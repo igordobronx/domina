@@ -1,0 +1,25 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.routers import health, auth
+from app.database import Base, engine
+from app.models import usuario  # garante que os modelos estão registrados antes do create_all
+
+Base.metadata.create_all(bind=engine)  # cria as tabelas se nao existirem (prototipo: sem Alembic por enquanto)
+
+app = FastAPI()
+
+origins = [
+    "http://localhost:8000",
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins, # diz ao navegador que apenas chamadas vindas das URL's listadas  na variavel origins tem permissao p acessar aa api
+    allow_credentials=True, # autoriza o envio de cookies de sessao ou cabeçalho Authorization com token JWT nas requisições
+    allow_methods=["*"], #permite todos os verbos get, post, put, pathc etc
+    allow_headers=["*"], #permite qqrl cabeçalho enviado pelo frontend
+)
+
+app.include_router(health.router)
+app.include_router(auth.router)
