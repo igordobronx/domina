@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.routers import health, auth
 from app.database import Base, engine
 from app.models import usuario  # garante que os modelos estão registrados antes do create_all

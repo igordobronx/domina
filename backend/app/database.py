@@ -7,12 +7,17 @@ from app.config import settings
 #por padrao o sqlite imepde q mais de uma thread use a msm conexao
 connect_args = {}
 if settings.DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False 
+    connect_args["check_same_thread"] = False
 #como o fastapi é assyncrono com varias thread, esses argumentpos mudam o check
-# se o database_url for do postgres o dicionario fica vazio {} e nao altera nada 
+# se o database_url for do postgres o dicionario fica vazio {} e nao altera nada
 
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgresql://"):
+    # forca o driver psycopg2 (instalado via requirements.txt); sem isso o
+    # SQLAlchemy tenta o dialeto psycopg (v3), que nao esta instalado
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
-engine = create_engine(settings.DATABASE_URL, connect_args=connect_args) #conexao fisica com o database
+engine = create_engine(db_url, connect_args=connect_args) #conexao fisica com o database
 
 #session local é uma conversa isolada com o banco de dados
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
