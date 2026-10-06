@@ -1,3 +1,5 @@
+import uuid
+
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -23,7 +25,8 @@ def get_current_user(
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except jwt.PyJWTError:
+        user_id = uuid.UUID(user_id)  # o JWT guarda o id como string; a coluna espera um uuid.UUID
+    except (jwt.PyJWTError, ValueError):
         raise credentials_exception
 
     usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
