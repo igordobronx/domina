@@ -5,6 +5,9 @@ __pycache__/
 *.pyo
 *.pyd
 .env
-sql_app.db
+*.db
+secrets/
+uploads/
+tests/
 .git/
 .gitignore

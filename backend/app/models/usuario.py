@@ -112,7 +112,10 @@ class Submissao(Base):
     aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
     tipo_envio = Column(SQLEnum(TipoEnvioEnum), nullable=False)
     conteudo_bruto = Column(Text, nullable=False)
-    texto_ocr = Column(Text, nullable=True)
+    texto_ocr = Column(Text, nullable=True)  # o que o OCR leu, intocado (serve para medir o OCR)
+    # texto que o aluno conferiu e confirmou; e ESTE que vai para a correcao por IA.
+    # nulo = envio aguardando confirmacao (RF-11). Envio TEXTO ja nasce preenchido.
+    texto_confirmado = Column(Text, nullable=True)
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
 
 

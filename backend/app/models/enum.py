@@ -8,7 +8,7 @@ class PerfilEnum(str, enum.Enum):
 
 class UsuarioTurmaPapelEnum(str, enum.Enum):
     ALUNO = "ALUNO"
-    PROFESSOR = "professor"
+    PROFESSOR = "PROFESSOR"
 
 class TipoMateriaEnum(str, enum.Enum):
     REDACAO_ENEM = "REDACAO_ENEM"

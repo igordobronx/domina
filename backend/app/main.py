@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import health, auth, ocr
+from app.routers import health, auth, ocr, submissoes
 from app.database import Base, engine
 from app.models import usuario  # garante que os modelos estão registrados antes do create_all
 
@@ -25,3 +25,4 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(ocr.router)
+app.include_router(submissoes.router)

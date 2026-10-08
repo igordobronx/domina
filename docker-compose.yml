@@ -1,0 +1,36 @@
+# sobe banco + API:  docker compose up -d --build
+# depois:            docker compose exec api python seed.py
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: domina
+      POSTGRES_PASSWORD: domina
+      POSTGRES_DB: domina
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U domina"]
+      interval: 2s
+      retries: 15
+
+  api:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      # sobrescreve o .env: dentro do docker o banco e o servico "db"
+      DATABASE_URL: postgresql://domina:domina@db:5432/domina
+      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/google.json
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - ./backend/secrets:/app/secrets:ro
+      - uploads:/app/uploads
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  uploads:
