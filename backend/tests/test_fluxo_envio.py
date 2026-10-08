@@ -52,6 +52,10 @@ def test_fluxo_completo():
     assert r.json()["texto_confirmado"] == "texto corrigido"
     assert r.json()["texto_ocr"] == "texto lido pelo ocr"  # original preservado
 
+    # recarregar a tela: dono e professor da turma veem
+    assert client.get(f"/submissoes/{sub['id']}", headers=aluno).json()["texto_confirmado"] == "texto corrigido"
+    assert client.get(f"/submissoes/{sub['id']}", headers=token("professor@domina.com")).status_code == 200
+
     # confirmado nao muda mais
     r = client.put(f"/submissoes/{sub['id']}/confirmar", headers=aluno, json={"texto": "outro"})
     assert r.status_code == 409
@@ -87,6 +91,43 @@ def test_ocr_sem_chave_responde_503():
         settings.GEMINI_API_KEY = "falsa"
 
 
+def test_imagem_sem_texto_responde_422():
+    original, ocr_router.extract_text = ocr_router.extract_text, lambda _b, _m: ""
+    try:
+        assert client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO).status_code == 422
+    finally:
+        ocr_router.extract_text = original
+
+
+def test_texto_publicado_responde_422():
+    from app.ocr.gemini import TextoPublicado
+
+    def recitacao(_b, _m):
+        raise TextoPublicado()
+
+    original, ocr_router.extract_text = ocr_router.extract_text, recitacao
+    try:
+        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO)
+        assert r.status_code == 422 and "publicada" in r.text
+    finally:
+        ocr_router.extract_text = original
+
+
+def test_outro_aluno_nao_ve_submissao():
+    from app.auth.security import hash_password
+    from app.models.enum import PerfilEnum
+    from app.models.usuario import Escola, Usuario
+
+    with SessionLocal() as db:
+        escola = db.query(Escola).first()
+        db.add(Usuario(escola_id=escola.id, nome="intruso", email="intruso@domina.com",
+                       senha_hash=hash_password(seed.SENHA), perfil=PerfilEnum.ALUNO))
+        db.commit()
+    sub = client.post("/submissoes/imagem", headers=token("aluno@domina.com"), files=FOTO,
+                      data={"atividade_id": atividade_id()}).json()
+    assert client.get(f"/submissoes/{sub['id']}", headers=token("intruso@domina.com")).status_code == 404
+
+
 def test_falha_do_gemini_nao_vaza_detalhe():
     def quebra(_bytes, _mime):
         raise RuntimeError("API_KEY_INVALID segredo-interno")
@@ -98,3 +139,27 @@ def test_falha_do_gemini_nao_vaza_detalhe():
         assert "segredo-interno" not in r.text
     finally:
         ocr_router.extract_text = original
+
+
+def test_gemini_usa_modelo_reserva_quando_cota_estoura():
+    from types import SimpleNamespace
+
+    from google.genai import errors
+
+    from app.ocr import gemini
+
+    chamados = []
+
+    def gerar(model, contents, config):
+        chamados.append(model)
+        if model == settings.GEMINI_MODEL:
+            raise errors.ClientError(429, {"error": {"message": "cota"}})
+        return SimpleNamespace(candidates=[], text=" texto da reserva ")
+
+    falso = SimpleNamespace(models=SimpleNamespace(generate_content=gerar))
+    original, gemini._client = gemini._client, lambda: falso
+    try:
+        assert gemini.extract_text(b"img", "image/png") == "texto da reserva"
+        assert chamados == [settings.GEMINI_MODEL, settings.GEMINI_MODEL_RESERVA]
+    finally:
+        gemini._client = original

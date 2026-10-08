@@ -9,7 +9,10 @@ class Settings(BaseSettings):
     # ponytail: plano gratis do Gemini pode usar os dados para treino (conflita com RN-21);
     # ativar faturamento no AI Studio antes de usar redacao de aluno real
     GEMINI_API_KEY: str | None = None
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash"  # o 2.5 nao aceita mais contas novas
+    # reserva quando o principal estoura cota (gratis: 20 chamadas/dia) ou esta sobrecarregado.
+    # mais rapido, mas erra mais palavra em letra cursiva -- a confirmacao do aluno cobre
+    GEMINI_MODEL_RESERVA: str = "gemini-3.5-flash-lite"
     # onde ficam as fotos originais das redacoes (Submissao.conteudo_bruto aponta pra ca)
     UPLOAD_DIR: str = "uploads"
 

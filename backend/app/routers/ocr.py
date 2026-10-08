@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
 from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.models.usuario import Usuario
-from app.ocr.gemini import extract_text
+from app.ocr.gemini import TextoPublicado, extract_text
 from app.schemas.ocr import OCRResponse
 
 logger = logging.getLogger(__name__)
@@ -43,13 +43,21 @@ def ocr(image_bytes: bytes, mime_type: str) -> str:
             detail="OCR indisponível: servidor sem chave do Gemini configurada.",
         )
     try:
-        return extract_text(image_bytes, mime_type)
+        texto = extract_text(image_bytes, mime_type)
+    except TextoPublicado:
+        raise HTTPException(
+            422, "Este texto parece ser de uma redação já publicada; a leitura automática foi bloqueada. "
+                 "Envie a sua própria redação ou digite o texto.",
+        )
     except Exception:
         logger.exception("falha no OCR")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Falha ao ler o texto da imagem. Tente de novo ou envie outra foto.",
         )
+    if not texto:
+        raise HTTPException(422, "Não encontramos texto na imagem. Envie uma foto mais nítida da redação.")
+    return texto
 
 
 # rota sincrona (def): o FastAPI roda numa thread separada, entao a chamada

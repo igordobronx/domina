@@ -42,9 +42,9 @@
     "semantic_hash": ""
   },
   "backend/app/config.py": {
-    "mtime": 1791423411.5212991,
-    "seen": 1791424230.2669706,
-    "ast_hash": "bdfc9e3b9d5b6cc999a907643138115a",
+    "mtime": 1791425060.7763734,
+    "seen": 1791425193.0999675,
+    "ast_hash": "8a7dd8da39cc5c3e689cb40ca572084c",
     "semantic_hash": ""
   },
   "backend/app/database.py": {
@@ -83,12 +83,6 @@
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
-  "backend/app/ocr/vision.py": {
-    "mtime": 1791423418.2036104,
-    "seen": 1791424230.2669706,
-    "ast_hash": "10e591ce84de63cdd3baa6b4208fed23",
-    "semantic_hash": ""
-  },
   "backend/app/routers/__init__.py": {
     "mtime": 1791422691.7262168,
     "seen": 1791424230.2669706,
@@ -108,9 +102,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/ocr.py": {
-    "mtime": 1791423684.9933674,
-    "seen": 1791424230.2669706,
-    "ast_hash": "60c9ce2ef648bd1e6e5dc199765deb77",
+    "mtime": 1791425079.9376771,
+    "seen": 1791425193.0999675,
+    "ast_hash": "6139bdc44474a023249914af0dbc89d3",
     "semantic_hash": ""
   },
   "backend/app/schemas/__init__.py": {
@@ -138,15 +132,15 @@
     "semantic_hash": ""
   },
   "backend/requirements.txt": {
-    "mtime": 1791423486.760079,
-    "seen": 1791424230.2669706,
-    "ast_hash": "925e1509bee987bfe55b104d4eed2773",
+    "mtime": 1791425079.9478002,
+    "seen": 1791425193.0999675,
+    "ast_hash": "8d49b47ea19051142765f17d72fad271",
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1791423685.1012547,
-    "seen": 1791424230.2669706,
-    "ast_hash": "b7a539541c2f1ca4302c0b2f44b66cc3",
+    "mtime": 1791425079.9386892,
+    "seen": 1791425193.0999675,
+    "ast_hash": "31a24d4e90f5f101a0065bbcc3694813",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
@@ -156,9 +150,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_fluxo_envio.py": {
-    "mtime": 1791423685.1907613,
-    "seen": 1791424230.2669706,
-    "ast_hash": "04854c0fff51671ef22b0f424194dcc7",
+    "mtime": 1791425079.9396827,
+    "seen": 1791425193.0999675,
+    "ast_hash": "e9e5209a5921ac58f6676a8e41b49878",
     "semantic_hash": ""
   },
   "backend/requirements-dev.txt": {
@@ -168,15 +162,21 @@
     "semantic_hash": ""
   },
   "docker-compose.yml": {
-    "mtime": 1791423486.865201,
-    "seen": 1791424230.2669706,
-    "ast_hash": "d6abeb5c7de31b1eaafef1ee75bcfefb",
+    "mtime": 1791425079.9630775,
+    "seen": 1791425193.0999675,
+    "ast_hash": "a70ef863e736ca77862ca2bfd056846f",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
     "mtime": 1791424256.8104763,
     "seen": 1791424283.3050084,
     "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
+    "semantic_hash": ""
+  },
+  "backend/app/ocr/gemini.py": {
+    "mtime": 1791425060.713327,
+    "seen": 1791425193.0999675,
+    "ast_hash": "f80f76c365979651125c61a87090e83d",
     "semantic_hash": ""
   }
 }

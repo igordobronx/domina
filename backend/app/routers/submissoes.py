@@ -56,6 +56,26 @@ def enviar_imagem(
     return submissao
 
 
+@router.get("/{submissao_id}", response_model=SubmissaoResponse)
+def ver_submissao(
+    submissao_id: uuid.UUID,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # o aluno dono ve (tela de confirmacao recarregada); professor da turma tambem
+    submissao = db.get(Submissao, submissao_id)
+    pode_ver = submissao and (
+        submissao.aluno_id == usuario.id
+        or (
+            usuario.perfil == PerfilEnum.PROFESSOR
+            and db.get(UsuarioTurma, (usuario.id, db.get(Atividade, submissao.atividade_id).turma_id))
+        )
+    )
+    if not pode_ver:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Submissão não encontrada.")
+    return submissao
+
+
 @router.put("/{submissao_id}/confirmar", response_model=SubmissaoResponse)
 def confirmar_texto(
     submissao_id: uuid.UUID,

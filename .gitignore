@@ -8,3 +8,4 @@ secrets/
 uploads/
 .claude/settings.local.json
 graphify-out/cache/last_query_stamp
+images/
