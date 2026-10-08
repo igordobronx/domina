@@ -62,5 +62,10 @@
   "60": "Session",
   "61": "google_auth_exceptions",
   "62": "google_cloud",
-  "63": "ImageAnnotatorClient"
+  "63": "ImageAnnotatorClient",
+  "64": "test_fluxo_envio.py",
+  "65": "Correcao",
+  "66": "Escola",
+  "67": "Usuario",
+  "68": "Ponto em aberto: precisão numeric/decimal das notas"
 }
