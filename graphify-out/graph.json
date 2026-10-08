@@ -173,19 +173,6 @@
       "source_location": "L19"
     },
     {
-      "id": "backend_app_models_enum_tipoenvioenum",
-      "label": "TipoEnvioEnum",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "Enums e Modelos do Backend",
-      "file_type": "code",
-      "norm_label": "tipoenvioenum",
-      "source_file": "backend/app/models/enum.py",
-      "source_location": "L36"
-    },
-    {
       "id": "backend_app_models_enum_tipomateriaenum",
       "label": "TipoMateriaEnum",
       "_callable": true,
@@ -235,7 +222,7 @@
       "file_type": "code",
       "norm_label": "auditlog",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L203"
+      "source_location": "L206"
     },
     {
       "id": "backend_app_models_usuario_consentimentolgpd",
@@ -248,7 +235,7 @@
       "file_type": "code",
       "norm_label": "consentimentolgpd",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L179"
+      "source_location": "L182"
     },
     {
       "id": "backend_app_models_usuario_correcao",
@@ -261,7 +248,7 @@
       "file_type": "code",
       "norm_label": "correcao",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L119"
+      "source_location": "L122"
     },
     {
       "id": "backend_app_models_usuario_correcaocriterio",
@@ -274,7 +261,7 @@
       "file_type": "code",
       "norm_label": "correcaocriterio",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L135"
+      "source_location": "L138"
     },
     {
       "id": "backend_app_models_usuario_custouso",
@@ -287,7 +274,7 @@
       "file_type": "code",
       "norm_label": "custouso",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L189"
+      "source_location": "L192"
     },
     {
       "id": "backend_app_models_usuario_documentobase",
@@ -313,7 +300,7 @@
       "file_type": "code",
       "norm_label": "dominioaluno",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L145"
+      "source_location": "L148"
     },
     {
       "id": "backend_app_models_usuario_escola",
@@ -339,7 +326,7 @@
       "file_type": "code",
       "norm_label": "exercicio",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L159"
+      "source_location": "L162"
     },
     {
       "id": "backend_app_models_usuario_exercicioresposta",
@@ -352,7 +339,7 @@
       "file_type": "code",
       "norm_label": "exercicioresposta",
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L169"
+      "source_location": "L172"
     },
     {
       "id": "backend_app_models_usuario_materia",
@@ -407,19 +394,6 @@
       "source_location": "L52"
     },
     {
-      "id": "backend_app_models_usuario_usuario",
-      "label": "Usuario",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 1,
-      "community_name": "Enums e Modelos do Backend",
-      "file_type": "code",
-      "norm_label": "usuario",
-      "source_file": "backend/app/models/usuario.py",
-      "source_location": "L38"
-    },
-    {
       "id": "backend_app_models_usuario_usuarioturma",
       "label": "UsuarioTurma",
       "_callable": true,
@@ -433,19 +407,6 @@
       "source_location": "L60"
     },
     {
-      "id": "backend_app_schemas_ocr_ocrresponse",
-      "label": "OCRResponse",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
-      "file_type": "code",
-      "norm_label": "ocrresponse",
-      "source_file": "backend/app/schemas/ocr.py",
-      "source_location": "L3"
-    },
-    {
       "id": "backend_app_config_settings",
       "label": "Settings",
       "_callable": true,
@@ -457,6 +418,32 @@
       "norm_label": "settings",
       "source_file": "backend/app/config.py",
       "source_location": "L5"
+    },
+    {
+      "id": "backend_app_models_enum_tipoenvioenum",
+      "label": "TipoEnvioEnum",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "tipoenvioenum",
+      "source_file": "backend/app/models/enum.py",
+      "source_location": "L36"
+    },
+    {
+      "id": "backend_app_models_usuario_usuario",
+      "label": "Usuario",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "usuario",
+      "source_file": "backend/app/models/usuario.py",
+      "source_location": "L38"
     },
     {
       "id": "backend_app_schemas_auth_loginrequest",
@@ -485,6 +472,45 @@
       "source_location": "L7"
     },
     {
+      "id": "backend_app_schemas_ocr_ocrresponse",
+      "label": "OCRResponse",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "ocrresponse",
+      "source_file": "backend/app/schemas/ocr.py",
+      "source_location": "L3"
+    },
+    {
+      "id": "backend_app_schemas_submissao_confirmartextorequest",
+      "label": "ConfirmarTextoRequest",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "confirmartextorequest",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L21"
+    },
+    {
+      "id": "backend_app_schemas_submissao_submissaoresponse",
+      "label": "SubmissaoResponse",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "submissaoresponse",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L9"
+    },
+    {
       "id": "backend_app_auth_security_hash_password",
       "label": "hash_password()",
       "_callable": true,
@@ -497,6 +523,18 @@
       "source_location": "L12"
     },
     {
+      "id": "backend_seed_get_or_create",
+      "label": "get_or_create()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "Enums e Modelos do Backend",
+      "file_type": "code",
+      "norm_label": "get_or_create()",
+      "source_file": "backend/seed.py",
+      "source_location": "L25"
+    },
+    {
       "id": "backend_seed_run_seed",
       "label": "run_seed()",
       "_callable": true,
@@ -506,31 +544,91 @@
       "file_type": "code",
       "norm_label": "run_seed()",
       "source_file": "backend/seed.py",
-      "source_location": "L6"
+      "source_location": "L41"
     },
     {
-      "id": "backend_app_ocr_vision_extract_text",
-      "label": "extract_text()",
+      "id": "backend_seed_usuario",
+      "label": "usuario()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 1,
+      "community_name": "Enums e Modelos do Backend",
+      "file_type": "code",
+      "norm_label": "usuario()",
+      "source_file": "backend/seed.py",
+      "source_location": "L34"
+    },
+    {
+      "id": "backend_tests_test_fluxo_envio_atividade_id",
+      "label": "atividade_id()",
       "_callable": true,
       "_origin": "ast",
       "community": 12,
       "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
       "file_type": "code",
-      "norm_label": "extract_text()",
-      "source_file": "backend/app/ocr/vision.py",
-      "source_location": "L4"
+      "norm_label": "atividade_id()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L34"
     },
     {
-      "id": "backend_app_routers_ocr_extract_text_from_image",
-      "label": "extract_text_from_image()",
+      "id": "backend_tests_test_fluxo_envio_test_fluxo_completo",
+      "label": "test_fluxo_completo()",
       "_callable": true,
       "_origin": "ast",
       "community": 12,
       "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
       "file_type": "code",
-      "norm_label": "extract_text_from_image()",
-      "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L11"
+      "norm_label": "test_fluxo_completo()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L39"
+    },
+    {
+      "id": "backend_tests_test_fluxo_envio_test_ocr_sem_credencial_responde_503",
+      "label": "test_ocr_sem_credencial_responde_503()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
+      "file_type": "code",
+      "norm_label": "test_ocr_sem_credencial_responde_503()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L79"
+    },
+    {
+      "id": "backend_tests_test_fluxo_envio_test_ocr_sem_credencial_responde_503_sem_credencial",
+      "label": "sem_credencial()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
+      "file_type": "code",
+      "norm_label": "sem_credencial()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L82"
+    },
+    {
+      "id": "backend_tests_test_fluxo_envio_test_regras_de_acesso",
+      "label": "test_regras_de_acesso()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
+      "file_type": "code",
+      "norm_label": "test_regras_de_acesso()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L58"
+    },
+    {
+      "id": "backend_tests_test_fluxo_envio_token",
+      "label": "token()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 12,
+      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
+      "file_type": "code",
+      "norm_label": "token()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L28"
     },
     {
       "id": "backend_app_auth_dependencies_get_current_user",
@@ -593,6 +691,30 @@
       "source_location": "L33"
     },
     {
+      "id": "backend_app_ocr_vision_client",
+      "label": "_client()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "_client()",
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L8"
+    },
+    {
+      "id": "backend_app_ocr_vision_extract_text",
+      "label": "extract_text()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "extract_text()",
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L13"
+    },
+    {
       "id": "backend_app_routers_auth_login",
       "label": "login()",
       "_callable": true,
@@ -615,6 +737,66 @@
       "norm_label": "health_check()",
       "source_file": "backend/app/routers/health.py",
       "source_location": "L15"
+    },
+    {
+      "id": "backend_app_routers_ocr_extract_text_from_image",
+      "label": "extract_text_from_image()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "extract_text_from_image()",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L58"
+    },
+    {
+      "id": "backend_app_routers_ocr_ler_imagem",
+      "label": "ler_imagem()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "ler_imagem()",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L18"
+    },
+    {
+      "id": "backend_app_routers_ocr_ocr",
+      "label": "ocr()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "ocr()",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L37"
+    },
+    {
+      "id": "backend_app_routers_submissoes_confirmar_texto",
+      "label": "confirmar_texto()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "confirmar_texto()",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L60"
+    },
+    {
+      "id": "backend_app_routers_submissoes_enviar_imagem",
+      "label": "enviar_imagem()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "enviar_imagem()",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L21"
     },
     {
       "id": "backend_app_models_enum",
@@ -672,70 +854,37 @@
       "source_location": ""
     },
     {
-      "id": "backend_app_ocr_vision",
-      "label": "vision.py",
+      "id": "backend_seed_rationale_1",
+      "label": "Popula o banco com o minimo para a demo. Pode rodar quantas vezes quiser: o que\u2026",
       "_origin": "ast",
-      "community": 12,
-      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
-      "file_type": "code",
-      "norm_label": "vision.py",
-      "source_file": "backend/app/ocr/vision.py",
+      "community": 1,
+      "community_name": "Enums e Modelos do Backend",
+      "file_type": "rationale",
+      "norm_label": "popula o banco com o minimo para a demo. pode rodar quantas vezes quiser: o que...",
+      "source_file": "backend/seed.py",
       "source_location": "L1"
     },
     {
-      "id": "backend_app_routers_ocr",
-      "label": "routers/ocr.py",
+      "id": "backend_tests_test_fluxo_envio",
+      "label": "test_fluxo_envio.py",
       "_origin": "ast",
       "community": 12,
       "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
       "file_type": "code",
-      "norm_label": "routers/ocr.py",
-      "source_file": "backend/app/routers/ocr.py",
+      "norm_label": "test_fluxo_envio.py",
+      "source_file": "backend/tests/test_fluxo_envio.py",
       "source_location": "L1"
     },
     {
-      "id": "backend_app_routers_ocr_py_post",
-      "label": "post",
+      "id": "backend_tests_test_fluxo_envio_rationale_1",
+      "label": "Fluxo do aluno: login -> envia foto -> OCR (falso) -> confirma texto. cd\u2026",
       "_origin": "ast",
       "community": 12,
       "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
-      "file_type": "code",
-      "norm_label": "post",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "backend_app_schemas_ocr",
-      "label": "schemas/ocr.py",
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
-      "file_type": "code",
-      "norm_label": "schemas/ocr.py",
-      "source_file": "backend/app/schemas/ocr.py",
+      "file_type": "rationale",
+      "norm_label": "fluxo do aluno: login -> envia foto -> ocr (falso) -> confirma texto. cd...",
+      "source_file": "backend/tests/test_fluxo_envio.py",
       "source_location": "L1"
-    },
-    {
-      "id": "backend_app_schemas_ocr_py_basemodel",
-      "label": "BaseModel",
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
-      "file_type": "code",
-      "norm_label": "basemodel",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "uploadfile",
-      "label": "UploadFile",
-      "_origin": "ast",
-      "community": 12,
-      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
-      "file_type": "code",
-      "norm_label": "uploadfile",
-      "source_file": "",
-      "source_location": ""
     },
     {
       "id": "backend_app_auth_dependencies",
@@ -815,6 +964,17 @@
       "source_location": "L1"
     },
     {
+      "id": "backend_app_ocr_vision",
+      "label": "vision.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "vision.py",
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L1"
+    },
+    {
       "id": "backend_app_routers_auth",
       "label": "routers/auth.py",
       "_origin": "ast",
@@ -870,6 +1030,83 @@
       "source_location": "L1"
     },
     {
+      "id": "backend_app_routers_ocr",
+      "label": "routers/ocr.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "routers/ocr.py",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_routers_ocr_py_post",
+      "label": "post",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "post",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_ocr_py_uploadfile",
+      "label": "UploadFile",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "uploadfile",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_submissoes",
+      "label": "submissoes.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "submissoes.py",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_routers_submissoes_py_post",
+      "label": "post",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "post",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_submissoes_py_session",
+      "label": "Session",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "session",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_submissoes_py_uploadfile",
+      "label": "UploadFile",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "uploadfile",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
       "id": "backend_app_schemas_auth",
       "label": "schemas/auth.py",
       "_origin": "ast",
@@ -882,6 +1119,50 @@
     },
     {
       "id": "backend_app_schemas_auth_py_basemodel",
+      "label": "BaseModel",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "basemodel",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_schemas_ocr",
+      "label": "schemas/ocr.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "schemas/ocr.py",
+      "source_file": "backend/app/schemas/ocr.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_schemas_ocr_py_basemodel",
+      "label": "BaseModel",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "basemodel",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_schemas_submissao",
+      "label": "submissao.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "submissao.py",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_schemas_submissao_py_basemodel",
       "label": "BaseModel",
       "_origin": "ast",
       "community": 2,
@@ -910,6 +1191,39 @@
       "community_name": "Auth Backend (Login, JWT, Config)",
       "file_type": "code",
       "norm_label": "get",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "imageannotatorclient",
+      "label": "ImageAnnotatorClient",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "imageannotatorclient",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "put",
+      "label": "put",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "put",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "uuid",
+      "label": "UUID",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "file_type": "code",
+      "norm_label": "uuid",
       "source_file": "",
       "source_location": ""
     },
@@ -1198,21 +1512,6 @@
       "source_url": null
     },
     {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_akcit_ceia_ufg_hub_goias",
-      "label": "AKCIT / CEIA-UFG / Hub Goi\u00e1s (poss\u00edvel fonte de fomento, mentoria e infraestrutura)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "akcit / ceia-ufg / hub goias (possivel fonte de fomento, mentoria e infraestrutura)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_arch_base_da_materia",
       "label": "Arquitetura: Base da mat\u00e9ria (temas e crit\u00e9rios validados pelo professor)",
       "_origin": "semantic",
@@ -1348,126 +1647,6 @@
       "source_url": null
     },
     {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_cope",
-      "label": "COPE (piloto institucional desejado)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "cope (piloto institucional desejado)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_escola_professor_beto",
-      "label": "Escola do Professor Beto (candidata a piloto adicional, foco em reda\u00e7\u00e3o)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "escola do professor beto (candidata a piloto adicional, foco em redacao)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_eu_en_wong",
-      "label": "Eu En Wong (ren., contato mantido por e-mail e LinkedIn)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "eu en wong (ren., contato mantido por e-mail e linkedin)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_gustavo",
-      "label": "Gustavo (Co-fundador; desenvolvimento backend)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "gustavo (co-fundador; desenvolvimento backend)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_igor_ferreira_magalhaes_silva",
-      "label": "Igor Ferreira Magalh\u00e3es Silva (Fundador; backend, infraestrutura, DevOps e seguran\u00e7a)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "igor ferreira magalhaes silva (fundador; backend, infraestrutura, devops e seguranca)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_ipe",
-      "label": "IPE (piloto institucional desejado)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "ipe (piloto institucional desejado)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_joao_pedro",
-      "label": "Jo\u00e3o Pedro (Co-fundador; estat\u00edstica, matem\u00e1tica e IA; ponte de entrada no CEIA via UFG)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "joao pedro (co-fundador; estatistica, matematica e ia; ponte de entrada no ceia via ufg)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_lucas",
-      "label": "Lucas (Co-fundador; documenta\u00e7\u00e3o, frontend e demandas administrativas)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "lucas (co-fundador; documentacao, frontend e demandas administrativas)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_perfil_administrador_domina",
       "label": "Perfil: Administrador Domina",
       "_origin": "semantic",
@@ -1528,36 +1707,6 @@
       "source_url": null
     },
     {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_produto_domina",
-      "label": "Domina (plataforma de IA de corre\u00e7\u00e3o e diagn\u00f3stico)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "domina (plataforma de ia de correcao e diagnostico)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_ren_education_singapura",
-      "label": "ren. (REN Education, Singapura) \u2014 caso an\u00e1logo",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "ren. (ren education, singapura) \u2014 caso analogo",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rnf_04",
       "label": "RNF-04 (Qualidade da IA): Concord\u00e2ncia entre nota da IA e do corretor humano (meta a definir com especialista)",
       "_origin": "semantic",
@@ -1568,21 +1717,6 @@
       "contributor": null,
       "file_type": "concept",
       "norm_label": "rnf-04 (qualidade da ia): concordancia entre nota da ia e do corretor humano (meta a definir com especialista)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_trivium_bruno_malavolta",
-      "label": "Trivium / Bruno Malavolta (candidata a piloto adicional, foco em reda\u00e7\u00e3o e literatura)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "trivium / bruno malavolta (candidata a piloto adicional, foco em redacao e literatura)",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -1650,51 +1784,6 @@
       "source_url": null
     },
     {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_fomento_akcit",
-      "label": "Ponto em aberto: fomento AKCIT \u2014 edital conferido, prot\u00f3tipo em constru\u00e7\u00e3o",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "rationale",
-      "norm_label": "ponto em aberto: fomento akcit \u2014 edital conferido, prototipo em construcao",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_metas_rnf",
-      "label": "Ponto em aberto: metas dos RNF s\u00e3o propostas, nenhuma testada com dados reais",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "rationale",
-      "norm_label": "ponto em aberto: metas dos rnf sao propostas, nenhuma testada com dados reais",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_participacao_societaria",
-      "label": "Ponto em aberto: participa\u00e7\u00e3o societ\u00e1ria ainda pendente entre os quatro fundadores",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "rationale",
-      "norm_label": "ponto em aberto: participacao societaria ainda pendente entre os quatro fundadores",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_treinar_documentos",
       "label": "Ponto em aberto: \"treinar\" com documentos \u2014 respondido em parte (RAG, n\u00e3o fine-tuning no MVP)",
       "_origin": "semantic",
@@ -1705,37 +1794,6 @@
       "contributor": null,
       "file_type": "rationale",
       "norm_label": "ponto em aberto: \"treinar\" com documentos \u2014 respondido em parte (rag, nao fine-tuning no mvp)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_problema_correcao_manual",
-      "label": "Problema: corre\u00e7\u00e3o manual de conte\u00fado aberto \u00e9 lenta, cara e pouco individualizada",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "rationale",
-      "norm_label": "problema: correcao manual de conteudo aberto e lenta, cara e pouco individualizada",
-      "rationale": "Alunos recebem feedback tarde e n\u00e3o sabem em quais temas est\u00e3o fracos; professores n\u00e3o t\u00eam tempo de aprofundar feedback; escolas n\u00e3o t\u00eam vis\u00e3o estruturada de lacunas por tema, turma ou tempo.",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_risco_concorrencia",
-      "label": "Risco: concorr\u00eancia (ex.: Evolucional; ren. em outros mercados)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 0,
-      "community_name": "Modelo de Dados (Entidades)",
-      "contributor": null,
-      "file_type": "rationale",
-      "norm_label": "risco: concorrencia (ex.: evolucional; ren. em outros mercados)",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -2477,6 +2535,66 @@
       "source_url": null
     },
     {
+      "id": "backend_requirements_bcrypt",
+      "label": "bcrypt",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 19,
+      "community_name": "Depend\u00eancia: Hash de Senha",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "bcrypt",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_passlib",
+      "label": "Passlib",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 19,
+      "community_name": "Depend\u00eancia: Hash de Senha",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "passlib",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_pydantic",
+      "label": "Pydantic",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 20,
+      "community_name": "Depend\u00eancia: Pydantic",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "pydantic",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_pydantic_settings",
+      "label": "Pydantic Settings",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 20,
+      "community_name": "Depend\u00eancia: Pydantic",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "pydantic settings",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_11",
       "label": "RN-11 (Dom\u00ednio): O percentual de dom\u00ednio \u00e9 uma estimativa com base nas avalia\u00e7\u00f5es feitas no sistema; n\u00e3o \u00e9 nota oficial nem previs\u00e3o de resultado no ENEM",
       "_origin": "semantic",
@@ -2503,6 +2621,66 @@
       "file_type": "concept",
       "norm_label": "rn-16 (tendencias): o indice de recorrencia nunca e apresentado como probabilidade de o assunto cair na proxima prova",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_fastapi",
+      "label": "FastAPI",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 26,
+      "community_name": "Depend\u00eancia: FastAPI",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "fastapi",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_google_cloud_vision",
+      "label": "Google Cloud Vision",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 27,
+      "community_name": "Depend\u00eancia: Google Cloud Vision",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "google cloud vision",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_psycopg2_binary",
+      "label": "psycopg2-binary",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 28,
+      "community_name": "Depend\u00eancia: psycopg2",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "psycopg2-binary",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_pyjwt",
+      "label": "PyJWT",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 29,
+      "community_name": "Depend\u00eancia: PyJWT",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "pyjwt",
+      "source_file": "backend/requirements.txt",
       "source_location": null,
       "source_url": null
     },
@@ -2892,6 +3070,51 @@
       "source_url": null
     },
     {
+      "id": "backend_requirements_python_multipart",
+      "label": "python-multipart",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 30,
+      "community_name": "Depend\u00eancia: python-multipart",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "python-multipart",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_sqlalchemy",
+      "label": "SQLAlchemy",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 31,
+      "community_name": "Depend\u00eancia: SQLAlchemy",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "sqlalchemy",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "backend_requirements_uvicorn",
+      "label": "Uvicorn",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 32,
+      "community_name": "Depend\u00eancia: Uvicorn",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "uvicorn",
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_modelagem_do_banco_de_dados_indices_nao_especificados",
       "label": "Ponto em aberto: \u00edndices n\u00e3o especificados",
       "_origin": "semantic",
@@ -3218,21 +3441,6 @@
       "contributor": null,
       "file_type": "concept",
       "norm_label": "us-09 (piloto): como professor, quero enviar varias redacoes da turma de uma vez, para ganhar tempo",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_us_10",
-      "label": "US-10 (MVP): Como professor, quero a nota estimada da reda\u00e7\u00e3o ENEM por compet\u00eancia e total, com justificativa, para revisar mais r\u00e1pido",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 4,
-      "community_name": "Envio, OCR e Corre\u00e7\u00e3o por IA",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "us-10 (mvp): como professor, quero a nota estimada da redacao enem por competencia e total, com justificativa, para revisar mais rapido",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -3915,6 +4123,36 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_akcit_ceia_ufg_hub_goias",
+      "label": "AKCIT / CEIA-UFG / Hub Goi\u00e1s (poss\u00edvel fonte de fomento, mentoria e infraestrutura)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "akcit / ceia-ufg / hub goias (possivel fonte de fomento, mentoria e infraestrutura)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_cope",
+      "label": "COPE (piloto institucional desejado)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "cope (piloto institucional desejado)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_enem",
       "label": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
       "_origin": "semantic",
@@ -3945,6 +4183,111 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_escola_professor_beto",
+      "label": "Escola do Professor Beto (candidata a piloto adicional, foco em reda\u00e7\u00e3o)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "escola do professor beto (candidata a piloto adicional, foco em redacao)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_eu_en_wong",
+      "label": "Eu En Wong (ren., contato mantido por e-mail e LinkedIn)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "eu en wong (ren., contato mantido por e-mail e linkedin)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_gustavo",
+      "label": "Gustavo (Co-fundador; desenvolvimento backend)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "gustavo (co-fundador; desenvolvimento backend)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_igor_ferreira_magalhaes_silva",
+      "label": "Igor Ferreira Magalh\u00e3es Silva (Fundador; backend, infraestrutura, DevOps e seguran\u00e7a)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "igor ferreira magalhaes silva (fundador; backend, infraestrutura, devops e seguranca)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_ipe",
+      "label": "IPE (piloto institucional desejado)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "ipe (piloto institucional desejado)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_joao_pedro",
+      "label": "Jo\u00e3o Pedro (Co-fundador; estat\u00edstica, matem\u00e1tica e IA; ponte de entrada no CEIA via UFG)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "joao pedro (co-fundador; estatistica, matematica e ia; ponte de entrada no ceia via ufg)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_lucas",
+      "label": "Lucas (Co-fundador; documenta\u00e7\u00e3o, frontend e demandas administrativas)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "lucas (co-fundador; documentacao, frontend e demandas administrativas)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_matriz_referencia_inep",
       "label": "Matriz de refer\u00eancia do INEP (habilidades/compet\u00eancias)",
       "_origin": "semantic",
@@ -3955,6 +4298,36 @@
       "contributor": null,
       "file_type": "concept",
       "norm_label": "matriz de referencia do inep (habilidades/competencias)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_produto_domina",
+      "label": "Domina (plataforma de IA de corre\u00e7\u00e3o e diagn\u00f3stico)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "domina (plataforma de ia de correcao e diagnostico)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_ren_education_singapura",
+      "label": "ren. (REN Education, Singapura) \u2014 caso an\u00e1logo",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "ren. (ren education, singapura) \u2014 caso analogo",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -4080,6 +4453,21 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_trivium_bruno_malavolta",
+      "label": "Trivium / Bruno Malavolta (candidata a piloto adicional, foco em reda\u00e7\u00e3o e literatura)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "trivium / bruno malavolta (candidata a piloto adicional, foco em redacao e literatura)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_us_03",
       "label": "US-03 (MVP): Como professor de reda\u00e7\u00e3o, quero come\u00e7ar com as 5 compet\u00eancias do ENEM j\u00e1 carregadas, para usar sem configurar nada",
       "_origin": "semantic",
@@ -4140,6 +4528,66 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_us_10",
+      "label": "US-10 (MVP): Como professor, quero a nota estimada da reda\u00e7\u00e3o ENEM por compet\u00eancia e total, com justificativa, para revisar mais r\u00e1pido",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "us-10 (mvp): como professor, quero a nota estimada da redacao enem por competencia e total, com justificativa, para revisar mais rapido",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_fomento_akcit",
+      "label": "Ponto em aberto: fomento AKCIT \u2014 edital conferido, prot\u00f3tipo em constru\u00e7\u00e3o",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "rationale",
+      "norm_label": "ponto em aberto: fomento akcit \u2014 edital conferido, prototipo em construcao",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_metas_rnf",
+      "label": "Ponto em aberto: metas dos RNF s\u00e3o propostas, nenhuma testada com dados reais",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "rationale",
+      "norm_label": "ponto em aberto: metas dos rnf sao propostas, nenhuma testada com dados reais",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_participacao_societaria",
+      "label": "Ponto em aberto: participa\u00e7\u00e3o societ\u00e1ria ainda pendente entre os quatro fundadores",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "rationale",
+      "norm_label": "ponto em aberto: participacao societaria ainda pendente entre os quatro fundadores",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_po_segunda_materia_mvp",
       "label": "Ponto em aberto: segunda mat\u00e9ria do MVP restrita \u00e0s mat\u00e9rias do segundo dia do ENEM",
       "_origin": "semantic",
@@ -4150,6 +4598,37 @@
       "contributor": null,
       "file_type": "rationale",
       "norm_label": "ponto em aberto: segunda materia do mvp restrita as materias do segundo dia do enem",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_problema_correcao_manual",
+      "label": "Problema: corre\u00e7\u00e3o manual de conte\u00fado aberto \u00e9 lenta, cara e pouco individualizada",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "rationale",
+      "norm_label": "problema: correcao manual de conteudo aberto e lenta, cara e pouco individualizada",
+      "rationale": "Alunos recebem feedback tarde e n\u00e3o sabem em quais temas est\u00e3o fracos; professores n\u00e3o t\u00eam tempo de aprofundar feedback; escolas n\u00e3o t\u00eam vis\u00e3o estruturada de lacunas por tema, turma ou tempo.",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_risco_concorrencia",
+      "label": "Risco: concorr\u00eancia (ex.: Evolucional; ren. em outros mercados)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "Base da Mat\u00e9ria e Reda\u00e7\u00e3o ENEM",
+      "contributor": null,
+      "file_type": "rationale",
+      "norm_label": "risco: concorrencia (ex.: evolucional; ren. em outros mercados)",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -4771,158 +5250,224 @@
       "source_url": null
     },
     {
-      "id": "backend_requirements_bcrypt",
-      "label": "bcrypt",
-      "author": null,
-      "captured_at": null,
-      "community": 19,
-      "community_name": "Depend\u00eancia: Hash de Senha",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "bcrypt",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_passlib",
-      "label": "Passlib",
-      "author": null,
-      "captured_at": null,
-      "community": 19,
-      "community_name": "Depend\u00eancia: Hash de Senha",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "passlib",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_pydantic",
-      "label": "Pydantic",
-      "author": null,
-      "captured_at": null,
-      "community": 20,
-      "community_name": "Depend\u00eancia: Pydantic",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "pydantic",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_pydantic_settings",
-      "label": "Pydantic Settings",
-      "author": null,
-      "captured_at": null,
-      "community": 20,
-      "community_name": "Depend\u00eancia: Pydantic",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "pydantic settings",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_fastapi",
-      "label": "FastAPI",
-      "author": null,
-      "captured_at": null,
-      "community": 26,
-      "community_name": "Depend\u00eancia: FastAPI",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "fastapi",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_google_cloud_vision",
-      "label": "Google Cloud Vision",
-      "author": null,
-      "captured_at": null,
-      "community": 27,
-      "community_name": "Depend\u00eancia: Google Cloud Vision",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "google cloud vision",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_psycopg2_binary",
-      "label": "psycopg2-binary",
-      "author": null,
-      "captured_at": null,
-      "community": 28,
-      "community_name": "Depend\u00eancia: psycopg2",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "psycopg2-binary",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_pyjwt",
-      "label": "PyJWT",
-      "author": null,
-      "captured_at": null,
-      "community": 29,
-      "community_name": "Depend\u00eancia: PyJWT",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "pyjwt",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_python_multipart",
-      "label": "python-multipart",
-      "author": null,
-      "captured_at": null,
-      "community": 30,
-      "community_name": "Depend\u00eancia: python-multipart",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "python-multipart",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "backend_requirements_sqlalchemy",
-      "label": "SQLAlchemy",
-      "author": null,
-      "captured_at": null,
-      "community": 31,
-      "community_name": "Depend\u00eancia: SQLAlchemy",
-      "contributor": null,
+      "id": "sqlalchemy",
+      "label": "sqlalchemy",
+      "community": 1,
+      "community_name": "Enums e Modelos do Backend",
+      "external": true,
       "file_type": "concept",
       "norm_label": "sqlalchemy",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
+      "source_file": "",
+      "type": "external"
     },
     {
-      "id": "backend_requirements_uvicorn",
-      "label": "Uvicorn",
-      "author": null,
-      "captured_at": null,
-      "community": 32,
-      "community_name": "Depend\u00eancia: Uvicorn",
-      "contributor": null,
+      "id": "sqlalchemy_dialects_postgresql",
+      "label": "sqlalchemy_dialects_postgresql",
+      "community": 1,
+      "community_name": "Enums e Modelos do Backend",
+      "external": true,
       "file_type": "concept",
-      "norm_label": "uvicorn",
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "source_url": null
+      "norm_label": "sqlalchemy_dialects_postgresql",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "fastapi_testclient",
+      "label": "fastapi_testclient",
+      "community": 12,
+      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "fastapi_testclient",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "tempfile",
+      "label": "tempfile",
+      "community": 12,
+      "community_name": "Integra\u00e7\u00e3o OCR (Google Vision)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "tempfile",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "datetime",
+      "label": "datetime",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "datetime",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "fastapi",
+      "label": "fastapi",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "fastapi",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "fastapi_middleware_cors",
+      "label": "fastapi_middleware_cors",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "fastapi_middleware_cors",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "fastapi_security",
+      "label": "fastapi_security",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "fastapi_security",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "functools",
+      "label": "functools",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "functools",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "google_auth_exceptions",
+      "label": "google_auth_exceptions",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "google_auth_exceptions",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "google_cloud",
+      "label": "google_cloud",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "google_cloud",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "jwt",
+      "label": "jwt",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "jwt",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "logging",
+      "label": "logging",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "logging",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "os",
+      "label": "os",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "os",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "passlib_context",
+      "label": "passlib_context",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "passlib_context",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "pathlib",
+      "label": "pathlib",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "pathlib",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "pydantic",
+      "label": "pydantic",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "pydantic",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "pydantic_settings",
+      "label": "pydantic_settings",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "pydantic_settings",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "sqlalchemy_orm",
+      "label": "sqlalchemy_orm",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "sqlalchemy_orm",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "typing",
+      "label": "typing",
+      "community": 2,
+      "community_name": "Auth Backend (Login, JWT, Config)",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "typing",
+      "source_file": "",
+      "type": "external"
     }
   ],
   "links": [
@@ -4936,6 +5481,18 @@
       "context": "call",
       "source_file": "backend/app/auth/dependencies.py",
       "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_ocr_vision_extract_text",
+      "target": "backend_app_ocr_vision_client",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L21",
       "weight": 1.0
     },
     {
@@ -4964,6 +5521,30 @@
     },
     {
       "source": "backend_app_routers_ocr_extract_text_from_image",
+      "target": "backend_app_routers_ocr_ler_imagem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr_extract_text_from_image",
+      "target": "backend_app_routers_ocr_ocr",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr_ocr",
       "target": "backend_app_ocr_vision_extract_text",
       "relation": "calls",
       "_origin": "ast",
@@ -4971,23 +5552,71 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L23",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_routers_ocr_ler_imagem",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_routers_ocr_ocr",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
       "source": "backend_seed_run_seed",
-      "target": "backend_app_models_usuario_escola",
+      "target": "backend_seed_get_or_create",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/seed.py",
-      "source_location": "L14",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
       "source": "backend_seed_run_seed",
+      "target": "backend_seed_usuario",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/seed.py",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed_usuario",
+      "target": "backend_seed_get_or_create",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/seed.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed_usuario",
       "target": "backend_app_auth_security_hash_password",
       "relation": "calls",
       "_origin": "ast",
@@ -4995,19 +5624,67 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/seed.py",
-      "source_location": "L25",
+      "source_location": "L37",
       "weight": 1.0
     },
     {
-      "source": "backend_seed_run_seed",
-      "target": "backend_app_models_usuario_usuario",
+      "source": "backend_tests_test_fluxo_envio_test_fluxo_completo",
+      "target": "backend_tests_test_fluxo_envio_token",
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "call",
-      "source_file": "backend/seed.py",
-      "source_location": "L31",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio_test_fluxo_completo",
+      "target": "backend_tests_test_fluxo_envio_atividade_id",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio_test_ocr_sem_credencial_responde_503",
+      "target": "backend_tests_test_fluxo_envio_token",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio_test_regras_de_acesso",
+      "target": "backend_tests_test_fluxo_envio_token",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio_test_regras_de_acesso",
+      "target": "backend_tests_test_fluxo_envio_atividade_id",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -5043,7 +5720,43 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L10",
+      "source_location": "L57",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_confirmar_texto",
+      "target": "put",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "decorator",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_routers_submissoes_py_post",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "decorator",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_dependencies",
+      "target": "uuid",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/dependencies.py",
+      "source_location": "L1",
       "weight": 1.0
     },
     {
@@ -5056,6 +5769,18 @@
       "context": "import",
       "source_file": "backend/app/auth/dependencies.py",
       "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_dependencies",
+      "target": "jwt",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/dependencies.py",
+      "source_location": "L3",
       "weight": 1.0
     },
     {
@@ -5080,6 +5805,42 @@
       "context": "import",
       "source_file": "backend/app/auth/dependencies.py",
       "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_security",
+      "target": "jwt",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/security.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_config",
+      "target": "os",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/config.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_models_usuario",
+      "target": "uuid",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/models/usuario.py",
+      "source_location": "L1",
       "weight": 1.0
     },
     {
@@ -5252,6 +6013,18 @@
     },
     {
       "source": "backend_app_routers_ocr",
+      "target": "logging",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr",
       "target": "backend_app_auth_dependencies_get_current_user",
       "relation": "imports",
       "_origin": "ast",
@@ -5259,7 +6032,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L3",
+      "source_location": "L6",
       "weight": 1.0
     },
     {
@@ -5271,7 +6044,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L4",
+      "source_location": "L7",
       "weight": 1.0
     },
     {
@@ -5283,7 +6056,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L5",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
@@ -5295,19 +6068,187 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L6",
+      "source_location": "L9",
       "weight": 1.0
     },
     {
-      "source": "backend_seed",
-      "target": "backend_app_auth_security_hash_password",
+      "source": "backend_app_routers_submissoes",
+      "target": "uuid",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "import",
-      "source_file": "backend/seed.py",
+      "source_file": "backend/app/routers/submissoes.py",
       "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_enum_perfilenum",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_enum_tipoenvioenum",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_usuario_atividade",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_usuario_submissao",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_usuario_usuario",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_usuario_usuarioturma",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_ocr_ler_imagem",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_ocr_ocr",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_schemas_submissao_confirmartextorequest",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_schemas_submissao_submissaoresponse",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_auth_dependencies_get_current_user",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_database_get_db",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao",
+      "target": "uuid",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao",
+      "target": "backend_app_models_enum_tipoenvioenum",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L6",
       "weight": 1.0
     },
     {
@@ -5319,7 +6260,55 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/seed.py",
-      "source_location": "L2",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_enum_tipoatividadeenum",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_enum_tipomateriaenum",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_enum_usuarioturmapapelenum",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_usuario_atividade",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L11",
       "weight": 1.0
     },
     {
@@ -5331,7 +6320,43 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/seed.py",
-      "source_location": "L3",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_usuario_materia",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_usuario_tema",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_usuario_turma",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L11",
       "weight": 1.0
     },
     {
@@ -5343,7 +6368,91 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/seed.py",
-      "source_location": "L3",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_models_usuario_usuarioturma",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_auth_security_hash_password",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_app_routers_ocr",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_seed",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_app_models_usuario_atividade",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "os",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "tempfile",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L7",
       "weight": 1.0
     },
     {
@@ -5356,6 +6465,42 @@
       "context": "import",
       "source_file": "backend/app/auth/dependencies.py",
       "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_dependencies",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/dependencies.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_dependencies",
+      "target": "fastapi_security",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/dependencies.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_dependencies",
+      "target": "sqlalchemy_orm",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/dependencies.py",
+      "source_location": "L6",
       "weight": 1.0
     },
     {
@@ -5384,6 +6529,30 @@
     },
     {
       "source": "backend_app_auth_security",
+      "target": "datetime",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/security.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_security",
+      "target": "passlib_context",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/auth/security.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_auth_security",
       "target": "backend_app_config",
       "relation": "imports_from",
       "_origin": "ast",
@@ -5392,6 +6561,54 @@
       "context": "import",
       "source_file": "backend/app/auth/security.py",
       "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_config",
+      "target": "pydantic_settings",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/config.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_database",
+      "target": "typing",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/database.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_database",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/database.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_database",
+      "target": "sqlalchemy_orm",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/database.py",
+      "source_location": "L3",
       "weight": 1.0
     },
     {
@@ -5404,6 +6621,30 @@
       "context": "import",
       "source_file": "backend/app/database.py",
       "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_main",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/main.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_main",
+      "target": "fastapi_middleware_cors",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/main.py",
+      "source_location": "L2",
       "weight": 1.0
     },
     {
@@ -5444,6 +6685,18 @@
     },
     {
       "source": "backend_app_models_usuario",
+      "target": "sqlalchemy_dialects_postgresql",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/models/usuario.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_models_usuario",
       "target": "backend_app_database",
       "relation": "imports_from",
       "_origin": "ast",
@@ -5464,6 +6717,66 @@
       "context": "import",
       "source_file": "backend/app/models/usuario.py",
       "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_models_usuario",
+      "target": "sqlalchemy",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/models/usuario.py",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_ocr_vision",
+      "target": "functools",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_ocr_vision",
+      "target": "google_cloud",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_auth",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/auth.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_auth",
+      "target": "sqlalchemy_orm",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/auth.py",
+      "source_location": "L2",
       "weight": 1.0
     },
     {
@@ -5515,8 +6828,20 @@
       "weight": 1.0
     },
     {
+      "source": "backend_app_routers_health",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/health.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
       "source": "backend_app_routers_ocr",
-      "target": "backend_app_auth_dependencies",
+      "target": "fastapi",
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -5528,7 +6853,7 @@
     },
     {
       "source": "backend_app_routers_ocr",
-      "target": "backend_app_models_usuario",
+      "target": "google_auth_exceptions",
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -5536,6 +6861,30 @@
       "context": "import",
       "source_file": "backend/app/routers/ocr.py",
       "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr",
+      "target": "backend_app_auth_dependencies",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr",
+      "target": "backend_app_models_usuario",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L7",
       "weight": 1.0
     },
     {
@@ -5547,7 +6896,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L5",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
@@ -5559,19 +6908,187 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L6",
+      "source_location": "L9",
       "weight": 1.0
     },
     {
-      "source": "backend_seed",
-      "target": "backend_app_auth_security",
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_enum",
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "import",
-      "source_file": "backend/seed.py",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_models_usuario",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_ocr",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_schemas_submissao",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "pathlib",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "fastapi",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "sqlalchemy_orm",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_auth_dependencies",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_config",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_database",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_auth",
+      "target": "pydantic",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/schemas/auth.py",
       "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_ocr",
+      "target": "pydantic",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/schemas/ocr.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao",
+      "target": "datetime",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao",
+      "target": "pydantic",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao",
+      "target": "backend_app_models_enum",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L6",
       "weight": 1.0
     },
     {
@@ -5583,7 +7100,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/seed.py",
-      "source_location": "L2",
+      "source_location": "L10",
       "weight": 1.0
     },
     {
@@ -5595,7 +7112,19 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/seed.py",
-      "source_location": "L3",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_app_auth_security",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/seed.py",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
@@ -5607,7 +7136,55 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "backend/seed.py",
-      "source_location": "L4",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "fastapi_testclient",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_app_database",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_app_main",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_app_models_usuario",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L20",
       "weight": 1.0
     },
     {
@@ -5636,14 +7213,98 @@
     },
     {
       "source": "backend_app_routers_ocr_extract_text_from_image",
-      "target": "uploadfile",
+      "target": "backend_app_routers_ocr_py_uploadfile",
       "relation": "references",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L11",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr_ler_imagem",
+      "target": "backend_app_routers_ocr_py_uploadfile",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_confirmar_texto",
+      "target": "backend_app_routers_submissoes_py_session",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_confirmar_texto",
+      "target": "uuid",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L60",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_routers_submissoes_py_session",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_routers_submissoes_py_uploadfile",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "uuid",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_ocr_vision_client",
+      "target": "imageannotatorclient",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "return_type",
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
@@ -5673,6 +7334,18 @@
     {
       "source": "backend_app_main",
       "target": "backend_app_routers_ocr",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "submodule_import",
+      "source_file": "backend/app/main.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_main",
+      "target": "backend_app_routers_submissoes",
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -5878,7 +7551,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L119",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -5889,7 +7562,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L135",
+      "source_location": "L138",
       "weight": 1.0
     },
     {
@@ -5900,7 +7573,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L145",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -5911,7 +7584,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L159",
+      "source_location": "L162",
       "weight": 1.0
     },
     {
@@ -5922,7 +7595,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L169",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -5933,7 +7606,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L179",
+      "source_location": "L182",
       "weight": 1.0
     },
     {
@@ -5944,7 +7617,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L189",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -5955,7 +7628,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L203",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -6054,7 +7727,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/ocr/vision.py",
-      "source_location": "L4",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_ocr_vision",
+      "target": "backend_app_ocr_vision_client",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/ocr/vision.py",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
@@ -6081,13 +7765,57 @@
     },
     {
       "source": "backend_app_routers_ocr",
+      "target": "backend_app_routers_ocr_ler_imagem",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr",
+      "target": "backend_app_routers_ocr_ocr",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_ocr",
       "target": "backend_app_routers_ocr_extract_text_from_image",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L11",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_submissoes_enviar_imagem",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_submissoes_confirmar_texto",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -6124,6 +7852,50 @@
       "weight": 1.0
     },
     {
+      "source": "backend_app_schemas_submissao",
+      "target": "backend_app_schemas_submissao_confirmartextorequest",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao",
+      "target": "backend_app_schemas_submissao_submissaoresponse",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_seed_get_or_create",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/seed.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed",
+      "target": "backend_seed_usuario",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/seed.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
       "source": "backend_seed",
       "target": "backend_seed_run_seed",
       "relation": "contains",
@@ -6131,7 +7903,62 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/seed.py",
-      "source_location": "L6",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_tests_test_fluxo_envio_token",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L28",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_tests_test_fluxo_envio_atividade_id",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L34",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_tests_test_fluxo_envio_test_fluxo_completo",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_tests_test_fluxo_envio_test_regras_de_acesso",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio",
+      "target": "backend_tests_test_fluxo_envio_test_ocr_sem_credencial_responde_503",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L79",
       "weight": 1.0
     },
     {
@@ -6252,7 +8079,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L203",
+      "source_location": "L206",
       "weight": 1.0
     },
     {
@@ -6263,7 +8090,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L179",
+      "source_location": "L182",
       "weight": 1.0
     },
     {
@@ -6274,7 +8101,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L119",
+      "source_location": "L122",
       "weight": 1.0
     },
     {
@@ -6285,7 +8112,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L135",
+      "source_location": "L138",
       "weight": 1.0
     },
     {
@@ -6296,7 +8123,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L189",
+      "source_location": "L192",
       "weight": 1.0
     },
     {
@@ -6318,7 +8145,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L145",
+      "source_location": "L148",
       "weight": 1.0
     },
     {
@@ -6340,7 +8167,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L159",
+      "source_location": "L162",
       "weight": 1.0
     },
     {
@@ -6351,7 +8178,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L169",
+      "source_location": "L172",
       "weight": 1.0
     },
     {
@@ -6454,6 +8281,62 @@
       "weight": 1.0
     },
     {
+      "source": "backend_app_schemas_submissao_confirmartextorequest",
+      "target": "backend_app_schemas_submissao_py_basemodel",
+      "relation": "inherits",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao_submissaoresponse",
+      "target": "backend_app_schemas_submissao_py_basemodel",
+      "relation": "inherits",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_seed_rationale_1",
+      "target": "backend_seed",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/seed.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio_rationale_1",
+      "target": "backend_tests_test_fluxo_envio",
+      "relation": "rationale_for",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio_test_ocr_sem_credencial_responde_503",
+      "target": "backend_tests_test_fluxo_envio_test_ocr_sem_credencial_responde_503_sem_credencial",
+      "relation": "indirect_call",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "context": "assignment",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L85",
+      "weight": 1.0
+    },
+    {
       "source": "backend_app_routers_auth_login",
       "target": "backend_app_schemas_auth_loginrequest",
       "relation": "uses",
@@ -6474,7 +8357,43 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L11",
+      "source_location": "L58",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_confirmar_texto",
+      "target": "backend_app_schemas_submissao_confirmartextorequest",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L62",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_confirmar_texto",
+      "target": "backend_app_models_usuario_usuario",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L63",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_models_usuario_usuario",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L24",
       "weight": 0.8
     },
     {
@@ -6508,7 +8427,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/models/usuario.py",
-      "source_location": "L129",
+      "source_location": "L132",
       "weight": 0.8
     },
     {
@@ -6607,7 +8526,95 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L25",
+      "source_location": "L59",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_confirmar_texto",
+      "target": "backend_app_models_usuario_submissao",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L66",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_models_enum_perfilenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L27",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_models_usuario_atividade",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L30",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_models_usuario_usuarioturma",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L31",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_models_usuario_submissao",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L46",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_enviar_imagem",
+      "target": "backend_app_models_enum_tipoenvioenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L49",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_schemas_submissao_submissaoresponse",
+      "target": "backend_app_models_enum_tipoenvioenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L15",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_usuario_escola",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L44",
       "weight": 0.8
     },
     {
@@ -6618,6 +8625,116 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/seed.py",
+      "source_location": "L46",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_usuario_turma",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L49",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_usuario_usuarioturma",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L50",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_enum_usuarioturmapapelenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L51",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_enum_tipomateriaenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L55",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_usuario_materia",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L55",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_usuario_tema",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L58",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_usuario_atividade",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L60",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_run_seed",
+      "target": "backend_app_models_enum_tipoatividadeenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L61",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_seed_usuario",
+      "target": "backend_app_models_usuario_usuario",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/seed.py",
+      "source_location": "L35",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_tests_test_fluxo_envio_atividade_id",
+      "target": "backend_app_models_usuario_atividade",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/tests/test_fluxo_envio.py",
       "source_location": "L36",
       "weight": 0.8
     },
@@ -9559,6 +11676,28 @@
       "weight": 1.0
     },
     {
+      "source": "backend_requirements_passlib",
+      "target": "backend_requirements_bcrypt",
+      "relation": "shares_data_with",
+      "_origin": "semantic",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "backend_requirements_pydantic_settings",
+      "target": "backend_requirements_pydantic",
+      "relation": "shares_data_with",
+      "_origin": "semantic",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/requirements.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
       "source": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_arch_correcao_por_ia",
       "target": "docs_domina_modelagem_do_banco_de_dados_correcao",
       "relation": "shares_data_with",
@@ -9621,26 +11760,6 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "weight": 1.0
-    },
-    {
-      "source": "backend_requirements_passlib",
-      "target": "backend_requirements_bcrypt",
-      "relation": "shares_data_with",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "backend/requirements.txt",
-      "source_location": null,
-      "weight": 1.0
-    },
-    {
-      "source": "backend_requirements_pydantic_settings",
-      "target": "backend_requirements_pydantic",
-      "relation": "shares_data_with",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "backend/requirements.txt",
       "source_location": null,
       "weight": 1.0
     }
@@ -9748,5 +11867,5 @@
       "source_file": "docs/plano_prototipo.pdf"
     }
   ],
-  "built_at_commit": "9f886bc692ba07590f465e8877d267ca4fdb9d45"
+  "built_at_commit": "be82808471d35bd2a5ce1ca735d690695a204134"
 }

@@ -6,3 +6,5 @@ __pycache__/
 chave.txt
 secrets/
 uploads/
+.claude/settings.local.json
+graphify-out/cache/last_query_stamp
