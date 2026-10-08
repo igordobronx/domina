@@ -1,0 +1,176 @@
+{
+  "docs/Domina - Modelagem do Banco de Dados.pdf": {
+    "mtime": 1791422691.7367737,
+    "seen": 1791424230.2669706,
+    "ast_hash": "79297c2df0d9bf5bec1b8a29c23180bf",
+    "semantic_hash": "79297c2df0d9bf5bec1b8a29c23180bf"
+  },
+  "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf": {
+    "mtime": 1791422691.7427819,
+    "seen": 1791424230.2669706,
+    "ast_hash": "324cb7d8a82739ce58b3e79ce625ba6f",
+    "semantic_hash": "324cb7d8a82739ce58b3e79ce625ba6f"
+  },
+  "docs/plano_prototipo.pdf": {
+    "mtime": 1791422691.7453496,
+    "seen": 1791424230.2669706,
+    "ast_hash": "78929a5935236ddff241557aaa2e9f90",
+    "semantic_hash": "78929a5935236ddff241557aaa2e9f90"
+  },
+  "backend/app/__init__.py": {
+    "mtime": 1791422691.7131813,
+    "seen": 1791424230.2669706,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "backend/app/auth/__init__.py": {
+    "mtime": 1791422691.71471,
+    "seen": 1791424230.2669706,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "backend/app/auth/dependencies.py": {
+    "mtime": 1791422691.715714,
+    "seen": 1791424230.2669706,
+    "ast_hash": "e5ec148fbe17b2fa89c12f6f2d8cd589",
+    "semantic_hash": ""
+  },
+  "backend/app/auth/security.py": {
+    "mtime": 1791423411.7243285,
+    "seen": 1791424230.2669706,
+    "ast_hash": "e893ec94b09189006aded07bffeb1c6b",
+    "semantic_hash": ""
+  },
+  "backend/app/config.py": {
+    "mtime": 1791423411.5212991,
+    "seen": 1791424230.2669706,
+    "ast_hash": "bdfc9e3b9d5b6cc999a907643138115a",
+    "semantic_hash": ""
+  },
+  "backend/app/database.py": {
+    "mtime": 1791422691.7177074,
+    "seen": 1791424230.2669706,
+    "ast_hash": "c24ea01da43064675e47776672648e5f",
+    "semantic_hash": ""
+  },
+  "backend/app/main.py": {
+    "mtime": 1791423458.2361584,
+    "seen": 1791424230.2669706,
+    "ast_hash": "379a575b1ce0e5c97744e89ca9e37f62",
+    "semantic_hash": ""
+  },
+  "backend/app/models/__init__.py": {
+    "mtime": 1791422691.7207074,
+    "seen": 1791424230.2669706,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "backend/app/models/enum.py": {
+    "mtime": 1791423411.8111084,
+    "seen": 1791424230.2669706,
+    "ast_hash": "495cb554220c869adde62e330d0320b3",
+    "semantic_hash": ""
+  },
+  "backend/app/models/usuario.py": {
+    "mtime": 1791423439.1281614,
+    "seen": 1791424230.2669706,
+    "ast_hash": "2e7d9de278e14ab10044ff4da235e99b",
+    "semantic_hash": ""
+  },
+  "backend/app/ocr/__init__.py": {
+    "mtime": 1791422691.7232227,
+    "seen": 1791424230.2669706,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "backend/app/ocr/vision.py": {
+    "mtime": 1791423418.2036104,
+    "seen": 1791424230.2669706,
+    "ast_hash": "10e591ce84de63cdd3baa6b4208fed23",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/__init__.py": {
+    "mtime": 1791422691.7262168,
+    "seen": 1791424230.2669706,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "backend/app/routers/auth.py": {
+    "mtime": 1791422691.7272174,
+    "seen": 1791424230.2669706,
+    "ast_hash": "01ccd2c548375bb32b85e7fde17c0b6d",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/health.py": {
+    "mtime": 1791422691.728217,
+    "seen": 1791424230.2669706,
+    "ast_hash": "668ed79b9bceb216c71e8385fd47e8c3",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/ocr.py": {
+    "mtime": 1791423684.9933674,
+    "seen": 1791424230.2669706,
+    "ast_hash": "60c9ce2ef648bd1e6e5dc199765deb77",
+    "semantic_hash": ""
+  },
+  "backend/app/schemas/__init__.py": {
+    "mtime": 1791422691.7292166,
+    "seen": 1791424230.2669706,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "backend/app/schemas/auth.py": {
+    "mtime": 1791422691.730217,
+    "seen": 1791424230.2669706,
+    "ast_hash": "a92693c259f42e4667afa3cae3034585",
+    "semantic_hash": ""
+  },
+  "backend/app/schemas/ocr.py": {
+    "mtime": 1791422691.730217,
+    "seen": 1791424230.2669706,
+    "ast_hash": "359cfb5b624ee54a9527fe29d78bb8e0",
+    "semantic_hash": ""
+  },
+  "backend/seed.py": {
+    "mtime": 1791423779.6682944,
+    "seen": 1791424230.2669706,
+    "ast_hash": "e984d8f1728547b89f4bb37725bfdce1",
+    "semantic_hash": ""
+  },
+  "backend/requirements.txt": {
+    "mtime": 1791423486.760079,
+    "seen": 1791424230.2669706,
+    "ast_hash": "925e1509bee987bfe55b104d4eed2773",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/submissoes.py": {
+    "mtime": 1791423685.1012547,
+    "seen": 1791424230.2669706,
+    "ast_hash": "b7a539541c2f1ca4302c0b2f44b66cc3",
+    "semantic_hash": ""
+  },
+  "backend/app/schemas/submissao.py": {
+    "mtime": 1791423439.200269,
+    "seen": 1791424230.2669706,
+    "ast_hash": "bfd5490981b9d85e692fe5d1cb534f9e",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_fluxo_envio.py": {
+    "mtime": 1791423685.1907613,
+    "seen": 1791424230.2669706,
+    "ast_hash": "04854c0fff51671ef22b0f424194dcc7",
+    "semantic_hash": ""
+  },
+  "backend/requirements-dev.txt": {
+    "mtime": 1791423486.8105984,
+    "seen": 1791424230.2669706,
+    "ast_hash": "9e6c66c0dfad3e0d33b687b30885b0e2",
+    "semantic_hash": ""
+  },
+  "docker-compose.yml": {
+    "mtime": 1791423486.865201,
+    "seen": 1791424230.2669706,
+    "ast_hash": "d6abeb5c7de31b1eaafef1ee75bcfefb",
+    "semantic_hash": ""
+  }
+}

@@ -1,11 +1,11 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
-from google.auth.exceptions import DefaultCredentialsError
 
 from app.auth.dependencies import get_current_user
+from app.config import settings
 from app.models.usuario import Usuario
-from app.ocr.vision import extract_text
+from app.ocr.gemini import extract_text
 from app.schemas.ocr import OCRResponse
 
 logger = logging.getLogger(__name__)
@@ -34,16 +34,16 @@ def ler_imagem(file: UploadFile) -> bytes:
     return image_bytes
 
 
-def ocr(image_bytes: bytes) -> str:
-    # chama o Vision e traduz falhas em respostas HTTP sem vazar detalhe interno
-    try:
-        return extract_text(image_bytes)
-    except DefaultCredentialsError:
-        logger.error("GOOGLE_APPLICATION_CREDENTIALS ausente ou invalida")
+def ocr(image_bytes: bytes, mime_type: str) -> str:
+    # chama o Gemini e traduz falhas em respostas HTTP sem vazar detalhe interno
+    if not settings.GEMINI_API_KEY:
+        logger.error("GEMINI_API_KEY nao configurada")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="OCR indisponível: servidor sem credencial do Google configurada.",
+            detail="OCR indisponível: servidor sem chave do Gemini configurada.",
         )
+    try:
+        return extract_text(image_bytes, mime_type)
     except Exception:
         logger.exception("falha no OCR")
         raise HTTPException(
@@ -53,7 +53,7 @@ def ocr(image_bytes: bytes) -> str:
 
 
 # rota sincrona (def): o FastAPI roda numa thread separada, entao a chamada
-# bloqueante ao Vision nao trava as outras requisicoes
+# bloqueante ao Gemini nao trava as outras requisicoes
 @router.post("/extract", response_model=OCRResponse)
 def extract_text_from_image(file: UploadFile, current_user: Usuario = Depends(get_current_user)):
-    return OCRResponse(texto_extraido=ocr(ler_imagem(file)))
+    return OCRResponse(texto_extraido=ocr(ler_imagem(file), file.content_type))

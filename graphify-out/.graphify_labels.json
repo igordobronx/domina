@@ -1,17 +1,17 @@
 {
-  "0": "Modelo de Dados (Entidades)",
-  "1": "Enums e Modelos do Backend",
-  "2": "Auth Backend (Login, JWT, Config)",
+  "0": "Domina (plataforma de IA de correção e diagnóstico)",
+  "1": "usuario.py",
+  "2": "submissoes.py",
   "3": "Plano do Protótipo (Hackathon)",
   "4": "Envio, OCR e Correção por IA",
   "5": "LGPD, Auditoria e Consentimento",
-  "6": "Base da Matéria e Redação ENEM",
+  "6": "E2 Base da matéria — Ensinar ao sistema o conteúdo e os critérios de cada matéria",
   "7": "Revisão Humana da Correção",
   "8": "Contas, Escolas e Multi-tenancy",
   "9": "Recomendação de Exercícios",
   "10": "Diagnóstico de Domínio",
   "11": "Tendências do ENEM",
-  "12": "Integração OCR (Google Vision)",
+  "12": "test_fluxo_envio.py",
   "13": "Painéis e Gamificação",
   "14": "Fases e Riscos do Projeto",
   "15": "Ciclo do Produto",
@@ -56,5 +56,6 @@
   "54": "RNF: Fila Assíncrona",
   "55": "RNF: Usabilidade",
   "56": "RNF: Acessibilidade",
-  "57": "RNF: Observabilidade"
+  "57": "RNF: Observabilidade",
+  "58": "CLAUDE.md"
 }

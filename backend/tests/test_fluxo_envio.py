@@ -9,18 +9,20 @@ import tempfile
 _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/teste.db"
 os.environ["JWT_SECRET"] = "x" * 32
+os.environ["GEMINI_API_KEY"] = "falsa"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
 
 from fastapi.testclient import TestClient  # noqa: E402
 
 import app.routers.ocr as ocr_router  # noqa: E402
 import seed  # noqa: E402
+from app.config import settings  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models.usuario import Atividade  # noqa: E402
 
 seed.run_seed()
-ocr_router.extract_text = lambda _bytes: "texto lido pelo ocr"
+ocr_router.extract_text = lambda _bytes, _mime: "texto lido pelo ocr"
 client = TestClient(app)
 FOTO = {"file": ("redacao.jpg", b"\xff\xd8 bytes de foto", "image/jpeg")}
 
@@ -76,16 +78,23 @@ def test_regras_de_acesso():
     assert client.put(f"/submissoes/{sub['id']}/confirmar", headers=aluno, json={"texto": "   "}).status_code == 422
 
 
-def test_ocr_sem_credencial_responde_503():
-    from google.auth.exceptions import DefaultCredentialsError
-
-    def sem_credencial(_bytes):
-        raise DefaultCredentialsError("sem chave")
-
-    original, ocr_router.extract_text = ocr_router.extract_text, sem_credencial
+def test_ocr_sem_chave_responde_503():
+    settings.GEMINI_API_KEY = None
     try:
         r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO)
         assert r.status_code == 503
-        assert "sem chave" not in r.text  # nao vaza detalhe interno
+    finally:
+        settings.GEMINI_API_KEY = "falsa"
+
+
+def test_falha_do_gemini_nao_vaza_detalhe():
+    def quebra(_bytes, _mime):
+        raise RuntimeError("API_KEY_INVALID segredo-interno")
+
+    original, ocr_router.extract_text = ocr_router.extract_text, quebra
+    try:
+        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO)
+        assert r.status_code == 502
+        assert "segredo-interno" not in r.text
     finally:
         ocr_router.extract_text = original

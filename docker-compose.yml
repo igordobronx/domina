@@ -20,10 +20,8 @@ services:
     environment:
       # sobrescreve o .env: dentro do docker o banco e o servico "db"
       DATABASE_URL: postgresql://domina:domina@db:5432/domina
-      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/google.json
       UPLOAD_DIR: /app/uploads
     volumes:
-      - ./backend/secrets:/app/secrets:ro
       - uploads:/app/uploads
     ports:
       - "8000:8000"

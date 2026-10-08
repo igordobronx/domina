@@ -34,7 +34,7 @@ def enviar_imagem(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Atividade não encontrada.")
 
     image_bytes = ler_imagem(file)
-    texto = ocr(image_bytes)  # se o OCR falhar, nada e gravado
+    texto = ocr(image_bytes, file.content_type)  # se o OCR falhar, nada e gravado
 
     # guarda a foto original (o professor pode querer ver ao revisar)
     # ponytail: disco local; trocar por bucket (GCS/S3) quando houver mais de um servidor
