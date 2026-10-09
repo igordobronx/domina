@@ -4,7 +4,7 @@
   "2": "routers/auth.py",
   "3": "Escopo do Protótipo",
   "4": "E4 Correção por IA — Nota estimada, feedback e nível de confiança",
-  "5": "LGPD, Auditoria e Consentimento",
+  "5": "E10 Privacidade e operação — LGPD, auditoria e custo",
   "6": "E2 Base da matéria — Ensinar ao sistema o conteúdo e os critérios de cada matéria",
   "7": "Revisão Humana da Correção",
   "8": "Contas, Escolas e Multi-tenancy",
@@ -58,14 +58,10 @@
   "56": "RNF: Acessibilidade",
   "57": "RNF: Observabilidade",
   "58": "CLAUDE.md",
-  "59": "submissao.py",
+  "59": "LGPD (Lei Geral de Proteção de Dados)",
   "60": "Session",
   "61": "google_auth_exceptions",
   "62": "google_cloud",
   "63": "ImageAnnotatorClient",
-  "64": "test_fluxo_envio.py",
-  "65": "Correcao",
-  "66": "Escola",
-  "67": "Usuario",
-  "68": "Ponto em aberto: precisão numeric/decimal das notas"
+  "64": "test_fluxo_envio.py"
 }
