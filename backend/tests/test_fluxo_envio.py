@@ -163,3 +163,20 @@ def test_gemini_usa_modelo_reserva_quando_cota_estoura():
         assert chamados == [settings.GEMINI_MODEL, settings.GEMINI_MODEL_RESERVA]
     finally:
         gemini._client = original
+
+
+def test_reduz_foto_grande_antes_do_gemini():
+    import io
+
+    from PIL import Image
+
+    from app.ocr.gemini import LADO_MAXIMO, reduzir
+
+    grande = io.BytesIO()
+    Image.new("RGB", (3000, 4000), "white").save(grande, "PNG")
+    dados, mime = reduzir(grande.getvalue(), "image/png")
+    assert mime == "image/jpeg"
+    assert max(Image.open(io.BytesIO(dados)).size) == LADO_MAXIMO
+
+    # o que o Pillow nao abre passa direto (o Gemini le HEIC, por exemplo)
+    assert reduzir(b"nao-e-imagem", "image/heic") == (b"nao-e-imagem", "image/heic")
