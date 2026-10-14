@@ -68,5 +68,7 @@
   "66": "app_schemas_ocr",
   "67": "app_schemas_submissao",
   "68": "Session",
-  "69": "UploadFile"
+  "69": "UploadFile",
+  "70": "Banco compartilhado + escola_id + RLS (estratégia escolhida)",
+  "71": "BaseModel"
 }
