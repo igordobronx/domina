@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1791512903.9502602,
-    "seen": 1791512905.6209812,
-    "ast_hash": "379a575b1ce0e5c97744e89ca9e37f62",
+    "mtime": 1791941586.2356915,
+    "seen": 1791942402.0643256,
+    "ast_hash": "bbb5eb59a25ca2490b55f5182e8ec5aa",
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "backend/app/models/usuario.py": {
-    "mtime": 1791512903.9519088,
-    "seen": 1791512905.6209812,
-    "ast_hash": "2e7d9de278e14ab10044ff4da235e99b",
+    "mtime": 1791941538.4224503,
+    "seen": 1791942402.0643256,
+    "ast_hash": "0669d98529003929e6532df911a16639",
     "semantic_hash": ""
   },
   "backend/app/ocr/__init__.py": {
@@ -138,21 +138,21 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1791512903.9529393,
-    "seen": 1791512905.6209812,
-    "ast_hash": "7011346c2f21a466806a25a836f272d3",
+    "mtime": 1791942363.739699,
+    "seen": 1791942402.0643256,
+    "ast_hash": "56eb6e1a6a51706fe579d926608b3dfa",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
-    "mtime": 1791512903.9540107,
-    "seen": 1791512905.6209812,
-    "ast_hash": "5073c7818838649dfc229639adae92a0",
+    "mtime": 1791941538.4224503,
+    "seen": 1791942402.0643256,
+    "ast_hash": "2f35c0f370b599fe1a122e7a76125e36",
     "semantic_hash": ""
   },
   "backend/tests/test_fluxo_envio.py": {
-    "mtime": 1791512903.9563944,
-    "seen": 1791512905.6209812,
-    "ast_hash": "4d7565491e2c305b541d6517647d9cf3",
+    "mtime": 1791942363.74069,
+    "seen": 1791942402.0643256,
+    "ast_hash": "5a8641b163494a6c162b986b5d8fa856",
     "semantic_hash": ""
   },
   "backend/requirements-dev.txt": {
@@ -174,9 +174,21 @@
     "semantic_hash": ""
   },
   "backend/app/ocr/gemini.py": {
-    "mtime": 1791512903.9519088,
-    "seen": 1791512905.6209812,
-    "ast_hash": "81068225564fef8c48ed211dce43e72b",
+    "mtime": 1791941493.0902338,
+    "seen": 1791942402.0643256,
+    "ast_hash": "57d3e260972df6df9bc38fec812fb7f3",
+    "semantic_hash": ""
+  },
+  "backend/app/correcao.py": {
+    "mtime": 1791941688.0199625,
+    "seen": 1791942402.0643256,
+    "ast_hash": "e4df303dac755358cbdc0d07a2403822",
+    "semantic_hash": ""
+  },
+  "backend/app/static/laboratorio/index.html": {
+    "mtime": 1791941651.5316038,
+    "seen": 1791942402.0643256,
+    "ast_hash": "7927147b3be913f6d2515077e452aa8c",
     "semantic_hash": ""
   }
 }
