@@ -125,14 +125,16 @@ class Correcao(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     submissao_id = Column(UUID(as_uuid=True), ForeignKey("submissao.id"), unique=True, nullable=False)
     revisado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
-    nota_ia = Column(Numeric(5, 2), nullable=False)
-    nota_professor = Column(Numeric(5, 2), nullable=True)
+    # 6,2: a nota da redacao ENEM vai ate 1000 (5,2 so guardava ate 999.99)
+    nota_ia = Column(Numeric(6, 2), nullable=False)
+    nota_professor = Column(Numeric(6, 2), nullable=True)
     confianca = Column(Numeric(3, 2), nullable=False)
     status = Column(
         SQLEnum(StatusCorrecaoEnum), default=StatusCorrecaoEnum.PENDENTE, nullable=False
     )
     modelo_usado = Column(String(100), nullable=False)
     versao_prompt = Column(String(50), nullable=False)
+    feedback = Column(Text, nullable=True)  # feedback geral; o professor edita antes de liberar (RF-21)
 
 
 class CorrecaoCriterio(Base):

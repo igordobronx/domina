@@ -1,7 +1,7 @@
 {
   "0": "Domina (plataforma de IA de correção e diagnóstico)",
   "1": "usuario.py",
-  "2": "routers/auth.py",
+  "2": "submissoes.py",
   "3": "Escopo do Protótipo",
   "4": "E4 Correção por IA — Nota estimada, feedback e nível de confiança",
   "5": "E10 Privacidade e operação — LGPD, auditoria e custo",
@@ -11,7 +11,7 @@
   "9": "Recomendação de Exercícios",
   "10": "Diagnóstico de Domínio",
   "11": "Tendências do ENEM",
-  "12": "submissoes.py",
+  "12": "app_models_enum",
   "13": "Painéis e Gamificação",
   "14": "Fases e Riscos do Projeto",
   "15": "Ciclo do Produto",
@@ -58,10 +58,13 @@
   "56": "RNF: Acessibilidade",
   "57": "RNF: Observabilidade",
   "58": "CLAUDE.md",
-  "59": "LGPD (Lei Geral de Proteção de Dados)",
-  "60": "Session",
+  "59": "routers/auth.py",
+  "60": "app_auth_dependencies",
   "61": "google_auth_exceptions",
   "62": "google_cloud",
-  "63": "ImageAnnotatorClient",
-  "64": "test_fluxo_envio.py"
+  "63": "app_models_usuario",
+  "64": "test_fluxo_envio.py",
+  "65": "app_routers_ocr",
+  "66": "app_schemas_ocr",
+  "67": "app_schemas_submissao"
 }

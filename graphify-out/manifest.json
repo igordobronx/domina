@@ -36,14 +36,14 @@
     "semantic_hash": ""
   },
   "backend/app/auth/security.py": {
-    "mtime": 1791423411.7243285,
-    "seen": 1791424230.2669706,
+    "mtime": 1791512903.9491558,
+    "seen": 1791512905.6209812,
     "ast_hash": "e893ec94b09189006aded07bffeb1c6b",
     "semantic_hash": ""
   },
   "backend/app/config.py": {
-    "mtime": 1791427747.1752112,
-    "seen": 1791427818.0964172,
+    "mtime": 1791512903.9502602,
+    "seen": 1791512905.6209812,
     "ast_hash": "081c2e5337ac8224dfc0982687515652",
     "semantic_hash": ""
   },
@@ -54,8 +54,8 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1791423458.2361584,
-    "seen": 1791424230.2669706,
+    "mtime": 1791512903.9502602,
+    "seen": 1791512905.6209812,
     "ast_hash": "379a575b1ce0e5c97744e89ca9e37f62",
     "semantic_hash": ""
   },
@@ -66,14 +66,14 @@
     "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
   },
   "backend/app/models/enum.py": {
-    "mtime": 1791423411.8111084,
-    "seen": 1791424230.2669706,
+    "mtime": 1791512903.9502602,
+    "seen": 1791512905.6209812,
     "ast_hash": "495cb554220c869adde62e330d0320b3",
     "semantic_hash": ""
   },
   "backend/app/models/usuario.py": {
-    "mtime": 1791423439.1281614,
-    "seen": 1791424230.2669706,
+    "mtime": 1791512903.9519088,
+    "seen": 1791512905.6209812,
     "ast_hash": "2e7d9de278e14ab10044ff4da235e99b",
     "semantic_hash": ""
   },
@@ -102,8 +102,8 @@
     "semantic_hash": ""
   },
   "backend/app/routers/ocr.py": {
-    "mtime": 1791427382.7965546,
-    "seen": 1791427818.0964172,
+    "mtime": 1791512903.9529393,
+    "seen": 1791512905.6209812,
     "ast_hash": "58adda290e815013793c61754b67cf03",
     "semantic_hash": ""
   },
@@ -126,56 +126,56 @@
     "semantic_hash": ""
   },
   "backend/seed.py": {
-    "mtime": 1791423779.6682944,
-    "seen": 1791424230.2669706,
-    "ast_hash": "e984d8f1728547b89f4bb37725bfdce1",
+    "mtime": 1791512903.955394,
+    "seen": 1791512905.6209812,
+    "ast_hash": "68aa82964ce0f79a2e9a0bdc5b248eaa",
     "semantic_hash": ""
   },
   "backend/requirements.txt": {
-    "mtime": 1791512034.947088,
-    "seen": 1791512144.1352425,
+    "mtime": 1791512903.955394,
+    "seen": 1791512905.6209812,
     "ast_hash": "5389e4981ee7e3789b986777a88fecfd",
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1791426707.9098015,
-    "seen": 1791427818.0964172,
+    "mtime": 1791512903.9529393,
+    "seen": 1791512905.6209812,
     "ast_hash": "7011346c2f21a466806a25a836f272d3",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
-    "mtime": 1791423439.200269,
-    "seen": 1791424230.2669706,
-    "ast_hash": "bfd5490981b9d85e692fe5d1cb534f9e",
+    "mtime": 1791512903.9540107,
+    "seen": 1791512905.6209812,
+    "ast_hash": "5073c7818838649dfc229639adae92a0",
     "semantic_hash": ""
   },
   "backend/tests/test_fluxo_envio.py": {
-    "mtime": 1791512041.1645935,
-    "seen": 1791512144.1352425,
-    "ast_hash": "fed426e8eb0c5d14626d800211cac556",
+    "mtime": 1791512903.9563944,
+    "seen": 1791512905.6209812,
+    "ast_hash": "4d7565491e2c305b541d6517647d9cf3",
     "semantic_hash": ""
   },
   "backend/requirements-dev.txt": {
-    "mtime": 1791423486.8105984,
-    "seen": 1791424230.2669706,
-    "ast_hash": "9e6c66c0dfad3e0d33b687b30885b0e2",
+    "mtime": 1791512903.9540107,
+    "seen": 1791512905.6209812,
+    "ast_hash": "244a489f05b732d9aea7b34e217a93d6",
     "semantic_hash": ""
   },
   "docker-compose.yml": {
-    "mtime": 1791425079.9630775,
-    "seen": 1791425193.0999675,
+    "mtime": 1791512903.957011,
+    "seen": 1791512905.6209812,
     "ast_hash": "a70ef863e736ca77862ca2bfd056846f",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1791424256.8104763,
-    "seen": 1791424283.3050084,
+    "mtime": 1791512903.9469512,
+    "seen": 1791512905.6209812,
     "ast_hash": "8a6643a420fdad6bfb583523bc6cef16",
     "semantic_hash": ""
   },
   "backend/app/ocr/gemini.py": {
-    "mtime": 1791512034.9312482,
-    "seen": 1791512144.1352425,
+    "mtime": 1791512903.9519088,
+    "seen": 1791512905.6209812,
     "ast_hash": "81068225564fef8c48ed211dce43e72b",
     "semantic_hash": ""
   }

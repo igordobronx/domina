@@ -1,5 +1,8 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.routers import health, auth, ocr, submissoes
 from app.database import Base, engine
@@ -26,3 +29,6 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(ocr.router)
 app.include_router(submissoes.router)
+
+# tela de testes do OCR + correcao (mesma origem da API, sem CORS). Abrir em /laboratorio/
+app.mount("/laboratorio", StaticFiles(directory=Path(__file__).parent / "static" / "laboratorio", html=True), name="laboratorio")

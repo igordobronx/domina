@@ -66,7 +66,7 @@ def test_regras_de_acesso():
     dados = {"atividade_id": atividade_id()}
 
     assert client.post("/submissoes/imagem", files=FOTO, data=dados).status_code == 401
-    assert client.post("/submissoes/imagem", headers=prof, files=FOTO, data=dados).status_code == 403
+    assert client.post("/submissoes/imagem", headers=prof, files=FOTO, data=dados).status_code == 422  # professor sem aluno_id
     sem_turma = {"atividade_id": "00000000-0000-0000-0000-000000000000"}
     assert client.post("/submissoes/imagem", headers=aluno, files=FOTO, data=sem_turma).status_code == 404
 
@@ -76,9 +76,7 @@ def test_regras_de_acesso():
     grande = {"file": ("g.jpg", b"0" * (ocr_router.MAX_IMAGEM_BYTES + 1), "image/jpeg")}
     assert client.post("/submissoes/imagem", headers=aluno, files=grande, data=dados).status_code == 413
 
-    # professor nao confirma texto de aluno
     sub = client.post("/submissoes/imagem", headers=aluno, files=FOTO, data=dados).json()
-    assert client.put(f"/submissoes/{sub['id']}/confirmar", headers=prof, json={"texto": "x"}).status_code == 404
     assert client.put(f"/submissoes/{sub['id']}/confirmar", headers=aluno, json={"texto": "   "}).status_code == 422
 
 
@@ -180,3 +178,62 @@ def test_reduz_foto_grande_antes_do_gemini():
 
     # o que o Pillow nao abre passa direto (o Gemini le HEIC, por exemplo)
     assert reduzir(b"nao-e-imagem", "image/heic") == (b"nao-e-imagem", "image/heic")
+
+
+def test_professor_envia_em_nome_do_aluno_e_gera_nota():
+    from app import correcao as ia
+
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    atividades = client.get("/atividades", headers=prof).json()
+    assert atividades and atividades[0]["alunos"], atividades
+    aluno_id = atividades[0]["alunos"][0]["id"]
+
+    sub = client.post("/submissoes/imagem", headers=prof, files=FOTO,
+                      data={"atividade_id": atividades[0]["id"], "aluno_id": aluno_id}).json()
+    assert sub["aluno_id"] == aluno_id
+
+    # nao corrige antes de confirmar
+    assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).status_code == 409
+    assert client.put(f"/submissoes/{sub['id']}/confirmar", headers=prof, json={"texto": "redacao"}).status_code == 200
+
+    nota_maxima = ia.ResultadoIA(
+        competencias=[{"codigo": f"C{i}", "nota": 200, "justificativa": "ok"} for i in range(5, 0, -1)],
+        feedback_geral="muito bom", confianca=0.9,
+    )
+    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota_maxima, settings.GEMINI_MODEL)
+    try:
+        # aluno nao gera nem ve a nota da IA antes da aprovacao (RN-01)
+        assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=aluno, json={}).status_code == 403
+        r = client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={"tema": "tema x"})
+        assert r.status_code == 201, r.text
+        c = r.json()
+        assert c["nota_ia"] == 1000 and c["status"] == "PENDENTE"
+        assert [k["codigo"] for k in c["criterios"]] == ["C1", "C2", "C3", "C4", "C5"]
+        assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).status_code == 409
+        assert client.get(f"/submissoes/{sub['id']}/correcao", headers=prof).json()["nota_ia"] == 1000
+        assert client.get(f"/submissoes/{sub['id']}/correcao", headers=aluno).status_code == 403
+
+        # corrigida pelo modelo reserva: sempre "requer atencao", mesmo com confianca alta
+        ia.corrigir = lambda texto, tema: (nota_maxima, settings.GEMINI_MODEL_RESERVA)
+        sub2 = client.post("/submissoes/imagem", headers=prof, files=FOTO,
+                           data={"atividade_id": atividades[0]["id"], "aluno_id": aluno_id}).json()
+        client.put(f"/submissoes/{sub2['id']}/confirmar", headers=prof, json={"texto": "redacao"})
+        assert client.post(f"/submissoes/{sub2['id']}/corrigir", headers=prof, json={}).json()["status"] == "REQUER_ATENCAO"
+    finally:
+        ia.corrigir = original
+
+
+def test_nota_da_ia_vira_nivel_valido_do_enem():
+    from app.correcao import ResultadoIA
+
+    r = ResultadoIA.model_validate({
+        "competencias": [{"codigo": f"C{i}", "nota": n, "justificativa": "x"} for i, n in zip(range(1, 6), [130, 200, 15, 199, 60])],
+        "feedback_geral": "x", "confianca": 0.5,
+    })
+    assert [c.nota for c in r.competencias] == [120, 200, 0, 200, 40]
+    try:
+        ResultadoIA.model_validate({"competencias": [{"codigo": "C1", "nota": 0, "justificativa": "x"}] * 5,
+                                    "feedback_geral": "x", "confianca": 0.5})
+        raise AssertionError("aceitou competencia repetida")
+    except ValueError:
+        pass

@@ -21,3 +21,38 @@ class SubmissaoResponse(BaseModel):
 class ConfirmarTextoRequest(BaseModel):
     # texto revisado pelo aluno; limite folgado (redacao ENEM tem ate 30 linhas)
     texto: str = Field(min_length=1, max_length=20_000)
+
+
+class CorrigirRequest(BaseModel):
+    # tema da proposta (a C2 depende dele); sem tema, usa o titulo da atividade
+    tema: str | None = Field(default=None, max_length=500)
+
+
+class CriterioResponse(BaseModel):
+    codigo: str
+    nome: str
+    nota: float
+    justificativa: str
+
+
+class CorrecaoResponse(BaseModel):
+    id: uuid.UUID
+    submissao_id: uuid.UUID
+    nota_ia: float
+    confianca: float
+    status: str
+    modelo_usado: str
+    feedback: str | None
+    criterios: list[CriterioResponse]
+
+
+class AlunoResumo(BaseModel):
+    id: uuid.UUID
+    nome: str
+
+
+class AtividadeResponse(BaseModel):
+    id: uuid.UUID
+    titulo: str
+    turma: str
+    alunos: list[AlunoResumo]

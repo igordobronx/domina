@@ -65,32 +65,31 @@ def reduzir(image_bytes: bytes, mime_type: str) -> tuple[bytes, str]:
     return saida.getvalue(), "image/jpeg"
 
 
-def _gerar(model: str, image_bytes: bytes, mime_type: str):
-    return _client().models.generate_content(
-        model=model,
-        contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type), PROMPT],
-        # raciocinio "minimal": transcrever nao precisa pensar; na redacao real
-        # caiu de 68s ("low") para 6s com a mesma fidelidade
-        config=types.GenerateContentConfig(
-            temperature=0,
-            thinking_config=types.ThinkingConfig(thinking_level="minimal"),
-        ),
-    )
-
-
-def extract_text(image_bytes: bytes, mime_type: str) -> str:
-    # recebe os bytes de uma imagem e pede ao Gemini a transcricao da redacao.
+def gerar(contents, config: types.GenerateContentConfig):
+    # chama o modelo principal; se ele estiver sem cota/sobrecarregado, o reserva.
+    # devolve (resposta, modelo_usado). Usado pelo OCR e pela correcao.
     # chamada BLOQUEANTE: so chame de rota sincrona (def), nunca de async def
-    image_bytes, mime_type = reduzir(image_bytes, mime_type)
     # ponytail: reserva simples; com faturamento ativo a cota deixa de ser problema
     try:
-        response = _gerar(settings.GEMINI_MODEL, image_bytes, mime_type)
+        return _client().models.generate_content(model=settings.GEMINI_MODEL, contents=contents, config=config), settings.GEMINI_MODEL
     except (errors.APIError, httpx.TimeoutException) as e:
         # timeout do lado do cliente (httpx) nao vira APIError, por isso entra aqui tambem
         if isinstance(e, errors.APIError) and e.code not in ERROS_DE_CAPACIDADE:
             raise
         logger.warning("Gemini %s indisponivel (%r), usando %s", settings.GEMINI_MODEL, e, settings.GEMINI_MODEL_RESERVA)
-        response = _gerar(settings.GEMINI_MODEL_RESERVA, image_bytes, mime_type)
+        modelo = settings.GEMINI_MODEL_RESERVA
+        return _client().models.generate_content(model=modelo, contents=contents, config=config), modelo
+
+
+def extract_text(image_bytes: bytes, mime_type: str) -> str:
+    # recebe os bytes de uma imagem e pede ao Gemini a transcricao da redacao
+    image_bytes, mime_type = reduzir(image_bytes, mime_type)
+    response, _ = gerar(
+        [types.Part.from_bytes(data=image_bytes, mime_type=mime_type), PROMPT],
+        # raciocinio "minimal": transcrever nao precisa pensar; na redacao real
+        # caiu de 68s ("low") para 6s com a mesma fidelidade
+        types.GenerateContentConfig(temperature=0, thinking_config=types.ThinkingConfig(thinking_level="minimal")),
+    )
     if response.candidates and response.candidates[0].finish_reason == types.FinishReason.RECITATION:
         raise TextoPublicado()
     return (response.text or "").strip()
