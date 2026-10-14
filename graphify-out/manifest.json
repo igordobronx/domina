@@ -190,5 +190,11 @@
     "seen": 1791942402.0643256,
     "ast_hash": "7927147b3be913f6d2515077e452aa8c",
     "semantic_hash": ""
+  },
+  "docs/decisoes/2026-10-13-correcao-ia-calibracao.md": {
+    "mtime": 1791943766.6632118,
+    "seen": 1791943800.2285566,
+    "ast_hash": "9c4c90f43b42ac1a1951e9f62fd6480f",
+    "semantic_hash": ""
   }
 }
