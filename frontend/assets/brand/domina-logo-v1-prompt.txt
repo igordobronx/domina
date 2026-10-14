@@ -1,0 +1,7 @@
+Mode: built-in image_gen. Use case: logo-brand.
+Use case: logo-brand.
+Create a polished original logo for DOMINA, an educational platform connecting teachers and students with AI-assisted assessment and personalized learning progress.
+Reference direction: strong deep navy blue approximately #102749, bold simple rounded geometry, as in the user's visual reference; do not reproduce the reference's G-shaped mark or LUGUI lettering.
+Design one distinctive, exceptionally simple uppercase D monogram, with an elegant negative-space cut subtly suggesting an open book and a forward/upward learning path. The D must remain immediately legible and have a strong silhouette for an app icon. Limit the symbol to two integrated broad geometric forms; restrained smooth gradient from deep navy #102749 through blue #2563EB to light blue #68BEF5. No thin lines or fussy detailing.
+Composition: one centered vertical logo lockup, symbol above the wordmark, generous breathing room, balanced proportions. Exact text: "DOMINA", all six letters spelled D O M I N A, bold modern geometric sans serif with slightly rounded corners, expertly spaced, solid deep navy. Wordmark a little wider than symbol.
+Style: sophisticated approachable education technology identity, crisp vector-like contours, flat graphic with gradient only within the symbol. Transparent background, no backdrop, no shadows, no 3D, no mockup, no extra text, no slogan, no watermark, no graduation cap, no brain, no robot, no sparkles. Deliver a single finished logo, not a presentation board.
