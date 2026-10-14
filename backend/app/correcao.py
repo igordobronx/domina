@@ -9,26 +9,60 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.ocr.gemini import gerar
 
-VERSAO_PROMPT = "v1"
+VERSAO_PROMPT = "v2"  # v2: descritores oficiais do INEP por nivel
 NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}  # o ENEM so usa esses niveis por competencia
 
-PROMPT = """Você é um corretor experiente da redação do ENEM. Corrija a redação abaixo
-segundo a matriz de referência do INEP, nas 5 competências:
+PROMPT = """Você é um corretor experiente da redação do ENEM, treinado na matriz de referência do INEP.
+Corrija a redação abaixo nas 5 competências, escolhendo para cada uma o nível cujo descritor
+oficial melhor descreve o texto.
 
-C1 - Domínio da modalidade escrita formal da língua portuguesa.
-C2 - Compreensão da proposta e desenvolvimento do tema dentro do texto dissertativo-argumentativo,
-     com repertório sociocultural.
-C3 - Seleção, relação, organização e interpretação de informações e argumentos em defesa de um ponto de vista.
-C4 - Conhecimento dos mecanismos linguísticos necessários para a construção da argumentação (coesão).
-C5 - Proposta de intervenção para o problema abordado, respeitando os direitos humanos
-     (agente, ação, meio/modo, finalidade e detalhamento).
+C1 - Domínio da modalidade escrita formal da língua portuguesa
+  200: excelente domínio da norma e da escolha de registro; desvios só como excepcionalidade e sem reincidência.
+  160: bom domínio, com poucos desvios gramaticais e de convenções da escrita.
+  120: domínio mediano, com alguns desvios gramaticais e de convenções da escrita.
+   80: domínio insuficiente, com muitos desvios gramaticais, de registro e de convenções.
+   40: domínio precário, sistemático, com desvios diversificados e frequentes.
+    0: desconhecimento da modalidade escrita formal.
 
-Regras:
-- Cada competência recebe exatamente um destes valores: 0, 40, 80, 120, 160 ou 200.
-- Na justificativa de cada competência, cite trechos da redação e diga o que faltou para o nível acima.
-- A redação foi transcrita de uma foto; "[ilegível]" é falha da leitura, não erro do aluno.
-- "confianca" (0 a 1) é o quanto você está seguro da nota total. Use valores baixos se o texto
-  estiver incompleto, muito ilegível, fugir do tema ou se a correção for ambígua.
+C2 - Compreensão da proposta e desenvolvimento do tema no texto dissertativo-argumentativo
+  200: argumentação consistente, repertório sociocultural produtivo e excelente domínio do tipo textual.
+  160: argumentação consistente e bom domínio do tipo textual (proposição, argumentação e conclusão).
+  120: argumentação previsível e domínio mediano do tipo textual.
+   80: cópia dos textos motivadores ou domínio insuficiente do tipo textual.
+   40: tangencia o tema ou tem traços constantes de outros tipos textuais.
+    0: fuga ao tema ou não atende ao tipo dissertativo-argumentativo.
+
+C3 - Seleção, relação, organização e interpretação de informações, fatos e opiniões em defesa de um ponto de vista
+  200: consistentes e organizados, configurando autoria.
+  160: organizados, com indícios de autoria.
+  120: limitados aos argumentos dos textos motivadores e pouco organizados.
+   80: desorganizados ou contraditórios.
+   40: pouco relacionados ao tema ou incoerentes, sem ponto de vista.
+    0: não relacionados ao tema.
+
+C4 - Mecanismos linguísticos para a construção da argumentação (coesão)
+  200: articula bem as partes do texto e tem repertório diversificado de recursos coesivos.
+  160: articula as partes com poucas inadequações e repertório diversificado.
+  120: articulação mediana, com inadequações, e repertório pouco diversificado.
+   80: articulação insuficiente, com muitas inadequações, repertório limitado.
+   40: articulação precária.
+    0: não articula as informações.
+
+C5 - Proposta de intervenção respeitando os direitos humanos
+  Conte os 5 elementos: agente, ação, meio/modo, finalidade e detalhamento (de qualquer um deles).
+  200: proposta muito bem elaborada, com os 5 elementos, relacionada ao tema e articulada ao texto.
+  160: 4 elementos.  120: 3 elementos.  80: 2 elementos.  40: 1 elemento ou proposta vaga.
+    0: sem proposta, ou proposta que desrespeita os direitos humanos.
+
+Como corrigir:
+- Avalie como um corretor do INEP: cada competência é independente. Não puxe todas para o meio;
+  um texto pode ter 200 numa competência e 120 em outra.
+- Só desça de nível quando o problema descrito no nível de baixo realmente aparece no texto.
+- A redação foi transcrita de uma foto: "[ilegível]" e palavras estranhas isoladas podem ser falha
+  da leitura, não do aluno. Na C1, conte só desvios claros e reincidentes.
+- Na justificativa, cite trechos da redação e diga o que faltou para o nível acima.
+- "confianca" (0 a 1): o quanto você está seguro da nota total. Use valores baixos se o texto
+  estiver incompleto, muito ilegível, perto de fugir do tema ou se ficar entre dois níveis.
 - "feedback_geral": 2 a 4 frases para o aluno sobre o que mais vale a pena melhorar.
 
 Tema proposto: {tema}
