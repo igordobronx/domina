@@ -1,0 +1,87 @@
+
+######## lite_v2.jsonl: 50 redacoes, modelo gemini-3.5-flash-lite
+
+== NOTA 1000 (INEP oficial)  n=20
+   total: real medio 1000 | IA media 924 | vies -76 | erro medio 76
+   IA >= 880: 17/20 | IA >= 800: 18/20 | menor 760 | maior 1000
+   por competencia (vies IA - real | erro medio):
+     C1: real   200  IA   162  vies   -38  erro   38
+     C2: real   200  IA   194  vies    -6  erro    6
+     C3: real   200  IA   192  vies    -8  erro    8
+     C4: real   200  IA   190  vies   -10  erro   10
+     C5: real   200  IA   186  vies   -14  erro   14
+
+== UOL (corretores UOL, escala 0/50/.../200)  n=30
+   total: real medio 545 | IA media 585 | vies +40 | erro medio 203
+   correlacao totais: pearson 0.40 | spearman 0.33 | |dif| <= 100: 6/30
+   fracas (<=350)    real  255 -> IA  544
+   medias (400-600)  real  535 -> IA  592
+   boas (>=700)      real  845 -> IA  620
+   por competencia (vies IA - real | erro medio):
+     C1: real   123  IA   137  vies   +14  erro   50
+     C2: real   117  IA   124  vies    +7  erro   45
+     C3: real   103  IA   121  vies   +18  erro   44
+     C4: real   107  IA   135  vies   +28  erro   55
+     C5: real    95  IA    68  vies   -27  erro   60
+
+   confianca media 0.93 | tempo medio 4s
+
+######## lite_v3a.jsonl: 50 redacoes, modelo gemini-3.5-flash-lite
+
+== NOTA 1000 (INEP oficial)  n=20
+   total: real medio 1000 | IA media 986 | vies -14 | erro medio 14
+   IA >= 880: 20/20 | IA >= 800: 20/20 | menor 920 | maior 1000
+   por competencia (vies IA - real | erro medio):
+     C1: real   200  IA   192  vies    -8  erro    8
+     C2: real   200  IA   198  vies    -2  erro    2
+     C3: real   200  IA   198  vies    -2  erro    2
+     C4: real   200  IA   200  vies    +0  erro    0
+     C5: real   200  IA   198  vies    -2  erro    2
+
+== UOL (corretores UOL, escala 0/50/.../200)  n=30
+   total: real medio 545 | IA media 668 | vies +123 | erro medio 216
+   correlacao totais: pearson 0.47 | spearman 0.42 | |dif| <= 100: 7/30
+   fracas (<=350)    real  255 -> IA  604
+   medias (400-600)  real  535 -> IA  628
+   boas (>=700)      real  845 -> IA  772
+   por competencia (vies IA - real | erro medio):
+     C1: real   123  IA   148  vies   +25  erro   49
+     C2: real   117  IA   152  vies   +35  erro   53
+     C3: real   103  IA   149  vies   +46  erro   51
+     C4: real   107  IA   152  vies   +45  erro   58
+     C5: real    95  IA    67  vies   -28  erro   68
+
+   confianca media 0.96 | tempo medio 3s
+
+######## lite_v3b.jsonl: 50 redacoes, modelo gemini-3.5-flash-lite
+
+== NOTA 1000 (INEP oficial)  n=20
+   total: real medio 1000 | IA media 986 | vies -14 | erro medio 14
+   IA >= 880: 20/20 | IA >= 800: 20/20 | menor 920 | maior 1000
+   por competencia (vies IA - real | erro medio):
+     C1: real   200  IA   188  vies   -12  erro   12
+     C2: real   200  IA   200  vies    +0  erro    0
+     C3: real   200  IA   200  vies    +0  erro    0
+     C4: real   200  IA   198  vies    -2  erro    2
+     C5: real   200  IA   200  vies    +0  erro    0
+
+== UOL (corretores UOL, escala 0/50/.../200)  n=30
+   total: real medio 545 | IA media 661 | vies +116 | erro medio 204
+   correlacao totais: pearson 0.54 | spearman 0.37 | |dif| <= 100: 8/30
+   fracas (<=350)    real  255 -> IA  580
+   medias (400-600)  real  535 -> IA  676
+   boas (>=700)      real  845 -> IA  728
+   por competencia (vies IA - real | erro medio):
+     C1: real   123  IA   144  vies   +21  erro   50
+     C2: real   117  IA   151  vies   +34  erro   54
+     C3: real   103  IA   149  vies   +46  erro   55
+     C4: real   107  IA   148  vies   +41  erro   59
+     C5: real    95  IA    69  vies   -26  erro   60
+
+   confianca media 0.96 | tempo medio 4s
+
+================ SCORE DE CORRECAO (0-100) ================
+arquivo                 precisao  ordenacao  acerto   SCORE
+lite_v2                     92.4       32.8    20.0    48.4
+lite_v3a                    98.6       41.8    23.3    54.6
+lite_v3b                    98.6       36.6    26.7    54.0

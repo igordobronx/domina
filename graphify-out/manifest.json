@@ -156,9 +156,9 @@
     "semantic_hash": ""
   },
   "backend/requirements-dev.txt": {
-    "mtime": 1791512903.9540107,
-    "seen": 1791512905.6209812,
-    "ast_hash": "244a489f05b732d9aea7b34e217a93d6",
+    "mtime": 1792031274.8386524,
+    "seen": 1792031347.724358,
+    "ast_hash": "e5ced7f5189e4c3b227d23b5a90d4467",
     "semantic_hash": ""
   },
   "docker-compose.yml": {
@@ -195,6 +195,264 @@
     "mtime": 1791943766.6632118,
     "seen": 1791943800.2285566,
     "ast_hash": "9c4c90f43b42ac1a1951e9f62fd6480f",
+    "semantic_hash": ""
+  },
+  "backend/calibracao/__init__.py": {
+    "mtime": 1792031240.3190508,
+    "seen": 1792031347.724358,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": ""
+  },
+  "backend/calibracao/analisa.py": {
+    "mtime": 1792031253.7387643,
+    "seen": 1792031347.724358,
+    "ast_hash": "4d86664fed827bfaf5bed79060909ea1",
+    "semantic_hash": ""
+  },
+  "backend/calibracao/calibra.py": {
+    "mtime": 1792031274.8212104,
+    "seen": 1792031347.724358,
+    "ast_hash": "3ba4edd3037251afdf22e4298f2e5412",
+    "semantic_hash": ""
+  },
+  "backend/calibracao/variantes.py": {
+    "mtime": 1792031240.3190508,
+    "seen": 1792031347.724358,
+    "ast_hash": "bb19e8c4ae040e277ac0c47ba6881f90",
+    "semantic_hash": ""
+  },
+  "frontend/package.json": {
+    "mtime": 1792029296.170889,
+    "seen": 1792031347.724358,
+    "ast_hash": "98a529f5f956c7832c01f5b2eef356c9",
+    "semantic_hash": ""
+  },
+  "frontend/playwright.config.ts": {
+    "mtime": 1792029296.170889,
+    "seen": 1792031347.724358,
+    "ast_hash": "0a863deeae2c53c92136bc8d43a27886",
+    "semantic_hash": ""
+  },
+  "frontend/src/App.tsx": {
+    "mtime": 1792029296.1749005,
+    "seen": 1792031347.724358,
+    "ast_hash": "2e9fa780359159769f69a3b25d62c894",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/Chart.tsx": {
+    "mtime": 1792029296.1749005,
+    "seen": 1792031347.724358,
+    "ast_hash": "3d0eb9882aa7159a950b8834e4826239",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/InstallBanner.tsx": {
+    "mtime": 1792029296.1758971,
+    "seen": 1792031347.724358,
+    "ast_hash": "d49276f9499051e1813b8b98609bc5f2",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ui.tsx": {
+    "mtime": 1792029296.1758971,
+    "seen": 1792031347.724358,
+    "ast_hash": "c851eb682eb56976b2bdeed7ea8001c4",
+    "semantic_hash": ""
+  },
+  "frontend/src/data/demo.ts": {
+    "mtime": 1792029296.1768906,
+    "seen": 1792031347.724358,
+    "ast_hash": "6c787e656dd852cc13626312eca75226",
+    "semantic_hash": ""
+  },
+  "frontend/src/hooks/usePwa.ts": {
+    "mtime": 1792029296.1778905,
+    "seen": 1792031347.724358,
+    "ast_hash": "9ff7dac95958aca827679db7668f02e9",
+    "semantic_hash": ""
+  },
+  "frontend/src/main.tsx": {
+    "mtime": 1792029296.1778905,
+    "seen": 1792031347.724358,
+    "ast_hash": "fc3d4628dc5324c9a8ea0ef128a201e1",
+    "semantic_hash": ""
+  },
+  "frontend/src/screens/Activities.tsx": {
+    "mtime": 1792029296.1788979,
+    "seen": 1792031347.724358,
+    "ast_hash": "e1ff848b6f69106755d1927c5f2d4726",
+    "semantic_hash": ""
+  },
+  "frontend/src/screens/Dashboard.tsx": {
+    "mtime": 1792029296.1800098,
+    "seen": 1792031347.724358,
+    "ast_hash": "10fa5048434581787d9602643602e3ed",
+    "semantic_hash": ""
+  },
+  "frontend/src/screens/EducatorDashboard.tsx": {
+    "mtime": 1792029296.1800098,
+    "seen": 1792031347.724358,
+    "ast_hash": "e2b5704040ee54d8e57adfa8f3bc1943",
+    "semantic_hash": ""
+  },
+  "frontend/src/screens/Learning.tsx": {
+    "mtime": 1792029296.181003,
+    "seen": 1792031347.724358,
+    "ast_hash": "4582f930e1e2f6a572af938de7870fa0",
+    "semantic_hash": ""
+  },
+  "frontend/src/screens/Management.tsx": {
+    "mtime": 1792029296.181003,
+    "seen": 1792031347.724358,
+    "ast_hash": "41221b103c410e163b8f793cda04e0a2",
+    "semantic_hash": ""
+  },
+  "frontend/src/screens/Settings.tsx": {
+    "mtime": 1792029296.1820073,
+    "seen": 1792031347.724358,
+    "ast_hash": "08313a2ccf205192337ccde9d3bafdf2",
+    "semantic_hash": ""
+  },
+  "frontend/src/services/demoStore.test.ts": {
+    "mtime": 1792029296.1830034,
+    "seen": 1792031347.724358,
+    "ast_hash": "34dae60163cc37e45db38cc79fda784c",
+    "semantic_hash": ""
+  },
+  "frontend/src/services/demoStore.ts": {
+    "mtime": 1792029296.1840036,
+    "seen": 1792031347.724358,
+    "ast_hash": "8da2cf42eb03b8d0beaf0bbe2e315017",
+    "semantic_hash": ""
+  },
+  "frontend/src/services/navigation.ts": {
+    "mtime": 1792029296.1840036,
+    "seen": 1792031347.724358,
+    "ast_hash": "d182514728d817525f3167473757bda1",
+    "semantic_hash": ""
+  },
+  "frontend/src/theme.ts": {
+    "mtime": 1792029296.1850023,
+    "seen": 1792031347.724358,
+    "ast_hash": "70c280f598e0954f4ea80cf6a0478926",
+    "semantic_hash": ""
+  },
+  "frontend/src/types.ts": {
+    "mtime": 1792029296.1861577,
+    "seen": 1792031347.724358,
+    "ast_hash": "7591e0b9da796491bce49dcb6afbf065",
+    "semantic_hash": ""
+  },
+  "frontend/src/vite-env.d.ts": {
+    "mtime": 1792029296.1861577,
+    "seen": 1792031347.724358,
+    "ast_hash": "0f66b836165705f473b4c4d019c2a781",
+    "semantic_hash": ""
+  },
+  "frontend/tests/flows.spec.ts": {
+    "mtime": 1792029296.1871603,
+    "seen": 1792031347.724358,
+    "ast_hash": "1f5ee7657435e8ab2598405e928246ab",
+    "semantic_hash": ""
+  },
+  "frontend/tsconfig.json": {
+    "mtime": 1792029296.1871603,
+    "seen": 1792031347.724358,
+    "ast_hash": "9e20fad2c7b40e850becb36a8fe43b3d",
+    "semantic_hash": ""
+  },
+  "frontend/vercel.json": {
+    "mtime": 1792029296.1886654,
+    "seen": 1792031347.724358,
+    "ast_hash": "0db3b48760e72962ee03cf8282cb9320",
+    "semantic_hash": ""
+  },
+  "frontend/vite.config.ts": {
+    "mtime": 1792029296.1886654,
+    "seen": 1792031347.724358,
+    "ast_hash": "f1ba514051e91ce118555ed7ddf21bb2",
+    "semantic_hash": ""
+  },
+  "frontend/vitest.config.ts": {
+    "mtime": 1792029296.1886654,
+    "seen": 1792031347.724358,
+    "ast_hash": "f2616ea3b46c192d1d06fd10cee261d2",
+    "semantic_hash": ""
+  },
+  "docs/calibracao/2026-10-14/resultado.txt": {
+    "mtime": 1792031254.010448,
+    "seen": 1792031347.724358,
+    "ast_hash": "db928d908edba51689b4f852c9211907",
+    "semantic_hash": ""
+  },
+  "docs/decisoes/2026-10-14-relatorio-calibracao-correcao.md": {
+    "mtime": 1792031315.5007575,
+    "seen": 1792031347.724358,
+    "ast_hash": "4870c62562091257aa693bc82d146fe2",
+    "semantic_hash": ""
+  },
+  "frontend/README.md": {
+    "mtime": 1792029296.1615932,
+    "seen": 1792031347.724358,
+    "ast_hash": "93dfc158c6f7f196186c816914c9df0a",
+    "semantic_hash": ""
+  },
+  "frontend/assets/brand/domina-logo-v1-prompt.txt": {
+    "mtime": 1792029296.1625924,
+    "seen": 1792031347.724358,
+    "ast_hash": "6394ef3eba2e24692c38f13cf60bc482",
+    "semantic_hash": ""
+  },
+  "frontend/docs/DEPLOY-VERCEL.md": {
+    "mtime": 1792029296.1665914,
+    "seen": 1792031347.724358,
+    "ast_hash": "c71a42b851cd2e404114da14d7c74565",
+    "semantic_hash": ""
+  },
+  "frontend/docs/FRONTEND.md": {
+    "mtime": 1792029296.1675916,
+    "seen": 1792031347.724358,
+    "ast_hash": "d1645d104ff67f7e49465aef1afe9b49",
+    "semantic_hash": ""
+  },
+  "frontend/docs/VALIDACAO.md": {
+    "mtime": 1792029296.1675916,
+    "seen": 1792031347.724358,
+    "ast_hash": "7ed035303b633125af9a83294e2d3b50",
+    "semantic_hash": ""
+  },
+  "frontend/index.html": {
+    "mtime": 1792029296.1685922,
+    "seen": 1792031347.724358,
+    "ast_hash": "c65fecbc89b58fc97fb9c2cc4b869ea0",
+    "semantic_hash": ""
+  },
+  "frontend/assets/brand/domina-logo-v1.png": {
+    "mtime": 1792029296.1655993,
+    "seen": 1792031347.724358,
+    "ast_hash": "b1b40374d37815b079dc7ff3fda97bd1",
+    "semantic_hash": ""
+  },
+  "frontend/public/favicon.svg": {
+    "mtime": 1792029296.1718895,
+    "seen": 1792031347.724358,
+    "ast_hash": "3666b874be5b2bd44ce60fbbfaf954c9",
+    "semantic_hash": ""
+  },
+  "frontend/public/icons/icon-192.png": {
+    "mtime": 1792029296.1728966,
+    "seen": 1792031347.724358,
+    "ast_hash": "99646016a68340453cd15bed6a2ba575",
+    "semantic_hash": ""
+  },
+  "frontend/public/icons/icon-512.png": {
+    "mtime": 1792029296.1728966,
+    "seen": 1792031347.724358,
+    "ast_hash": "76548698edd6cd5810279c3e987b6d0f",
+    "semantic_hash": ""
+  },
+  "frontend/public/icons/maskable-512.png": {
+    "mtime": 1792029296.17389,
+    "seen": 1792031347.724358,
+    "ast_hash": "9e4bc37ffcad68e9efdea54a004dada1",
     "semantic_hash": ""
   }
 }
