@@ -1,0 +1,21 @@
+Gemini gemini-3.5-flash indisponivel (ServerError("503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}")), usando gemini-3.5-flash-lite
+MODELO USADO: gemini-3.5-flash-lite
+CONFIANCA: 0.95
+TOTAL: 760
+
+C1: 120
+  O texto apresenta alguns desvios gramaticais e de concordância, como 'a herança africano' em vez de 'africana' e problemas pontuais de regência e pontuação ('Infere-se, que'). Para alcançar 160, seria necessário eliminar a reincidência de pequenos desvios de concordância de gênero e garantir maior precisão no registro formal.
+
+C2: 160
+  O texto demonstra bom domínio do tipo dissertativo-argumentativo, com repertório sociocultural produtivo (filme 'Django Livre' e citação de Nelson Mandela) articulado aos argumentos. Para alcançar 200, a articulação e a defesa poderiam ser ainda mais aprofundadas, evitando pequenas imprecisões na construção sintática do repertório.
+
+C3: 160
+  A tese é claramente apresentada na introdução, os argumentos dos parágrafos de desenvolvimento (viés tradicionalista escolar e negligência do Estado) são pertinentes e a progressão lógica é mantida. Para alcançar 200, a argumentação deveria apresentar um nível superior de autoria e aprofundamento crítico sem falhas pontuais de coerência.
+
+C4: 160
+  O texto utiliza diversos conectivos interparágrafos e intraparágrafos (como 'No entanto', 'Além disso', 'Em primeira análise', 'Portanto'), embora haja algumas falhas na escolha de articuladores. Para alcançar 200, seria preciso um repertório de recursos coesivos ainda mais diversificado e sem pequenas inadequações na transição das ideias.
+
+C5: 160
+  A proposta de intervenção apresenta o agente (Ministério da Educação e Estado), a ação (promover reforma e campanhas), o meio/modo (por meio de uma reforma / por meio de campanhas) e a finalidade (como fito de cessar / com a finalidade de acabar), totalizando 4 elementos válidos. Para alcançar 200, faltou incluir um detalhamento explícito de um dos elementos constituintes da proposta.
+
+FEEDBACK GERAL: Sua redação possui uma boa estrutura dissertativo-argumentativa e utiliza repertórios válidos como o filme Django Livre. Para melhorar sua nota, preste mais atenção na concordância nominal e de gênero para garantir a norma padrão, e certifique-se de incluir um detalhamento completo na proposta de intervenção final.

@@ -5,10 +5,9 @@ uso (de dentro de backend/):
 ex.: python -m calibracao.calibra ../docs/calibracao/nova.jsonl gemini-3.5-flash 20 30 v3a
 Retoma de onde parou: redacoes ja presentes no jsonl sao puladas.
 """
-import json, random, sys, time
+import json, sys, time
 from pathlib import Path
 
-import openpyxl
 from google.genai import errors, types
 
 from calibracao import variantes
@@ -21,17 +20,8 @@ N1000 = int(sys.argv[3]) if len(sys.argv) > 3 else 20
 NUOL = int(sys.argv[4]) if len(sys.argv) > 4 else 30
 VARIANTE = sys.argv[5] if len(sys.argv) > 5 else "v2"
 PROMPT, SCHEMA, CONV = variantes.pegar(VARIANTE)
-PLANILHA = variantes.PLANILHA
 
-rows = [r for r in list(openpyxl.load_workbook(PLANILHA, read_only=True, data_only=True)["Redações"].iter_rows(values_only=True))[1:] if r[0]]
-mil = [r for r in rows if str(r[10]).startswith(("Cartilha", "Toda"))]
-uol = [r for r in rows if str(r[10]).startswith("Banco") and r[3] and len(str(r[3]).split()) >= 120]
-rnd = random.Random(42)
-fracas = [r for r in uol if float(r[9]) <= 350]
-medias = [r for r in uol if 400 <= float(r[9]) <= 600]
-boas = [r for r in uol if float(r[9]) >= 700]
-k = NUOL // 3
-amostra = [("mil", r) for r in rnd.sample(mil, N1000)] + [("uol", r) for r in rnd.sample(fracas, k) + rnd.sample(medias, k) + rnd.sample(boas, NUOL - 2 * k)]
+amostra = variantes.amostra(N1000, NUOL)
 
 feitas = {json.loads(l)["id"] for l in SAIDA.read_text(encoding="utf-8").splitlines()} if SAIDA.exists() else set()
 cfg = types.GenerateContentConfig(temperature=0, response_mime_type="application/json", response_schema=SCHEMA)

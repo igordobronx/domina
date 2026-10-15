@@ -1,0 +1,117 @@
+{
+  "evidencias": {
+    "c1": {
+      "erros_reais": [
+        {
+          "trecho": "mostra a realidade escravocrata dos Estados Unidos antes da abolição da escravidão, como a população branca desvalorizando os descendentes da África, tratando-os como objeto e abandonando a passado e culturas africanas.",
+          "erro": "concordância: \"abandonando a passado\" → deveria ser \"abandonando o passado\""
+        },
+        {
+          "trecho": "geran do desafios para a valorização da cultura africana no Brasil.",
+          "erro": "erro de digitação e separação: \"geran do\" → \"gerando\""
+        },
+        {
+          "trecho": "deixado por seus descendentes, geran do desafios",
+          "erro": "concordância nominal: \"deixado\" deveria concordar com \"cultura\" (feminino) → \"deixada\""
+        },
+        {
+          "trecho": "de acordo como ex-presidente da África do Sul, Nelson Mandela",
+          "erro": "regência: \"de acordo como\" → \"de acordo com\""
+        },
+        {
+          "trecho": "a educação é a arma mais poderosa que pode mudar o mun do",
+          "erro": "erro de ortografia: \"mun do\" → \"mundo\""
+        },
+        {
+          "trecho": "colabo ra para a exclusão",
+          "erro": "erro de separação: \"colabo ra\" → \"colabora\""
+        },
+        {
+          "trecho": "contra a população preta.",
+          "erro": "uso de termo pejorativo \"preta\" sem necessidade; registro inadequado"
+        },
+        {
+          "trecho": "a favelização dos descendentes dos africanos, assim como o estereótipo do \"pobreza\"",
+          "erro": "concordância: \"estereótipo do \\\"pobreza\\\"\" → \"estereótipo da pobreza\""
+        },
+        {
+          "trecho": "medidas serie necessárias",
+          "erro": "erro de ortografia: \"serie\" → \"serão\""
+        },
+        {
+          "trecho": "valori zar a história",
+          "erro": "erro de separação: \"valori zar\" → \"valorizar\""
+        },
+        {
+          "trecho": "herança africano nas salas de aula como fito de cessar",
+          "erro": "concordância e ortografia: \"herança africano\" → \"herança africana\"; \"fito\" → \"fim\""
+        },
+        {
+          "trecho": "filmes como \"Django livre\" serão tratada como realidade distante",
+          "erro": "concordância: \"serão tratada\" → \"será tratado\""
+        }
+      ],
+      "autocorrecoes_ignoradas": []
+    },
+    "c2": {
+      "repertorio_usado": "filme \"Django livre\"; citação de Nelson Mandela; referência à Lei Áurea de 1888; menção ao Ministério da Educação.",
+      "uso": "produtivo"
+    },
+    "c3": {
+      "tese": "É necessário enfrentar os desafios para a valorização da herança africana no Brasil por meio da educação e da ação estatal.",
+      "argumentos": [
+        "As instituições de ensino reproduzem um viés tradicionalista e eurocêntrico que desvaloriza a história africana.",
+        "A negligência do Estado, manifestada na violência policial e na falta de políticas de apoio aos descendentes de africanos, perpetua a invisibilização.",
+        "A abolição da escravidão sem apoio efetivo gerou consequências atuais como a favelização e estigmatização dos negros."
+      ]
+    },
+    "c4": {
+      "conectivos": [
+        "No entanto",
+        "Além disso",
+        "Em primeira análise",
+        "Ademais",
+        "Além do mais",
+        "Sob esse viés analítico",
+        "Entretanto",
+        "Portanto",
+        "Infere-se",
+        "Logo",
+        "Conclui-se também",
+        "Somente assim"
+      ]
+    },
+    "c5": {
+      "agente": "Ministério da Educação",
+      "acao": "reforma no método escolar para valorizar a história e herança africana nas salas de aula",
+      "meio": "por meio de uma reforma no método escolar",
+      "finalidade": "cessar a eurocentrização e acabar com a negligência estatal",
+      "detalhamento": "incluir conteúdos sobre a cultura africana, campanhas de incentivo ao conhecimento da cultura negra"
+    }
+  },
+  "competencias": {
+    "c1": {
+      "nota": 120,
+      "justificativa": "O texto apresenta diversos erros de concordância, regência e ortografia (ex.: \"abandonando a passado\", \"de acordo como\", \"colabo ra\"). Embora não haja reincidência de um único tipo de erro, a variedade de desvios impede a atribuição de nota superior. Para alcançar 160 seria necessário reduzir significativamente esses erros, mantendo a correção formal."
+    },
+    "c2": {
+      "nota": 200,
+      "justificativa": "A proposta é desenvolvida de forma consistente, com repertório sociocultural (filme, citação de Mandela, Lei Áurea) bem articulado ao argumento. O tema foi plenamente abordado, demonstrando domínio do tipo dissertativo‑argumentativo."
+    },
+    "c3": {
+      "nota": 200,
+      "justificativa": "A tese está clara e os três argumentos são organizados em parágrafos distintos, com progressão lógica que sustenta o ponto de vista. Não há repetições ou contradições."
+    },
+    "c4": {
+      "nota": 160,
+      "justificativa": "O texto utiliza um repertório razoável de conectivos que garantem coesão entre as ideias. Contudo, há algumas repetições e falta de variedade maior (ex.: uso frequente de \"Além disso\", \"Além do mais\"). Para chegar a 200 seria preciso ampliar a diversidade de recursos coesivos e melhorar a retomada referencial."
+    },
+    "c5": {
+      "nota": 200,
+      "justificativa": "A proposta de intervenção contém os cinco elementos exigidos: agente (Ministério da Educação), ação (reforma curricular), meio (reforma no método escolar), finalidade (cessar eurocentrização e negligência) e detalhamento (incluir conteúdos, campanhas). Está alinhada ao tema e respeita os direitos humanos."
+    }
+  },
+  "nota_total": 880,
+  "confianca": 0.92,
+  "feedback_geral": "Sua argumentação está bem estruturada e o repertório usado enriquece o texto. Foque agora em revisar concordância, regência e ortografia para melhorar a nota da competência C1 e diversifique ainda mais os conectivos para elevar a coesão textual."
+}

@@ -1,4 +1,5 @@
 """Variantes de prompt para o teste de calibracao (nao fazem parte do projeto)."""
+import random
 from typing import Literal
 
 from pathlib import Path
@@ -9,6 +10,20 @@ from pydantic import BaseModel, Field
 from app.correcao import PROMPT as V2, ResultadoIA
 
 PLANILHA = Path(__file__).resolve().parents[2] / "essays" / "base_redacoes_enem_domina_ai.xlsm"
+
+
+def amostra(n1000: int, nuol: int, seed: int = 42):
+    # mesma amostra (seed 42) usada por calibra.py, extraida pra ca para que
+    # qualquer backend novo (ex.: Groq) teste exatamente as mesmas redacoes.
+    rows = [r for r in list(openpyxl.load_workbook(PLANILHA, read_only=True, data_only=True)["Redações"].iter_rows(values_only=True))[1:] if r[0]]
+    mil = [r for r in rows if str(r[10]).startswith(("Cartilha", "Toda"))]
+    uol = [r for r in rows if str(r[10]).startswith("Banco") and r[3] and len(str(r[3]).split()) >= 120]
+    rnd = random.Random(seed)
+    fracas = [r for r in uol if float(r[9]) <= 350]
+    medias = [r for r in uol if 400 <= float(r[9]) <= 600]
+    boas = [r for r in uol if float(r[9]) >= 700]
+    k = nuol // 3
+    return [("mil", r) for r in rnd.sample(mil, n1000)] + [("uol", r) for r in rnd.sample(fracas, k) + rnd.sample(medias, k) + rnd.sample(boas, nuol - 2 * k)]
 
 # --- v3a: pensa antes de dar a nota, conta desvios na C1, usa a escala inteira -------------
 EXTRA_V3A = """
