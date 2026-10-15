@@ -1,7 +1,4 @@
-import sys
 from pathlib import Path
-# Ensure the project root (backend) is in PYTHONPATH so that `import app` works when executing this file directly
-sys.path.append(str(Path(__file__).parent.parent))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
