@@ -143,7 +143,8 @@ class CorrecaoCriterio(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     correcao_id = Column(UUID(as_uuid=True), ForeignKey("correcao.id"), nullable=False)
     tema_id = Column(UUID(as_uuid=True), ForeignKey("tema.id"), nullable=False)
-    nota = Column(Numeric(5, 2), nullable=False)
+    nota = Column(Numeric(5, 2), nullable=False)  # nota da IA
+    nota_professor = Column(Numeric(5, 2), nullable=True)  # nota final, editada na aprovacao (RF-21)
     justificativa = Column(Text, nullable=False)
 
 

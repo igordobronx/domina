@@ -15,8 +15,8 @@ from app.models.usuario import (
 )
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
-    AlunoResumo, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse, CorrigirRequest,
-    CriterioResponse, SubmissaoResponse,
+    AlunoResumo, AprovarRequest, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse,
+    CorrigirRequest, CriterioResponse, SubmissaoResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -148,10 +148,16 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
     )
     return CorrecaoResponse(
         id=correcao.id, submissao_id=correcao.submissao_id, nota_ia=float(correcao.nota_ia),
+        nota_professor=float(correcao.nota_professor) if correcao.nota_professor is not None else None,
+        revisado_por=correcao.revisado_por,
         confianca=float(correcao.confianca), status=correcao.status.value, modelo_usado=correcao.modelo_usado,
         feedback=correcao.feedback,
         criterios=[
-            CriterioResponse(codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota), justificativa=c.justificativa)
+            CriterioResponse(
+                codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
+                nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
+                justificativa=c.justificativa,
+            )
             for c, t in criterios
         ],
     )
@@ -217,4 +223,36 @@ def ver_correcao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current
     correcao = db.query(Correcao).filter_by(submissao_id=submissao.id).first()
     if not correcao:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
+    return _correcao_response(db, correcao)
+
+@router.put("/submissoes/{submissao_id}/aprovar", response_model=CorrecaoResponse)
+def aprovar_correcao(
+    submissao_id: uuid.UUID,
+    payload: AprovarRequest,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    submissao = _submissao_visivel(db, submissao_id, usuario)
+    _so_professor(db, submissao, usuario)
+
+    correcao = db.query(Correcao).filter_by(submissao_id=submissao.id).first()
+    if not correcao:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
+    if correcao.status == StatusCorrecaoEnum.APROVADA:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta correção já foi aprovada.")
+
+    criterios = {
+        t.habilidade_codigo: c
+        for c, t in db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
+        .filter(CorrecaoCriterio.correcao_id == correcao.id)
+    }
+    for nota in payload.notas:
+        criterios[nota.codigo].nota_professor = nota.nota
+
+    correcao.nota_professor = sum(n.nota for n in payload.notas)
+    correcao.revisado_por = usuario.id
+    correcao.status = StatusCorrecaoEnum.APROVADA
+    if payload.feedback is not None:
+        correcao.feedback = payload.feedback.strip()
+    db.commit()
     return _correcao_response(db, correcao)
