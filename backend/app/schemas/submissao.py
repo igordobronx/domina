@@ -18,6 +18,12 @@ class SubmissaoResponse(BaseModel):
     criado_em: datetime
 
 
+class EnviarTextoRequest(BaseModel):
+    atividade_id: uuid.UUID
+    texto: str = Field(min_length=1, max_length=20_000)
+    aluno_id: uuid.UUID | None = None
+
+
 class ConfirmarTextoRequest(BaseModel):
     # texto revisado pelo aluno; limite folgado (redacao ENEM tem ate 30 linhas)
     texto: str = Field(min_length=1, max_length=20_000)

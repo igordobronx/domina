@@ -2,7 +2,7 @@ import logging
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, HTTPException, status, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, status, UploadFile
 from sqlalchemy.orm import Session
 
 from app import correcao as ia
@@ -16,7 +16,7 @@ from app.models.usuario import (
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse, CorrigirRequest,
-    CriterioResponse, SubmissaoResponse,
+    CriterioResponse, EnviarTextoRequest, SubmissaoResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,12 +27,15 @@ router = APIRouter(tags=["submissoes"])
 CONFIANCA_MINIMA = 0.6
 
 
-def _na_turma(db: Session, usuario_id, turma_id) -> bool:
-    return db.get(UsuarioTurma, (usuario_id, turma_id)) is not None
+def _na_turma(db: Session, usuario_id, turma_id, papel: UsuarioTurmaPapelEnum | None = None) -> bool:
+    vinculo = db.get(UsuarioTurma, (usuario_id, turma_id))
+    return vinculo is not None and (papel is None or vinculo.papel == papel)
 
 
 def _professor_da_turma(db: Session, usuario: Usuario, turma_id) -> bool:
-    return usuario.perfil == PerfilEnum.PROFESSOR and _na_turma(db, usuario.id, turma_id)
+    return usuario.perfil == PerfilEnum.PROFESSOR and _na_turma(
+        db, usuario.id, turma_id, UsuarioTurmaPapelEnum.PROFESSOR
+    )
 
 
 def _submissao_visivel(db: Session, submissao_id, usuario: Usuario) -> Submissao:
@@ -44,6 +47,30 @@ def _submissao_visivel(db: Session, submissao_id, usuario: Usuario) -> Submissao
     ):
         return submissao
     raise HTTPException(status.HTTP_404_NOT_FOUND, "Submissão não encontrada.")
+
+
+def _validar_envio(db: Session, usuario: Usuario, atividade_id: uuid.UUID, aluno_id: uuid.UUID | None):
+    if usuario.perfil == PerfilEnum.ALUNO:
+        aluno_id = usuario.id
+    elif usuario.perfil != PerfilEnum.PROFESSOR:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos e professores enviam redação.")
+    elif aluno_id is None:
+        raise HTTPException(422, "Informe o aluno (aluno_id).")
+
+    atividade = db.get(Atividade, atividade_id)
+    turma = db.get(Turma, atividade.turma_id) if atividade else None
+    # Nao revela atividades de outra turma ou escola.
+    papel = UsuarioTurmaPapelEnum.ALUNO if usuario.perfil == PerfilEnum.ALUNO else UsuarioTurmaPapelEnum.PROFESSOR
+    if not turma or turma.escola_id != usuario.escola_id or not _na_turma(db, usuario.id, turma.id, papel):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Atividade não encontrada.")
+
+    aluno = db.get(Usuario, aluno_id)
+    if (
+        not aluno or aluno.perfil != PerfilEnum.ALUNO or aluno.escola_id != usuario.escola_id
+        or not _na_turma(db, aluno.id, turma.id, UsuarioTurmaPapelEnum.ALUNO)
+    ):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado nesta turma.")
+    return atividade, aluno
 
 
 @router.get("/atividades", response_model=list[AtividadeResponse])
@@ -66,6 +93,69 @@ def listar_atividades(usuario: Usuario = Depends(get_current_user), db: Session 
     return resposta
 
 
+@router.post("/submissoes/texto", response_model=SubmissaoResponse, status_code=status.HTTP_201_CREATED)
+def enviar_texto(
+    payload: EnviarTextoRequest,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    atividade, aluno = _validar_envio(db, usuario, payload.atividade_id, payload.aluno_id)
+    texto = payload.texto.strip()
+    if not texto:
+        raise HTTPException(422, "Texto vazio.")
+
+    submissao = Submissao(
+        atividade_id=atividade.id,
+        aluno_id=aluno.id,
+        tipo_envio=TipoEnvioEnum.TEXTO,
+        conteudo_bruto=texto,
+        texto_ocr=None,
+        texto_confirmado=texto,
+    )
+    db.add(submissao)
+    db.commit()
+    db.refresh(submissao)
+    return submissao
+
+
+@router.get("/submissoes", response_model=list[SubmissaoResponse])
+def listar_submissoes(
+    atividade_id: uuid.UUID | None = None,
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if usuario.perfil not in (PerfilEnum.ALUNO, PerfilEnum.PROFESSOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos e professores listam redações.")
+
+    if atividade_id is not None:
+        atividade = db.get(Atividade, atividade_id)
+        turma = db.get(Turma, atividade.turma_id) if atividade else None
+        papel = UsuarioTurmaPapelEnum.ALUNO if usuario.perfil == PerfilEnum.ALUNO else UsuarioTurmaPapelEnum.PROFESSOR
+        if not turma or turma.escola_id != usuario.escola_id or not _na_turma(db, usuario.id, turma.id, papel):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Atividade não encontrada.")
+
+    consulta = (
+        db.query(Submissao)
+        .join(Atividade, Submissao.atividade_id == Atividade.id)
+        .join(Turma, Atividade.turma_id == Turma.id)
+        .join(Usuario, Submissao.aluno_id == Usuario.id)
+        .filter(Turma.escola_id == usuario.escola_id, Usuario.escola_id == usuario.escola_id)
+    )
+    if usuario.perfil == PerfilEnum.ALUNO:
+        consulta = consulta.filter(Submissao.aluno_id == usuario.id)
+    else:
+        turmas_professor = db.query(UsuarioTurma.turma_id).filter(
+            UsuarioTurma.usuario_id == usuario.id,
+            UsuarioTurma.papel == UsuarioTurmaPapelEnum.PROFESSOR,
+        )
+        consulta = consulta.filter(Atividade.turma_id.in_(turmas_professor))
+    if atividade_id is not None:
+        consulta = consulta.filter(Submissao.atividade_id == atividade_id)
+    return consulta.order_by(Submissao.criado_em.desc(), Submissao.id.desc()).offset(offset).limit(limit).all()
+
+
 # fluxo RF-11: foto -> OCR -> confere/corrige o texto -> confirma -> correcao por IA.
 # o aluno envia a propria redacao; o professor pode enviar em nome de um aluno da turma (RF-12).
 @router.post("/submissoes/imagem", response_model=SubmissaoResponse, status_code=status.HTTP_201_CREATED)
@@ -76,20 +166,7 @@ def enviar_imagem(
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    atividade = db.get(Atividade, atividade_id)
-    if usuario.perfil == PerfilEnum.ALUNO:
-        aluno_id = usuario.id
-    elif usuario.perfil != PerfilEnum.PROFESSOR:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos e professores enviam redação.")
-    elif aluno_id is None:
-        raise HTTPException(422, "Informe o aluno (aluno_id).")
-
-    # mesma resposta para "nao existe" e "nao e da sua turma": nao revela atividades alheias
-    if not atividade or not _na_turma(db, usuario.id, atividade.turma_id):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Atividade não encontrada.")
-    aluno = db.get(Usuario, aluno_id)
-    if not aluno or aluno.perfil != PerfilEnum.ALUNO or not _na_turma(db, aluno.id, atividade.turma_id):
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado nesta turma.")
+    atividade, aluno = _validar_envio(db, usuario, atividade_id, aluno_id)
 
     image_bytes = ler_imagem(file)
     texto = ocr(image_bytes, file.content_type)  # se o OCR falhar, nada e gravado

@@ -237,3 +237,142 @@ def test_nota_da_ia_vira_nivel_valido_do_enem():
         raise AssertionError("aceitou competencia repetida")
     except ValueError:
         pass
+
+
+def test_envio_de_texto_e_listagem_por_turma_e_aluno():
+    import uuid
+
+    from app.auth.security import hash_password
+    from app.models.enum import PerfilEnum, TipoAtividadeEnum, UsuarioTurmaPapelEnum
+    from app.models.usuario import Escola, Materia, Submissao, Turma, Usuario, UsuarioTurma
+
+    with SessionLocal() as db:
+        escola = db.query(Escola).filter_by(nome="COLEGIO PREPARA ENEM").one()
+        turma = db.query(Turma).filter_by(escola_id=escola.id).first()
+        materia = db.query(Materia).filter_by(escola_id=escola.id).first()
+        aluno = db.query(Usuario).filter_by(email="aluno@domina.com").one()
+        outro_email = f"outro-{uuid.uuid4()}@domina.com"
+        outro = Usuario(escola_id=escola.id, nome="Outro aluno", email=outro_email,
+                        senha_hash=hash_password(seed.SENHA), perfil=PerfilEnum.ALUNO)
+        db.add(outro)
+        db.flush()
+        db.add(UsuarioTurma(usuario_id=outro.id, turma_id=turma.id, papel=UsuarioTurmaPapelEnum.ALUNO))
+        atividade = Atividade(materia_id=materia.id, turma_id=turma.id,
+                              titulo="Redação de teste", tipo=TipoAtividadeEnum.REDACAO)
+        db.add(atividade)
+        db.commit()
+        atividade_id_nova, aluno_id, outro_id = str(atividade.id), str(aluno.id), str(outro.id)
+
+    auth_aluno = token("aluno@domina.com")
+    auth_outro = token(outro_email)
+    auth_professor = token("professor@domina.com")
+    primeiro = client.post("/submissoes/texto", headers=auth_aluno,
+                          json={"atividade_id": atividade_id_nova, "texto": "  Minha redação  "})
+    assert primeiro.status_code == 201, primeiro.text
+    assert primeiro.json()["aluno_id"] == aluno_id
+    assert primeiro.json()["tipo_envio"] == "TEXTO"
+    assert primeiro.json()["texto_confirmado"] == "Minha redação"
+    assert primeiro.json()["texto_ocr"] is None
+
+    segundo = client.post("/submissoes/texto", headers=auth_professor,
+                         json={"atividade_id": atividade_id_nova, "aluno_id": outro_id,
+                               "texto": "Texto enviado pelo professor"})
+    assert segundo.status_code == 201, segundo.text
+    assert segundo.json()["aluno_id"] == outro_id
+    with SessionLocal() as db:
+        salvo = db.get(Submissao, uuid.UUID(primeiro.json()["id"]))
+        assert salvo.conteudo_bruto == salvo.texto_confirmado == "Minha redação"
+        assert salvo.texto_ocr is None
+
+    caminho = f"/submissoes?atividade_id={atividade_id_nova}"
+    lista_professor = client.get(caminho, headers=auth_professor)
+    assert lista_professor.status_code == 200
+    itens = lista_professor.json()
+    assert {item["id"] for item in itens} == {primeiro.json()["id"], segundo.json()["id"]}
+    assert all("nota_ia" not in item and "feedback" not in item and "conteudo_bruto" not in item for item in itens)
+    assert [(item["criado_em"], item["id"]) for item in itens] == sorted(
+        [(item["criado_em"], item["id"]) for item in itens], reverse=True
+    )
+    assert client.get(caminho, headers=auth_aluno).json() == [primeiro.json()]
+    assert client.get(caminho, headers=auth_outro).json() == [segundo.json()]
+    assert client.get("/submissoes", headers=auth_aluno).status_code == 200
+    assert client.get(caminho + "&limit=1", headers=auth_professor).json() == itens[:1]
+    assert client.get(caminho + "&limit=1&offset=1", headers=auth_professor).json() == itens[1:]
+
+
+def test_envio_texto_e_listagem_rejeitam_acesso_e_dados_invalidos():
+    import uuid
+
+    from app.auth.security import hash_password
+    from app.models.enum import PerfilEnum, TipoAtividadeEnum, TipoMateriaEnum, UsuarioTurmaPapelEnum
+    from app.models.usuario import Escola, Materia, Turma, Usuario, UsuarioTurma
+
+    auth_aluno = token("aluno@domina.com")
+    auth_professor = token("professor@domina.com")
+    atividade = atividade_id()
+    payload = {"atividade_id": atividade, "texto": "Redação válida"}
+    assert client.post("/submissoes/texto", json=payload).status_code == 401
+    assert client.get("/submissoes").status_code == 401
+    assert client.post("/submissoes/texto", headers=auth_professor, json=payload).status_code == 422
+    assert client.post("/submissoes/texto", headers=auth_aluno,
+                       json={**payload, "texto": "  \n  "}).status_code == 422
+    assert client.post("/submissoes/texto", headers=auth_aluno,
+                       json={**payload, "texto": "x" * 20_001}).status_code == 422
+    assert client.get("/submissoes?limit=0", headers=auth_aluno).status_code == 422
+    assert client.get("/submissoes?offset=-1", headers=auth_aluno).status_code == 422
+
+    inexistente = str(uuid.uuid4())
+    assert client.post("/submissoes/texto", headers=auth_aluno,
+                       json={**payload, "atividade_id": inexistente}).status_code == 404
+    assert client.get(f"/submissoes?atividade_id={inexistente}", headers=auth_aluno).status_code == 404
+
+    with SessionLocal() as db:
+        escola_atual = db.query(Escola).filter_by(nome="COLEGIO PREPARA ENEM").one()
+        materia_atual = db.query(Materia).filter_by(escola_id=escola_atual.id).first()
+        turma_alheia = Turma(escola_id=escola_atual.id, nome="Turma sem professor", ano=2026)
+        email_alheio = f"turma-{uuid.uuid4()}@domina.com"
+        aluno_alheio = Usuario(escola_id=escola_atual.id, nome="Aluno de outra turma", email=email_alheio,
+                               senha_hash=hash_password(seed.SENHA), perfil=PerfilEnum.ALUNO)
+        db.add_all([turma_alheia, aluno_alheio])
+        db.flush()
+        db.add(UsuarioTurma(usuario_id=aluno_alheio.id, turma_id=turma_alheia.id,
+                            papel=UsuarioTurmaPapelEnum.ALUNO))
+        atividade_alheia = Atividade(materia_id=materia_atual.id, turma_id=turma_alheia.id,
+                                    titulo="Outra turma", tipo=TipoAtividadeEnum.REDACAO)
+        db.add(atividade_alheia)
+        db.commit()
+        atividade_alheia_id = str(atividade_alheia.id)
+
+    auth_alheio = token(email_alheio)
+    envio_alheio = client.post("/submissoes/texto", headers=auth_alheio,
+                              json={"atividade_id": atividade_alheia_id, "texto": "Texto de outra turma"})
+    assert envio_alheio.status_code == 201, envio_alheio.text
+    assert client.get(f"/submissoes?atividade_id={atividade_alheia_id}", headers=auth_professor).status_code == 404
+    assert envio_alheio.json()["id"] not in {item["id"] for item in client.get("/submissoes", headers=auth_professor).json()}
+
+    with SessionLocal() as db:
+        escola = Escola(nome="Escola isolada", cnpj=str(uuid.uuid4())[:18])
+        db.add(escola)
+        db.flush()
+        turma = Turma(escola_id=escola.id, nome="Turma isolada", ano=2026)
+        materia = Materia(escola_id=escola.id, nome="Redação isolada", tipo=TipoMateriaEnum.REDACAO_ENEM)
+        email = f"isolado-{uuid.uuid4()}@domina.com"
+        aluno = Usuario(escola_id=escola.id, nome="Aluno isolado", email=email,
+                        senha_hash=hash_password(seed.SENHA), perfil=PerfilEnum.ALUNO)
+        db.add_all([turma, materia, aluno])
+        db.flush()
+        db.add(UsuarioTurma(usuario_id=aluno.id, turma_id=turma.id, papel=UsuarioTurmaPapelEnum.ALUNO))
+        atividade_remota = Atividade(materia_id=materia.id, turma_id=turma.id,
+                                    titulo="Atividade isolada", tipo=TipoAtividadeEnum.REDACAO)
+        db.add(atividade_remota)
+        db.commit()
+        remota_id = str(atividade_remota.id)
+
+    auth_remoto = token(email)
+    envio_remoto = client.post("/submissoes/texto", headers=auth_remoto,
+                              json={"atividade_id": remota_id, "texto": "Redação isolada"})
+    assert envio_remoto.status_code == 201, envio_remoto.text
+    assert client.post("/submissoes/texto", headers=auth_aluno,
+                       json={"atividade_id": remota_id, "texto": "Tentativa"}).status_code == 404
+    assert client.get(f"/submissoes?atividade_id={remota_id}", headers=auth_professor).status_code == 404
+    assert envio_remoto.json()["id"] not in {item["id"] for item in client.get("/submissoes", headers=auth_professor).json()}
