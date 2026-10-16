@@ -107,21 +107,13 @@ C5 - Proposta de intervenção respeitando os direitos humanos
 
 Responda em JSON com esta estrutura:
 {{
-  "evidencias": {{
-    "c1": {{"erros_reais": [...], "autocorrecoes_ignoradas": [...]}},
-    "c2": {{"repertorio_usado": "...", "uso": "produtivo | decorativo"}},
-    "c3": {{"tese": "...", "argumentos": [...]}},
-    "c4": {{"conectivos": [...]}},
-    "c5": {{"agente": "...", "acao": "...", "meio": "...", "finalidade": "...", "detalhamento": "..."}}
-  }},
-  "competencias": {{
-    "c1": {{"nota": 0, "justificativa": "..."}},
-    "c2": {{"nota": 0, "justificativa": "..."}},
-    "c3": {{"nota": 0, "justificativa": "..."}},
-    "c4": {{"nota": 0, "justificativa": "..."}},
-    "c5": {{"nota": 0, "justificativa": "..."}}
-  }},
-  "nota_total": 0,
+  "competencias": [
+    {{"codigo": "C1", "analise": "...", "nota": 0, "justificativa": "..."}},
+    {{"codigo": "C2", "analise": "...", "nota": 0, "justificativa": "..."}},
+    {{"codigo": "C3", "analise": "...", "nota": 0, "justificativa": "..."}},
+    {{"codigo": "C4", "analise": "...", "nota": 0, "justificativa": "..."}},
+    {{"codigo": "C5", "analise": "...", "nota": 0, "justificativa": "..."}}
+  ],
   "confianca": 0.0,
   "feedback_geral": "..."
 }}
@@ -135,6 +127,7 @@ Redação:
 
 class CompetenciaIA(BaseModel):
     codigo: Literal["C1", "C2", "C3", "C4", "C5"]
+    analise: str  # evidencias/raciocinio da Etapa 1, ANTES da nota -- forca pensar antes de decidir
     nota: int
     justificativa: str
 

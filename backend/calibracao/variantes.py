@@ -58,7 +58,7 @@ class ResultadoV3(BaseModel):
 def para_v2(r: ResultadoV3) -> ResultadoIA:
     # reaproveita as validacoes da v2 (niveis do ENEM, C1..C5 uma vez cada)
     return ResultadoIA.model_validate({
-        "competencias": [{"codigo": c.codigo, "nota": c.nota, "justificativa": c.analise} for c in r.competencias],
+        "competencias": [{"codigo": c.codigo, "analise": c.analise, "nota": c.nota, "justificativa": c.analise} for c in r.competencias],
         "feedback_geral": r.feedback_geral, "confianca": r.confianca})
 
 
