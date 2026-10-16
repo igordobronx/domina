@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1792094272.7969527,
-    "seen": 1792096848.879532,
-    "ast_hash": "9709bfb9f315e3ba3fc2dcb7d4ba376f",
+    "mtime": 1792180183.9159524,
+    "seen": 1792180224.4834957,
+    "ast_hash": "d14b812c42b39952e76aca9813d9da9d",
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
@@ -72,8 +72,8 @@
     "semantic_hash": ""
   },
   "backend/app/models/usuario.py": {
-    "mtime": 1792091733.4802396,
-    "seen": 1792096848.8795354,
+    "mtime": 1792156245.8876557,
+    "seen": 1792180224.4835188,
     "ast_hash": "553b9f5e12be5d54df4b9ecb6b7a4bed",
     "semantic_hash": ""
   },
@@ -138,15 +138,15 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1792091770.2802305,
-    "seen": 1792096848.8795419,
-    "ast_hash": "ac098e95760c5adcd33e976e6c694e3e",
+    "mtime": 1792156279.5876913,
+    "seen": 1792180224.4835496,
+    "ast_hash": "af4fafb5cfaebcad71228722f6b08466",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
-    "mtime": 1792091746.0482364,
-    "seen": 1792096848.879546,
-    "ast_hash": "f6a0c1c4b4c787bc3332a468fa4e1b1d",
+    "mtime": 1792156257.199668,
+    "seen": 1792180224.4835737,
+    "ast_hash": "dba8c19d94b57df1bc0d7f34a43824b9",
     "semantic_hash": ""
   },
   "backend/tests/test_fluxo_envio.py": {
@@ -477,6 +477,30 @@
     "mtime": 1792072667.82867,
     "seen": 1792096848.8795843,
     "ast_hash": "c6079337dc523add0737b6c630bce17d",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/turma.py": {
+    "mtime": 1792180176.283936,
+    "seen": 1792180224.4835536,
+    "ast_hash": "c570e4e4353148108532525efda6933a",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/usuario.py": {
+    "mtime": 1792180164.6959112,
+    "seen": 1792180224.4835572,
+    "ast_hash": "4ae5659055beb7723720f7bee326f1db",
+    "semantic_hash": ""
+  },
+  "backend/app/schemas/turma.py": {
+    "mtime": 1792180166.9919162,
+    "seen": 1792180224.483577,
+    "ast_hash": "26a08e7545db4a9d4d499005afb2fd97",
+    "semantic_hash": ""
+  },
+  "backend/app/schemas/usuario.py": {
+    "mtime": 1792158890.0986419,
+    "seen": 1792180224.4835806,
+    "ast_hash": "944f669f682f11b6605108421ec9e953",
     "semantic_hash": ""
   }
 }

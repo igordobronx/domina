@@ -15,8 +15,8 @@ from app.models.usuario import (
 )
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
-    AlunoResumo, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse, CorrigirRequest,
-    CriterioResponse, SubmissaoResponse,
+    AlunoResumo, AprovarRequest, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse,
+    CorrigirRequest, CriterioResponse, EnviarTextoRequest, MinhaSubmissaoResponse, SubmissaoResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -148,10 +148,16 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
     )
     return CorrecaoResponse(
         id=correcao.id, submissao_id=correcao.submissao_id, nota_ia=float(correcao.nota_ia),
+        nota_professor=float(correcao.nota_professor) if correcao.nota_professor is not None else None,
+        revisado_por=correcao.revisado_por,
         confianca=float(correcao.confianca), status=correcao.status.value, modelo_usado=correcao.modelo_usado,
         feedback=correcao.feedback,
         criterios=[
-            CriterioResponse(codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota), justificativa=c.justificativa)
+            CriterioResponse(
+                codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
+                nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
+                justificativa=c.justificativa,
+            )
             for c, t in criterios
         ],
     )
@@ -218,3 +224,94 @@ def ver_correcao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current
     if not correcao:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
     return _correcao_response(db, correcao)
+
+
+@router.put("/submissoes/{submissao_id}/aprovar", response_model=CorrecaoResponse)
+def aprovar_correcao(
+    submissao_id: uuid.UUID,
+    payload: AprovarRequest,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    submissao = _submissao_visivel(db, submissao_id, usuario)
+    _so_professor(db, submissao, usuario)
+
+    correcao = db.query(Correcao).filter_by(submissao_id=submissao.id).first()
+    if not correcao:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
+    if correcao.status == StatusCorrecaoEnum.APROVADA:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta correção já foi aprovada.")
+
+    criterios = {
+        t.habilidade_codigo: c
+        for c, t in db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
+        .filter(CorrecaoCriterio.correcao_id == correcao.id)
+    }
+    for nota in payload.notas:
+        criterios[nota.codigo].nota_professor = nota.nota
+
+    correcao.nota_professor = sum(n.nota for n in payload.notas)
+    correcao.revisado_por = usuario.id
+    correcao.status = StatusCorrecaoEnum.APROVADA
+    if payload.feedback is not None:
+        correcao.feedback = payload.feedback.strip()
+    db.commit()
+    return _correcao_response(db, correcao)
+
+
+def _validar_envio(db: Session, usuario: Usuario, atividade_id, aluno_id) -> tuple[Atividade, Usuario]:
+    atividade = db.get(Atividade, atividade_id)
+    if usuario.perfil == PerfilEnum.ALUNO:
+        aluno_id = usuario.id
+    elif usuario.perfil != PerfilEnum.PROFESSOR:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos e professores enviam redação.")
+    elif aluno_id is None:
+        raise HTTPException(422, "Informe o aluno (aluno_id).")
+
+    # mesma resposta para "nao existe" e "nao e da sua turma": nao revela atividades alheias
+    if not atividade or not _na_turma(db, usuario.id, atividade.turma_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Atividade não encontrada.")
+    aluno = db.get(Usuario, aluno_id)
+    if not aluno or aluno.perfil != PerfilEnum.ALUNO or not _na_turma(db, aluno.id, atividade.turma_id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado nesta turma.")
+    return atividade, aluno
+
+
+@router.post("/submissoes/texto", response_model=SubmissaoResponse, status_code=status.HTTP_201_CREATED)
+def enviar_texto(payload: EnviarTextoRequest, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    atividade, aluno = _validar_envio(db, usuario, payload.atividade_id, payload.aluno_id)
+    texto = payload.texto.strip()
+    if not texto:
+        raise HTTPException(422, "Texto vazio.")
+
+    # envio por texto ja nasce confirmado: nao ha etapa de OCR pra revisar
+    submissao = Submissao(
+        atividade_id=atividade.id, aluno_id=aluno.id,
+        tipo_envio=TipoEnvioEnum.TEXTO,
+        conteudo_bruto=texto,
+        texto_confirmado=texto,
+    )
+    db.add(submissao)
+    db.commit()
+    db.refresh(submissao)
+    return submissao
+
+
+@router.get("/submissoes/minhas", response_model=list[MinhaSubmissaoResponse])
+def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    if usuario.perfil != PerfilEnum.ALUNO:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos usam esta rota.")
+    submissoes = db.query(Submissao).filter_by(aluno_id=usuario.id).order_by(Submissao.criado_em.desc())
+    resposta = []
+    for s in submissoes:
+        correcao = db.query(Correcao).filter_by(submissao_id=s.id).first()
+        aprovada = correcao and correcao.status == StatusCorrecaoEnum.APROVADA
+        resposta.append(MinhaSubmissaoResponse(
+            id=s.id,
+            atividade_titulo=db.get(Atividade, s.atividade_id).titulo,
+            status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
+            criado_em=s.criado_em,
+            nota=float(correcao.nota_professor) if aprovada else None,
+            feedback=correcao.feedback if aprovada else None,
+        ))
+    return resposta
