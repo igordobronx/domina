@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.ocr.gemini import gerar
 
-VERSAO_PROMPT = "v6"  # v6: contagem de desvios na C1, tripe do repertorio na C2, conectivos na C4, 5 elementos na C5
+VERSAO_PROMPT = "v9"  # v9: C1 com 160 como nivel comum (120 so com 6+ desvios); C3 com descritores oficiais do INEP
 NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}  # o ENEM so usa esses niveis por competencia
 
 PROMPT = """Você é um corretor experiente da redação do ENEM, treinado na matriz de referência do INEP.
@@ -66,12 +66,19 @@ C1 - Domínio da modalidade escrita formal da língua portuguesa
          TIPOS DIFERENTES: o mesmo desvio repetido (ex.: 2 erros de crase) já é reincidência e
          tira o 200 (nota máxima 160). Na Etapa 1, registre o TIPO de cada desvio. 200 NÃO exige texto
          perfeito: redações nota 1000 reais costumam ter 1 ou 2 desvios pontuais.
-    160: no máximo 3 falhas de estrutura sintática e até 5 desvios.
-    120: estrutura sintática regular, com alguns desvios a mais (cerca de 6 a 9) ou desvios de registro.
+    160: até 3 falhas de estrutura sintática e até 5 desvios. Este é o nível MAIS COMUM em redações
+         boas: texto com alguns deslizes de concordância, crase, pontuação ou acentuação, mas
+         que se lê sem dificuldade, é 160, não 120.
+    120: só quando há 6 a 9 desvios, ou estrutura sintática claramente irregular em vários
+         períodos, ou desvios de registro. Poucos deslizes pontuais NÃO justificam 120.
      80: estrutura sintática deficiente OU muitos desvios (10 ou mais) e problemas de registro.
      40: estrutura sintática deficitária, com desvios diversificados e frequentes em quase todo o texto.
+  FALHA DE ESTRUTURA SINTÁTICA é só período realmente quebrado: frase incompleta, sem verbo ou
+  sem sentido, fragmento solto, junção de orações sem ligação. Vírgula mal colocada, regência ou
+  concordância NÃO são falha de estrutura: contam como desvio comum.
+  Antes de dar a nota, some os desvios da Etapa 1 e escolha o nível pela faixa da contagem.
   A nota da C1 tem que bater com a contagem: não dê 120 para um texto com 3 desvios, e não dê
-  200 para um texto com 8.
+  200 para um texto com 8. Na dúvida entre 120 e 160, e a contagem for 5 ou menos, dê 160.
 
 C2 - Compreensão da proposta e desenvolvimento do tema no texto dissertativo-argumentativo
   200: argumentação consistente, a partir de um repertório sociocultural LEGÍTIMO, PERTINENTE e
@@ -89,16 +96,23 @@ C2 - Compreensão da proposta e desenvolvimento do tema no texto dissertativo-ar
   argumento (sem produtividade), fica em 120 a 160, nunca 200.
 
 C3 - Seleção, relação, organização e interpretação de informações, fatos e opiniões em defesa de um ponto de vista
-  200: consistentes e organizados, configurando autoria.
-  160: organizados, com indícios de autoria.
-  120: limitados aos argumentos dos textos motivadores e pouco organizados.
-  COMO DIFERENCIAR: autoria (200) = argumentos próprios, desenvolvidos com explicação, causa e
-  consequência ou exemplo, que sustentam a tese. 160 = argumentos bem organizados, mas com algum
-  trecho só afirmado, sem desenvolver. 120 = argumentos previsíveis, do senso comum ou repetindo
-  os textos motivadores, afirmados sem aprofundamento. Argumento genérico NÃO é 160 nem 200.
-   80: desorganizados ou contraditórios.
-   40: pouco relacionados ao tema ou incoerentes, sem ponto de vista.
+  (descritores oficiais do INEP)
+  200: informações, fatos e opiniões relacionados ao tema, de forma consistente e organizada,
+       configurando AUTORIA: os argumentos estão organizados e relacionados de forma consistente
+       com o ponto de vista e com o tema, mostrando independência de pensamento.
+  160: informações, fatos e opiniões relacionados ao tema, de forma organizada, com INDÍCIOS de
+       autoria: os argumentos, embora ainda possam ser previsíveis, estão organizados e
+       relacionados de forma consistente ao ponto de vista e ao tema.
+  120: informações, fatos e opiniões relacionados ao tema, mas limitados aos argumentos dos textos
+       motivadores e pouco organizados, ou seja, em defesa de um ponto de vista, mas sem projeto claro.
+   80: relacionados ao tema, mas desorganizados ou contraditórios e limitados aos argumentos dos
+       textos motivadores.
+   40: pouco relacionados ao tema ou incoerentes, sem defesa de um ponto de vista.
     0: não relacionados ao tema.
+  COMO DIFERENCIAR 160 DE 200: argumento previsível, mas bem organizado e ligado à tese, é 160.
+  Para 200, os argumentos precisam ir além do previsível: explicação própria, causa e consequência
+  ou exemplo que mostrem posicionamento do autor, sem trecho apenas afirmado. Organização boa
+  sozinha é 160. Argumentos que só repetem os textos motivadores são 120 ou menos.
 
 C4 - Mecanismos linguísticos para a construção da argumentação (coesão)
   200: articula bem as partes do texto e tem repertório diversificado de recursos coesivos.
