@@ -87,6 +87,13 @@ class AtividadeResponse(BaseModel):
     turma: str
     alunos: list[AlunoResumo]
 
+
+class CriarAtividadeRequest(BaseModel):
+    materia_id: uuid.UUID
+    turma_id: uuid.UUID
+    titulo: str = Field(min_length=1, max_length=200)
+    tipo: Literal["REDACAO", "PROVA_DISCURSIVA", "PROVA_OBJETIVA", "EXERCICIO"]
+
 class EnviarTextoRequest(BaseModel):
     atividade_id: uuid.UUID
     aluno_id: uuid.UUID | None = None

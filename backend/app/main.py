@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import health, auth, ocr, submissoes, usuario, turma
+from app.routers import documento, health, auth, ocr, submissoes, usuario, turma
 from app.database import Base, engine
 from app.models import usuario as _  # garante que os modelos estão registrados antes do create_all
 
@@ -31,6 +31,7 @@ app.include_router(ocr.router)
 app.include_router(submissoes.router)
 app.include_router(usuario.router)
 app.include_router(turma.router)
+app.include_router(documento.router)
 
 # tela de testes do OCR + correcao (mesma origem da API, sem CORS). Abrir em /laboratorio/
 app.mount("/laboratorio", StaticFiles(directory=Path(__file__).parent / "static" / "laboratorio", html=True), name="laboratorio")

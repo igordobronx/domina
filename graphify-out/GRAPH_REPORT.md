@@ -1,23 +1,23 @@
-# Graph Report - domina  (2026-10-16)
+# Graph Report - domina  (2026-10-19)
 
 ## Corpus Check
-- 67 files · ~47,878 words
+- 69 files · ~48,248 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 13 file(s) not represented in the graph (top: (none) 5, .jsonl 5, .example 1)
 
 ## Summary
-- 701 nodes · 1276 edges · 81 communities (28 shown, 53 thin omitted)
-- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 155 edges (avg confidence: 0.92)
+- 713 nodes · 1331 edges · 84 communities (31 shown, 53 thin omitted)
+- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 170 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a56b0780`
+- Built from commit: `f5d0f6dd`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Domina (plataforma de IA de correção e diagnóstico)
-- variantes.py
+- correcao.py
 - models/usuario.py
 - Escopo do Protótipo
 - E4 Correção por IA — Nota estimada, feedback e nível de confiança
@@ -72,7 +72,7 @@
 - RNF: Acessibilidade
 - RNF: Observabilidade
 - CLAUDE.md
-- Tema
+- Correcao
 - app_routers
 - google_auth_exceptions
 - google_cloud
@@ -82,28 +82,31 @@
 - app_schemas_ocr
 - app_schemas_submissao
 - Documentação do frontend Domina
-- gemini.py
+- calibra.py
 - Banco compartilhado + escola_id + RLS (estratégia escolhida)
 - package.json
 - DominioAluno
 - Usuario
 - compilerOptions
+- routers/ocr.py
 - E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor
 - app_ocr_gemini
+- test_fluxo_envio.py
+- variantes.py
+- gemini.py
 - vercel.json
-- Correcao
 
 ## God Nodes (most connected - your core abstractions)
-1. `Usuario` - 33 edges
+1. `Usuario` - 37 edges
 2. `Domina (plataforma de IA de correção e diagnóstico)` - 30 edges
-3. `PerfilEnum` - 19 edges
-4. `Atividade` - 15 edges
+3. `PerfilEnum` - 22 edges
+4. `Atividade` - 17 edges
 5. `corrigir_submissao()` - 15 edges
 6. `Usuario` - 14 edges
 7. `enviar_imagem()` - 13 edges
 8. `aprovar_correcao()` - 13 edges
 9. `run_seed()` - 13 edges
-10. `Documentação do frontend Domina` - 12 edges
+10. `_atividade_response()` - 12 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Laboratório /laboratorio/ (foto → texto → nota)` --references--> `corrigir()`  [EXTRACTED]
@@ -129,27 +132,27 @@
 - **Conformidade LGPD e privacidade de dados de menores no Domina** — docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_19, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_20, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_21, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_22, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rnf_10, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rnf_11, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_risco_dados_menores [INFERRED 0.85]
 - **Fluxo de Correção, Revisão e Diagnóstico de Domínio** — docs_plano_prototipo_motor_de_correcao, docs_plano_prototipo_revisao_do_professor, docs_plano_prototipo_motor_de_diagnostico_de_dominio, docs_plano_prototipo_painel_de_dominio_do_aluno [INFERRED 0.85]
 
-## Communities (81 total, 53 thin omitted)
+## Communities (84 total, 53 thin omitted)
 
 ### Community 0 - "Domina (plataforma de IA de correção e diagnóstico)"
 Cohesion: 0.13
 Nodes (17): AKCIT / CEIA-UFG / Hub Goiás (possível fonte de fomento, mentoria e infraestrutura), COPE (piloto institucional desejado), Escola do Professor Beto (candidata a piloto adicional, foco em redação), Eu En Wong (ren., contato mantido por e-mail e LinkedIn), Gustavo (Co-fundador; desenvolvimento backend), Igor Ferreira Magalhães Silva (Fundador; backend, infraestrutura, DevOps e segurança), IPE (piloto institucional desejado), João Pedro (Co-fundador; estatística, matemática e IA; ponte de entrada no CEIA via UFG) (+9 more)
 
-### Community 1 - "variantes.py"
-Cohesion: 0.08
-Nodes (29): CompetenciaIA, corrigir(), BaseModel, field_validator, Correcao da redacao ENEM pelo Gemini nas 5 competencias do INEP. A nota NAO vai…, ResultadoIA, OCRResponse, BaseModel (+21 more)
+### Community 1 - "correcao.py"
+Cohesion: 0.24
+Nodes (9): CompetenciaIA, corrigir(), BaseModel, field_validator, Correcao da redacao ENEM pelo Gemini nas 5 competencias do INEP. A nota NAO vai…, ResultadoIA, test_nota_da_ia_vira_nivel_valido_do_enem(), Prompt de correção v2 (descritores oficiais do INEP por nível) (+1 more)
 
 ### Community 2 - "models/usuario.py"
 Cohesion: 0.06
-Nodes (72): get_current_user(), Session, create_access_token(), decode_access_token(), hash_password(), verify_password(), Settings, get_db() (+64 more)
+Nodes (74): get_current_user(), Session, create_access_token(), decode_access_token(), hash_password(), verify_password(), Settings, get_db() (+66 more)
 
 ### Community 3 - "Escopo do Protótipo"
 Cohesion: 0.05
 Nodes (47): ConsentimentoLGPD, Ponto em aberto: retenção de conteudo_bruto, E10 Privacidade e operação — LGPD, auditoria e custo, LGPD (Lei Geral de Proteção de Dados), Ponto em aberto: RN-21 (dados não usados para treinar modelos de terceiros) mantida, pendente confirmação do usuário, RF-40 (Privacidade): Registrar o consentimento dos responsáveis para alunos menores de 18 anos antes do primeiro envio, RF-41 (Privacidade): Exportar e excluir os dados de um aluno mediante solicitação, RF-42 (Operação): Registro de auditoria: quem acessou, corrigiu, aprovou ou alterou (+39 more)
 
 ### Community 4 - "E4 Correção por IA — Nota estimada, feedback e nível de confiança"
-Cohesion: 0.09
-Nodes (22): E3 Envio e OCR — Receber a produção do aluno, digitada ou manuscrita, E4 Correção por IA — Nota estimada, feedback e nível de confiança, Ponto em aberto: correção por gabarito (RF-18) — resolvido, tornou-se obrigatório no MVP, RF-10 (Envio): Enviar produção por texto digitado ou por arquivo (PDF ou imagem), RF-11 (Envio): Extrair texto manuscrito por OCR e mostrar o texto extraído para conferência, RF-12 (Envio): Envio em lote pelo professor (várias produções de uma turma), RF-13 (Envio): Associar cada envio a aluno, turma, matéria, atividade e data, RF-15 (Correção): Corrigir questão ou prova discursiva de qualquer matéria segundo a rubrica da base da matéria (+14 more)
+Cohesion: 0.10
+Nodes (21): E3 Envio e OCR — Receber a produção do aluno, digitada ou manuscrita, E4 Correção por IA — Nota estimada, feedback e nível de confiança, Ponto em aberto: correção por gabarito (RF-18) — resolvido, tornou-se obrigatório no MVP, RF-10 (Envio): Enviar produção por texto digitado ou por arquivo (PDF ou imagem), RF-11 (Envio): Extrair texto manuscrito por OCR e mostrar o texto extraído para conferência, RF-12 (Envio): Envio em lote pelo professor (várias produções de uma turma), RF-13 (Envio): Associar cada envio a aluno, turma, matéria, atividade e data, RF-15 (Correção): Corrigir questão ou prova discursiva de qualquer matéria segundo a rubrica da base da matéria (+13 more)
 
 ### Community 5 - "App.tsx"
 Cohesion: 0.08
@@ -176,8 +179,8 @@ Cohesion: 0.20
 Nodes (10): E9 Tendências — Recorrência histórica de assuntos do ENEM, Ponto em aberto: conferir licença e formato dos dados públicos do ENEM e de outros vestibulares, RF-31 (Recomendação): Cruzar a lacuna do aluno com a recorrência do tema em provas passadas para priorizar, RF-36 (Tendências): Ingerir provas públicas do ENEM e de outros vestibulares (UFG, UFU, FUVEST, UEG) e classificar as questões por assunto e gênero textual, RF-37 (Tendências): Calcular o índice de recorrência (frequência, nº de provas, recência, consistência) e classificar em 4 categorias, RF-38 (Tendências): Exibir por assunto o nível de atenção, as evidências históricas e o grau de confiança, nunca como probabilidade de cair, RF-39 (Tendências): Indicar alta ou queda de frequência só com amostra suficiente; senão, avisar que não há tendência confiável, US-30 (Piloto): Como estudante, quero ver os assuntos do ENEM classificados por recorrência histórica, para priorizar meu tempo (+2 more)
 
 ### Community 12 - "submissoes.py"
-Cohesion: 0.12
-Nodes (47): StatusCorrecaoEnum, TipoEnvioEnum, Atividade, Correcao, CorrecaoCriterio, Submissao, Tema, extract_text_from_image() (+39 more)
+Cohesion: 0.14
+Nodes (46): StatusCorrecaoEnum, TipoEnvioEnum, Atividade, Correcao, CorrecaoCriterio, Submissao, Tema, Usuario (+38 more)
 
 ### Community 14 - "Fases e Riscos do Projeto"
 Cohesion: 0.33
@@ -195,21 +198,21 @@ Nodes (3): Ponto em aberto: definição de "aluno ativo" para cobrança, Ponto e
 Cohesion: 0.67
 Nodes (3): Risco: custo variável de LLM e OCR por correção acima do previsto, RN-26 (Comercial): O valor por aluno deve superar o custo variável de IA e OCR por aluno; o preço só fecha depois de medir o custo real, RNF-17 (Custo): Custo variável por correção monitorado e abaixo do valor cobrado por aluno
 
-### Community 59 - "Tema"
-Cohesion: 0.32
-Nodes (8): Atividade, CorrecaoCriterio, DocumentoBase, Materia, Tema, Arquitetura: Base da matéria (temas e critérios validados pelo professor), Arquitetura: Material-base (apostila, rubrica, matriz do INEP), Ponto em aberto: "treinar" com documentos — respondido em parte (RAG, não fine-tuning no MVP)
+### Community 59 - "Correcao"
+Cohesion: 0.22
+Nodes (14): Atividade, Correcao, CorrecaoCriterio, DocumentoBase, Materia, Submissao, Tema, Arquitetura: Base da matéria (temas e critérios validados pelo professor) (+6 more)
 
 ### Community 64 - "ENEM (Exame Nacional do Ensino Médio) — mercado inicial"
-Cohesion: 0.40
-Nodes (6): ENEM (Exame Nacional do Ensino Médio) — mercado inicial, Matriz de referência do INEP (habilidades/competências), RF-08 (Matéria e base): Trazer pré-carregadas a matriz de referência do ENEM e as 5 competências da redação (INEP), RF-14 (Correção): Corrigir redação do ENEM com nota estimada por competência (0 a 200) e total, com justificativa, RN-05 (Correção): A redação do ENEM é avaliada pelas 5 competências do INEP, cada uma de 0 a 200, com total de 0 a 1000, US-03 (MVP): Como professor de redação, quero começar com as 5 competências do ENEM já carregadas, para usar sem configurar nada
+Cohesion: 0.33
+Nodes (7): ENEM (Exame Nacional do Ensino Médio) — mercado inicial, Matriz de referência do INEP (habilidades/competências), RF-08 (Matéria e base): Trazer pré-carregadas a matriz de referência do ENEM e as 5 competências da redação (INEP), RF-14 (Correção): Corrigir redação do ENEM com nota estimada por competência (0 a 200) e total, com justificativa, RN-05 (Correção): A redação do ENEM é avaliada pelas 5 competências do INEP, cada uma de 0 a 200, com total de 0 a 1000, US-03 (MVP): Como professor de redação, quero começar com as 5 competências do ENEM já carregadas, para usar sem configurar nada, US-10 (MVP): Como professor, quero a nota estimada da redação ENEM por competência e total, com justificativa, para revisar mais rápido
 
 ### Community 68 - "Documentação do frontend Domina"
 Cohesion: 0.05
 Nodes (35): Publicar o Domina na Vercel, Verificação no celular, 10. Responsividade, 11. Limitações e próximos incrementos, 1. Objetivo e decisões, 2. Linguagens, bibliotecas e ferramentas, 3. Organização de pastas, 4. Identidade visual (+27 more)
 
-### Community 69 - "gemini.py"
-Cohesion: 0.08
-Nodes (28): _client(), extract_text(), gerar(), reduzir(), TextoPublicado, pearson(), ranks(), score() (+20 more)
+### Community 69 - "calibra.py"
+Cohesion: 0.16
+Nodes (12): pearson(), ranks(), score(), Mede a correcao da IA contra notas conhecidas, via Groq (gratis). Nao altera o…, Mede a correcao da IA contra notas conhecidas (so texto, sem OCR). Nao altera o…, google_genai, httpx, json (+4 more)
 
 ### Community 70 - "Banco compartilhado + escola_id + RLS (estratégia escolhida)"
 Cohesion: 0.15
@@ -231,21 +234,33 @@ Nodes (14): AuditLog, CustoUso, Escola, Exercicio, ExercicioResposta, Ponto em a
 Cohesion: 0.15
 Nodes (12): compilerOptions, allowImportingTsExtensions, esModuleInterop, jsx, lib, module, moduleResolution, noEmit (+4 more)
 
+### Community 75 - "routers/ocr.py"
+Cohesion: 0.20
+Nodes (13): extract_text(), TextoPublicado, extract_text_from_image(), ler_imagem(), ocr(), post, UploadFile, OCRResponse (+5 more)
+
 ### Community 76 - "E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor"
 Cohesion: 0.22
 Nodes (9): E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor, RF-32 (Painéis): Painel do aluno: percentual de domínio por tema, barras de progresso e evolução, RF-33 (Painéis): Gamificação (metas, sequência de estudo, níveis), sem ranking público que exponha alunos, RF-34 (Painéis): Painel do professor: turma, lacunas coletivas e correções pendentes, RF-35 (Painéis): Painel do gestor: visão por turma e por professor, US-26 (MVP): Como aluno, quero um painel com percentual por tema e barras de progresso, para acompanhar minha evolução como em um jogo, US-27 (Piloto): Como aluno, quero metas e sequência de estudo, para manter o hábito, US-28 (MVP): Como professor, quero um painel com correções pendentes e lacunas coletivas, para organizar meu trabalho (+1 more)
+
+### Community 78 - "test_fluxo_envio.py"
+Cohesion: 0.20
+Nodes (14): reduzir(), atividade_id(), Fluxo do aluno: login -> envia foto -> OCR (falso) -> confirma texto. cd…, test_falha_do_gemini_nao_vaza_detalhe(), test_fluxo_completo(), test_imagem_sem_texto_responde_422(), test_ocr_sem_chave_responde_503(), test_professor_envia_em_nome_do_aluno_e_gera_nota() (+6 more)
+
+### Community 79 - "variantes.py"
+Cohesion: 0.21
+Nodes (10): CompetenciaV3, para_v2(), pegar(), BaseModel, Variantes de prompt para o teste de calibracao (nao fazem parte do projeto)., ResultadoV3, _v3b(), openpyxl (+2 more)
+
+### Community 80 - "gemini.py"
+Cohesion: 0.25
+Nodes (8): _client(), gerar(), functools, GenerateContentConfig, google, io, logging, pil
 
 ### Community 81 - "vercel.json"
 Cohesion: 0.29
 Nodes (6): buildCommand, framework, headers, installCommand, outputDirectory, $schema
 
-### Community 82 - "Correcao"
-Cohesion: 0.53
-Nodes (6): Correcao, Submissao, Arquitetura: Correção por IA (rubrica + LLM: nota e confiança), Arquitetura: Envio (texto, foto ou PDF de aluno/professor), Arquitetura: OCR (lê o manuscrito, usuário confere), Arquitetura: Professor revisa (aprova, edita ou rejeita cada nota)
-
 ## Knowledge Gaps
 - **175 isolated node(s):** `name`, `private`, `version`, `type`, `dev` (+170 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 272 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 276 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **53 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
@@ -253,15 +268,15 @@ _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Domina (plataforma de IA de correção e diagnóstico)` connect `Domina (plataforma de IA de correção e diagnóstico)` to `ENEM (Exame Nacional do Ensino Médio) — mercado inicial`, `Escopo do Protótipo`, `E4 Correção por IA — Nota estimada, feedback e nível de confiança`, `Banco compartilhado + escola_id + RLS (estratégia escolhida)`, `Relatório: teste de calibração da correção (14/10/2026)`, `E2 Base da matéria — Ensinar ao sistema o conteúdo e os critérios de cada matéria`, `E7 Recomendação e exercícios — Dizer o que estudar e oferecer exercícios`, `Diagnóstico de Domínio`, `Tendências do ENEM`, `E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor`, `Usuario`?**
   _High betweenness centrality (0.205) - this node is a cross-community bridge._
-- **Why does `Prompt de correção v2 (descritores oficiais do INEP por nível)` connect `variantes.py` to `E4 Correção por IA — Nota estimada, feedback e nível de confiança`, `Relatório: teste de calibração da correção (14/10/2026)`?**
-  _High betweenness centrality (0.175) - this node is a cross-community bridge._
-- **Why does `E4 Correção por IA — Nota estimada, feedback e nível de confiança` connect `E4 Correção por IA — Nota estimada, feedback e nível de confiança` to `Domina (plataforma de IA de correção e diagnóstico)`, `variantes.py`, `Relatório: teste de calibração da correção (14/10/2026)`?**
-  _High betweenness centrality (0.169) - this node is a cross-community bridge._
-- **Are the 22 inferred relationships involving `Usuario` (e.g. with `get_current_user()` and `PerfilEnum`) actually correct?**
-  _`Usuario` has 22 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 11 inferred relationships involving `PerfilEnum` (e.g. with `Usuario` and `enviar_imagem()`) actually correct?**
-  _`PerfilEnum` has 11 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 10 inferred relationships involving `Atividade` (e.g. with `TipoAtividadeEnum` and `corrigir_submissao()`) actually correct?**
-  _`Atividade` has 10 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Prompt de correção v2 (descritores oficiais do INEP por nível)` connect `correcao.py` to `E4 Correção por IA — Nota estimada, feedback e nível de confiança`, `Relatório: teste de calibração da correção (14/10/2026)`?**
+  _High betweenness centrality (0.178) - this node is a cross-community bridge._
+- **Why does `E4 Correção por IA — Nota estimada, feedback e nível de confiança` connect `E4 Correção por IA — Nota estimada, feedback e nível de confiança` to `Domina (plataforma de IA de correção e diagnóstico)`, `correcao.py`, `ENEM (Exame Nacional do Ensino Médio) — mercado inicial`, `Relatório: teste de calibração da correção (14/10/2026)`?**
+  _High betweenness centrality (0.171) - this node is a cross-community bridge._
+- **Are the 25 inferred relationships involving `Usuario` (e.g. with `get_current_user()` and `PerfilEnum`) actually correct?**
+  _`Usuario` has 25 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 13 inferred relationships involving `PerfilEnum` (e.g. with `Usuario` and `enviar_documento()`) actually correct?**
+  _`PerfilEnum` has 13 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 12 inferred relationships involving `Atividade` (e.g. with `TipoAtividadeEnum` and `_atividade_response()`) actually correct?**
+  _`Atividade` has 12 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `private`, `version` to the rest of the system?**
   _175 weakly-connected nodes found - possible documentation gaps or missing edges._

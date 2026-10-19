@@ -9,14 +9,15 @@ from app import correcao as ia
 from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.database import get_db
-from app.models.enum import PerfilEnum, StatusCorrecaoEnum, TipoEnvioEnum, UsuarioTurmaPapelEnum
+from app.models.enum import PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, UsuarioTurmaPapelEnum
 from app.models.usuario import (
-    Atividade, Correcao, CorrecaoCriterio, Submissao, Tema, Turma, Usuario, UsuarioTurma,
+    Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, Tema, Turma, Usuario, UsuarioTurma,
 )
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AprovarRequest, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse,
-    CorrigirRequest, CriterioResponse, EnviarTextoRequest, MinhaSubmissaoResponse, SubmissaoResponse,
+    CriarAtividadeRequest, CorrigirRequest, CriterioResponse, EnviarTextoRequest, MinhaSubmissaoResponse,
+    SubmissaoResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -46,24 +47,52 @@ def _submissao_visivel(db: Session, submissao_id, usuario: Usuario) -> Submissao
     raise HTTPException(status.HTTP_404_NOT_FOUND, "Submissão não encontrada.")
 
 
+def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> AtividadeResponse:
+    alunos = (
+        db.query(Usuario).join(UsuarioTurma, UsuarioTurma.usuario_id == Usuario.id)
+        .filter(UsuarioTurma.turma_id == atividade.turma_id, UsuarioTurma.papel == UsuarioTurmaPapelEnum.ALUNO)
+        .order_by(Usuario.nome)
+    )
+    if usuario.perfil == PerfilEnum.ALUNO:
+        alunos = alunos.filter(Usuario.id == usuario.id)
+    return AtividadeResponse(
+        id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome,
+        alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
+    )
+
+
 @router.get("/atividades", response_model=list[AtividadeResponse])
 def listar_atividades(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     # atividades das turmas do usuario, com os alunos de cada turma (o professor escolhe em nome de quem envia)
     turma_ids = [ut.turma_id for ut in db.query(UsuarioTurma).filter_by(usuario_id=usuario.id)]
-    resposta = []
-    for atividade in db.query(Atividade).filter(Atividade.turma_id.in_(turma_ids)):
-        alunos = (
-            db.query(Usuario).join(UsuarioTurma, UsuarioTurma.usuario_id == Usuario.id)
-            .filter(UsuarioTurma.turma_id == atividade.turma_id, UsuarioTurma.papel == UsuarioTurmaPapelEnum.ALUNO)
-            .order_by(Usuario.nome)
-        )
-        if usuario.perfil == PerfilEnum.ALUNO:
-            alunos = alunos.filter(Usuario.id == usuario.id)
-        resposta.append(AtividadeResponse(
-            id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome,
-            alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
-        ))
-    return resposta
+    atividades = db.query(Atividade).filter(Atividade.turma_id.in_(turma_ids))
+    return [_atividade_response(db, atividade, usuario) for atividade in atividades]
+
+
+# RF-09/RF-10: professor (ou gestor) cria a atividade numa turma dele, vinculada a uma materia da escola
+@router.post("/atividades", response_model=AtividadeResponse, status_code=status.HTTP_201_CREATED)
+def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    turma = db.get(Turma, payload.turma_id)
+    if not turma or turma.escola_id != usuario.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
+    if usuario.perfil == PerfilEnum.PROFESSOR and not _na_turma(db, usuario.id, turma.id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não leciona nesta turma.")
+    elif usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores criam atividades.")
+
+    materia = db.get(Materia, payload.materia_id)
+    if not materia or materia.escola_id != usuario.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+
+    atividade = Atividade(
+        materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
+        tipo=TipoAtividadeEnum(payload.tipo),
+    )
+    db.add(atividade)
+    db.commit()
+    db.refresh(atividade)
+    return _atividade_response(db, atividade, usuario)
 
 
 # fluxo RF-11: foto -> OCR -> confere/corrige o texto -> confirma -> correcao por IA.
