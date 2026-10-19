@@ -2,27 +2,15 @@
 
 A nota NAO vai para o aluno aqui: fica PENDENTE ate o professor aprovar (RN-01).
 """
-from concurrent.futures import ThreadPoolExecutor
-from itertools import combinations
 from typing import Literal
 
 from google.genai import types
 from pydantic import BaseModel, Field, field_validator
 
-from app.config import settings
 from app.ocr.gemini import gerar
 
-VERSAO_PROMPT = "v12-2x"  # v12: v9 + C3 com 160 como nivel comum; 2x: nota = media de 2 correcoes, como no ENEM
-NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}  # cada corretor do ENEM so usa esses niveis por competencia
-# como no ENEM: 2 correcoes independentes; a 2a com temperatura acima de 0 para nao sair
-# identica a 1a. Discrepancia (mais de 80 numa competencia ou 100 no total) chama uma 3a
-TEMPERATURAS = (0, 0.5)
-DISCREPANCIA_COMPETENCIA = 80
-DISCREPANCIA_TOTAL = 100
-# a "confianca" que o modelo informa nao serve (0,93-0,96 mesmo errando 500 pontos);
-# usa a divergencia entre as correcoes: 100 pontos no total (limite do ENEM) da 0,6, o minimo da rota
-DIVERGENCIA_CONFIANCA_ZERO = 250
-CONFIANCA_DISCREPANTE = 0.5  # abaixo do minimo da rota: a correcao vai para o topo da fila do professor
+VERSAO_PROMPT = "v12"  # v12: v9 + C3 com 160 como nivel comum e 200 raro (na duvida, 160)
+NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}  # o ENEM so usa esses niveis por competencia
 
 PROMPT = """Você é um corretor experiente da redação do ENEM, treinado na matriz de referência do INEP.
 Você vai corrigir a redação abaixo em DUAS ETAPAS. Não pule direto para a nota.
@@ -230,55 +218,16 @@ class ResultadoIA(BaseModel):
         return sorted(v, key=lambda c: c.codigo)
 
 
-def _uma_correcao(texto: str, tema: str, temperatura: float) -> tuple[ResultadoIA, str]:
+def corrigir(texto: str, tema: str) -> tuple[ResultadoIA, str]:
+    # devolve (resultado, modelo_usado). Levanta excecao se o modelo nao devolver JSON valido.
+    # ponytail: "confianca" e autoavaliacao do modelo; trocar por medida real
+    # (ex.: divergencia entre 2 correcoes) quando houver dados de concordancia com professor
     response, modelo = gerar(
         PROMPT.format(tema=tema, texto=texto),
         types.GenerateContentConfig(
-            temperature=temperatura,
+            temperature=0,
             response_mime_type="application/json",
             response_schema=ResultadoIA,
         ),
     )
     return ResultadoIA.model_validate_json(response.text), modelo
-
-
-def discrepantes(a: ResultadoIA, b: ResultadoIA) -> bool:
-    # regra do ENEM para chamar o 3o corretor
-    notas = [(x.nota, y.nota) for x, y in zip(a.competencias, b.competencias)]
-    return (any(abs(x - y) > DISCREPANCIA_COMPETENCIA for x, y in notas)
-            or abs(sum(x for x, _ in notas) - sum(y for _, y in notas)) > DISCREPANCIA_TOTAL)
-
-
-def media(a: ResultadoIA, b: ResultadoIA) -> ResultadoIA:
-    # nota final = media das 2 correcoes por competencia (multiplo de 20, como 140 e 180 no ENEM).
-    # model_copy nao revalida, entao o 140/180 nao e arredondado de volta para o nivel de 40.
-    # Analise e justificativa ficam as da 1a correcao
-    divergencia = abs(sum(c.nota for c in a.competencias) - sum(c.nota for c in b.competencias))
-    return a.model_copy(update={
-        "competencias": [x.model_copy(update={"nota": (x.nota + y.nota) // 2})
-                         for x, y in zip(a.competencias, b.competencias)],
-        "confianca": max(0.0, 1 - divergencia / DIVERGENCIA_CONFIANCA_ZERO),
-    })
-
-
-def corrigir(texto: str, tema: str) -> tuple[ResultadoIA, str]:
-    # devolve (resultado, modelo_usado). Levanta excecao se o modelo nao devolver JSON valido.
-    # Gasta 2 chamadas (3 se discrepar). Se alguma usou o modelo reserva, devolve o reserva
-    # para a rota marcar "requer atencao"
-    with ThreadPoolExecutor(len(TEMPERATURAS)) as pool:
-        feitas = list(pool.map(lambda t: _uma_correcao(texto, tema, t), TEMPERATURAS))
-    resultados = [r for r, _ in feitas]
-    modelos = {m for _, m in feitas}
-    if not discrepantes(*resultados):
-        final = media(*resultados)
-    else:
-        terceira, modelo = _uma_correcao(texto, tema, TEMPERATURAS[-1])
-        resultados.append(terceira)
-        modelos.add(modelo)
-        # como no ENEM: fica a media do par mais proximo; continua sendo caso para o professor olhar
-        par = min(combinations(resultados, 2),
-                  key=lambda p: sum(abs(x.nota - y.nota) for x, y in zip(p[0].competencias, p[1].competencias)))
-        final = media(*par)
-        final.confianca = min(final.confianca, CONFIANCA_DISCREPANTE)
-    modelo = modelos.pop() if len(modelos) == 1 else settings.GEMINI_MODEL_RESERVA
-    return final, modelo

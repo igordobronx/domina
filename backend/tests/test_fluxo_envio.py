@@ -237,38 +237,3 @@ def test_nota_da_ia_vira_nivel_valido_do_enem():
         raise AssertionError("aceitou competencia repetida")
     except ValueError:
         pass
-
-
-def test_corrigir_faz_media_de_2_correcoes_e_3a_se_discrepar():
-    from app import correcao as ia
-
-    def resultado(notas, confianca=0.9):
-        return ia.ResultadoIA(
-            competencias=[{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x"} for i, n in zip(range(1, 6), notas)],
-            feedback_geral="x", confianca=confianca,
-        )
-
-    def com(*respostas):
-        fila = list(respostas)
-        ia._uma_correcao = lambda texto, tema, temperatura: fila.pop(0)
-        return fila
-
-    original = ia._uma_correcao
-    try:
-        # como no ENEM: 160 e 200 viram 180 (a media nao volta para o nivel de 40)
-        com((resultado([160, 200, 160, 120, 200]), settings.GEMINI_MODEL),
-            (resultado([200, 200, 120, 120, 160], 0.7), settings.GEMINI_MODEL))
-        r, modelo = ia.corrigir("texto", "tema")
-        assert [c.nota for c in r.competencias] == [180, 200, 140, 120, 180]
-        # confianca vem da divergencia entre as 2 (40 pontos no total), nao da autoavaliacao do modelo
-        assert modelo == settings.GEMINI_MODEL and r.confianca == 1 - 40 / 250
-
-        # diferenca de 120 numa competencia: 3a correcao, media do par mais proximo e vai para o professor
-        sobra = com((resultado([200, 200, 200, 200, 200]), settings.GEMINI_MODEL),
-                    (resultado([200, 200, 80, 200, 200]), settings.GEMINI_MODEL),
-                    (resultado([200, 200, 160, 200, 200]), settings.GEMINI_MODEL_RESERVA))
-        r, modelo = ia.corrigir("texto", "tema")
-        assert not sobra and [c.nota for c in r.competencias] == [200, 200, 180, 200, 200]
-        assert r.confianca < 0.6 and modelo == settings.GEMINI_MODEL_RESERVA
-    finally:
-        ia._uma_correcao = original
