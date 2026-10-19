@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1792008998.5807838,
-    "seen": 1792096848.8795567,
-    "ast_hash": "2264dbd47122de1eeae12f1a0a0b4b5f",
+    "mtime": 1792438154.5292537,
+    "seen": 1792438326.5717072,
+    "ast_hash": "b1546cca02ca629c6caeea0ff0dfbbed",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
@@ -342,9 +342,9 @@
     "semantic_hash": ""
   },
   "frontend/src/vite-env.d.ts": {
-    "mtime": 1792008998.5847838,
-    "seen": 1792096848.8795726,
-    "ast_hash": "11ecfcbd6f7344db8ce9e9ae76e70a6c",
+    "mtime": 1792438049.4052064,
+    "seen": 1792438326.5718026,
+    "ast_hash": "55f9277eb4965629a8194516a9d832e8",
     "semantic_hash": ""
   },
   "frontend/tests/flows.spec.ts": {
@@ -549,6 +549,12 @@
     "mtime": 1792419879.618713,
     "seen": 1792419958.2341678,
     "ast_hash": "3500298d8e88b3e5102f464873f3847e",
+    "semantic_hash": ""
+  },
+  "frontend/src/services/api.ts": {
+    "mtime": 1792438061.641212,
+    "seen": 1792438326.571772,
+    "ast_hash": "221e275064c8e2247834c5f7453629bf",
     "semantic_hash": ""
   }
 }

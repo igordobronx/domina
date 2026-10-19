@@ -21,6 +21,15 @@ import {
 } from "lucide-react";
 import type { Activity, DemoState, Page, Role } from "./types";
 import { loadDemo, saveDemo } from "./services/demoStore";
+import {
+  ApiError,
+  getToken,
+  login as apiLogin,
+  logout as apiLogout,
+  me as apiMe,
+  perfilParaRole,
+  type UsuarioAtual,
+} from "./services/api";
 import { usePwa } from "./hooks/usePwa";
 import { Badge, Button, IconButton, Logo, Modal } from "./components/ui";
 import { InstallBanner } from "./components/InstallBanner";
@@ -93,6 +102,20 @@ export function App() {
     "install" | "notifications" | "search" | "login" | null
   >(null);
   const [query, setQuery] = useState("");
+  const [currentUser, setCurrentUser] = useState<UsuarioAtual | null>(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginSenha, setLoginSenha] = useState("");
+  const [loginErro, setLoginErro] = useState("");
+  const [loginCarregando, setLoginCarregando] = useState(false);
+  useEffect(() => {
+    if (!getToken()) return;
+    apiMe()
+      .then((usuario) => {
+        setCurrentUser(usuario);
+        setRole(perfilParaRole(usuario.perfil));
+      })
+      .catch(() => apiLogout());
+  }, []);
   const [updateReady, setUpdateReady] = useState(false);
   const updateWorker = useRef<((reload?: boolean) => Promise<void>) | null>(
     null,
@@ -219,9 +242,36 @@ export function App() {
     if (!(await pwa.install())) setModal("install");
   };
   const changeRole = (next: Role) => {
+    if (currentUser) {
+      apiLogout();
+      setCurrentUser(null);
+    }
     setRole(next);
     navigate("inicio");
     notify(`Visualizando como ${next}. Todos os dados são demonstrativos.`);
+  };
+  const handleLogin = async () => {
+    setLoginCarregando(true);
+    setLoginErro("");
+    try {
+      const usuario = await apiLogin(loginEmail.trim(), loginSenha);
+      setCurrentUser(usuario);
+      setRole(perfilParaRole(usuario.perfil));
+      setLoginSenha("");
+      setModal(null);
+      navigate("inicio");
+      notify(`Bem-vindo(a), ${usuario.nome}.`);
+    } catch (erro) {
+      setLoginErro(erro instanceof ApiError ? erro.message : "Não foi possível entrar. Tente de novo.");
+    } finally {
+      setLoginCarregando(false);
+    }
+  };
+  const handleLogout = () => {
+    apiLogout();
+    setCurrentUser(null);
+    setModal(null);
+    notify("Você saiu da sua conta.");
   };
   const count = state.activities.filter((a) => a.status === "pendente").length;
   return (
@@ -327,33 +377,30 @@ export function App() {
             Preferências
           </button>
           <div className="sidebar-profile">
-            <div className="avatar">
-              {role === "aluno"
-                ? state.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")
-                : "MC"}
-            </div>
-            <div>
-              <strong>
-                {role === "aluno"
-                  ? state.name
-                  : role === "professor"
-                    ? "Marina Costa"
-                    : "Gestão escolar"}
-              </strong>
-              <span>
-                {role === "aluno"
-                  ? "Estudante"
-                  : role === "professor"
-                    ? "Professora"
-                    : "Gestor"}
-              </span>
-            </div>
+            {(() => {
+              const nomeExibido =
+                currentUser?.nome ??
+                (role === "aluno" ? state.name : role === "professor" ? "Marina Costa" : "Gestão escolar");
+              return (
+                <>
+                  <div className="avatar">
+                    {nomeExibido
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")}
+                  </div>
+                  <div>
+                    <strong>{nomeExibido}</strong>
+                    <span>
+                      {role === "aluno" ? "Estudante" : role === "professor" ? "Professor(a)" : "Gestor(a)"}
+                    </span>
+                  </div>
+                </>
+              );
+            })()}
             <button
-              aria-label="Acesso demonstrativo"
+              aria-label={currentUser ? "Conta" : "Acesso demonstrativo"}
               className="profile-button"
               onClick={() => setModal("login")}
             >
@@ -665,13 +712,51 @@ export function App() {
               </div>
             </>
           )}
-          {modal === "login" && (
+          {modal === "login" && currentUser && (
             <>
               <Logo />
               <p>
-                Escolha um perfil para conhecer as telas. Não é necessário criar
-                uma conta nesta demonstração.
+                Conectado como <strong>{currentUser.nome}</strong> ({currentUser.email}).
               </p>
+              <Button variant="secondary" onPress={handleLogout}>
+                Sair da conta
+              </Button>
+            </>
+          )}
+          {modal === "login" && !currentUser && (
+            <>
+              <Logo />
+              <p>Entre com a conta da sua escola.</p>
+              <div className="form-grid">
+                <label>
+                  Email
+                  <input
+                    type="email"
+                    value={loginEmail}
+                    autoFocus
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  />
+                </label>
+                <label>
+                  Senha
+                  <input
+                    type="password"
+                    value={loginSenha}
+                    onChange={(e) => setLoginSenha(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                  />
+                </label>
+              </div>
+              {loginErro && <p className="tiny error">{loginErro}</p>}
+              <Button
+                variant="primary"
+                disabled={loginCarregando || !loginEmail.trim() || !loginSenha}
+                onPress={handleLogin}
+              >
+                {loginCarregando ? "Entrando..." : "Entrar"}
+              </Button>
+              <p className="tiny muted">Ou explore sem conta:</p>
               <div className="demo-roles">
                 {(["aluno", "professor", "gestor"] as Role[]).map((r) => (
                   <Button
@@ -687,8 +772,8 @@ export function App() {
                 ))}
               </div>
               <p className="tiny muted">
-                O acesso por convite da escola será conectado ao backend. Esta
-                troca de perfil não representa autenticação.
+                O modo demonstração não representa autenticação; os dados ficam só
+                neste navegador.
               </p>
             </>
           )}
