@@ -1,0 +1,13 @@
+amostra 80 (0 nota 1000 + 0 UOL), ja feitas 0, modelo gemini-3.5-flash-lite
+aes 0001 real=400 ia=520 (11.4s)
+aes 0002 real=400 ia=600 (3.9s)
+aes 0003 real=400 ia=480 (4.8s)
+aes 0004 real=400 ia=560 (3.4s)
+aes 0005 real=0 ia=200 (3.6s)
+aes 0006 real=80 ia=640 (3.7s)
+aes 0007 real=320 ia=680 (4.0s)
+aes 0008 real=0 ia=720 (5.5s)
+aes 0009 real=0 ia=600 (3.2s)
+aes 0010 real=240 ia=320 (4.1s)
+aes 0011 real=600 ia=600 (3.2s)
+aes 0012 real=440 ia=560 (5.5s)
