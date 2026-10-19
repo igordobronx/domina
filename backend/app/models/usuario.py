@@ -37,9 +37,6 @@ class Escola(Base):
 
 class Usuario(Base):
     __tablename__ = "usuario"
-    __table_args__ = (
-        UniqueConstraint("escola_id", "email", name="uq_usuario_escola_email"),
-    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     escola_id = Column(UUID(as_uuid=True), ForeignKey("escola.id"), nullable=False)

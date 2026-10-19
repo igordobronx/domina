@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "backend/app/models/usuario.py": {
-    "mtime": 1792156245.8876557,
-    "seen": 1792180224.4835188,
-    "ast_hash": "553b9f5e12be5d54df4b9ecb6b7a4bed",
+    "mtime": 1792437714.3210397,
+    "seen": 1792437788.579947,
+    "ast_hash": "51a55f854df3ce71b7ba9d06bc7923fd",
     "semantic_hash": ""
   },
   "backend/app/ocr/__init__.py": {
@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1792419912.2107265,
-    "seen": 1792419958.2341452,
-    "ast_hash": "8877344dfe03125445ae151df30377b9",
+    "mtime": 1792437737.9410524,
+    "seen": 1792437788.5799668,
+    "ast_hash": "5aa523b733a6651a6ff4f39913449170",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {

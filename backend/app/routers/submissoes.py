@@ -38,14 +38,25 @@ def _professor_da_turma(db: Session, usuario: Usuario, turma_id) -> bool:
     return usuario.perfil == PerfilEnum.PROFESSOR and _na_turma(db, usuario.id, turma_id)
 
 
+def _gestor_da_escola(db: Session, usuario: Usuario, turma_id) -> bool:
+    # gestor so observa (RF-22): nunca corrige nem aprova, so enxerga o que ja existe
+    if usuario.perfil != PerfilEnum.GESTOR:
+        return False
+    turma = db.get(Turma, turma_id)
+    return bool(turma and turma.escola_id == usuario.escola_id)
+
+
 def _submissao_visivel(db: Session, submissao_id, usuario: Usuario) -> Submissao:
-    # aluno dono ou professor da turma; o resto recebe 404 (nao revela que existe)
+    # aluno dono, professor da turma ou gestor da escola; o resto recebe 404 (nao revela que existe)
     submissao = db.get(Submissao, submissao_id)
-    if submissao and (
-        submissao.aluno_id == usuario.id
-        or _professor_da_turma(db, usuario, db.get(Atividade, submissao.atividade_id).turma_id)
-    ):
-        return submissao
+    if submissao:
+        turma_id = db.get(Atividade, submissao.atividade_id).turma_id
+        if (
+            submissao.aluno_id == usuario.id
+            or _professor_da_turma(db, usuario, turma_id)
+            or _gestor_da_escola(db, usuario, turma_id)
+        ):
+            return submissao
     raise HTTPException(status.HTTP_404_NOT_FOUND, "Submissão não encontrada.")
 
 
@@ -146,6 +157,28 @@ def enviar_imagem(
     return submissao
 
 
+# rota literal: tem que vir antes de /submissoes/{submissao_id}, senao o FastAPI tenta
+# interpretar "minhas" como UUID e quebra com 422 (casa pela posicao do path, nao pelo tipo)
+@router.get("/submissoes/minhas", response_model=list[MinhaSubmissaoResponse])
+def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    if usuario.perfil != PerfilEnum.ALUNO:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos usam esta rota.")
+    submissoes = db.query(Submissao).filter_by(aluno_id=usuario.id).order_by(Submissao.criado_em.desc())
+    resposta = []
+    for s in submissoes:
+        correcao = db.query(Correcao).filter_by(submissao_id=s.id).first()
+        aprovada = correcao and correcao.status == StatusCorrecaoEnum.APROVADA
+        resposta.append(MinhaSubmissaoResponse(
+            id=s.id,
+            atividade_titulo=db.get(Atividade, s.atividade_id).titulo,
+            status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
+            criado_em=s.criado_em,
+            nota=float(correcao.nota_professor) if aprovada else None,
+            feedback=correcao.feedback if aprovada else None,
+        ))
+    return resposta
+
+
 @router.get("/submissoes/{submissao_id}", response_model=SubmissaoResponse)
 def ver_submissao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     return _submissao_visivel(db, submissao_id, usuario)
@@ -196,9 +229,16 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
 
 
 def _so_professor(db: Session, submissao: Submissao, usuario: Usuario):
-    # a nota da IA so e vista pelo professor; o aluno so ve depois da aprovacao (RN-01)
+    # corrigir e aprovar sao acoes, nao so visualizacao: gestor nao entra aqui (RF-22)
     if not _professor_da_turma(db, usuario, db.get(Atividade, submissao.atividade_id).turma_id):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o professor da turma vê a correção antes da aprovação.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o professor da turma realiza esta ação.")
+
+
+def _pode_ver_correcao(db: Session, submissao: Submissao, usuario: Usuario):
+    # a nota da IA so e vista pelo professor/gestor; o aluno so ve depois da aprovacao (RN-01)
+    turma_id = db.get(Atividade, submissao.atividade_id).turma_id
+    if not (_professor_da_turma(db, usuario, turma_id) or _gestor_da_escola(db, usuario, turma_id)):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o professor da turma ou um gestor vê a correção antes da aprovação.")
 
 
 @router.post("/submissoes/{submissao_id}/corrigir", response_model=CorrecaoResponse, status_code=status.HTTP_201_CREATED)
@@ -254,7 +294,7 @@ def corrigir_submissao(
 @router.get("/submissoes/{submissao_id}/correcao", response_model=CorrecaoResponse)
 def ver_correcao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     submissao = _submissao_visivel(db, submissao_id, usuario)
-    _so_professor(db, submissao, usuario)
+    _pode_ver_correcao(db, submissao, usuario)
     correcao = db.query(Correcao).filter_by(submissao_id=submissao.id).first()
     if not correcao:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
@@ -352,21 +392,3 @@ def enviar_texto(payload: EnviarTextoRequest, usuario: Usuario = Depends(get_cur
     return submissao
 
 
-@router.get("/submissoes/minhas", response_model=list[MinhaSubmissaoResponse])
-def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    if usuario.perfil != PerfilEnum.ALUNO:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos usam esta rota.")
-    submissoes = db.query(Submissao).filter_by(aluno_id=usuario.id).order_by(Submissao.criado_em.desc())
-    resposta = []
-    for s in submissoes:
-        correcao = db.query(Correcao).filter_by(submissao_id=s.id).first()
-        aprovada = correcao and correcao.status == StatusCorrecaoEnum.APROVADA
-        resposta.append(MinhaSubmissaoResponse(
-            id=s.id,
-            atividade_titulo=db.get(Atividade, s.atividade_id).titulo,
-            status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
-            criado_em=s.criado_em,
-            nota=float(correcao.nota_professor) if aprovada else None,
-            feedback=correcao.feedback if aprovada else None,
-        ))
-    return resposta
