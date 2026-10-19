@@ -486,9 +486,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/usuario.py": {
-    "mtime": 1792419898.2427206,
-    "seen": 1792419958.2341545,
-    "ast_hash": "597ef0eb2f658459b15fa6094159ab28",
+    "mtime": 1792438009.6491878,
+    "seen": 1792438025.0321403,
+    "ast_hash": "529c96cb753279e5f58ceda155eb60a3",
     "semantic_hash": ""
   },
   "backend/app/schemas/turma.py": {

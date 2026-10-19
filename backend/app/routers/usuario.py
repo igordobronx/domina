@@ -12,6 +12,11 @@ from app.schemas.usuario import CriarUsuarioRequest, UsuarioResponse
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
 
+@router.get("/me", response_model=UsuarioResponse)
+def meu_usuario(usuario_atual: Usuario = Depends(get_current_user)):
+    return usuario_atual
+
+
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def criar_usuario(payload: CriarUsuarioRequest, usuario_atual: Usuario = Depends(get_current_user),
                    db: Session = Depends(get_db)):

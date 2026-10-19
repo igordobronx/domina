@@ -1,6 +1,6 @@
 {
   "0": "Domina (plataforma de IA de correção e diagnóstico)",
-  "1": "CompetenciaIA",
+  "1": "correcao.py",
   "2": "submissoes.py",
   "3": "Escopo do Protótipo",
   "4": "E4 Correção por IA — Nota estimada, feedback e nível de confiança",
@@ -71,9 +71,10 @@
   "69": "calibra.py",
   "70": "Banco compartilhado + escola_id + RLS (estratégia escolhida)",
   "71": "package.json",
-  "72": "Materia",
+  "72": "routers/usuario.py",
   "73": "Tema",
   "74": "compilerOptions",
+  "75": "routers/auth.py",
   "76": "E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor",
   "77": "app_ocr_gemini",
   "78": "test_fluxo_envio.py",
@@ -82,6 +83,10 @@
   "81": "vercel.json",
   "82": "routers/ocr.py",
   "83": "routers/compliance.py",
+  "84": "routers/dominio.py",
+  "85": "main.py",
+  "86": "pydantic",
   "87": "vitest.config.ts",
-  "88": "vite-env.d.ts"
+  "88": "vite-env.d.ts",
+  "89": "ENEM (Exame Nacional do Ensino Médio) — mercado inicial"
 }
