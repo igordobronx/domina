@@ -504,6 +504,7 @@ export function App() {
                 selected={activity}
                 select={setActivity}
                 reviewOnly={page === "revisoes"}
+                currentUser={currentUser}
               />
             )}
             {page === "evolucao" && <Evolution />}

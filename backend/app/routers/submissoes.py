@@ -70,6 +70,7 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
         alunos = alunos.filter(Usuario.id == usuario.id)
     return AtividadeResponse(
         id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome,
+        materia=db.get(Materia, atividade.materia_id).nome, tipo=atividade.tipo.value,
         alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
     )
 
@@ -168,13 +169,29 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
     for s in submissoes:
         correcao = db.query(Correcao).filter_by(submissao_id=s.id).first()
         aprovada = correcao and correcao.status == StatusCorrecaoEnum.APROVADA
+        criterios = None
+        if aprovada:
+            linhas = (
+                db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
+                .filter(CorrecaoCriterio.correcao_id == correcao.id).order_by(Tema.habilidade_codigo)
+            )
+            criterios = [
+                CriterioResponse(
+                    codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
+                    nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
+                    justificativa=c.justificativa,
+                )
+                for c, t in linhas
+            ]
         resposta.append(MinhaSubmissaoResponse(
             id=s.id,
+            atividade_id=s.atividade_id,
             atividade_titulo=db.get(Atividade, s.atividade_id).titulo,
             status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
             criado_em=s.criado_em,
             nota=float(correcao.nota_professor) if aprovada else None,
             feedback=correcao.feedback if aprovada else None,
+            criterios=criterios,
         ))
     return resposta
 

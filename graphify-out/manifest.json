@@ -138,15 +138,15 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1792437737.9410524,
-    "seen": 1792437788.5799668,
-    "ast_hash": "5aa523b733a6651a6ff4f39913449170",
+    "mtime": 1792441064.9028492,
+    "seen": 1792441283.6917968,
+    "ast_hash": "a1d8ec4091106fab562bdc663b5dfc0e",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
-    "mtime": 1792411058.0801547,
-    "seen": 1792411157.339416,
-    "ast_hash": "3a397778bd0d4c065a71a758b7386c01",
+    "mtime": 1792441044.3468397,
+    "seen": 1792441283.691845,
+    "ast_hash": "7b50c2c7f954b379ad0f724d9b537c0c",
     "semantic_hash": ""
   },
   "backend/tests/test_fluxo_envio.py": {
@@ -162,9 +162,9 @@
     "semantic_hash": ""
   },
   "docker-compose.yml": {
-    "mtime": 1792437839.4411051,
-    "seen": 1792437938.4435697,
-    "ast_hash": "97a1a49ce588f2bf068e0e1514aa6885",
+    "mtime": 1792440546.654601,
+    "seen": 1792441283.692058,
+    "ast_hash": "afc211b946a987d4a10f2523d9be5c17",
     "semantic_hash": ""
   },
   "CLAUDE.md": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1792438154.5292537,
-    "seen": 1792438326.5717072,
-    "ast_hash": "b1546cca02ca629c6caeea0ff0dfbbed",
+    "mtime": 1792441162.446895,
+    "seen": 1792441283.6919084,
+    "ast_hash": "7990174dc6393c01e2d50f038859fd3d",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
@@ -276,15 +276,15 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Activities.tsx": {
-    "mtime": 1792008998.5807838,
-    "seen": 1792096848.879563,
-    "ast_hash": "e0a7c0dd59634df0e5650281f336ba7e",
+    "mtime": 1792441155.5388916,
+    "seen": 1792441283.691943,
+    "ast_hash": "dde8d8e796df76fa158db45b6ba92299",
     "semantic_hash": ""
   },
   "frontend/src/screens/Dashboard.tsx": {
-    "mtime": 1792008998.5807838,
-    "seen": 1792096848.879564,
-    "ast_hash": "9324dd389928a14ec3876ab035f3dda0",
+    "mtime": 1792441175.0589006,
+    "seen": 1792441283.6919475,
+    "ast_hash": "cc29d4413a479e04b823ea1cd8b54893",
     "semantic_hash": ""
   },
   "frontend/src/screens/EducatorDashboard.tsx": {
@@ -552,9 +552,15 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1792438061.641212,
-    "seen": 1792438326.571772,
-    "ast_hash": "221e275064c8e2247834c5f7453629bf",
+    "mtime": 1792441092.6948624,
+    "seen": 1792441283.6919715,
+    "ast_hash": "c590ace94469eced541f35233d4b6244",
+    "semantic_hash": ""
+  },
+  "frontend/src/services/atividades.ts": {
+    "mtime": 1792441209.7829125,
+    "seen": 1792441283.691978,
+    "ast_hash": "498f0ec55f508971b80076f16de07ace",
     "semantic_hash": ""
   }
 }

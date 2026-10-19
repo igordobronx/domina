@@ -356,7 +356,8 @@ export function ActivityRow({
       <span className="activity-info">
         <strong>{a.title}</strong>
         <span>
-          {a.subject} · {a.date}
+          {a.subject}
+          {a.date && ` · ${a.date}`}
         </span>
       </span>
       <Badge

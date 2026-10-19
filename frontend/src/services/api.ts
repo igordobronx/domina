@@ -82,3 +82,46 @@ export function logout() {
 export function me(): Promise<UsuarioAtual> {
   return request<UsuarioAtual>("/usuarios/me");
 }
+
+export interface AtividadeAPI {
+  id: string;
+  titulo: string;
+  turma: string;
+  materia: string;
+  tipo: "REDACAO" | "PROVA_DISCURSIVA" | "PROVA_OBJETIVA" | "EXERCICIO";
+  alunos: { id: string; nome: string }[];
+}
+
+export interface CriterioAPI {
+  codigo: string;
+  nome: string;
+  nota: number;
+  nota_professor: number | null;
+  justificativa: string;
+}
+
+export interface MinhaSubmissaoAPI {
+  id: string;
+  atividade_id: string;
+  atividade_titulo: string;
+  status: string;
+  criado_em: string;
+  nota: number | null;
+  feedback: string | null;
+  criterios: CriterioAPI[] | null;
+}
+
+export function listarAtividades(): Promise<AtividadeAPI[]> {
+  return request<AtividadeAPI[]>("/atividades");
+}
+
+export function minhasSubmissoes(): Promise<MinhaSubmissaoAPI[]> {
+  return request<MinhaSubmissaoAPI[]>("/submissoes/minhas");
+}
+
+export function enviarTexto(atividadeId: string, texto: string): Promise<unknown> {
+  return request("/submissoes/texto", {
+    method: "POST",
+    body: JSON.stringify({ atividade_id: atividadeId, texto }),
+  });
+}

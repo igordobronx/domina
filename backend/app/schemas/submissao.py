@@ -85,6 +85,8 @@ class AtividadeResponse(BaseModel):
     id: uuid.UUID
     titulo: str
     turma: str
+    materia: str
+    tipo: str
     alunos: list[AlunoResumo]
 
 
@@ -101,8 +103,10 @@ class EnviarTextoRequest(BaseModel):
 
 class MinhaSubmissaoResponse(BaseModel):
     id: uuid.UUID
-    atividade_titulo: str 
+    atividade_id: uuid.UUID
+    atividade_titulo: str
     status: str  #aguardado correcao | status.value da correcao, so se existir
     criado_em: datetime
     nota: float | None #so preenche se Correcao.status == Aprovada
     feedback: str | None #idem
+    criterios: list[CriterioResponse] | None = None  # detalhe por competencia, so se aprovada (RN-01)

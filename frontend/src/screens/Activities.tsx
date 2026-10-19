@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Check,
@@ -17,6 +17,9 @@ import {
   validScores,
   visibleResult,
 } from "../services/demoStore";
+import { enviarTexto } from "../services/api";
+import { carregarAtividadesDoAluno } from "../services/atividades";
+import type { UsuarioAtual } from "../services/api";
 
 type Props = {
   state: DemoState;
@@ -26,6 +29,7 @@ type Props = {
   selected: string | null;
   select: (id: string | null) => void;
   reviewOnly?: boolean;
+  currentUser?: UsuarioAtual | null;
 };
 export function Activities({
   state,
@@ -35,10 +39,29 @@ export function Activities({
   selected,
   select,
   reviewOnly,
+  currentUser,
 }: Props) {
   const [filter, setFilter] = useState("todas");
   const [search, setSearch] = useState("");
-  const activity = state.activities.find((a) => a.id === selected);
+  // modo real: aluno autenticado de verdade, dados vem do backend em vez do demoStore
+  const real = !!currentUser && role === "aluno";
+  const [realActivities, setRealActivities] = useState<Activity[] | null>(null);
+  const [loadingReal, setLoadingReal] = useState(real);
+  const recarregar = () => {
+    if (!real || !currentUser) return;
+    setLoadingReal(true);
+    carregarAtividadesDoAluno(currentUser.nome)
+      .then(setRealActivities)
+      .catch(() => notify("Não foi possível carregar suas atividades."))
+      .finally(() => setLoadingReal(false));
+  };
+  useEffect(recarregar, [real, currentUser?.id]);
+  const activities = real ? (realActivities ?? []) : state.activities;
+  const activity = activities.find((a) => a.id === selected);
+  if (real && loadingReal && !activity)
+    return (
+      <Empty title="Carregando..." text="Buscando suas atividades no servidor." />
+    );
   if (activity)
     return (
       <ActivityDetail
@@ -49,9 +72,10 @@ export function Activities({
         update={update}
         notify={notify}
         onBack={() => select(null)}
+        onSubmittedReal={real ? () => { select(null); recarregar(); } : undefined}
       />
     );
-  const list = state.activities.filter(
+  const list = activities.filter(
     (a) =>
       (!reviewOnly || a.status !== "disponivel") &&
       (filter === "todas" || a.status === filter) &&
@@ -132,15 +156,18 @@ function ActivityDetail({
   update,
   notify,
   onBack,
-}: Omit<Props, "selected" | "select" | "reviewOnly"> & {
+  onSubmittedReal,
+}: Omit<Props, "selected" | "select" | "reviewOnly" | "currentUser"> & {
   activity: Activity;
   onBack: () => void;
+  onSubmittedReal?: () => void;
 }) {
   const [text, setText] = useState(state.drafts[a.id] || "");
   const [file, setFile] = useState<File | null>(null);
   const [mode, setMode] = useState<"texto" | "arquivo">("texto");
   const [error, setError] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const [enviando, setEnviando] = useState(false);
   const [scores, setScores] = useState(
     a.scores ||
       a.aiScores ||
@@ -148,7 +175,7 @@ function ActivityDetail({
   );
   const [feedback, setFeedback] = useState(a.feedback || "");
   const [confirmApproval, setConfirmApproval] = useState(false);
-  const submit = () => {
+  const submit = async () => {
     if (mode === "texto" && text.trim().length < 40) {
       setError("Escreva pelo menos 40 caracteres para enviar sua resposta.");
       return;
@@ -159,6 +186,24 @@ function ActivityDetail({
     }
     if (!confirmed) {
       setError("Confirme que você revisou o conteúdo antes de enviar.");
+      return;
+    }
+    if (onSubmittedReal) {
+      if (mode === "arquivo") {
+        setError("Envio de foto/PDF ainda não está conectado ao backend. Use o modo texto.");
+        return;
+      }
+      setEnviando(true);
+      try {
+        await enviarTexto(a.id, text);
+        update((s) => ({ ...s, drafts: { ...s.drafts, [a.id]: "" } }));
+        notify("Redação enviada. Agora ela aguarda a correção do professor.");
+        onSubmittedReal();
+      } catch (erro) {
+        setError(erro instanceof Error ? erro.message : "Não foi possível enviar. Tente de novo.");
+      } finally {
+        setEnviando(false);
+      }
       return;
     }
     update((s) => ({
@@ -321,8 +366,8 @@ function ActivityDetail({
               <Button variant="secondary" onPress={onBack}>
                 Continuar depois
               </Button>
-              <Button icon={Send} onPress={submit}>
-                Enviar para revisão
+              <Button icon={Send} disabled={enviando} onPress={submit}>
+                {enviando ? "Enviando..." : "Enviar para revisão"}
               </Button>
             </div>
           </Card>
