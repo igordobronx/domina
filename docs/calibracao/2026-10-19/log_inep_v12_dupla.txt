@@ -1,0 +1,68 @@
+  1: RuntimeError Cannot send a request, as the client has been closed.
+1 real=880 ia=920 conf=1.00 (3.5s)
+2 real=860 ia=840 conf=0.68 (3.5s)
+3 real=560 ia=580 conf=0.84 (3.4s)
+4 real=940 ia=920 conf=1.00 (3.7s)
+5 real=740 ia=840 conf=0.68 (3.8s)
+6 real=780 ia=700 conf=0.50 (10.4s)
+7 real=920 ia=920 conf=1.00 (6.2s)
+Gemini gemini-3.5-flash-lite indisponivel (ClientError("429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\nPlease retry in 36.07892326s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '36s'}]}}")), usando gemini-3.5-flash-lite
+Gemini gemini-3.5-flash-lite indisponivel (ClientError("429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\nPlease retry in 36.11245665s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '36s'}]}}")), usando gemini-3.5-flash-lite
+8 real=900 ia=920 conf=1.00 (7.4s)
+9 real=780 ia=960 conf=1.00 (8.1s)
+10 real=800 ia=780 conf=0.84 (8.3s)
+11 real=900 ia=920 conf=1.00 (9.2s)
+12 real=900 ia=920 conf=1.00 (7.7s)
+13 real=860 ia=900 conf=0.84 (8.7s)
+14 real=900 ia=880 conf=1.00 (7.6s)
+15 real=900 ia=920 conf=1.00 (8.1s)
+16 real=900 ia=920 conf=1.00 (8.7s)
+17 real=860 ia=760 conf=1.00 (8.2s)
+18 real=980 ia=920 conf=1.00 (10.3s)
+19 real=920 ia=860 conf=0.84 (9.1s)
+20 real=940 ia=940 conf=0.84 (9.7s)
+21 real=800 ia=820 conf=0.84 (8.9s)
+Gemini gemini-3.5-flash-lite indisponivel (ClientError("429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite\\nPlease retry in 35.974150639s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '35s'}]}}")), usando gemini-3.5-flash-lite
+22 real=840 ia=780 conf=0.84 (10.7s)
+23 real=920 ia=920 conf=1.00 (9.1s)
+24 real=800 ia=760 conf=0.50 (17.2s)
+25 real=940 ia=860 conf=0.84 (6.1s)
+26 real=920 ia=800 conf=1.00 (4.4s)
+27 real=900 ia=960 conf=0.68 (7.0s)
+28 real=880 ia=800 conf=0.68 (5.1s)
+29 real=880 ia=800 conf=1.00 (6.2s)
+30 real=800 ia=800 conf=1.00 (4.9s)
+31 real=720 ia=960 conf=1.00 (9.0s)
+32 real=940 ia=920 conf=1.00 (10.3s)
+33 real=880 ia=920 conf=1.00 (6.4s)
+34 real=820 ia=800 conf=0.50 (23.9s)
+35 real=1000 ia=860 conf=0.84 (9.0s)
+36 real=1000 ia=980 conf=0.84 (8.3s)
+37 real=1000 ia=920 conf=1.00 (9.1s)
+38 real=1000 ia=920 conf=1.00 (15.1s)
+39 real=1000 ia=980 conf=0.84 (16.4s)
+40 real=1000 ia=980 conf=0.84 (7.9s)
+41 real=1000 ia=960 conf=0.68 (9.1s)
+42 real=1000 ia=940 conf=0.84 (8.3s)
+43 real=1000 ia=940 conf=0.84 (11.9s)
+44 real=1000 ia=1000 conf=1.00 (11.1s)
+45 real=840 ia=940 conf=0.84 (6.5s)
+46 real=440 ia=320 conf=0.68 (8.3s)
+47 real=640 ia=620 conf=0.50 (13.5s)
+48 real=620 ia=620 conf=0.50 (15.2s)
+49 real=800 ia=880 conf=1.00 (10.4s)
+50 real=880 ia=880 conf=1.00 (8.1s)
+51 real=560 ia=560 conf=0.68 (8.5s)
+52 real=920 ia=920 conf=1.00 (7.6s)
+53 real=840 ia=880 conf=0.68 (6.4s)
+## ../docs/calibracao/2026-10-19/inep_lite_v12_dupla.jsonl: 53 redacoes
+erro medio total 49 | a menos de 100: 45/53 | vies -9
+  C1: erro medio  15 | vies   -8 | acerta exato 27/53
+  C2: erro medio  15 | vies   -6 | acerta exato 29/53
+  C3: erro medio  19 | vies   -2 | acerta exato 18/53
+  C4: erro medio  11 | vies   +3 | acerta exato 33/53
+  C5: erro medio  10 | vies   +3 | acerta exato 31/53
+  <=700   n= 5 real  564 IA  540
+  720-860 n=16 real  809 IA  838
+  880-960 n=21 real  908 IA  896
+  1000    n=10 real 1000 IA  948
