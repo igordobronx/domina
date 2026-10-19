@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1792414236.0280554,
-    "seen": 1792414282.481253,
-    "ast_hash": "5546acfc9b95ec6a5748f8b60a61dbc1",
+    "mtime": 1792419925.9387321,
+    "seen": 1792419958.2340822,
+    "ast_hash": "82157d931055d2416c6693ddf91cde0b",
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
@@ -102,9 +102,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/ocr.py": {
-    "mtime": 1791977300.0934238,
-    "seen": 1792096848.8795407,
-    "ast_hash": "0b71837d982005d989d6f94dbfbdc9f9",
+    "mtime": 1792419919.9147296,
+    "seen": 1792419958.2341413,
+    "ast_hash": "168c4c27f735b3e28c78d4ebfb004e7c",
     "semantic_hash": ""
   },
   "backend/app/schemas/__init__.py": {
@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1792414212.656039,
-    "seen": 1792414282.4812808,
-    "ast_hash": "323d8ad2e8f5b41fbe7bd075a16bca5a",
+    "mtime": 1792419912.2107265,
+    "seen": 1792419958.2341452,
+    "ast_hash": "8877344dfe03125445ae151df30377b9",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
@@ -486,9 +486,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/usuario.py": {
-    "mtime": 1792180164.6959112,
-    "seen": 1792180224.4835572,
-    "ast_hash": "4ae5659055beb7723720f7bee326f1db",
+    "mtime": 1792419898.2427206,
+    "seen": 1792419958.2341545,
+    "ast_hash": "597ef0eb2f658459b15fa6094159ab28",
     "semantic_hash": ""
   },
   "backend/app/schemas/turma.py": {
@@ -525,6 +525,30 @@
     "mtime": 1792414189.0320218,
     "seen": 1792414282.4812937,
     "ast_hash": "e0bb02df747863e6ce87cd1e0a03ecf9",
+    "semantic_hash": ""
+  },
+  "backend/app/auditoria.py": {
+    "mtime": 1792419869.1827085,
+    "seen": 1792419958.2340257,
+    "ast_hash": "b48421954fdb017a5b1faffa19eca221",
+    "semantic_hash": ""
+  },
+  "backend/app/custo.py": {
+    "mtime": 1792419875.250711,
+    "seen": 1792419958.2340717,
+    "ast_hash": "6adc3a9a2a07211fcc80f7d0e589b3e5",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/compliance.py": {
+    "mtime": 1792419889.9187171,
+    "seen": 1792419958.234122,
+    "ast_hash": "3024a30f78cdb51066a7051a13525f75",
+    "semantic_hash": ""
+  },
+  "backend/app/schemas/compliance.py": {
+    "mtime": 1792419879.618713,
+    "seen": 1792419958.2341678,
+    "ast_hash": "3500298d8e88b3e5102f464873f3847e",
     "semantic_hash": ""
   }
 }

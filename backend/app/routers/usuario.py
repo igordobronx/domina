@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.auditoria import registrar
 from app.auth.security import hash_password
 from app.auth.dependencies import get_current_user
 from app.database import get_db
@@ -32,6 +33,8 @@ def criar_usuario(payload: CriarUsuarioRequest, usuario_atual: Usuario = Depends
         escola_id=usuario_atual.escola_id,
     )
     db.add(novo_usuario)
+    db.flush()
+    registrar(db, usuario_atual.id, "CRIAR", "Usuario", novo_usuario.id)
     db.commit()
     db.refresh(novo_usuario)
 

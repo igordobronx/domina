@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, Form, HTTPException, status, UploadFile
 from sqlalchemy.orm import Session
 
 from app import correcao as ia
+from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.config import settings
+from app.custo import registrar_uso
 from app.database import get_db
 from app.models.enum import PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, UsuarioTurmaPapelEnum
 from app.models.usuario import (
@@ -122,6 +124,7 @@ def enviar_imagem(
 
     image_bytes = ler_imagem(file)
     texto = ocr(image_bytes, file.content_type)  # se o OCR falhar, nada e gravado
+    registrar_uso(db, usuario.escola_id, chamadas_ocr=1)
 
     # guarda a foto original (o professor pode querer ver ao revisar)
     # ponytail: disco local; trocar por bucket (GCS/S3) quando houver mais de um servidor
@@ -241,6 +244,9 @@ def corrigir_submissao(
     db.flush()
     for c in resultado.competencias:
         db.add(CorrecaoCriterio(correcao_id=correcao.id, tema_id=temas[c.codigo].id, nota=c.nota, justificativa=c.justificativa))
+    # ponytail: estimativa de tokens por tamanho do texto (sem usage_metadata real da API ainda)
+    tokens_estimados = len(submissao.texto_confirmado) // 4
+    registrar_uso(db, usuario.escola_id, tokens_llm=tokens_estimados)
     db.commit()
     return _correcao_response(db, correcao)
 
@@ -303,6 +309,7 @@ def aprovar_correcao(
     if payload.feedback is not None:
         correcao.feedback = payload.feedback.strip()
     _atualizar_dominio(db, submissao.aluno_id, criterios)
+    registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
     db.commit()
     return _correcao_response(db, correcao)
 
