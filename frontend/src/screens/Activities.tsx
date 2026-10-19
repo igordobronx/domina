@@ -5,6 +5,7 @@ import {
   FileText,
   Search,
   Send,
+  Sparkles,
   Upload,
   ShieldCheck,
 } from "lucide-react";
@@ -17,8 +18,16 @@ import {
   validScores,
   visibleResult,
 } from "../services/demoStore";
-import { enviarTexto } from "../services/api";
+import {
+  aprovarCorrecao,
+  corrigirSubmissao,
+  enviarTexto,
+  verCorrecao,
+  verSubmissao,
+  type CorrecaoAPI,
+} from "../services/api";
 import { carregarAtividadesDoAluno } from "../services/atividades";
+import { carregarRevisoes } from "../services/revisoes";
 import type { UsuarioAtual } from "../services/api";
 
 type Props = {
@@ -43,24 +52,42 @@ export function Activities({
 }: Props) {
   const [filter, setFilter] = useState("todas");
   const [search, setSearch] = useState("");
-  // modo real: aluno autenticado de verdade, dados vem do backend em vez do demoStore
+  // modo real: aluno autenticado de verdade manda/ve suas proprias atividades;
+  // professor autenticado de verdade revisa a fila real de submissoes
   const real = !!currentUser && role === "aluno";
+  const realProfessor = !!currentUser && role === "professor" && !!reviewOnly;
   const [realActivities, setRealActivities] = useState<Activity[] | null>(null);
-  const [loadingReal, setLoadingReal] = useState(real);
+  const [loadingReal, setLoadingReal] = useState(real || realProfessor);
   const recarregar = () => {
-    if (!real || !currentUser) return;
-    setLoadingReal(true);
-    carregarAtividadesDoAluno(currentUser.nome)
-      .then(setRealActivities)
-      .catch(() => notify("Não foi possível carregar suas atividades."))
-      .finally(() => setLoadingReal(false));
+    if (real && currentUser) {
+      setLoadingReal(true);
+      carregarAtividadesDoAluno(currentUser.nome)
+        .then(setRealActivities)
+        .catch(() => notify("Não foi possível carregar suas atividades."))
+        .finally(() => setLoadingReal(false));
+    } else if (realProfessor) {
+      setLoadingReal(true);
+      carregarRevisoes()
+        .then(setRealActivities)
+        .catch(() => notify("Não foi possível carregar a fila de revisão."))
+        .finally(() => setLoadingReal(false));
+    }
   };
-  useEffect(recarregar, [real, currentUser?.id]);
-  const activities = real ? (realActivities ?? []) : state.activities;
+  useEffect(recarregar, [real, realProfessor, currentUser?.id]);
+  const activities = real || realProfessor ? (realActivities ?? []) : state.activities;
   const activity = activities.find((a) => a.id === selected);
-  if (real && loadingReal && !activity)
+  if ((real || realProfessor) && loadingReal && !activity)
     return (
-      <Empty title="Carregando..." text="Buscando suas atividades no servidor." />
+      <Empty title="Carregando..." text="Buscando dados no servidor." />
+    );
+  if (activity && realProfessor)
+    return (
+      <RevisaoReal
+        key={activity.id}
+        activity={activity}
+        onBack={() => select(null)}
+        onApproved={() => { select(null); recarregar(); }}
+      />
     );
   if (activity)
     return (
@@ -543,6 +570,203 @@ function ActivityDetail({
             </Card>
           </div>
         )
+      )}
+    </>
+  );
+}
+
+// niveis validos de nota por competencia do ENEM (C1-C5): o backend rejeita qualquer outro valor
+const NOTAS_ENEM = [0, 40, 80, 120, 160, 200];
+
+function RevisaoReal({
+  activity: a,
+  onBack,
+  onApproved,
+}: {
+  activity: Activity;
+  onBack: () => void;
+  onApproved: () => void;
+}) {
+  const [texto, setTexto] = useState<string | null>(null);
+  const [correcao, setCorrecao] = useState<CorrecaoAPI | null>(null);
+  const [notas, setNotas] = useState<Record<string, number>>({});
+  const [feedback, setFeedback] = useState("");
+  const [carregando, setCarregando] = useState(true);
+  const [corrigindo, setCorrigindo] = useState(false);
+  const [aprovando, setAprovando] = useState(false);
+  const [confirmApproval, setConfirmApproval] = useState(false);
+  const [error, setError] = useState("");
+
+  const aplicarCorrecao = (c: CorrecaoAPI) => {
+    setCorrecao(c);
+    setFeedback(c.feedback ?? "");
+    setNotas(Object.fromEntries(c.criterios.map((cr) => [cr.codigo, cr.nota_professor ?? cr.nota])));
+  };
+
+  useEffect(() => {
+    let ativo = true;
+    Promise.all([verSubmissao(a.id), verCorrecao(a.id).catch(() => null)]).then(([s, c]) => {
+      if (!ativo) return;
+      setTexto(s.texto_confirmado ?? s.texto_ocr ?? "");
+      if (c) aplicarCorrecao(c);
+      setCarregando(false);
+    });
+    return () => {
+      ativo = false;
+    };
+  }, [a.id]);
+
+  const gerarCorrecao = () => {
+    setCorrigindo(true);
+    setError("");
+    corrigirSubmissao(a.id)
+      .then(aplicarCorrecao)
+      .catch((erro) =>
+        setError(erro instanceof Error ? erro.message : "Não foi possível gerar a correção."),
+      )
+      .finally(() => setCorrigindo(false));
+  };
+
+  const aprovar = () => {
+    setAprovando(true);
+    setError("");
+    aprovarCorrecao(
+      a.id,
+      Object.entries(notas).map(([codigo, nota]) => ({ codigo, nota })),
+      feedback,
+    )
+      .then(() => onApproved())
+      .catch((erro) => {
+        setError(erro instanceof Error ? erro.message : "Não foi possível aprovar.");
+        setConfirmApproval(false);
+      })
+      .finally(() => setAprovando(false));
+  };
+
+  const aprovada = a.status === "aprovada";
+  const nota = Object.values(notas).reduce((s, n) => s + n, 0);
+
+  return (
+    <>
+      <button className="back-link" onClick={onBack}>
+        <ArrowLeft size={16} />
+        Voltar às atividades
+      </button>
+      <div className="page-heading">
+        <div>
+          <Badge tone="neutral">{a.subject}</Badge>
+          <h1 className="detail-heading">{a.title}</h1>
+          <p>{a.student}</p>
+        </div>
+      </div>
+      {carregando ? (
+        <Card>
+          <p className="muted">Carregando submissão...</p>
+        </Card>
+      ) : (
+        <div className="detail-grid">
+          <Card>
+            <SectionTitle title={aprovada ? "Correção aprovada" : "Revisão da atividade"} />
+            {!correcao ? (
+              <>
+                <p className="muted">Esta redação ainda não tem correção da IA.</p>
+                <Button icon={Sparkles} disabled={corrigindo} onPress={gerarCorrecao}>
+                  {corrigindo ? "Gerando correção..." : "Gerar correção com IA"}
+                </Button>
+                {error && (
+                  <p role="alert" className="error">
+                    {error}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <Badge tone={aprovada ? "green" : "amber"}>
+                  {aprovada
+                    ? "Revisada pelo professor"
+                    : `Sugestão da IA · confiança ${Math.round(correcao.confianca * 100)}%`}
+                </Badge>
+                <div className="score-total">
+                  <strong>{nota}</strong>
+                  <span>/ 1000 pontos</span>
+                </div>
+                <div className="criteria-grid">
+                  {correcao.criterios.map((c) => (
+                    <label key={c.codigo}>
+                      <span>{c.codigo}</span>
+                      {!aprovada ? (
+                        <select
+                          aria-label={`Nota da competência ${c.codigo}`}
+                          value={notas[c.codigo] ?? c.nota}
+                          onChange={(e) =>
+                            setNotas({ ...notas, [c.codigo]: Number(e.target.value) })
+                          }
+                        >
+                          {NOTAS_ENEM.map((v) => (
+                            <option key={v}>{v}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <strong>{notas[c.codigo]}</strong>
+                      )}
+                      <small>{c.nome}</small>
+                    </label>
+                  ))}
+                </div>
+                <h3>{aprovada ? "Orientação enviada" : "Orientação ao aluno"}</h3>
+                {!aprovada ? (
+                  <textarea
+                    aria-label="Feedback do professor"
+                    className="text-area"
+                    placeholder="Explique os pontos fortes e indique o que o aluno pode melhorar..."
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                  />
+                ) : (
+                  <p className="feedback-text">{feedback}</p>
+                )}
+                {error && (
+                  <p role="alert" className="error">
+                    {error}
+                  </p>
+                )}
+                {!aprovada &&
+                  (confirmApproval ? (
+                    <div className="confirmation">
+                      <strong>Publicar esta correção?</strong>
+                      <p>O aluno verá as notas e o feedback acima.</p>
+                      <div className="form-actions">
+                        <Button variant="secondary" onPress={() => setConfirmApproval(false)}>
+                          Voltar à revisão
+                        </Button>
+                        <Button icon={Check} disabled={aprovando} onPress={aprovar}>
+                          {aprovando ? "Aprovando..." : "Confirmar aprovação"}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      icon={Check}
+                      onPress={() => {
+                        if (!feedback.trim()) {
+                          setError("Escreva uma orientação para o aluno antes de aprovar.");
+                          return;
+                        }
+                        setError("");
+                        setConfirmApproval(true);
+                      }}
+                    >
+                      Aprovar e liberar resultado
+                    </Button>
+                  ))}
+              </>
+            )}
+          </Card>
+          <Card>
+            <SectionTitle title="Texto enviado" />
+            <div className="essay">{texto}</div>
+          </Card>
+        </div>
       )}
     </>
   );

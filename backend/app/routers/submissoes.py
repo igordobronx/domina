@@ -19,7 +19,7 @@ from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AprovarRequest, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse,
     CriarAtividadeRequest, CorrigirRequest, CriterioResponse, EnviarTextoRequest, MinhaSubmissaoResponse,
-    SubmissaoResponse,
+    SubmissaoResponse, SubmissaoRevisaoResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -156,6 +156,41 @@ def enviar_imagem(
     db.commit()
     db.refresh(submissao)
     return submissao
+
+
+# RF-17/RF-23: fila de revisao do professor (ou visao do gestor) -- submissoes das turmas dele, com status
+@router.get("/submissoes", response_model=list[SubmissaoRevisaoResponse])
+def listar_submissoes(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    if usuario.perfil == PerfilEnum.PROFESSOR:
+        turma_ids = [
+            ut.turma_id for ut in
+            db.query(UsuarioTurma).filter_by(usuario_id=usuario.id, papel=UsuarioTurmaPapelEnum.PROFESSOR)
+        ]
+    elif usuario.perfil == PerfilEnum.GESTOR:
+        turma_ids = [t.id for t in db.query(Turma).filter_by(escola_id=usuario.escola_id)]
+    else:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores usam esta rota.")
+
+    linhas = (
+        db.query(Submissao, Atividade, Materia, Usuario)
+        .join(Atividade, Atividade.id == Submissao.atividade_id)
+        .join(Materia, Materia.id == Atividade.materia_id)
+        .join(Usuario, Usuario.id == Submissao.aluno_id)
+        .filter(Atividade.turma_id.in_(turma_ids))
+        .order_by(Submissao.criado_em.desc())
+    )
+    resposta = []
+    for s, atividade, materia, aluno in linhas:
+        correcao = db.query(Correcao).filter_by(submissao_id=s.id).first()
+        aprovada = correcao and correcao.status == StatusCorrecaoEnum.APROVADA
+        resposta.append(SubmissaoRevisaoResponse(
+            id=s.id, atividade_id=atividade.id, atividade_titulo=atividade.titulo, materia=materia.nome,
+            aluno_id=aluno.id, aluno_nome=aluno.nome,
+            status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
+            criado_em=s.criado_em,
+            nota=float(correcao.nota_professor) if aprovada else None,
+        ))
+    return resposta
 
 
 # rota literal: tem que vir antes de /submissoes/{submissao_id}, senao o FastAPI tenta

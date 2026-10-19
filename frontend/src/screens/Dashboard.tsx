@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -16,6 +17,9 @@ import type { Activity, DemoState, Page, Role } from "../types";
 import { topics, studyTasks } from "../data/demo";
 import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
+import type { UsuarioAtual } from "../services/api";
+import { carregarDominioReal, type Recomendacao } from "../services/dominio";
+import type { DominioAPI } from "../services/api";
 
 export function Dashboard({
   role,
@@ -23,16 +27,32 @@ export function Dashboard({
   navigate,
   openActivity,
   openStudy,
+  currentUser,
 }: {
   role: Role;
   state: DemoState;
   navigate: (p: Page) => void;
   openActivity: (a: Activity) => void;
   openStudy: (id: string) => void;
+  currentUser?: UsuarioAtual | null;
 }) {
   const student = role === "aluno";
   const pending = state.activities.filter((a) => a.status === "pendente");
   const approved = state.activities.filter((a) => a.status === "aprovada");
+  // mapa de dominio real: so para aluno autenticado de verdade; enquanto nao carrega, mantem os dados de demonstracao
+  const real = student && !!currentUser;
+  const [dominioReal, setDominioReal] = useState<DominioAPI[] | null>(null);
+  const [recomendacao, setRecomendacao] = useState<Recomendacao | null>(null);
+  useEffect(() => {
+    if (!real) return;
+    carregarDominioReal().then(({ dominio, recomendacao }) => {
+      setDominioReal(dominio);
+      setRecomendacao(recomendacao);
+    });
+  }, [real, currentUser?.id]);
+  const mediaReal = dominioReal?.length
+    ? Math.round(dominioReal.reduce((s, d) => s + d.percentual_dominio, 0) / dominioReal.length)
+    : null;
   return (
     <>
       <div className="page-heading">
@@ -181,9 +201,9 @@ export function Dashboard({
       <div className="stats-grid">
         <Stat
           icon={Target}
-          value="67%"
+          value={real ? (mediaReal != null ? `${mediaReal}%` : "--") : "67%"}
           label="Domínio médio"
-          foot="↑ 12 pontos neste mês"
+          foot={real ? "Baseado nas suas correções aprovadas" : "↑ 12 pontos neste mês"}
         />
         <Stat
           icon={CheckCheck}
@@ -220,24 +240,51 @@ export function Dashboard({
             Não é sobre saber tudo. É sobre saber por onde começar.
           </p>
           <div className="topic-list">
-            {topics.map((t) => (
-              <div key={t.name} className="topic-row">
-                <div className="topic-heading">
-                  <div>
-                    <strong>{t.name}</strong>
-                    <span>
-                      {t.subject} <span className="separator">/</span>{" "}
-                      {t.evidence} correções aprovadas
-                    </span>
+            {real
+              ? (dominioReal ?? []).map((d) => (
+                  <div key={d.tema_id} className="topic-row">
+                    <div className="topic-heading">
+                      <div>
+                        <strong>{d.tema}</strong>
+                        <span>
+                          {d.habilidade_codigo} <span className="separator">/</span>{" "}
+                          {d.num_evidencias} correções aprovadas
+                        </span>
+                      </div>
+                      <span className="topic-value">
+                        {Math.round(d.percentual_dominio)}
+                        <small>%</small>
+                      </span>
+                    </div>
+                    <Progress
+                      value={d.percentual_dominio}
+                      label={`Domínio em ${d.tema}`}
+                    />
                   </div>
-                  <span className="topic-value">
-                    {t.value}
-                    <small>%</small>
-                  </span>
-                </div>
-                <Progress value={t.value} label={`Domínio em ${t.name}`} />
-              </div>
-            ))}
+                ))
+              : topics.map((t) => (
+                  <div key={t.name} className="topic-row">
+                    <div className="topic-heading">
+                      <div>
+                        <strong>{t.name}</strong>
+                        <span>
+                          {t.subject} <span className="separator">/</span>{" "}
+                          {t.evidence} correções aprovadas
+                        </span>
+                      </div>
+                      <span className="topic-value">
+                        {t.value}
+                        <small>%</small>
+                      </span>
+                    </div>
+                    <Progress value={t.value} label={`Domínio em ${t.name}`} />
+                  </div>
+                ))}
+            {real && dominioReal !== null && !dominioReal.length && (
+              <p className="tiny muted">
+                Ainda não há correções aprovadas para estimar seu domínio.
+              </p>
+            )}
           </div>
           <div className="card-note">
             <span className="live-dot" />
@@ -263,20 +310,52 @@ export function Dashboard({
             <span className="spark spark-a">✧</span>
             <span className="spark spark-b">✳</span>
           </div>
-          <Badge tone="neutral">Redação · Coesão textual</Badge>
-          <h3>
-            Boas ideias merecem
-            <br />
-            boas conexões.
-          </h3>
-          <p>Pratique conectivos e deixe seus argumentos ainda mais claros.</p>
+          {real ? (
+            recomendacao ? (
+              <>
+                <Badge tone="neutral">
+                  Redação · {recomendacao.tema}
+                </Badge>
+                <h3>Seu ponto de maior oportunidade agora.</h3>
+                <p>
+                  Seu domínio em {recomendacao.habilidadeCodigo} ({recomendacao.tema}) está em{" "}
+                  {recomendacao.percentual}%. Pratique esse critério na próxima redação.
+                </p>
+              </>
+            ) : (
+              <>
+                <Badge tone="neutral">Redação</Badge>
+                <h3>Envie sua primeira redação.</h3>
+                <p>
+                  Depois que uma correção for aprovada, mostramos aqui onde focar primeiro.
+                </p>
+              </>
+            )
+          ) : (
+            <>
+              <Badge tone="neutral">Redação · Coesão textual</Badge>
+              <h3>
+                Boas ideias merecem
+                <br />
+                boas conexões.
+              </h3>
+              <p>Pratique conectivos e deixe seus argumentos ainda mais claros.</p>
+            </>
+          )}
           <div className="study-meta">
             <Clock3 size={14} /> 10 minutos <span>·</span> Exercício guiado
           </div>
-          <Button onPress={() => openStudy(studyTasks[0].id)} icon={ArrowRight}>
-            {state.completed.includes("s1")
-              ? "Praticar novamente"
-              : "Começar a praticar"}
+          <Button
+            onPress={() =>
+              real ? navigate("estudos") : openStudy(studyTasks[0].id)
+            }
+            icon={ArrowRight}
+          >
+            {real
+              ? "Ver plano de estudo"
+              : state.completed.includes("s1")
+                ? "Praticar novamente"
+                : "Começar a praticar"}
           </Button>
         </Card>
       </div>

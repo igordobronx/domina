@@ -3,7 +3,7 @@ import { listarAtividades, minhasSubmissoes, type MinhaSubmissaoAPI } from "./ap
 
 // chamada so quando ja existe submissao; qualquer status != APROVADA conta como "em revisao"
 // (AGUARDANDO_CORRECAO, PENDENTE ou REQUER_ATENCAO -- o aluno nao distingue essas fases)
-function paraStatus(statusBackend: string): ActivityStatus {
+export function paraStatus(statusBackend: string): ActivityStatus {
   return statusBackend === "APROVADA" ? "aprovada" : "pendente";
 }
 

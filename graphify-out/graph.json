@@ -587,7 +587,7 @@
       "file_type": "code",
       "norm_label": "minhasubmissaoresponse",
       "source_file": "backend/app/schemas/submissao.py",
-      "source_location": "L104"
+      "source_location": "L116"
     },
     {
       "id": "backend_app_schemas_submissao_notacriterioinput",
@@ -616,17 +616,17 @@
       "source_location": "L11"
     },
     {
-      "id": "frontend_src_hooks_usepwa_installevent",
-      "label": "InstallEvent",
+      "id": "backend_app_schemas_submissao_submissaorevisaoresponse",
+      "label": "SubmissaoRevisaoResponse",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 5,
-      "community_name": "App.tsx",
+      "community": 2,
+      "community_name": "submissoes.py",
       "file_type": "code",
-      "norm_label": "installevent",
-      "source_file": "frontend/src/hooks/usePwa.ts",
-      "source_location": "L2"
+      "norm_label": "submissaorevisaoresponse",
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L104"
     },
     {
       "id": "frontend_src_screens_activities_props",
@@ -639,7 +639,7 @@
       "file_type": "code",
       "norm_label": "props",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L24"
+      "source_location": "L33"
     },
     {
       "id": "frontend_src_services_api_apierror",
@@ -668,6 +668,19 @@
       "source_location": "L86"
     },
     {
+      "id": "frontend_src_services_api_correcaoapi",
+      "label": "CorrecaoAPI",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "correcaoapi",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L159"
+    },
+    {
       "id": "frontend_src_services_api_criterioapi",
       "label": "CriterioAPI",
       "_callable": true,
@@ -679,6 +692,19 @@
       "norm_label": "criterioapi",
       "source_file": "frontend/src/services/api.ts",
       "source_location": "L95"
+    },
+    {
+      "id": "frontend_src_services_api_dominioapi",
+      "label": "DominioAPI",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "dominioapi",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L192"
     },
     {
       "id": "frontend_src_services_api_minhasubmissaoapi",
@@ -694,6 +720,32 @@
       "source_location": "L103"
     },
     {
+      "id": "frontend_src_services_api_submissaoapi",
+      "label": "SubmissaoAPI",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "submissaoapi",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L145"
+    },
+    {
+      "id": "frontend_src_services_api_submissaorevisaoapi",
+      "label": "SubmissaoRevisaoAPI",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "submissaorevisaoapi",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L129"
+    },
+    {
       "id": "frontend_src_services_api_usuarioatual",
       "label": "UsuarioAtual",
       "_callable": true,
@@ -705,6 +757,19 @@
       "norm_label": "usuarioatual",
       "source_file": "frontend/src/services/api.ts",
       "source_location": "L51"
+    },
+    {
+      "id": "frontend_src_services_dominio_recomendacao",
+      "label": "Recomendacao",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "recomendacao",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L3"
     },
     {
       "id": "frontend_src_types_activity",
@@ -863,30 +928,56 @@
       "source_location": "L21"
     },
     {
-      "id": "backend_app_ocr_gemini_textopublicado",
-      "label": "TextoPublicado",
+      "id": "backend_app_schemas_ocr_ocrresponse",
+      "label": "OCRResponse",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
       "community": 64,
-      "community_name": "TextoPublicado",
+      "community_name": "pydantic",
       "file_type": "code",
-      "norm_label": "textopublicado",
-      "source_file": "backend/app/ocr/gemini.py",
-      "source_location": "L40"
+      "norm_label": "ocrresponse",
+      "source_file": "backend/app/schemas/ocr.py",
+      "source_location": "L3"
     },
     {
-      "id": "backend_app_config_settings",
-      "label": "Settings",
+      "id": "backend_app_schemas_turma_criarturmarequest",
+      "label": "CriarTurmaRequest",
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
+      "community": 64,
+      "community_name": "pydantic",
       "file_type": "code",
-      "norm_label": "settings",
-      "source_file": "backend/app/config.py",
-      "source_location": "L3"
+      "norm_label": "criarturmarequest",
+      "source_file": "backend/app/schemas/turma.py",
+      "source_location": "L7"
+    },
+    {
+      "id": "backend_app_schemas_turma_matricularrequest",
+      "label": "MatricularRequest",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "pydantic",
+      "file_type": "code",
+      "norm_label": "matricularrequest",
+      "source_file": "backend/app/schemas/turma.py",
+      "source_location": "L20"
+    },
+    {
+      "id": "backend_app_schemas_turma_turmaresponse",
+      "label": "TurmaResponse",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "pydantic",
+      "file_type": "code",
+      "norm_label": "turmaresponse",
+      "source_file": "backend/app/schemas/turma.py",
+      "source_location": "L12"
     },
     {
       "id": "backend_app_models_usuario_auditlog",
@@ -895,7 +986,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "auditlog",
       "source_file": "backend/app/models/usuario.py",
@@ -908,7 +999,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "loginrequest",
       "source_file": "backend/app/schemas/auth.py",
@@ -921,7 +1012,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "tokenresponse",
       "source_file": "backend/app/schemas/auth.py",
@@ -934,63 +1025,11 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "dominioresponse",
       "source_file": "backend/app/schemas/dominio.py",
       "source_location": "L6"
-    },
-    {
-      "id": "backend_app_schemas_ocr_ocrresponse",
-      "label": "OCRResponse",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "ocrresponse",
-      "source_file": "backend/app/schemas/ocr.py",
-      "source_location": "L3"
-    },
-    {
-      "id": "backend_app_schemas_turma_criarturmarequest",
-      "label": "CriarTurmaRequest",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "criarturmarequest",
-      "source_file": "backend/app/schemas/turma.py",
-      "source_location": "L7"
-    },
-    {
-      "id": "backend_app_schemas_turma_matricularrequest",
-      "label": "MatricularRequest",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "matricularrequest",
-      "source_file": "backend/app/schemas/turma.py",
-      "source_location": "L20"
-    },
-    {
-      "id": "backend_app_schemas_turma_turmaresponse",
-      "label": "TurmaResponse",
-      "_callable": true,
-      "_callable_class": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "turmaresponse",
-      "source_file": "backend/app/schemas/turma.py",
-      "source_location": "L12"
     },
     {
       "id": "backend_app_schemas_usuario_criarusuariorequest",
@@ -999,7 +1038,7 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "criarusuariorequest",
       "source_file": "backend/app/schemas/usuario.py",
@@ -1012,11 +1051,24 @@
       "_callable_class": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "usuarioresponse",
       "source_file": "backend/app/schemas/usuario.py",
       "source_location": "L11"
+    },
+    {
+      "id": "frontend_src_hooks_usepwa_installevent",
+      "label": "InstallEvent",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 75,
+      "community_name": "usePwa.ts",
+      "file_type": "code",
+      "norm_label": "installevent",
+      "source_file": "frontend/src/hooks/usePwa.ts",
+      "source_location": "L2"
     },
     {
       "id": "backend_calibracao_variantes_competenciav3",
@@ -1043,6 +1095,32 @@
       "norm_label": "resultadov3",
       "source_file": "backend/calibracao/variantes.py",
       "source_location": "L52"
+    },
+    {
+      "id": "backend_app_ocr_gemini_textopublicado",
+      "label": "TextoPublicado",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 80,
+      "community_name": "gemini.py",
+      "file_type": "code",
+      "norm_label": "textopublicado",
+      "source_file": "backend/app/ocr/gemini.py",
+      "source_location": "L40"
+    },
+    {
+      "id": "backend_app_config_settings",
+      "label": "Settings",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast",
+      "community": 82,
+      "community_name": "config.py",
+      "file_type": "code",
+      "norm_label": "settings",
+      "source_file": "backend/app/config.py",
+      "source_location": "L3"
     },
     {
       "id": "frontend_src_vite_env_d_importmetaenv",
@@ -1106,6 +1184,18 @@
       "source_location": "L13"
     },
     {
+      "id": "backend_app_database_get_db",
+      "label": "get_db()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "get_db()",
+      "source_file": "backend/app/database.py",
+      "source_location": "L33"
+    },
+    {
       "id": "backend_app_routers_documento_enviar_documento",
       "label": "enviar_documento()",
       "_callable": true,
@@ -1116,6 +1206,30 @@
       "norm_label": "enviar_documento()",
       "source_file": "backend/app/routers/documento.py",
       "source_location": "L23"
+    },
+    {
+      "id": "backend_app_routers_ocr_extract_text_from_image",
+      "label": "extract_text_from_image()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "extract_text_from_image()",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L69"
+    },
+    {
+      "id": "backend_app_routers_ocr_ler_imagem",
+      "label": "ler_imagem()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "ler_imagem()",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L21"
     },
     {
       "id": "backend_app_routers_ocr_ocr",
@@ -1139,7 +1253,7 @@
       "file_type": "code",
       "norm_label": "aprovar_correcao()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L340"
+      "source_location": "L375"
     },
     {
       "id": "backend_app_routers_submissoes_atividade_response",
@@ -1163,7 +1277,7 @@
       "file_type": "code",
       "norm_label": "_atualizar_dominio()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L323"
+      "source_location": "L358"
     },
     {
       "id": "backend_app_routers_submissoes_confirmar_texto",
@@ -1175,7 +1289,7 @@
       "file_type": "code",
       "norm_label": "confirmar_texto()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L205"
+      "source_location": "L240"
     },
     {
       "id": "backend_app_routers_submissoes_correcao_response",
@@ -1187,7 +1301,7 @@
       "file_type": "code",
       "norm_label": "_correcao_response()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L226"
+      "source_location": "L261"
     },
     {
       "id": "backend_app_routers_submissoes_corrigir_submissao",
@@ -1199,7 +1313,7 @@
       "file_type": "code",
       "norm_label": "corrigir_submissao()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L262"
+      "source_location": "L297"
     },
     {
       "id": "backend_app_routers_submissoes_criar_atividade",
@@ -1235,7 +1349,7 @@
       "file_type": "code",
       "norm_label": "enviar_texto()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L393"
+      "source_location": "L428"
     },
     {
       "id": "backend_app_routers_submissoes_gestor_da_escola",
@@ -1262,6 +1376,18 @@
       "source_location": "L79"
     },
     {
+      "id": "backend_app_routers_submissoes_listar_submissoes",
+      "label": "listar_submissoes()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "listar_submissoes()",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L163"
+    },
+    {
       "id": "backend_app_routers_submissoes_minhas_submissoes",
       "label": "minhas_submissoes()",
       "_callable": true,
@@ -1271,7 +1397,7 @@
       "file_type": "code",
       "norm_label": "minhas_submissoes()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L164"
+      "source_location": "L199"
     },
     {
       "id": "backend_app_routers_submissoes_na_turma",
@@ -1295,7 +1421,7 @@
       "file_type": "code",
       "norm_label": "_pode_ver_correcao()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L254"
+      "source_location": "L289"
     },
     {
       "id": "backend_app_routers_submissoes_professor_da_turma",
@@ -1319,7 +1445,7 @@
       "file_type": "code",
       "norm_label": "_so_professor()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L248"
+      "source_location": "L283"
     },
     {
       "id": "backend_app_routers_submissoes_submissao_visivel",
@@ -1343,7 +1469,7 @@
       "file_type": "code",
       "norm_label": "_validar_envio()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L374"
+      "source_location": "L409"
     },
     {
       "id": "backend_app_routers_submissoes_ver_correcao",
@@ -1355,7 +1481,7 @@
       "file_type": "code",
       "norm_label": "ver_correcao()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L312"
+      "source_location": "L347"
     },
     {
       "id": "backend_app_routers_submissoes_ver_submissao",
@@ -1367,7 +1493,7 @@
       "file_type": "code",
       "norm_label": "ver_submissao()",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L200"
+      "source_location": "L235"
     },
     {
       "id": "backend_app_routers_turma_criar_turma",
@@ -1634,54 +1760,6 @@
       "source_location": "L140"
     },
     {
-      "id": "frontend_src_hooks_usepwa_installevent_prompt",
-      "label": ".prompt()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "App.tsx",
-      "file_type": "code",
-      "norm_label": ".prompt()",
-      "source_file": "frontend/src/hooks/usePwa.ts",
-      "source_location": "L3"
-    },
-    {
-      "id": "frontend_src_hooks_usepwa_isstandalone",
-      "label": "isStandalone()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "App.tsx",
-      "file_type": "code",
-      "norm_label": "isstandalone()",
-      "source_file": "frontend/src/hooks/usePwa.ts",
-      "source_location": "L6"
-    },
-    {
-      "id": "frontend_src_hooks_usepwa_usepwa",
-      "label": "usePwa()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "App.tsx",
-      "file_type": "code",
-      "norm_label": "usepwa()",
-      "source_file": "frontend/src/hooks/usePwa.ts",
-      "source_location": "L19"
-    },
-    {
-      "id": "frontend_src_hooks_usepwa_wasdismissed",
-      "label": "wasDismissed()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "App.tsx",
-      "file_type": "code",
-      "norm_label": "wasdismissed()",
-      "source_file": "frontend/src/hooks/usePwa.ts",
-      "source_location": "L12"
-    },
-    {
       "id": "frontend_src_screens_activities_activities",
       "label": "Activities()",
       "_callable": true,
@@ -1691,7 +1769,7 @@
       "file_type": "code",
       "norm_label": "activities()",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L34"
+      "source_location": "L43"
     },
     {
       "id": "frontend_src_screens_activities_activitydetail",
@@ -1703,7 +1781,19 @@
       "file_type": "code",
       "norm_label": "activitydetail()",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L152"
+      "source_location": "L179"
+    },
+    {
+      "id": "frontend_src_screens_activities_revisaoreal",
+      "label": "RevisaoReal()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "revisaoreal()",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L581"
     },
     {
       "id": "frontend_src_screens_dashboard_activityrow",
@@ -1715,7 +1805,7 @@
       "file_type": "code",
       "norm_label": "activityrow()",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L342"
+      "source_location": "L421"
     },
     {
       "id": "frontend_src_screens_dashboard_dashboard",
@@ -1727,7 +1817,7 @@
       "file_type": "code",
       "norm_label": "dashboard()",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L20"
+      "source_location": "L24"
     },
     {
       "id": "frontend_src_screens_dashboard_stat",
@@ -1739,7 +1829,7 @@
       "file_type": "code",
       "norm_label": "stat()",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L316"
+      "source_location": "L395"
     },
     {
       "id": "frontend_src_screens_educatordashboard_educatordashboard",
@@ -1838,6 +1928,18 @@
       "source_location": "L7"
     },
     {
+      "id": "frontend_src_services_api_aprovarcorrecao",
+      "label": "aprovarCorrecao()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "aprovarcorrecao()",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L181"
+    },
+    {
       "id": "frontend_src_services_api_cleartoken",
       "label": "clearToken()",
       "_callable": true,
@@ -1848,6 +1950,30 @@
       "norm_label": "cleartoken()",
       "source_file": "frontend/src/services/api.ts",
       "source_location": "L22"
+    },
+    {
+      "id": "frontend_src_services_api_corrigirsubmissao",
+      "label": "corrigirSubmissao()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "corrigirsubmissao()",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L170"
+    },
+    {
+      "id": "frontend_src_services_api_dominiomeu",
+      "label": "dominioMeu()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "dominiomeu()",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L200"
     },
     {
       "id": "frontend_src_services_api_enviartexto",
@@ -1884,6 +2010,18 @@
       "norm_label": "listaratividades()",
       "source_file": "frontend/src/services/api.ts",
       "source_location": "L114"
+    },
+    {
+      "id": "frontend_src_services_api_listarsubmissoesrevisao",
+      "label": "listarSubmissoesRevisao()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "listarsubmissoesrevisao()",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L141"
     },
     {
       "id": "frontend_src_services_api_login",
@@ -1968,6 +2106,30 @@
       "norm_label": "settoken()",
       "source_file": "frontend/src/services/api.ts",
       "source_location": "L14"
+    },
+    {
+      "id": "frontend_src_services_api_vercorrecao",
+      "label": "verCorrecao()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "vercorrecao()",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L177"
+    },
+    {
+      "id": "frontend_src_services_api_versubmissao",
+      "label": "verSubmissao()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "versubmissao()",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L155"
     },
     {
       "id": "frontend_src_services_atividades_carregaratividadesdoaluno",
@@ -2066,6 +2228,30 @@
       "source_location": "L33"
     },
     {
+      "id": "frontend_src_services_dominio_carregardominioreal",
+      "label": "carregarDominioReal()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "carregardominioreal()",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L22"
+    },
+    {
+      "id": "frontend_src_services_dominio_recomendar",
+      "label": "recomendar()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "recomendar()",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L11"
+    },
+    {
       "id": "frontend_src_services_navigation_readroute",
       "label": "readRoute()",
       "_callable": true,
@@ -2076,6 +2262,30 @@
       "norm_label": "readroute()",
       "source_file": "frontend/src/services/navigation.ts",
       "source_location": "L21"
+    },
+    {
+      "id": "frontend_src_services_revisoes_carregarrevisoes",
+      "label": "carregarRevisoes()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "carregarrevisoes()",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L11"
+    },
+    {
+      "id": "frontend_src_services_revisoes_paradata",
+      "label": "paraData()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "paradata()",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L5"
     },
     {
       "id": "backend_app_routers_compliance_custo_uso_do_mes",
@@ -2136,30 +2346,6 @@
       "norm_label": "_so_gestor()",
       "source_file": "backend/app/routers/compliance.py",
       "source_location": "L15"
-    },
-    {
-      "id": "backend_tests_test_fluxo_envio_test_texto_publicado_responde_422",
-      "label": "test_texto_publicado_responde_422()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 64,
-      "community_name": "TextoPublicado",
-      "file_type": "code",
-      "norm_label": "test_texto_publicado_responde_422()",
-      "source_file": "backend/tests/test_fluxo_envio.py",
-      "source_location": "L100"
-    },
-    {
-      "id": "backend_tests_test_fluxo_envio_test_texto_publicado_responde_422_recitacao",
-      "label": "recitacao()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 64,
-      "community_name": "TextoPublicado",
-      "file_type": "code",
-      "norm_label": "recitacao()",
-      "source_file": "backend/tests/test_fluxo_envio.py",
-      "source_location": "L103"
     },
     {
       "id": "backend_calibracao_analisa_pearson",
@@ -2227,7 +2413,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "registrar()",
       "source_file": "backend/app/auditoria.py",
@@ -2239,7 +2425,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "get_current_user()",
       "source_file": "backend/app/auth/dependencies.py",
@@ -2251,7 +2437,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "create_access_token()",
       "source_file": "backend/app/auth/security.py",
@@ -2263,7 +2449,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "decode_access_token()",
       "source_file": "backend/app/auth/security.py",
@@ -2275,23 +2461,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "verify_password()",
       "source_file": "backend/app/auth/security.py",
       "source_location": "L15"
-    },
-    {
-      "id": "backend_app_database_get_db",
-      "label": "get_db()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "get_db()",
-      "source_file": "backend/app/database.py",
-      "source_location": "L33"
     },
     {
       "id": "backend_app_routers_auth_login",
@@ -2299,7 +2473,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "login()",
       "source_file": "backend/app/routers/auth.py",
@@ -2311,7 +2485,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "_compartilha_turma()",
       "source_file": "backend/app/routers/dominio.py",
@@ -2323,7 +2497,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "_dominio_de()",
       "source_file": "backend/app/routers/dominio.py",
@@ -2335,7 +2509,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "dominio_do_aluno()",
       "source_file": "backend/app/routers/dominio.py",
@@ -2347,7 +2521,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "meu_dominio()",
       "source_file": "backend/app/routers/dominio.py",
@@ -2359,35 +2533,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "health_check()",
       "source_file": "backend/app/routers/health.py",
       "source_location": "L15"
-    },
-    {
-      "id": "backend_app_routers_ocr_extract_text_from_image",
-      "label": "extract_text_from_image()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "extract_text_from_image()",
-      "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L69"
-    },
-    {
-      "id": "backend_app_routers_ocr_ler_imagem",
-      "label": "ler_imagem()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "ler_imagem()",
-      "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L21"
     },
     {
       "id": "backend_app_routers_usuario_criar_usuario",
@@ -2395,7 +2545,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "criar_usuario()",
       "source_file": "backend/app/routers/usuario.py",
@@ -2407,11 +2557,59 @@
       "_callable": true,
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "meu_usuario()",
       "source_file": "backend/app/routers/usuario.py",
       "source_location": "L16"
+    },
+    {
+      "id": "frontend_src_hooks_usepwa_installevent_prompt",
+      "label": ".prompt()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 75,
+      "community_name": "usePwa.ts",
+      "file_type": "code",
+      "norm_label": ".prompt()",
+      "source_file": "frontend/src/hooks/usePwa.ts",
+      "source_location": "L3"
+    },
+    {
+      "id": "frontend_src_hooks_usepwa_isstandalone",
+      "label": "isStandalone()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 75,
+      "community_name": "usePwa.ts",
+      "file_type": "code",
+      "norm_label": "isstandalone()",
+      "source_file": "frontend/src/hooks/usePwa.ts",
+      "source_location": "L6"
+    },
+    {
+      "id": "frontend_src_hooks_usepwa_usepwa",
+      "label": "usePwa()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 75,
+      "community_name": "usePwa.ts",
+      "file_type": "code",
+      "norm_label": "usepwa()",
+      "source_file": "frontend/src/hooks/usePwa.ts",
+      "source_location": "L19"
+    },
+    {
+      "id": "frontend_src_hooks_usepwa_wasdismissed",
+      "label": "wasDismissed()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 75,
+      "community_name": "usePwa.ts",
+      "file_type": "code",
+      "norm_label": "wasdismissed()",
+      "source_file": "frontend/src/hooks/usePwa.ts",
+      "source_location": "L12"
     },
     {
       "id": "backend_app_auth_security_hash_password",
@@ -2424,6 +2622,18 @@
       "norm_label": "hash_password()",
       "source_file": "backend/app/auth/security.py",
       "source_location": "L12"
+    },
+    {
+      "id": "backend_app_ocr_gemini_reduzir",
+      "label": "reduzir()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 78,
+      "community_name": "test_fluxo_envio.py",
+      "file_type": "code",
+      "norm_label": "reduzir()",
+      "source_file": "backend/app/ocr/gemini.py",
+      "source_location": "L56"
     },
     {
       "id": "backend_tests_test_fluxo_envio_atividade_id",
@@ -2534,6 +2744,18 @@
       "source_location": "L183"
     },
     {
+      "id": "backend_tests_test_fluxo_envio_test_reduz_foto_grande_antes_do_gemini",
+      "label": "test_reduz_foto_grande_antes_do_gemini()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 78,
+      "community_name": "test_fluxo_envio.py",
+      "file_type": "code",
+      "norm_label": "test_reduz_foto_grande_antes_do_gemini()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L166"
+    },
+    {
       "id": "backend_tests_test_fluxo_envio_test_regras_de_acesso",
       "label": "test_regras_de_acesso()",
       "_callable": true,
@@ -2642,18 +2864,6 @@
       "source_location": "L68"
     },
     {
-      "id": "backend_app_ocr_gemini_reduzir",
-      "label": "reduzir()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 80,
-      "community_name": "gemini.py",
-      "file_type": "code",
-      "norm_label": "reduzir()",
-      "source_file": "backend/app/ocr/gemini.py",
-      "source_location": "L56"
-    },
-    {
       "id": "backend_tests_test_fluxo_envio_test_gemini_usa_modelo_reserva_quando_cota_estoura",
       "label": "test_gemini_usa_modelo_reserva_quando_cota_estoura()",
       "_callable": true,
@@ -2678,16 +2888,28 @@
       "source_location": "L151"
     },
     {
-      "id": "backend_tests_test_fluxo_envio_test_reduz_foto_grande_antes_do_gemini",
-      "label": "test_reduz_foto_grande_antes_do_gemini()",
+      "id": "backend_tests_test_fluxo_envio_test_texto_publicado_responde_422",
+      "label": "test_texto_publicado_responde_422()",
       "_callable": true,
       "_origin": "ast",
       "community": 80,
       "community_name": "gemini.py",
       "file_type": "code",
-      "norm_label": "test_reduz_foto_grande_antes_do_gemini()",
+      "norm_label": "test_texto_publicado_responde_422()",
       "source_file": "backend/tests/test_fluxo_envio.py",
-      "source_location": "L166"
+      "source_location": "L100"
+    },
+    {
+      "id": "backend_tests_test_fluxo_envio_test_texto_publicado_responde_422_recitacao",
+      "label": "recitacao()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 80,
+      "community_name": "gemini.py",
+      "file_type": "code",
+      "norm_label": "recitacao()",
+      "source_file": "backend/tests/test_fluxo_envio.py",
+      "source_location": "L103"
     },
     {
       "id": "backend_app_correcao",
@@ -2756,6 +2978,17 @@
       "source_location": ""
     },
     {
+      "id": "backend_app_database",
+      "label": "database.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "database.py",
+      "source_file": "backend/app/database.py",
+      "source_location": "L1"
+    },
+    {
       "id": "backend_app_init",
       "label": "app/__init__.py",
       "_origin": "ast",
@@ -2786,6 +3019,17 @@
       "file_type": "code",
       "norm_label": "models/usuario.py",
       "source_file": "backend/app/models/usuario.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_routers_documento",
+      "label": "routers/documento.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "routers/documento.py",
+      "source_file": "backend/app/routers/documento.py",
       "source_location": "L1"
     },
     {
@@ -2829,6 +3073,50 @@
       "community_name": "submissoes.py",
       "file_type": "code",
       "norm_label": "uuid",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_ocr",
+      "label": "routers/ocr.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "routers/ocr.py",
+      "source_file": "backend/app/routers/ocr.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_routers_ocr_py_post",
+      "label": "post",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "post",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_ocr_py_session",
+      "label": "Session",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "session",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_ocr_py_uploadfile",
+      "label": "UploadFile",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "uploadfile",
       "source_file": "",
       "source_location": ""
     },
@@ -2897,6 +3185,17 @@
       "norm_label": "uuid",
       "source_file": "",
       "source_location": ""
+    },
+    {
+      "id": "backend_app_routers_turma",
+      "label": "routers/turma.py",
+      "_origin": "ast",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "file_type": "code",
+      "norm_label": "routers/turma.py",
+      "source_file": "backend/app/routers/turma.py",
+      "source_location": "L1"
     },
     {
       "id": "backend_app_routers_turma_py_post",
@@ -3185,17 +3484,6 @@
       "source_location": "L3"
     },
     {
-      "id": "frontend_src_hooks_usepwa",
-      "label": "usePwa.ts",
-      "_origin": "ast",
-      "community": 5,
-      "community_name": "App.tsx",
-      "file_type": "code",
-      "norm_label": "usepwa.ts",
-      "source_file": "frontend/src/hooks/usePwa.ts",
-      "source_location": "L1"
-    },
-    {
       "id": "frontend_src_main",
       "label": "main.tsx",
       "_origin": "ast",
@@ -3216,6 +3504,17 @@
       "norm_label": "activities.tsx",
       "source_file": "frontend/src/screens/Activities.tsx",
       "source_location": "L1"
+    },
+    {
+      "id": "frontend_src_screens_activities_notas_enem",
+      "label": "NOTAS_ENEM",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "notas_enem",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L579"
     },
     {
       "id": "frontend_src_screens_dashboard",
@@ -3317,6 +3616,17 @@
       "source_location": "L1"
     },
     {
+      "id": "frontend_src_services_dominio",
+      "label": "dominio.ts",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "dominio.ts",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "frontend_src_services_navigation",
       "label": "navigation.ts",
       "_origin": "ast",
@@ -3337,6 +3647,17 @@
       "norm_label": "allowedpages",
       "source_file": "frontend/src/services/navigation.ts",
       "source_location": "L2"
+    },
+    {
+      "id": "frontend_src_services_revisoes",
+      "label": "revisoes.ts",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "App.tsx",
+      "file_type": "code",
+      "norm_label": "revisoes.ts",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L1"
     },
     {
       "id": "frontend_src_theme",
@@ -3495,13 +3816,46 @@
       "source_location": ""
     },
     {
-      "id": "exception",
-      "label": "Exception",
+      "id": "backend_app_schemas_ocr",
+      "label": "schemas/ocr.py",
       "_origin": "ast",
       "community": 64,
-      "community_name": "TextoPublicado",
+      "community_name": "pydantic",
       "file_type": "code",
-      "norm_label": "exception",
+      "norm_label": "schemas/ocr.py",
+      "source_file": "backend/app/schemas/ocr.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_schemas_ocr_py_basemodel",
+      "label": "BaseModel",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "pydantic",
+      "file_type": "code",
+      "norm_label": "basemodel",
+      "source_file": "",
+      "source_location": ""
+    },
+    {
+      "id": "backend_app_schemas_turma",
+      "label": "schemas/turma.py",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "pydantic",
+      "file_type": "code",
+      "norm_label": "schemas/turma.py",
+      "source_file": "backend/app/schemas/turma.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "backend_app_schemas_turma_py_basemodel",
+      "label": "BaseModel",
+      "_origin": "ast",
+      "community": 64,
+      "community_name": "pydantic",
+      "file_type": "code",
+      "norm_label": "basemodel",
       "source_file": "",
       "source_location": ""
     },
@@ -4583,7 +4937,7 @@
       "label": "auditoria.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "auditoria.py",
       "source_file": "backend/app/auditoria.py",
@@ -4594,7 +4948,7 @@
       "label": "Session",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "session",
       "source_file": "",
@@ -4605,7 +4959,7 @@
       "label": "dependencies.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "dependencies.py",
       "source_file": "backend/app/auth/dependencies.py",
@@ -4616,7 +4970,7 @@
       "label": "Session",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "session",
       "source_file": "",
@@ -4627,32 +4981,10 @@
       "label": "security.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "security.py",
       "source_file": "backend/app/auth/security.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "backend_app_config",
-      "label": "config.py",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "config.py",
-      "source_file": "backend/app/config.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "backend_app_database",
-      "label": "database.py",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "database.py",
-      "source_file": "backend/app/database.py",
       "source_location": "L1"
     },
     {
@@ -4660,7 +4992,7 @@
       "label": "main.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "main.py",
       "source_file": "backend/app/main.py",
@@ -4671,7 +5003,7 @@
       "label": "models/__init__.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "models/__init__.py",
       "source_file": "backend/app/models/__init__.py",
@@ -4682,7 +5014,7 @@
       "label": "routers/auth.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "routers/auth.py",
       "source_file": "backend/app/routers/auth.py",
@@ -4693,7 +5025,7 @@
       "label": "post",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "post",
       "source_file": "",
@@ -4704,29 +5036,18 @@
       "label": "Session",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "session",
       "source_file": "",
       "source_location": ""
     },
     {
-      "id": "backend_app_routers_documento",
-      "label": "routers/documento.py",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "routers/documento.py",
-      "source_file": "backend/app/routers/documento.py",
-      "source_location": "L1"
-    },
-    {
       "id": "backend_app_routers_dominio",
       "label": "routers/dominio.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "routers/dominio.py",
       "source_file": "backend/app/routers/dominio.py",
@@ -4737,7 +5058,7 @@
       "label": "get",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "get",
       "source_file": "",
@@ -4748,7 +5069,7 @@
       "label": "Session",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "session",
       "source_file": "",
@@ -4759,7 +5080,7 @@
       "label": "UUID",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "uuid",
       "source_file": "",
@@ -4770,7 +5091,7 @@
       "label": "health.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "health.py",
       "source_file": "backend/app/routers/health.py",
@@ -4781,7 +5102,7 @@
       "label": "get",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "get",
       "source_file": "",
@@ -4792,65 +5113,10 @@
       "label": "routers/__init__.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "routers/__init__.py",
       "source_file": "backend/app/routers/__init__.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "backend_app_routers_ocr",
-      "label": "routers/ocr.py",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "routers/ocr.py",
-      "source_file": "backend/app/routers/ocr.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "backend_app_routers_ocr_py_post",
-      "label": "post",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "post",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "backend_app_routers_ocr_py_session",
-      "label": "Session",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "session",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "backend_app_routers_ocr_py_uploadfile",
-      "label": "UploadFile",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "uploadfile",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "backend_app_routers_turma",
-      "label": "routers/turma.py",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "routers/turma.py",
-      "source_file": "backend/app/routers/turma.py",
       "source_location": "L1"
     },
     {
@@ -4858,7 +5124,7 @@
       "label": "routers/usuario.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "routers/usuario.py",
       "source_file": "backend/app/routers/usuario.py",
@@ -4869,7 +5135,7 @@
       "label": "get",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "get",
       "source_file": "",
@@ -4880,7 +5146,7 @@
       "label": "post",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "post",
       "source_file": "",
@@ -4891,7 +5157,7 @@
       "label": "Session",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "session",
       "source_file": "",
@@ -4902,7 +5168,7 @@
       "label": "schemas/auth.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "schemas/auth.py",
       "source_file": "backend/app/schemas/auth.py",
@@ -4913,7 +5179,7 @@
       "label": "BaseModel",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "basemodel",
       "source_file": "",
@@ -4924,7 +5190,7 @@
       "label": "schemas/dominio.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "schemas/dominio.py",
       "source_file": "backend/app/schemas/dominio.py",
@@ -4935,51 +5201,7 @@
       "label": "BaseModel",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "basemodel",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "backend_app_schemas_ocr",
-      "label": "schemas/ocr.py",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "schemas/ocr.py",
-      "source_file": "backend/app/schemas/ocr.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "backend_app_schemas_ocr_py_basemodel",
-      "label": "BaseModel",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "basemodel",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "backend_app_schemas_turma",
-      "label": "schemas/turma.py",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "schemas/turma.py",
-      "source_file": "backend/app/schemas/turma.py",
-      "source_location": "L1"
-    },
-    {
-      "id": "backend_app_schemas_turma_py_basemodel",
-      "label": "BaseModel",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "basemodel",
       "source_file": "",
@@ -4990,7 +5212,7 @@
       "label": "schemas/usuario.py",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "schemas/usuario.py",
       "source_file": "backend/app/schemas/usuario.py",
@@ -5001,20 +5223,9 @@
       "label": "BaseModel",
       "_origin": "ast",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "file_type": "code",
       "norm_label": "basemodel",
-      "source_file": "",
-      "source_location": ""
-    },
-    {
-      "id": "basesettings",
-      "label": "BaseSettings",
-      "_origin": "ast",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "file_type": "code",
-      "norm_label": "basesettings",
       "source_file": "",
       "source_location": ""
     },
@@ -5162,6 +5373,17 @@
       "source_location": "L14"
     },
     {
+      "id": "frontend_src_hooks_usepwa",
+      "label": "usePwa.ts",
+      "_origin": "ast",
+      "community": 75,
+      "community_name": "usePwa.ts",
+      "file_type": "code",
+      "norm_label": "usepwa.ts",
+      "source_file": "frontend/src/hooks/usePwa.ts",
+      "source_location": "L1"
+    },
+    {
       "id": "backend_tests_test_fluxo_envio",
       "label": "test_fluxo_envio.py",
       "_origin": "ast",
@@ -5226,6 +5448,17 @@
       "norm_label": "gemini.py",
       "source_file": "backend/app/ocr/gemini.py",
       "source_location": "L1"
+    },
+    {
+      "id": "exception",
+      "label": "Exception",
+      "_origin": "ast",
+      "community": 80,
+      "community_name": "gemini.py",
+      "file_type": "code",
+      "norm_label": "exception",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "generatecontentconfig",
@@ -5314,6 +5547,28 @@
       "norm_label": "$schema",
       "source_file": "frontend/vercel.json",
       "source_location": "L2"
+    },
+    {
+      "id": "backend_app_config",
+      "label": "config.py",
+      "_origin": "ast",
+      "community": 82,
+      "community_name": "config.py",
+      "file_type": "code",
+      "norm_label": "config.py",
+      "source_file": "backend/app/config.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "basesettings",
+      "label": "BaseSettings",
+      "_origin": "ast",
+      "community": 82,
+      "community_name": "config.py",
+      "file_type": "code",
+      "norm_label": "basesettings",
+      "source_file": "",
+      "source_location": ""
     },
     {
       "id": "frontend_vitest_config",
@@ -6192,6 +6447,36 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_modelagem_do_banco_de_dados_exercicio",
+      "label": "Exercicio",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 12,
+      "community_name": "Usuario",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "exercicio",
+      "source_file": "docs/Domina - Modelagem do Banco de Dados.pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_modelagem_do_banco_de_dados_exercicioresposta",
+      "label": "ExercicioResposta",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 12,
+      "community_name": "Usuario",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "exercicioresposta",
+      "source_file": "docs/Domina - Modelagem do Banco de Dados.pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_modelagem_do_banco_de_dados_turma",
       "label": "Turma",
       "_origin": "semantic",
@@ -6969,6 +7254,21 @@
       "contributor": null,
       "file_type": "concept",
       "norm_label": "esqueleto do backend (fastapi) + auth + deploy inicial",
+      "source_file": "docs/plano_prototipo.pdf",
+      "source_location": "p.1",
+      "source_url": null
+    },
+    {
+      "id": "docs_plano_prototipo_correcao_de_redacao_enem",
+      "label": "Corre\u00e7\u00e3o de Reda\u00e7\u00e3o do ENEM (5 compet\u00eancias INEP)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 3,
+      "community_name": "Escopo do Prot\u00f3tipo",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "correcao de redacao do enem (5 competencias inep)",
       "source_file": "docs/plano_prototipo.pdf",
       "source_location": "p.1",
       "source_url": null
@@ -8172,6 +8472,21 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_enem",
+      "label": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "E2 Base da mat\u00e9ria \u2014 Ensinar ao sistema o conte\u00fado e os crit\u00e9rios de cada mat\u00e9ria",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "enem (exame nacional do ensino medio) \u2014 mercado inicial",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_epico_e2",
       "label": "E2 Base da mat\u00e9ria \u2014 Ensinar ao sistema o conte\u00fado e os crit\u00e9rios de cada mat\u00e9ria",
       "_origin": "semantic",
@@ -8182,6 +8497,21 @@
       "contributor": null,
       "file_type": "concept",
       "norm_label": "e2 base da materia \u2014 ensinar ao sistema o conteudo e os criterios de cada materia",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_matriz_referencia_inep",
+      "label": "Matriz de refer\u00eancia do INEP (habilidades/compet\u00eancias)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "E2 Base da mat\u00e9ria \u2014 Ensinar ao sistema o conte\u00fado e os crit\u00e9rios de cada mat\u00e9ria",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "matriz de referencia do inep (habilidades/competencias)",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -8232,6 +8562,21 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rf_08",
+      "label": "RF-08 (Mat\u00e9ria e base): Trazer pr\u00e9-carregadas a matriz de refer\u00eancia do ENEM e as 5 compet\u00eancias da reda\u00e7\u00e3o (INEP)",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "E2 Base da mat\u00e9ria \u2014 Ensinar ao sistema o conte\u00fado e os crit\u00e9rios de cada mat\u00e9ria",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "rf-08 (materia e base): trazer pre-carregadas a matriz de referencia do enem e as 5 competencias da redacao (inep)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rf_09",
       "label": "RF-09 (Mat\u00e9ria e base): Versionar a base de uma mat\u00e9ria, registrando quem mudou o qu\u00ea e quando",
       "_origin": "semantic",
@@ -8247,6 +8592,21 @@
       "source_url": null
     },
     {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rf_14",
+      "label": "RF-14 (Corre\u00e7\u00e3o): Corrigir reda\u00e7\u00e3o do ENEM com nota estimada por compet\u00eancia (0 a 200) e total, com justificativa",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "E2 Base da mat\u00e9ria \u2014 Ensinar ao sistema o conte\u00fado e os crit\u00e9rios de cada mat\u00e9ria",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "rf-14 (correcao): corrigir redacao do enem com nota estimada por competencia (0 a 200) e total, com justificativa",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_04",
       "label": "RN-04 (Corre\u00e7\u00e3o): A IA s\u00f3 corrige com crit\u00e9rios de uma base de mat\u00e9ria aprovada por um professor; sem base aprovada, n\u00e3o corrige",
       "_origin": "semantic",
@@ -8257,6 +8617,36 @@
       "contributor": null,
       "file_type": "concept",
       "norm_label": "rn-04 (correcao): a ia so corrige com criterios de uma base de materia aprovada por um professor; sem base aprovada, nao corrige",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_05",
+      "label": "RN-05 (Corre\u00e7\u00e3o): A reda\u00e7\u00e3o do ENEM \u00e9 avaliada pelas 5 compet\u00eancias do INEP, cada uma de 0 a 200, com total de 0 a 1000",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "E2 Base da mat\u00e9ria \u2014 Ensinar ao sistema o conte\u00fado e os crit\u00e9rios de cada mat\u00e9ria",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "rn-05 (correcao): a redacao do enem e avaliada pelas 5 competencias do inep, cada uma de 0 a 200, com total de 0 a 1000",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
+      "source_url": null
+    },
+    {
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_us_03",
+      "label": "US-03 (MVP): Como professor de reda\u00e7\u00e3o, quero come\u00e7ar com as 5 compet\u00eancias do ENEM j\u00e1 carregadas, para usar sem configurar nada",
+      "_origin": "semantic",
+      "author": null,
+      "captured_at": null,
+      "community": 6,
+      "community_name": "E2 Base da mat\u00e9ria \u2014 Ensinar ao sistema o conte\u00fado e os crit\u00e9rios de cada mat\u00e9ria",
+      "contributor": null,
+      "file_type": "concept",
+      "norm_label": "us-03 (mvp): como professor de redacao, quero comecar com as 5 competencias do enem ja carregadas, para usar sem configurar nada",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -8849,36 +9239,6 @@
       "source_url": null
     },
     {
-      "id": "docs_domina_modelagem_do_banco_de_dados_exercicio",
-      "label": "Exercicio",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 73,
-      "community_name": "DominioAluno",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "exercicio",
-      "source_file": "docs/Domina - Modelagem do Banco de Dados.pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_modelagem_do_banco_de_dados_exercicioresposta",
-      "label": "ExercicioResposta",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 73,
-      "community_name": "DominioAluno",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "exercicioresposta",
-      "source_file": "docs/Domina - Modelagem do Banco de Dados.pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
       "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_arch_motor_de_dominio",
       "label": "Arquitetura: Motor de dom\u00ednio (% por tema; s\u00f3 com corre\u00e7\u00e3o aprovada)",
       "_origin": "semantic",
@@ -8904,21 +9264,6 @@
       "contributor": null,
       "file_type": "concept",
       "norm_label": "arquitetura: paineis (aluno, professor e gestor)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_arch_professor_revisa",
-      "label": "Arquitetura: Professor revisa (aprova, edita ou rejeita cada nota)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 73,
-      "community_name": "DominioAluno",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "arquitetura: professor revisa (aprova, edita ou rejeita cada nota)",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -9254,8 +9599,8 @@
       "source_url": null
     },
     {
-      "id": "docs_plano_prototipo_correcao_de_redacao_enem",
-      "label": "Corre\u00e7\u00e3o de Reda\u00e7\u00e3o do ENEM (5 compet\u00eancias INEP)",
+      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_arch_professor_revisa",
+      "label": "Arquitetura: Professor revisa (aprova, edita ou rejeita cada nota)",
       "_origin": "semantic",
       "author": null,
       "captured_at": null,
@@ -9263,9 +9608,9 @@
       "community_name": "Correcao",
       "contributor": null,
       "file_type": "concept",
-      "norm_label": "correcao de redacao do enem (5 competencias inep)",
-      "source_file": "docs/plano_prototipo.pdf",
-      "source_location": "p.1",
+      "norm_label": "arquitetura: professor revisa (aprova, edita ou rejeita cada nota)",
+      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
+      "source_location": null,
       "source_url": null
     },
     {
@@ -9279,96 +9624,6 @@
       "contributor": null,
       "file_type": "rationale",
       "norm_label": "ponto em aberto: \"treinar\" com documentos \u2014 respondido em parte (rag, nao fine-tuning no mvp)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_enem",
-      "label": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 89,
-      "community_name": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "enem (exame nacional do ensino medio) \u2014 mercado inicial",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_matriz_referencia_inep",
-      "label": "Matriz de refer\u00eancia do INEP (habilidades/compet\u00eancias)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 89,
-      "community_name": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "matriz de referencia do inep (habilidades/competencias)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rf_08",
-      "label": "RF-08 (Mat\u00e9ria e base): Trazer pr\u00e9-carregadas a matriz de refer\u00eancia do ENEM e as 5 compet\u00eancias da reda\u00e7\u00e3o (INEP)",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 89,
-      "community_name": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "rf-08 (materia e base): trazer pre-carregadas a matriz de referencia do enem e as 5 competencias da redacao (inep)",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rf_14",
-      "label": "RF-14 (Corre\u00e7\u00e3o): Corrigir reda\u00e7\u00e3o do ENEM com nota estimada por compet\u00eancia (0 a 200) e total, com justificativa",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 89,
-      "community_name": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "rf-14 (correcao): corrigir redacao do enem com nota estimada por competencia (0 a 200) e total, com justificativa",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_05",
-      "label": "RN-05 (Corre\u00e7\u00e3o): A reda\u00e7\u00e3o do ENEM \u00e9 avaliada pelas 5 compet\u00eancias do INEP, cada uma de 0 a 200, com total de 0 a 1000",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 89,
-      "community_name": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "rn-05 (correcao): a redacao do enem e avaliada pelas 5 competencias do inep, cada uma de 0 a 200, com total de 0 a 1000",
-      "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
-      "source_location": null,
-      "source_url": null
-    },
-    {
-      "id": "docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_us_03",
-      "label": "US-03 (MVP): Como professor de reda\u00e7\u00e3o, quero come\u00e7ar com as 5 compet\u00eancias do ENEM j\u00e1 carregadas, para usar sem configurar nada",
-      "_origin": "semantic",
-      "author": null,
-      "captured_at": null,
-      "community": 89,
-      "community_name": "ENEM (Exame Nacional do Ensino M\u00e9dio) \u2014 mercado inicial",
-      "contributor": null,
-      "file_type": "concept",
-      "norm_label": "us-03 (mvp): como professor de redacao, quero comecar com as 5 competencias do enem ja carregadas, para usar sem configurar nada",
       "source_file": "docs/Domina \u2014 Vis\u00e3o, ERS, Backlog e Regras de Neg\u00f3cio (v0.1) (2).pdf",
       "source_location": null,
       "source_url": null
@@ -9593,6 +9848,30 @@
       "type": "external"
     },
     {
+      "id": "logging",
+      "label": "logging",
+      "_origin": "semantic",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "logging",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "sqlalchemy",
+      "label": "sqlalchemy",
+      "_origin": "semantic",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "sqlalchemy",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "sqlalchemy_dialects_postgresql",
       "label": "sqlalchemy_dialects_postgresql",
       "_origin": "semantic",
@@ -9601,6 +9880,18 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "sqlalchemy_dialects_postgresql",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "sqlalchemy_orm",
+      "label": "sqlalchemy_orm",
+      "_origin": "semantic",
+      "community": 2,
+      "community_name": "submissoes.py",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "sqlalchemy_orm",
       "source_file": "",
       "type": "external"
     },
@@ -9713,6 +10004,30 @@
       "type": "external"
     },
     {
+      "id": "pydantic",
+      "label": "pydantic",
+      "_origin": "semantic",
+      "community": 64,
+      "community_name": "pydantic",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "pydantic",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "typing",
+      "label": "typing",
+      "_origin": "semantic",
+      "community": 64,
+      "community_name": "pydantic",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "typing",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "app_routers_ocr",
       "label": "app_routers_ocr",
       "_origin": "semantic",
@@ -9785,6 +10100,18 @@
       "type": "external"
     },
     {
+      "id": "pathlib",
+      "label": "pathlib",
+      "_origin": "semantic",
+      "community": 69,
+      "community_name": "calibra.py",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "pathlib",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "statistics",
       "label": "statistics",
       "_origin": "semantic",
@@ -9825,7 +10152,7 @@
       "label": "fastapi",
       "_origin": "semantic",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "external": true,
       "file_type": "concept",
       "norm_label": "fastapi",
@@ -9837,7 +10164,7 @@
       "label": "fastapi_middleware_cors",
       "_origin": "semantic",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "external": true,
       "file_type": "concept",
       "norm_label": "fastapi_middleware_cors",
@@ -9849,7 +10176,7 @@
       "label": "fastapi_security",
       "_origin": "semantic",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "external": true,
       "file_type": "concept",
       "norm_label": "fastapi_security",
@@ -9861,7 +10188,7 @@
       "label": "fastapi_staticfiles",
       "_origin": "semantic",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "external": true,
       "file_type": "concept",
       "norm_label": "fastapi_staticfiles",
@@ -9873,7 +10200,7 @@
       "label": "jwt",
       "_origin": "semantic",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "external": true,
       "file_type": "concept",
       "norm_label": "jwt",
@@ -9885,82 +10212,10 @@
       "label": "passlib_context",
       "_origin": "semantic",
       "community": 72,
-      "community_name": "routers/ocr.py",
+      "community_name": "routers/dominio.py",
       "external": true,
       "file_type": "concept",
       "norm_label": "passlib_context",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "pathlib",
-      "label": "pathlib",
-      "_origin": "semantic",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "pathlib",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "pydantic",
-      "label": "pydantic",
-      "_origin": "semantic",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "pydantic",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "pydantic_settings",
-      "label": "pydantic_settings",
-      "_origin": "semantic",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "pydantic_settings",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "sqlalchemy",
-      "label": "sqlalchemy",
-      "_origin": "semantic",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "sqlalchemy",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "sqlalchemy_orm",
-      "label": "sqlalchemy_orm",
-      "_origin": "semantic",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "sqlalchemy_orm",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "typing",
-      "label": "typing",
-      "_origin": "semantic",
-      "community": 72,
-      "community_name": "routers/ocr.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "typing",
       "source_file": "",
       "type": "external"
     },
@@ -10085,18 +10340,6 @@
       "type": "external"
     },
     {
-      "id": "logging",
-      "label": "logging",
-      "_origin": "semantic",
-      "community": 80,
-      "community_name": "gemini.py",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "logging",
-      "source_file": "",
-      "type": "external"
-    },
-    {
       "id": "pil",
       "label": "pil",
       "_origin": "semantic",
@@ -10105,6 +10348,18 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "pil",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "pydantic_settings",
+      "label": "pydantic_settings",
+      "_origin": "semantic",
+      "community": 82,
+      "community_name": "config.py",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "pydantic_settings",
       "source_file": "",
       "type": "external"
     }
@@ -10359,7 +10614,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L346",
+      "source_location": "L381",
       "weight": 1.0
     },
     {
@@ -10371,7 +10626,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L347",
+      "source_location": "L382",
       "weight": 1.0
     },
     {
@@ -10383,7 +10638,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L368",
+      "source_location": "L403",
       "weight": 1.0
     },
     {
@@ -10395,7 +10650,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L369",
+      "source_location": "L404",
       "weight": 1.0
     },
     {
@@ -10407,7 +10662,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L371",
+      "source_location": "L406",
       "weight": 1.0
     },
     {
@@ -10443,7 +10698,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L328",
+      "source_location": "L363",
       "weight": 1.0
     },
     {
@@ -10455,7 +10710,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L211",
+      "source_location": "L246",
       "weight": 1.0
     },
     {
@@ -10467,7 +10722,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L231",
+      "source_location": "L266",
       "weight": 1.0
     },
     {
@@ -10479,7 +10734,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L238",
+      "source_location": "L273",
       "weight": 1.0
     },
     {
@@ -10491,7 +10746,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L268",
+      "source_location": "L303",
       "weight": 1.0
     },
     {
@@ -10503,7 +10758,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L269",
+      "source_location": "L304",
       "weight": 1.0
     },
     {
@@ -10515,7 +10770,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L283",
+      "source_location": "L318",
       "weight": 1.0
     },
     {
@@ -10527,7 +10782,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L306",
+      "source_location": "L341",
       "weight": 1.0
     },
     {
@@ -10539,7 +10794,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L308",
+      "source_location": "L343",
       "weight": 1.0
     },
     {
@@ -10623,7 +10878,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L394",
+      "source_location": "L429",
       "weight": 1.0
     },
     {
@@ -10647,7 +10902,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L257",
+      "source_location": "L292",
       "weight": 1.0
     },
     {
@@ -10659,7 +10914,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L257",
+      "source_location": "L292",
       "weight": 1.0
     },
     {
@@ -10683,7 +10938,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L250",
+      "source_location": "L285",
       "weight": 1.0
     },
     {
@@ -10719,7 +10974,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L384",
+      "source_location": "L419",
       "weight": 1.0
     },
     {
@@ -10731,7 +10986,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L313",
+      "source_location": "L348",
       "weight": 1.0
     },
     {
@@ -10743,7 +10998,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L314",
+      "source_location": "L349",
       "weight": 1.0
     },
     {
@@ -10755,7 +11010,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L318",
+      "source_location": "L353",
       "weight": 1.0
     },
     {
@@ -10767,7 +11022,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L201",
+      "source_location": "L236",
       "weight": 1.0
     },
     {
@@ -11235,7 +11490,19 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L53",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities_activities",
+      "target": "frontend_src_services_revisoes_carregarrevisoes",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L70",
       "weight": 1.0
     },
     {
@@ -11247,7 +11514,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L198",
+      "source_location": "L225",
       "weight": 1.0
     },
     {
@@ -11259,7 +11526,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L228",
+      "source_location": "L255",
       "weight": 1.0
     },
     {
@@ -11271,7 +11538,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L239",
+      "source_location": "L266",
       "weight": 1.0
     },
     {
@@ -11283,7 +11550,103 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L404",
+      "source_location": "L431",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities_revisaoreal",
+      "target": "frontend_src_services_api_vercorrecao",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L608",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities_revisaoreal",
+      "target": "frontend_src_services_api_versubmissao",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L608",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities_revisaoreal",
+      "target": "frontend_src_services_api_corrigirsubmissao",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L622",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities_revisaoreal",
+      "target": "frontend_src_services_api_aprovarcorrecao",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L633",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard_dashboard",
+      "target": "frontend_src_services_dominio_carregardominioreal",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api_aprovarcorrecao",
+      "target": "frontend_src_services_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L186",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api_corrigirsubmissao",
+      "target": "frontend_src_services_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L171",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api_dominiomeu",
+      "target": "frontend_src_services_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L201",
       "weight": 1.0
     },
     {
@@ -11308,6 +11671,18 @@
       "context": "call",
       "source_file": "frontend/src/services/api.ts",
       "source_location": "L115",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api_listarsubmissoesrevisao",
+      "target": "frontend_src_services_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L142",
       "weight": 1.0
     },
     {
@@ -11407,6 +11782,30 @@
       "weight": 1.0
     },
     {
+      "source": "frontend_src_services_api_vercorrecao",
+      "target": "frontend_src_services_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L178",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api_versubmissao",
+      "target": "frontend_src_services_api_request",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L156",
+      "weight": 1.0
+    },
+    {
       "source": "frontend_src_services_atividades_carregaratividadesdoaluno",
       "target": "frontend_src_services_api_listaratividades",
       "relation": "calls",
@@ -11464,6 +11863,66 @@
       "context": "call",
       "source_file": "frontend/src/services/demoStore.ts",
       "source_location": "L59",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_dominio_carregardominioreal",
+      "target": "frontend_src_services_api_dominiomeu",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L23",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_dominio_carregardominioreal",
+      "target": "frontend_src_services_dominio_recomendar",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes_carregarrevisoes",
+      "target": "frontend_src_services_api_listarsubmissoesrevisao",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes_carregarrevisoes",
+      "target": "frontend_src_services_revisoes_paradata",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes_carregarrevisoes",
+      "target": "frontend_src_services_atividades_parastatus",
+      "relation": "calls",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "call",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -11619,7 +12078,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L339",
+      "source_location": "L374",
       "weight": 1.0
     },
     {
@@ -11631,7 +12090,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L204",
+      "source_location": "L239",
       "weight": 1.0
     },
     {
@@ -11643,7 +12102,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L261",
+      "source_location": "L296",
       "weight": 1.0
     },
     {
@@ -11679,7 +12138,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L392",
+      "source_location": "L427",
       "weight": 1.0
     },
     {
@@ -11695,6 +12154,18 @@
       "weight": 1.0
     },
     {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_routers_submissoes_py_get",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "decorator",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L162",
+      "weight": 1.0
+    },
+    {
       "source": "backend_app_routers_submissoes_minhas_submissoes",
       "target": "backend_app_routers_submissoes_py_get",
       "relation": "references",
@@ -11703,7 +12174,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L163",
+      "source_location": "L198",
       "weight": 1.0
     },
     {
@@ -11715,7 +12186,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L311",
+      "source_location": "L346",
       "weight": 1.0
     },
     {
@@ -11727,7 +12198,7 @@
       "confidence_score": 1.0,
       "context": "decorator",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L199",
+      "source_location": "L234",
       "weight": 1.0
     },
     {
@@ -12958,6 +13429,18 @@
     {
       "source": "backend_app_routers_submissoes",
       "target": "backend_app_schemas_submissao_submissaoresponse",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_schemas_submissao_submissaorevisaoresponse",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -14392,7 +14875,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0
     },
     {
@@ -14404,7 +14887,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -14416,7 +14899,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -14428,7 +14911,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -14440,7 +14923,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -14452,7 +14935,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -14464,7 +14947,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0
     },
     {
@@ -14476,7 +14959,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0
     },
     {
@@ -14488,7 +14971,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0
     },
     {
@@ -14500,7 +14983,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -14512,7 +14995,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -14524,24 +15007,12 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
       "source": "frontend_src_screens_activities",
-      "target": "frontend_src_services_api_enviartexto",
-      "relation": "imports",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "context": "import",
-      "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L20",
-      "weight": 1.0
-    },
-    {
-      "source": "frontend_src_screens_activities",
-      "target": "frontend_src_services_atividades_carregaratividadesdoaluno",
+      "target": "frontend_src_services_api_aprovarcorrecao",
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -14553,6 +15024,90 @@
     },
     {
       "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_api_correcaoapi",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_api_corrigirsubmissao",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_api_enviartexto",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_api_vercorrecao",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_api_versubmissao",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_atividades_carregaratividadesdoaluno",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_revisoes_carregarrevisoes",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
       "target": "frontend_src_services_api_usuarioatual",
       "relation": "imports",
       "_origin": "ast",
@@ -14560,7 +15115,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L22",
+      "source_location": "L31",
       "weight": 1.0
     },
     {
@@ -14572,7 +15127,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -14584,7 +15139,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -14596,7 +15151,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -14608,7 +15163,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -14620,7 +15175,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -14632,7 +15187,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -14644,7 +15199,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -14656,7 +15211,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -14668,7 +15223,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -14680,7 +15235,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -14692,7 +15247,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -14704,7 +15259,55 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L18",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard",
+      "target": "frontend_src_services_api_usuarioatual",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard",
+      "target": "frontend_src_services_dominio_carregardominioreal",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard",
+      "target": "frontend_src_services_dominio_recomendacao",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard",
+      "target": "frontend_src_services_api_dominioapi",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L22",
       "weight": 1.0
     },
     {
@@ -15272,6 +15875,30 @@
       "weight": 1.0
     },
     {
+      "source": "frontend_src_services_dominio",
+      "target": "frontend_src_services_api_dominioapi",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_dominio",
+      "target": "frontend_src_services_api_dominiomeu",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
       "source": "frontend_src_services_navigation",
       "target": "frontend_src_types_page",
       "relation": "imports",
@@ -15293,6 +15920,42 @@
       "context": "import",
       "source_file": "frontend/src/services/navigation.ts",
       "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_types_activity",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_services_api_listarsubmissoesrevisao",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_services_atividades_parastatus",
+      "relation": "imports",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L3",
       "weight": 1.0
     },
     {
@@ -17396,7 +18059,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0
     },
     {
@@ -17408,7 +18071,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0
     },
     {
@@ -17420,7 +18083,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0
     },
     {
@@ -17432,7 +18095,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L14",
+      "source_location": "L15",
       "type_only": true,
       "weight": 1.0
     },
@@ -17445,7 +18108,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -17469,7 +18132,19 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L21",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_services_revisoes",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -17481,13 +18156,13 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L22",
+      "source_location": "L31",
       "type_only": true,
       "weight": 1.0
     },
     {
       "source": "frontend_src_screens_dashboard",
-      "target": "ref_lucide_react",
+      "target": "ref_react",
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -17506,7 +18181,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L15",
+      "source_location": "L16",
       "type_only": true,
       "weight": 1.0
     },
@@ -17519,7 +18194,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -17531,7 +18206,7 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
@@ -17543,7 +18218,44 @@
       "confidence_score": 1.0,
       "context": "import",
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L18",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard",
+      "target": "ref_lucide_react",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard",
+      "target": "frontend_src_services_dominio",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_dashboard",
+      "target": "frontend_src_services_api",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/screens/Dashboard.tsx",
+      "source_location": "L22",
+      "type_only": true,
       "weight": 1.0
     },
     {
@@ -17914,6 +18626,18 @@
       "weight": 1.0
     },
     {
+      "source": "frontend_src_services_dominio",
+      "target": "frontend_src_services_api",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
       "source": "frontend_src_services_navigation",
       "target": "frontend_src_types",
       "relation": "imports_from",
@@ -17924,6 +18648,43 @@
       "source_file": "frontend/src/services/navigation.ts",
       "source_location": "L1",
       "type_only": true,
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_types",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L1",
+      "type_only": true,
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_services_api",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_services_atividades",
+      "relation": "imports_from",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "import",
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L3",
       "weight": 1.0
     },
     {
@@ -18223,7 +18984,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L340",
+      "source_location": "L375",
       "weight": 1.0
     },
     {
@@ -18235,7 +18996,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L340",
+      "source_location": "L375",
       "weight": 1.0
     },
     {
@@ -18259,7 +19020,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L323",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -18271,7 +19032,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L205",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -18283,7 +19044,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L205",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -18295,7 +19056,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L226",
+      "source_location": "L261",
       "weight": 1.0
     },
     {
@@ -18307,7 +19068,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L262",
+      "source_location": "L297",
       "weight": 1.0
     },
     {
@@ -18319,7 +19080,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L262",
+      "source_location": "L297",
       "weight": 1.0
     },
     {
@@ -18379,7 +19140,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L393",
+      "source_location": "L428",
       "weight": 1.0
     },
     {
@@ -18407,6 +19168,18 @@
       "weight": 1.0
     },
     {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_routers_submissoes_py_session",
+      "relation": "references",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
       "source": "backend_app_routers_submissoes_minhas_submissoes",
       "target": "backend_app_routers_submissoes_py_session",
       "relation": "references",
@@ -18415,7 +19188,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L164",
+      "source_location": "L199",
       "weight": 1.0
     },
     {
@@ -18439,7 +19212,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L254",
+      "source_location": "L289",
       "weight": 1.0
     },
     {
@@ -18463,7 +19236,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L248",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -18487,7 +19260,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L374",
+      "source_location": "L409",
       "weight": 1.0
     },
     {
@@ -18499,7 +19272,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L312",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -18511,7 +19284,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L312",
+      "source_location": "L347",
       "weight": 1.0
     },
     {
@@ -18523,7 +19296,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L200",
+      "source_location": "L235",
       "weight": 1.0
     },
     {
@@ -18535,7 +19308,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L200",
+      "source_location": "L235",
       "weight": 1.0
     },
     {
@@ -19406,13 +20179,24 @@
     },
     {
       "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_submissoes_listar_submissoes",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L163",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
       "target": "backend_app_routers_submissoes_minhas_submissoes",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L164",
+      "source_location": "L199",
       "weight": 1.0
     },
     {
@@ -19423,7 +20207,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L200",
+      "source_location": "L235",
       "weight": 1.0
     },
     {
@@ -19434,7 +20218,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L205",
+      "source_location": "L240",
       "weight": 1.0
     },
     {
@@ -19445,7 +20229,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L226",
+      "source_location": "L261",
       "weight": 1.0
     },
     {
@@ -19456,7 +20240,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L248",
+      "source_location": "L283",
       "weight": 1.0
     },
     {
@@ -19467,7 +20251,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L254",
+      "source_location": "L289",
       "weight": 1.0
     },
     {
@@ -19478,29 +20262,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L262",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_app_routers_submissoes",
-      "target": "backend_app_routers_submissoes_ver_correcao",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L312",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_app_routers_submissoes",
-      "target": "backend_app_routers_submissoes_atualizar_dominio",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L323",
+      "source_location": "L297",
       "weight": 1.0
     },
     {
@@ -19516,13 +20278,24 @@
     },
     {
       "source": "backend_app_routers_submissoes",
-      "target": "backend_app_routers_submissoes_aprovar_correcao",
+      "target": "backend_app_routers_submissoes_ver_correcao",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L340",
+      "source_location": "L347",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_submissoes_atualizar_dominio",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L358",
       "weight": 1.0
     },
     {
@@ -19538,24 +20311,24 @@
     },
     {
       "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_submissoes_aprovar_correcao",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L375",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
       "target": "backend_app_routers_submissoes_validar_envio",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L374",
-      "weight": 1.0
-    },
-    {
-      "source": "backend_app_routers_submissoes",
-      "target": "backend_app_routers_submissoes_enviar_texto",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L393",
+      "source_location": "L409",
       "weight": 1.0
     },
     {
@@ -19567,6 +20340,17 @@
       "confidence_score": 1.0,
       "source_file": "backend/app/routers/submissoes.py",
       "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_routers_submissoes",
+      "target": "backend_app_routers_submissoes_enviar_texto",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L428",
       "weight": 1.0
     },
     {
@@ -19769,7 +20553,7 @@
     },
     {
       "source": "backend_app_schemas_submissao",
-      "target": "backend_app_schemas_submissao_minhasubmissaoresponse",
+      "target": "backend_app_schemas_submissao_submissaorevisaoresponse",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -19787,6 +20571,17 @@
       "confidence_score": 1.0,
       "source_file": "backend/app/schemas/submissao.py",
       "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao",
+      "target": "backend_app_schemas_submissao_minhasubmissaoresponse",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -21227,7 +22022,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L152",
+      "source_location": "L179",
       "weight": 1.0
     },
     {
@@ -21238,7 +22033,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L24",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -21249,7 +22044,29 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/screens/Activities.tsx",
-      "source_location": "L34",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_screens_activities_notas_enem",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L579",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_screens_activities",
+      "target": "frontend_src_screens_activities_revisaoreal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/screens/Activities.tsx",
+      "source_location": "L581",
       "weight": 1.0
     },
     {
@@ -21260,7 +22077,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L20",
+      "source_location": "L24",
       "weight": 1.0
     },
     {
@@ -21271,7 +22088,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L316",
+      "source_location": "L395",
       "weight": 1.0
     },
     {
@@ -21282,7 +22099,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "frontend/src/screens/Dashboard.tsx",
-      "source_location": "L342",
+      "source_location": "L421",
       "weight": 1.0
     },
     {
@@ -21419,6 +22236,17 @@
     },
     {
       "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_submissaorevisaoapi",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L129",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
       "target": "frontend_src_services_api_settoken",
       "relation": "contains",
       "_origin": "ast",
@@ -21426,6 +22254,105 @@
       "confidence_score": 1.0,
       "source_file": "frontend/src/services/api.ts",
       "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_listarsubmissoesrevisao",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L141",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_submissaoapi",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L145",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_versubmissao",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L155",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_correcaoapi",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L159",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_corrigirsubmissao",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L170",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_vercorrecao",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L177",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_aprovarcorrecao",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L181",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_dominioapi",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L192",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_api",
+      "target": "frontend_src_services_api_dominiomeu",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/api.ts",
+      "source_location": "L200",
       "weight": 1.0
     },
     {
@@ -21638,6 +22565,39 @@
       "weight": 1.0
     },
     {
+      "source": "frontend_src_services_dominio",
+      "target": "frontend_src_services_dominio_recomendar",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_dominio",
+      "target": "frontend_src_services_dominio_carregardominioreal",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_dominio",
+      "target": "frontend_src_services_dominio_recomendacao",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/dominio.ts",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
       "source": "frontend_src_services_navigation",
       "target": "frontend_src_services_navigation_allowedpages",
       "relation": "contains",
@@ -21657,6 +22617,28 @@
       "confidence_score": 1.0,
       "source_file": "frontend/src/services/navigation.ts",
       "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_services_revisoes_carregarrevisoes",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_src_services_revisoes",
+      "target": "frontend_src_services_revisoes_paradata",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/src/services/revisoes.ts",
+      "source_location": "L5",
       "weight": 1.0
     },
     {
@@ -22501,7 +23483,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "backend/app/schemas/submissao.py",
-      "source_location": "L104",
+      "source_location": "L116",
       "weight": 1.0
     },
     {
@@ -22524,6 +23506,17 @@
       "confidence_score": 1.0,
       "source_file": "backend/app/schemas/submissao.py",
       "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "backend_app_schemas_submissao_submissaorevisaoresponse",
+      "target": "backend_app_schemas_submissao_py_basemodel",
+      "relation": "inherits",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "backend/app/schemas/submissao.py",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -22850,7 +23843,7 @@
       "confidence_score": 0.95,
       "context": "generic_arg",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L374",
+      "source_location": "L409",
       "weight": 0.8
     },
     {
@@ -22862,7 +23855,7 @@
       "confidence_score": 0.95,
       "context": "generic_arg",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L374",
+      "source_location": "L409",
       "weight": 0.8
     },
     {
@@ -23018,7 +24011,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L342",
+      "source_location": "L377",
       "weight": 0.8
     },
     {
@@ -23030,7 +24023,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L343",
+      "source_location": "L378",
       "weight": 0.8
     },
     {
@@ -23066,7 +24059,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L207",
+      "source_location": "L242",
       "weight": 0.8
     },
     {
@@ -23078,7 +24071,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L208",
+      "source_location": "L243",
       "weight": 0.8
     },
     {
@@ -23090,7 +24083,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L226",
+      "source_location": "L261",
       "weight": 0.8
     },
     {
@@ -23102,7 +24095,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L264",
+      "source_location": "L299",
       "weight": 0.8
     },
     {
@@ -23114,7 +24107,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L265",
+      "source_location": "L300",
       "weight": 0.8
     },
     {
@@ -23162,7 +24155,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L393",
+      "source_location": "L428",
       "weight": 0.8
     },
     {
@@ -23174,7 +24167,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L393",
+      "source_location": "L428",
       "weight": 0.8
     },
     {
@@ -23202,6 +24195,18 @@
       "weight": 0.8
     },
     {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_usuario_usuario",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "context": "parameter_type",
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L163",
+      "weight": 0.8
+    },
+    {
       "source": "backend_app_routers_submissoes_minhas_submissoes",
       "target": "backend_app_models_usuario_usuario",
       "relation": "uses",
@@ -23210,7 +24215,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L164",
+      "source_location": "L199",
       "weight": 0.8
     },
     {
@@ -23222,7 +24227,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L254",
+      "source_location": "L289",
       "weight": 0.8
     },
     {
@@ -23234,7 +24239,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L254",
+      "source_location": "L289",
       "weight": 0.8
     },
     {
@@ -23258,7 +24263,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L248",
+      "source_location": "L283",
       "weight": 0.8
     },
     {
@@ -23270,7 +24275,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L248",
+      "source_location": "L283",
       "weight": 0.8
     },
     {
@@ -23294,7 +24299,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L312",
+      "source_location": "L347",
       "weight": 0.8
     },
     {
@@ -23306,7 +24311,7 @@
       "confidence_score": 0.95,
       "context": "parameter_type",
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L200",
+      "source_location": "L235",
       "weight": 0.8
     },
     {
@@ -23757,7 +24762,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L349",
+      "source_location": "L384",
       "weight": 0.8
     },
     {
@@ -23768,7 +24773,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L352",
+      "source_location": "L387",
       "weight": 0.8
     },
     {
@@ -23779,7 +24784,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L357",
+      "source_location": "L392",
       "weight": 0.8
     },
     {
@@ -23790,7 +24795,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L357",
+      "source_location": "L392",
       "weight": 0.8
     },
     {
@@ -23856,7 +24861,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L228",
+      "source_location": "L263",
       "weight": 0.8
     },
     {
@@ -23867,7 +24872,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L228",
+      "source_location": "L263",
       "weight": 0.8
     },
     {
@@ -23878,7 +24883,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L272",
+      "source_location": "L307",
       "weight": 0.8
     },
     {
@@ -23889,7 +24894,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L275",
+      "source_location": "L310",
       "weight": 0.8
     },
     {
@@ -23900,7 +24905,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L276",
+      "source_location": "L311",
       "weight": 0.8
     },
     {
@@ -23911,7 +24916,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L295",
+      "source_location": "L330",
       "weight": 0.8
     },
     {
@@ -23922,7 +24927,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L303",
+      "source_location": "L338",
       "weight": 0.8
     },
     {
@@ -24032,7 +25037,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L400",
+      "source_location": "L435",
       "weight": 0.8
     },
     {
@@ -24043,7 +25048,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L402",
+      "source_location": "L437",
       "weight": 0.8
     },
     {
@@ -24091,19 +25096,19 @@
       "weight": 0.8
     },
     {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "source": "backend_app_routers_submissoes_listar_submissoes",
       "target": "backend_app_models_enum_perfilenum",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L165",
+      "source_location": "L164",
       "weight": 0.8
     },
     {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
-      "target": "backend_app_models_usuario_submissao",
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_enum_usuarioturmapapelenum",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -24113,8 +25118,19 @@
       "weight": 0.8
     },
     {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
-      "target": "backend_app_models_usuario_correcao",
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_usuario_usuarioturma",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L167",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_usuario_turma",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -24124,52 +25140,63 @@
       "weight": 0.8
     },
     {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_usuario_atividade",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L175",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_usuario_materia",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L175",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_usuario_submissao",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L175",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_models_usuario_correcao",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L184",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_listar_submissoes",
       "target": "backend_app_models_enum_statuscorrecaoenum",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L171",
+      "source_location": "L185",
       "weight": 0.8
     },
     {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
-      "target": "backend_app_models_usuario_correcaocriterio",
-      "relation": "uses",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L175",
-      "weight": 0.8
-    },
-    {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
-      "target": "backend_app_models_usuario_tema",
-      "relation": "uses",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L175",
-      "weight": 0.8
-    },
-    {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
-      "target": "backend_app_schemas_submissao_criterioresponse",
-      "relation": "uses",
-      "_origin": "ast",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L179",
-      "weight": 0.8
-    },
-    {
-      "source": "backend_app_routers_submissoes_minhas_submissoes",
-      "target": "backend_app_schemas_submissao_minhasubmissaoresponse",
+      "source": "backend_app_routers_submissoes_listar_submissoes",
+      "target": "backend_app_schemas_submissao_submissaorevisaoresponse",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
@@ -24180,13 +25207,101 @@
     },
     {
       "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_models_enum_perfilenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L200",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_models_usuario_submissao",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L202",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_models_usuario_correcao",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L205",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_models_enum_statuscorrecaoenum",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L206",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_models_usuario_correcaocriterio",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L210",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_models_usuario_tema",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L210",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_schemas_submissao_criterioresponse",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L214",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
+      "target": "backend_app_schemas_submissao_minhasubmissaoresponse",
+      "relation": "uses",
+      "_origin": "ast",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "backend/app/routers/submissoes.py",
+      "source_location": "L221",
+      "weight": 0.8
+    },
+    {
+      "source": "backend_app_routers_submissoes_minhas_submissoes",
       "target": "backend_app_models_usuario_atividade",
       "relation": "uses",
       "_origin": "ast",
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L189",
+      "source_location": "L224",
       "weight": 0.8
     },
     {
@@ -24208,7 +25323,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L256",
+      "source_location": "L291",
       "weight": 0.8
     },
     {
@@ -24230,7 +25345,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L250",
+      "source_location": "L285",
       "weight": 0.8
     },
     {
@@ -24252,7 +25367,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L376",
+      "source_location": "L411",
       "weight": 0.8
     },
     {
@@ -24263,7 +25378,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.95,
       "source_file": "backend/app/routers/submissoes.py",
-      "source_location": "L315",
+      "source_location": "L350",
       "weight": 0.8
     },
     {
@@ -28080,5 +29195,5 @@
       "source_file": "docs/plano_prototipo.pdf"
     }
   ],
-  "built_at_commit": "167ff2351203347c2f6e3524a215f5deea25c340"
+  "built_at_commit": "7cb7a282a3fe096c3d00c5265e63989188bfe463"
 }

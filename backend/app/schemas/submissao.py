@@ -101,6 +101,18 @@ class EnviarTextoRequest(BaseModel):
     aluno_id: uuid.UUID | None = None
     texto: str = Field(min_length=1, max_length=20_000)
 
+class SubmissaoRevisaoResponse(BaseModel):
+    id: uuid.UUID
+    atividade_id: uuid.UUID
+    atividade_titulo: str
+    materia: str
+    aluno_id: uuid.UUID
+    aluno_nome: str
+    status: str  # AGUARDANDO_CORRECAO | status.value da correcao
+    criado_em: datetime
+    nota: float | None  # nota_professor, so se aprovada
+
+
 class MinhaSubmissaoResponse(BaseModel):
     id: uuid.UUID
     atividade_id: uuid.UUID

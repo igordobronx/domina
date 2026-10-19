@@ -125,3 +125,78 @@ export function enviarTexto(atividadeId: string, texto: string): Promise<unknown
     body: JSON.stringify({ atividade_id: atividadeId, texto }),
   });
 }
+
+export interface SubmissaoRevisaoAPI {
+  id: string;
+  atividade_id: string;
+  atividade_titulo: string;
+  materia: string;
+  aluno_id: string;
+  aluno_nome: string;
+  status: string;
+  criado_em: string;
+  nota: number | null;
+}
+
+export function listarSubmissoesRevisao(): Promise<SubmissaoRevisaoAPI[]> {
+  return request<SubmissaoRevisaoAPI[]>("/submissoes");
+}
+
+export interface SubmissaoAPI {
+  id: string;
+  atividade_id: string;
+  aluno_id: string;
+  tipo_envio: string;
+  texto_ocr: string | null;
+  texto_confirmado: string | null;
+  criado_em: string;
+}
+
+export function verSubmissao(id: string): Promise<SubmissaoAPI> {
+  return request<SubmissaoAPI>(`/submissoes/${id}`);
+}
+
+export interface CorrecaoAPI {
+  id: string;
+  submissao_id: string;
+  nota_ia: number;
+  nota_professor: number | null;
+  confianca: number;
+  status: string;
+  feedback: string | null;
+  criterios: CriterioAPI[];
+}
+
+export function corrigirSubmissao(id: string, tema?: string): Promise<CorrecaoAPI> {
+  return request<CorrecaoAPI>(`/submissoes/${id}/corrigir`, {
+    method: "POST",
+    body: JSON.stringify({ tema: tema ?? null }),
+  });
+}
+
+export function verCorrecao(id: string): Promise<CorrecaoAPI> {
+  return request<CorrecaoAPI>(`/submissoes/${id}/correcao`);
+}
+
+export function aprovarCorrecao(
+  id: string,
+  notas: { codigo: string; nota: number }[],
+  feedback: string,
+): Promise<CorrecaoAPI> {
+  return request<CorrecaoAPI>(`/submissoes/${id}/aprovar`, {
+    method: "PUT",
+    body: JSON.stringify({ notas, feedback }),
+  });
+}
+
+export interface DominioAPI {
+  tema_id: string;
+  tema: string;
+  habilidade_codigo: string;
+  percentual_dominio: number;
+  num_evidencias: number;
+}
+
+export function dominioMeu(): Promise<DominioAPI[]> {
+  return request<DominioAPI[]>("/dominio/meu");
+}

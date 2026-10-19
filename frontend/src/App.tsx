@@ -485,6 +485,7 @@ export function App() {
                 navigate={navigate}
                 openActivity={openActivity}
                 openStudy={openStudy}
+                currentUser={currentUser}
               />
             )}
             {page === "inicio" && role !== "aluno" && (
