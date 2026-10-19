@@ -79,7 +79,7 @@ Regras de trabalho: sempre usar o graphify; não dar push sem o usuário pedir; 
 
 ## 6. Prompts
 
-Em `backend/app/correcao.py` hoje está o **v12** (`docs/calibracao/2026-10-19/prompt_v12.txt`, `VERSAO_PROMPT = "v12-2x"`): igual ao v9, só com a regra da C3 mais dura (160 comum, 200 raro), usado em 2 correções com média. Texto do v9 em `docs/calibracao/2026-10-18/prompt_v9.txt`; da v6 em `docs/calibracao/2026-10-16/prompt_v6.txt`.
+Em `backend/app/correcao.py` hoje está o **v12** (`docs/calibracao/2026-10-19/prompt_v12.txt`, `VERSAO_PROMPT = "v12"`): igual ao v9, só com a regra da C3 mais dura (160 comum, 200 raro), com 1 correção. Texto do v9 em `docs/calibracao/2026-10-18/prompt_v9.txt`; da v6 em `docs/calibracao/2026-10-16/prompt_v6.txt`.
 
 ## graphify
 
