@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1792411097.048084,
-    "seen": 1792411157.3393915,
-    "ast_hash": "93939a660da42f0a2b9c676064cae96e",
+    "mtime": 1792414236.0280554,
+    "seen": 1792414282.481253,
+    "ast_hash": "5546acfc9b95ec6a5748f8b60a61dbc1",
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1792411078.6001174,
-    "seen": 1792411157.339406,
-    "ast_hash": "ce085b9b1c72e1830177e447683a1aef",
+    "mtime": 1792414212.656039,
+    "seen": 1792414282.4812808,
+    "ast_hash": "323d8ad2e8f5b41fbe7bd075a16bca5a",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
@@ -513,6 +513,18 @@
     "mtime": 1792411081.632112,
     "seen": 1792411157.3394125,
     "ast_hash": "466dde105593764a70610e8883583184",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/dominio.py": {
+    "mtime": 1792414229.380051,
+    "seen": 1792414282.4812741,
+    "ast_hash": "00ff64432cad8bf4fa2cd08527edc0bd",
+    "semantic_hash": ""
+  },
+  "backend/app/schemas/dominio.py": {
+    "mtime": 1792414189.0320218,
+    "seen": 1792414282.4812937,
+    "ast_hash": "e0bb02df747863e6ce87cd1e0a03ecf9",
     "semantic_hash": ""
   }
 }

@@ -11,7 +11,7 @@ from app.config import settings
 from app.database import get_db
 from app.models.enum import PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, UsuarioTurmaPapelEnum
 from app.models.usuario import (
-    Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, Tema, Turma, Usuario, UsuarioTurma,
+    Atividade, Correcao, CorrecaoCriterio, DominioAluno, Materia, Submissao, Tema, Turma, Usuario, UsuarioTurma,
 )
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
@@ -255,6 +255,24 @@ def ver_correcao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current
     return _correcao_response(db, correcao)
 
 
+# RF-25: cada aprovacao e uma "evidencia" de desempenho do aluno naquela competencia (tema).
+# percentual_dominio e uma media movel: pondera o historico pelo numero de evidencias ja visto.
+def _atualizar_dominio(db: Session, aluno_id, criterios: dict) -> None:
+    for criterio in criterios.values():
+        nota_pct = float(criterio.nota_professor) / 200 * 100
+        dominio = db.query(DominioAluno).filter_by(aluno_id=aluno_id, tema_id=criterio.tema_id).first()
+        if dominio is None:
+            db.add(DominioAluno(
+                aluno_id=aluno_id, tema_id=criterio.tema_id,
+                percentual_dominio=nota_pct, num_evidencias=1,
+            ))
+        else:
+            dominio.percentual_dominio = (
+                float(dominio.percentual_dominio) * dominio.num_evidencias + nota_pct
+            ) / (dominio.num_evidencias + 1)
+            dominio.num_evidencias += 1
+
+
 @router.put("/submissoes/{submissao_id}/aprovar", response_model=CorrecaoResponse)
 def aprovar_correcao(
     submissao_id: uuid.UUID,
@@ -284,6 +302,7 @@ def aprovar_correcao(
     correcao.status = StatusCorrecaoEnum.APROVADA
     if payload.feedback is not None:
         correcao.feedback = payload.feedback.strip()
+    _atualizar_dominio(db, submissao.aluno_id, criterios)
     db.commit()
     return _correcao_response(db, correcao)
 
