@@ -1,6 +1,6 @@
 # CLAUDE.md: domina, correção de redação do ENEM por IA
 
-Atualizado em 19/10/2026 (noite, 2ª versão; a anterior está em docs/handoff_CLAUDE_2026-10-19.md). Responda sempre em português, de forma curta e simples, sem números difíceis.
+Atualizado em 19/10/2026 (noite, 3ª versão; as anteriores estão em docs/handoff_CLAUDE_2026-10-19.md e docs/handoff_CLAUDE_2026-10-19b.md). Responda sempre em português, de forma curta e simples, sem números difíceis.
 
 ## 1. Objetivo do prompt
 
@@ -17,6 +17,7 @@ A meta realista é a IA ficar a cerca de 100 pontos da média dos humanos, porqu
   - `db35f46`: planilha externa, prompts testados, resultados e scripts em `docs/calibracao/2026-10-16/`.
   - `4b35e86` (18/10): prompt **v9** em `correcao.py` (`VERSAO_PROMPT = "v9"`) + testes em `docs/calibracao/2026-10-18/`.
   - commit de 19/10: teste do v9 nas 53 do INEP, prompt v10 (não adotado) e scripts em `docs/calibracao/2026-10-19/`.
+  - commit de 19/10 (noite, 2): app aplicado com **v12 + 2 correções + média** (seção 5).
   - commit de 19/10 (noite): v11 (pior, não adotado) e v12 (melhor total, ainda NÃO aplicado em `correcao.py`), com prompts, resultados e scripts em `docs/calibracao/2026-10-19/`.
 - **O prompt fica em** `backend/app/correcao.py` (constante `PROMPT`, chamada em `corrigir()`).
 - **Rede (19/10):** quando a thread se conecta ao Mac (ferramentas de pasta), o container perde o acesso a `generativelanguage.googleapis.com` (403). Para o Claude rodar o Gemini sozinho, a thread NÃO deve se conectar ao Mac: as redações 51–53 já estão em `essays/novas_51_53.jsonl` e `docs/calibracao/2026-10-19/roda_inep53.py` junta elas às 50 da planilha (de `backend/`, com `DATABASE_URL=sqlite:// JWT_SECRET=x PYTHONPATH=.`). Se não der, o usuário roda `bash docs/calibracao/2026-10-19/roda_v12.sh` no terminal do Mac.
@@ -66,10 +67,9 @@ Lições:
 
 ## 5. Próximos passos
 
-1. **PRÓXIMA TAREFA (combinada com o usuário em 19/10): corrigir cada redação 2 vezes e tirar a média, arredondando de 20 em 20.** Imita os 2 corretores do INEP e reduz a oscilação (até 40 pontos) entre rodadas. Teste com dados que já existem: as duas rodadas do v9 nas mesmas 50 redações (18/10 e 19/10) deram erro total 60 e 53, e a média das duas 49; acertos (diferença até 20) 196 e 195 → 212. O ganho é do tamanho do ruído, então é indício, não prova.
-   - Fazer em `corrigir()` de `backend/app/correcao.py`: 2 chamadas, média por competência, arredondar para múltiplo de 20 (a nota oficial do INEP é sempre múltiplo de 20, não de 40). Cuidado: `NOTAS_VALIDAS` e o `CompetenciaIA.nota` só aceitam 0/40/.../200 por chamada; a média pode dar 140/180. Conferir se o schema do banco/API da correção aceita 140 e 180 (veja `app/schemas/submissao.py` e `models/usuario.py`) e se `tests/test_fluxo_envio.py` continua passando (ele troca `ia.corrigir` por um falso). Texto de justificativa/feedback: usar o da 1ª chamada ou juntar; `confianca`: usar a divergência entre as 2 correções no lugar da autoavaliação do modelo (a "ponytail" no código pede isso).
-   - Prompt para a correção dupla: o usuário disse "bora do melhor jeito"; a recomendação é o **v12** (`docs/calibracao/2026-10-19/prompt_v12.txt`) porque tem o melhor total e viés da C3 perto de zero. Aplicar o texto do v12 em `PROMPT` e `VERSAO_PROMPT = "v12"`.
-   - Medir: rodar a correção dupla nas 53 do INEP (flash-lite) e comparar com v12 sozinho (total 46, C3 20). Para a 2ª rodada de cada redação, o `temperature=0` não basta para variar; considerar temperature baixa (ex.: 0.3) na 2ª chamada, senão as duas saem iguais. Isso precisa ser testado.
+1. **FEITO no código (19/10 noite), FALTA MEDIR:** `backend/app/correcao.py` agora usa o prompt **v12** (`VERSAO_PROMPT = "v12-2x"`) e `corrigir()` faz 2 correções em paralelo (temperatura 0 e 0,5); nota final = média por competência (pode dar 140/180; o banco aceita, nota é Numeric e a API é float). Se a diferença passar de 80 numa competência ou 100 no total, faz uma 3ª e fica a média do par mais próximo, com confiança limitada a 0,5 (vai para o topo da fila do professor). A `confianca` agora vem da divergência entre as correções (100 pontos de diferença = 0,6; 250 = 0), não da autoavaliação do modelo. Se alguma chamada usou o modelo reserva, devolve o reserva (a rota marca "requer atenção"). Testes: 12 passam (`cd backend && python -m pytest`), com um novo para média e 3ª correção.
+   - **Custo:** 2 chamadas por redação (3 se discrepar): no plano grátis (20/dia no flash) dá uns 10 redações por dia.
+   - **MEDIR (pendente):** com o Mac conectado o container não alcança o Gemini (403). O usuário roda no terminal do Mac: `bash docs/calibracao/2026-10-19/roda_dupla.sh` (usa `roda_dupla53.py`, que chama o `corrigir()` do app nas 53 do INEP com flash-lite e imprime a análise). Comparar com v12 sozinho: total 46, 46/53 a menos de 100, C3 erro 20. Saída em `inep_lite_v12_dupla.jsonl` e `log_inep_v12_dupla.txt`. A temperatura 0,5 da 2ª chamada não foi testada; se a média não ajudar, tentar 0,3.
 2. **C3:** NÃO mexer mais por enquanto. Tentativas: v8, v10, v11 pioraram; v12 corrigiu só o viés. Uma regra pós-prompt (limitar a C3 a 160 quando outra competência não é 200) foi simulada nos resultados do v9 e não ajudou (erro total 52–54). A IA dá 200 em 20 redações e o INEP deu menos em 11, mas as outras competências delas também eram 200: nada separa esses casos.
 3. **Redações fracas e médias:** na base INEP só 5 abaixo de 700. Conseguir mais redações com nota oficial baixa (espelho do INEP de conhecidos, com consentimento; para menor de idade, o do responsável). Os prints da "Vista Pedagógica" trazem nome e CPF: nunca copiar.
 4. Opcional: detectar anulação (fuga ao tema, cópia, texto curto) antes de corrigir.
@@ -79,7 +79,7 @@ Regras de trabalho: sempre usar o graphify; não dar push sem o usuário pedir; 
 
 ## 6. Prompts
 
-Em `backend/app/correcao.py` hoje está o **v9** (`VERSAO_PROMPT = "v9"`). O candidato a entrar é o **v12** (`docs/calibracao/2026-10-19/prompt_v12.txt`): igual ao v9, só com a regra da C3 mais dura (160 comum, 200 raro). Texto do v9 em `docs/calibracao/2026-10-18/prompt_v9.txt`; da v6 em `docs/calibracao/2026-10-16/prompt_v6.txt`.
+Em `backend/app/correcao.py` hoje está o **v12** (`docs/calibracao/2026-10-19/prompt_v12.txt`, `VERSAO_PROMPT = "v12-2x"`): igual ao v9, só com a regra da C3 mais dura (160 comum, 200 raro), usado em 2 correções com média. Texto do v9 em `docs/calibracao/2026-10-18/prompt_v9.txt`; da v6 em `docs/calibracao/2026-10-16/prompt_v6.txt`.
 
 ## graphify
 
