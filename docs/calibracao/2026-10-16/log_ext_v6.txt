@@ -1,0 +1,101 @@
+amostra 80 (0 nota 1000 + 0 UOL), ja feitas 0, modelo gemini-3.5-flash-lite
+aes 0001 real=400 ia=520 (6.0s)
+aes 0002 real=400 ia=600 (6.2s)
+aes 0003 real=400 ia=520 (11.0s)
+aes 0004 real=400 ia=560 (8.4s)
+aes 0005 real=0 ia=280 (6.6s)
+  0006: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+  0006: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0006 real=80 ia=520 (23.5s)
+  0007: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0007 real=320 ia=680 (5.1s)
+aes 0008 real=0 ia=680 (5.5s)
+aes 0009 real=0 ia=520 (5.6s)
+aes 0010 real=240 ia=240 (6.3s)
+aes 0011 real=600 ia=520 (6.6s)
+aes 0012 real=440 ia=600 (7.0s)
+aes 0013 real=600 ia=680 (4.8s)
+aes 0014 real=520 ia=600 (6.3s)
+aes 0015 real=480 ia=800 (6.4s)
+  0016: 429, esperando 30s
+aes 0016 real=440 ia=480 (6.6s)
+aes 0017 real=480 ia=520 (5.7s)
+aes 0018 real=480 ia=920 (6.5s)
+aes 0019 real=520 ia=600 (6.6s)
+aes 0020 real=440 ia=720 (8.9s)
+  0021: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0021 real=720 ia=640 (7.4s)
+aes 0022 real=800 ia=720 (5.8s)
+  0023: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0023 real=640 ia=640 (6.6s)
+  0024: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0024 real=680 ia=960 (11.6s)
+aes 0025 real=760 ia=960 (11.4s)
+  0026: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0026 real=800 ia=840 (6.8s)
+aes 0027 real=800 ia=640 (11.3s)
+aes 0028 real=720 ia=640 (12.6s)
+aes 0029 real=640 ia=560 (5.9s)
+aes 0030 real=640 ia=560 (6.4s)
+  0031: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0031 real=920 ia=720 (13.5s)
+aes 0032 real=880 ia=840 (6.9s)
+  0033: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+  0033: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+  0033: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0033 real=880 ia=680 (7.0s)
+aes 0034 real=880 ia=720 (9.5s)
+aes 0035 real=840 ia=480 (5.4s)
+aes 0036 real=960 ia=960 (12.3s)
+aes 0037 real=840 ia=640 (6.1s)
+  0038: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+  0038: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0038 real=960 ia=920 (7.7s)
+aes 0039 real=880 ia=800 (11.7s)
+  0040: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0040 real=880 ia=720 (5.4s)
+aes 0041 real=1000 ia=760 (6.4s)
+aes 0042 real=1000 ia=720 (6.5s)
+aes 0043 real=1000 ia=760 (6.3s)
+  0044: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0044 real=1000 ia=1000 (7.8s)
+aes 0045 real=1000 ia=600 (17.3s)
+aes 0046 real=1000 ia=840 (5.3s)
+aes 0047 real=1000 ia=720 (12.1s)
+aes 0048 real=1000 ia=920 (7.4s)
+aes 0049 real=1000 ia=760 (17.2s)
+  0050: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+aes 0050 real=1000 ia=1000 (5.7s)
+ebr 0051 real=400 ia=560 (12.8s)
+ebr 0052 real=400 ia=680 (6.6s)
+  0053: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+ebr 0053 real=0 ia=320 (6.0s)
+ebr 0054 real=400 ia=400 (10.3s)
+ebr 0055 real=360 ia=480 (5.4s)
+ebr 0056 real=400 ia=520 (5.1s)
+ebr 0057 real=600 ia=600 (12.3s)
+ebr 0058 real=600 ia=800 (6.4s)
+ebr 0059 real=600 ia=640 (5.5s)
+ebr 0060 real=560 ia=720 (16.6s)
+ebr 0061 real=560 ia=720 (6.3s)
+ebr 0062 real=600 ia=520 (10.6s)
+  0063: ReadTimeout The read operation timed out
+  0063: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+ebr 0063 real=640 ia=800 (6.1s)
+ebr 0064 real=720 ia=440 (10.1s)
+ebr 0065 real=800 ia=640 (4.9s)
+ebr 0066 real=800 ia=960 (6.8s)
+ebr 0067 real=640 ia=720 (10.8s)
+ebr 0068 real=720 ia=560 (7.3s)
+ebr 0069 real=920 ia=960 (10.1s)
+ebr 0070 real=960 ia=960 (9.9s)
+ebr 0071 real=920 ia=840 (8.0s)
+ebr 0072 real=840 ia=760 (7.6s)
+ebr 0073 real=840 ia=720 (5.9s)
+ebr 0074 real=840 ia=960 (5.3s)
+ebr 0075 real=1000 ia=520 (6.0s)
+ebr 0076 real=1000 ia=920 (12.4s)
+ebr 0077 real=1000 ia=960 (6.2s)
+ebr 0078 real=1000 ia=1000 (5.9s)
+ebr 0079 real=1000 ia=960 (10.7s)
+ebr 0080 real=1000 ia=720 (4.9s)
