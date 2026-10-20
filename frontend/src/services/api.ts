@@ -34,7 +34,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      // FormData define seu proprio Content-Type (multipart + boundary); fixar aqui quebraria o upload
+      ...(options.body && !(options.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -247,6 +248,20 @@ export function verSubmissao(id: string): Promise<SubmissaoAPI> {
   return request<SubmissaoAPI>(`/submissoes/${id}`);
 }
 
+export function enviarImagem(atividadeId: string, file: File): Promise<SubmissaoAPI> {
+  const formData = new FormData();
+  formData.append("atividade_id", atividadeId);
+  formData.append("file", file);
+  return request<SubmissaoAPI>("/submissoes/imagem", { method: "POST", body: formData });
+}
+
+export function confirmarTexto(submissaoId: string, texto: string): Promise<SubmissaoAPI> {
+  return request<SubmissaoAPI>(`/submissoes/${submissaoId}/confirmar`, {
+    method: "PUT",
+    body: JSON.stringify({ texto }),
+  });
+}
+
 export interface CorrecaoAPI {
   id: string;
   submissao_id: string;
@@ -321,4 +336,73 @@ export interface ExercicioAPI {
 
 export function meusExercicios(): Promise<ExercicioAPI[]> {
   return request<ExercicioAPI[]>("/estudos/meu");
+}
+
+export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {
+  return request<DominioAPI[]>(`/alunos/${alunoId}/dominio`);
+}
+
+export interface DocumentoAPI {
+  id: string;
+  materia_id: string;
+  nome_arquivo: string;
+  tipo: "APOSTILA" | "RUBRICA" | "PLANO_DE_AULA" | "GABARITO";
+  status_processamento: "PENDENTE" | "PROCESSADO" | "FALHOU";
+}
+
+export function listarDocumentos(materiaId: string): Promise<DocumentoAPI[]> {
+  return request<DocumentoAPI[]>(`/materias/${materiaId}/documentos`);
+}
+
+export function enviarDocumento(
+  materiaId: string,
+  file: File,
+  tipo: DocumentoAPI["tipo"],
+): Promise<DocumentoAPI> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("tipo", tipo);
+  return request<DocumentoAPI>(`/materias/${materiaId}/documentos`, { method: "POST", body: formData });
+}
+
+export interface ConsentimentoAPI {
+  aluno_id: string;
+  responsavel_nome: string;
+  responsavel_email: string;
+  aceito_em: string;
+}
+
+export function meuConsentimento(): Promise<ConsentimentoAPI> {
+  return request<ConsentimentoAPI>("/consentimento/meu");
+}
+
+export function registrarConsentimento(payload: {
+  responsavel_nome: string;
+  responsavel_email: string;
+}): Promise<ConsentimentoAPI> {
+  return request<ConsentimentoAPI>("/consentimento", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export interface CustoUsoAPI {
+  mes_referencia: string;
+  tokens_llm: number;
+  chamadas_ocr: number;
+  custo_estimado: number;
+}
+
+export function custoUso(): Promise<CustoUsoAPI> {
+  return request<CustoUsoAPI>("/custo-uso");
+}
+
+export interface AuditLogAPI {
+  id: string;
+  usuario_id: string;
+  acao: string;
+  entidade: string;
+  entidade_id: string;
+  criado_em: string;
+}
+
+export function auditLog(): Promise<AuditLogAPI[]> {
+  return request<AuditLogAPI[]>("/audit-log");
 }

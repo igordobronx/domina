@@ -529,7 +529,7 @@ export function App() {
               <Classes state={state} role={role} currentUser={currentUser} notify={notify} />
             )}
             {page === "materiais" && (
-              <Materials state={state} update={update} notify={notify} />
+              <Materials state={state} update={update} notify={notify} role={role} currentUser={currentUser} />
             )}
             {page === "configuracoes" && (
               <Settings
@@ -537,6 +537,8 @@ export function App() {
                 update={update}
                 notify={notify}
                 onInstall={() => setModal("install")}
+                role={role}
+                currentUser={currentUser}
               />
             )}
             {page === "ajuda" && <Help />}

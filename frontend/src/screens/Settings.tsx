@@ -1,19 +1,32 @@
-import { useState } from "react";
-import { Download, RotateCcw, Save } from "lucide-react";
-import type { DemoState } from "../types";
-import { Button, Card, SectionTitle } from "../components/ui";
+import { useEffect, useState } from "react";
+import { Download, RotateCcw, Save, ShieldCheck } from "lucide-react";
+import type { DemoState, Role } from "../types";
+import { Badge, Button, Card, SectionTitle } from "../components/ui";
 import { initialState } from "../data/demo";
+import {
+  auditLog,
+  custoUso,
+  meuConsentimento,
+  registrarConsentimento,
+  type AuditLogAPI,
+  type CustoUsoAPI,
+  type UsuarioAtual,
+} from "../services/api";
 
 export function Settings({
   state,
   update,
   notify,
   onInstall,
+  role,
+  currentUser,
 }: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
   notify: (s: string) => void;
   onInstall: () => void;
+  role?: Role;
+  currentUser?: UsuarioAtual | null;
 }) {
   const [name, setName] = useState(state.name),
     [goal, setGoal] = useState(state.goal),
@@ -30,8 +43,11 @@ export function Settings({
     URL.revokeObjectURL(url);
     notify("Dados demonstrativos exportados.");
   };
+  const real = !!currentUser;
   return (
     <>
+      {real && role === "aluno" && <Consentimento notify={notify} />}
+      {real && role === "gestor" && <CustoEAuditoria notify={notify} />}
       <div className="page-heading">
         <div>
           <div className="eyebrow">DO SEU JEITO</div>
@@ -134,6 +150,138 @@ export function Settings({
     </>
   );
 }
+
+function Consentimento({ notify }: { notify: (s: string) => void }) {
+  const [consentimento, setConsentimento] = useState<{ responsavel_nome: string; aceito_em: string } | "ausente" | null>(null);
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    meuConsentimento()
+      .then(setConsentimento)
+      .catch(() => setConsentimento("ausente"));
+  }, []);
+
+  const registrar = async () => {
+    if (!nome.trim() || !email.trim()) {
+      setError("Informe o nome e o e-mail do responsável.");
+      return;
+    }
+    setSalvando(true);
+    setError("");
+    try {
+      const c = await registrarConsentimento({ responsavel_nome: nome.trim(), responsavel_email: email.trim() });
+      setConsentimento(c);
+      notify("Consentimento registrado.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível registrar o consentimento.");
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (consentimento === null) return null;
+  return (
+    <Card>
+      <SectionTitle title="Consentimento do responsável (LGPD)" />
+      {consentimento === "ausente" ? (
+        <>
+          <p className="muted">
+            Para usar a plataforma, registre o nome e o e-mail do responsável que autoriza o uso dos
+            seus dados de estudo.
+          </p>
+          <div className="form-grid">
+            <label>
+              Nome do responsável
+              <input value={nome} onChange={(e) => setNome(e.target.value)} />
+            </label>
+            <label>
+              E-mail do responsável
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </label>
+          </div>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          <Button icon={ShieldCheck} disabled={salvando} onPress={registrar}>
+            {salvando ? "Registrando..." : "Registrar consentimento"}
+          </Button>
+        </>
+      ) : (
+        <p>
+          <Badge>Consentimento registrado</Badge> por {consentimento.responsavel_nome} em{" "}
+          {new Date(consentimento.aceito_em).toLocaleDateString("pt-BR")}.
+        </p>
+      )}
+    </Card>
+  );
+}
+
+function CustoEAuditoria({ notify }: { notify: (s: string) => void }) {
+  const [custo, setCusto] = useState<CustoUsoAPI | null>(null);
+  const [logs, setLogs] = useState<AuditLogAPI[] | null>(null);
+
+  useEffect(() => {
+    Promise.all([custoUso(), auditLog()])
+      .then(([c, l]) => {
+        setCusto(c);
+        setLogs(l);
+      })
+      .catch(() => notify("Não foi possível carregar custo e auditoria da escola."));
+  }, []);
+
+  return (
+    <>
+      <Card>
+        <SectionTitle title="Custo e uso da IA este mês" />
+        {!custo ? (
+          <p className="muted">Carregando...</p>
+        ) : (
+          <div className="form-grid">
+            <div>
+              <strong>{custo.tokens_llm.toLocaleString("pt-BR")}</strong>
+              <p className="muted">tokens de correção</p>
+            </div>
+            <div>
+              <strong>{custo.chamadas_ocr.toLocaleString("pt-BR")}</strong>
+              <p className="muted">leituras de foto (OCR)</p>
+            </div>
+            <div>
+              <strong>
+                {custo.custo_estimado.toLocaleString("pt-BR", { style: "currency", currency: "USD" })}
+              </strong>
+              <p className="muted">custo estimado ({custo.mes_referencia})</p>
+            </div>
+          </div>
+        )}
+      </Card>
+      <Card>
+        <SectionTitle title="Registro de auditoria" />
+        {!logs ? (
+          <p className="muted">Carregando...</p>
+        ) : !logs.length ? (
+          <p className="muted">Nenhum registro ainda.</p>
+        ) : (
+          logs.slice(0, 20).map((l) => (
+            <div className="material-row" key={l.id}>
+              <div className="activity-info">
+                <strong>{l.acao}</strong>
+                <span>
+                  {l.entidade} · {new Date(l.criado_em).toLocaleString("pt-BR")}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </Card>
+    </>
+  );
+}
+
 export function Help() {
   return (
     <>

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -13,3 +14,4 @@ class DocumentoBaseResponse(BaseModel):
     nome_arquivo: str
     tipo: TipoDocumentoEnum
     status_processamento: StatusProcessamentoEnum
+    criado_em: datetime

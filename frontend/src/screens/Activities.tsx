@@ -22,9 +22,11 @@ import {
 } from "../services/demoStore";
 import {
   aprovarCorrecao,
+  confirmarTexto,
   corrigirSubmissao,
   criarAtividade,
   criarMateria,
+  enviarImagem,
   enviarTexto,
   listarMaterias,
   listarTurmasMinhas,
@@ -33,6 +35,7 @@ import {
   type AtividadeAPI,
   type CorrecaoAPI,
   type MateriaAPI,
+  type SubmissaoAPI,
   type TurmaAPI,
 } from "../services/api";
 import { carregarAtividadesDoAluno } from "../services/atividades";
@@ -231,6 +234,27 @@ function ActivityDetail({
   );
   const [feedback, setFeedback] = useState(a.feedback || "");
   const [confirmApproval, setConfirmApproval] = useState(false);
+  const [ocrSubmissao, setOcrSubmissao] = useState<SubmissaoAPI | null>(null);
+  const [ocrTexto, setOcrTexto] = useState("");
+  const [confirmandoOcr, setConfirmandoOcr] = useState(false);
+  const confirmarOcr = async () => {
+    if (!ocrSubmissao) return;
+    if (!ocrTexto.trim()) {
+      setError("O texto não pode ficar vazio.");
+      return;
+    }
+    setConfirmandoOcr(true);
+    setError("");
+    try {
+      await confirmarTexto(ocrSubmissao.id, ocrTexto);
+      notify("Atividade enviada. Agora ela aguarda a correção.");
+      onSubmittedReal?.();
+    } catch (erro) {
+      setError(erro instanceof Error ? erro.message : "Não foi possível confirmar o texto.");
+    } finally {
+      setConfirmandoOcr(false);
+    }
+  };
   const [gerandoCorrecao, setGerandoCorrecao] = useState(false);
   const [erroCorrecao, setErroCorrecao] = useState("");
   const gerarMinhaCorrecao = async () => {
@@ -259,16 +283,19 @@ function ActivityDetail({
       return;
     }
     if (onSubmittedReal) {
-      if (mode === "arquivo") {
-        setError("Envio de foto/PDF ainda não está conectado ao backend. Use o modo texto.");
-        return;
-      }
       setEnviando(true);
+      setError("");
       try {
-        await enviarTexto(a.id, text);
-        update((s) => ({ ...s, drafts: { ...s.drafts, [a.id]: "" } }));
-        notify("Redação enviada. Agora ela aguarda a correção do professor.");
-        onSubmittedReal();
+        if (mode === "arquivo") {
+          const submissao = await enviarImagem(a.id, file!);
+          setOcrSubmissao(submissao);
+          setOcrTexto(submissao.texto_ocr ?? "");
+        } else {
+          await enviarTexto(a.id, text);
+          update((s) => ({ ...s, drafts: { ...s.drafts, [a.id]: "" } }));
+          notify("Redação enviada. Agora ela aguarda a correção do professor.");
+          onSubmittedReal();
+        }
       } catch (erro) {
         setError(erro instanceof Error ? erro.message : "Não foi possível enviar. Tente de novo.");
       } finally {
@@ -330,6 +357,55 @@ function ActivityDetail({
       {a.status === "disponivel" ? (
         <div className="detail-grid">
           <Card>
+            {ocrSubmissao ? (
+              <>
+                <SectionTitle title="Confira o texto da sua foto" />
+                <p className="muted">
+                  Lemos o texto abaixo da sua imagem. Revise e corrija o que precisar antes de
+                  confirmar — depois de confirmado, não dá mais para editar.
+                </p>
+                <TextInput
+                  accessibilityLabel="Texto reconhecido da foto"
+                  multiline
+                  value={ocrTexto}
+                  onChangeText={setOcrTexto}
+                  style={{
+                    minHeight: 300,
+                    fontFamily: "IBM Plex Sans",
+                    fontSize: 16,
+                    lineHeight: 27,
+                    padding: 18,
+                    borderWidth: 1,
+                    borderColor: "#DCD8CC",
+                    borderRadius: 10,
+                    textAlignVertical: "top",
+                    color: "#141A2E",
+                  }}
+                />
+                {error && (
+                  <p className="error" role="alert">
+                    {error}
+                  </p>
+                )}
+                <div className="form-actions">
+                  <Button
+                    variant="secondary"
+                    onPress={() => {
+                      setOcrSubmissao(null);
+                      setOcrTexto("");
+                      setFile(null);
+                      setError("");
+                    }}
+                  >
+                    Cancelar e tentar outra foto
+                  </Button>
+                  <Button icon={Check} disabled={confirmandoOcr} onPress={confirmarOcr}>
+                    {confirmandoOcr ? "Confirmando..." : "Confirmar e enviar para revisão"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
             <SectionTitle title="Sua resposta" />
             {a.questoes?.length ? (
               // gabarito real desta atividade (materias de exatas) -- nunca um texto fixo de outra atividade
@@ -404,19 +480,21 @@ function ActivityDetail({
               <div className="upload-zone">
                 <Upload size={30} />
                 <strong>{file?.name || "Escolha sua atividade"}</strong>
-                <span>PDF, JPG ou PNG · até 10 MB</span>
+                <span>{onSubmittedReal ? "JPG ou PNG · até 10 MB" : "PDF, JPG ou PNG · até 10 MB"}</span>
                 <input
                   aria-label="Selecionar arquivo da atividade"
                   type="file"
-                  accept=".pdf,.png,.jpg,.jpeg"
+                  accept={onSubmittedReal ? ".png,.jpg,.jpeg" : ".pdf,.png,.jpg,.jpeg"}
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (
-                      f &&
-                      (f.size > 10 * 1024 * 1024 ||
-                        !/\.(pdf|png|jpe?g)$/i.test(f.name))
-                    ) {
-                      setError("Use PDF, JPG ou PNG com no máximo 10 MB.");
+                    // a leitura automatica (OCR) so existe pra imagem; PDF so faz sentido na demo
+                    const valido = onSubmittedReal ? /\.(png|jpe?g)$/i.test(f?.name ?? "") : /\.(pdf|png|jpe?g)$/i.test(f?.name ?? "");
+                    if (f && (f.size > 10 * 1024 * 1024 || !valido)) {
+                      setError(
+                        onSubmittedReal
+                          ? "Use JPG ou PNG com no máximo 10 MB."
+                          : "Use PDF, JPG ou PNG com no máximo 10 MB.",
+                      );
                       setFile(null);
                       e.target.value = "";
                     } else {
@@ -426,8 +504,9 @@ function ActivityDetail({
                   }}
                 />
                 <p className="tiny">
-                  Nesta demonstração, somente o nome do arquivo é salvo. A
-                  leitura do manuscrito será conectada ao backend.
+                  {onSubmittedReal
+                    ? "Lemos o texto da sua foto automaticamente: você confere e confirma antes de enviar."
+                    : "Nesta demonstração, somente o nome do arquivo é salvo. A leitura do manuscrito será conectada ao backend."}
                 </p>
               </div>
             )}
@@ -452,6 +531,8 @@ function ActivityDetail({
                 {enviando ? "Enviando..." : "Enviar para revisão"}
               </Button>
             </div>
+              </>
+            )}
           </Card>
           <Card className="aside-card">
             <ShieldCheck size={29} color="#197451" />

@@ -16,6 +16,14 @@ router = APIRouter(tags=["documentos"])
 MAX_DOCUMENTO_BYTES = 20 * 1024 * 1024  # 20 MB: apostila/rubrica em PDF cabe com folga
 
 
+@router.get("/materias/{materia_id}/documentos", response_model=list[DocumentoBaseResponse])
+def listar_documentos(materia_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    materia = db.get(Materia, materia_id)
+    if not materia or materia.escola_id != usuario.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+    return db.query(DocumentoBase).filter_by(materia_id=materia_id).order_by(DocumentoBase.criado_em.desc()).all()
+
+
 # RF-13: professor/gestor sobe material de apoio (apostila, rubrica, gabarito) de uma materia da escola.
 # ponytail: so grava o arquivo e cria o registro PENDENTE; extracao de conteudo fica pro P2/P3
 @router.post("/materias/{materia_id}/documentos", response_model=DocumentoBaseResponse,

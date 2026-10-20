@@ -97,6 +97,7 @@ class DocumentoBase(Base):
     status_processamento = Column(
         SQLEnum(StatusProcessamentoEnum), default=StatusProcessamentoEnum.PENDENTE, nullable=False
     )
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)
 
 
 class Atividade(Base):

@@ -1518,6 +1518,25 @@ a {
 .student-table p {
   font-size: 11px;
 }
+.student-table-button {
+  width: 100%;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+}
+.student-table-button.student-table {
+  border-top: 1px solid var(--line);
+}
+.student-domain {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 0 6px 56px;
+}
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
 import { BookOpen, Check, Plus, Users } from "lucide-react";
 import type { DemoState, Role } from "../types";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { Badge, Button, Card, Empty, Progress, SectionTitle } from "../components/ui";
 import {
   criarTurma,
   criarUsuario,
+  dominioDoAluno,
+  enviarDocumento,
+  listarDocumentos,
+  listarMaterias,
   listarTurmasMinhas,
   listarUsuarios,
   matricular,
   membrosTurma,
+  type DocumentoAPI,
+  type DominioAPI,
+  type MateriaAPI,
   type MembroTurmaAPI,
   type TurmaAPI,
   type UsuarioAtual,
@@ -184,25 +191,27 @@ function TurmaCard({
           {carregando ? (
             <p className="muted">Carregando...</p>
           ) : (
-            (membros ?? []).map((m) => (
-              <div className="student-table" key={m.id}>
-                <div className="avatar">
-                  {m.nome
-                    .split(" ")
-                    .map((n) => n[0])
-                    .slice(0, 2)
-                    .join("")
-                    .toUpperCase()}
+            (membros ?? []).map((m) =>
+              m.papel === "ALUNO" ? (
+                <AlunoRow key={m.id} aluno={m} notify={notify} />
+              ) : (
+                <div className="student-table" key={m.id}>
+                  <div className="avatar">
+                    {m.nome
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </div>
+                  <div>
+                    <strong>{m.nome}</strong>
+                    <p className="muted">{m.email}</p>
+                  </div>
+                  <Badge tone="neutral">Professor(a)</Badge>
                 </div>
-                <div>
-                  <strong>{m.nome}</strong>
-                  <p className="muted">{m.email}</p>
-                </div>
-                <Badge tone={m.papel === "PROFESSOR" ? "neutral" : undefined}>
-                  {m.papel === "PROFESSOR" ? "Professor(a)" : "Aluno(a)"}
-                </Badge>
-              </div>
-            ))
+              ),
+            )
           )}
           {gestor && !adicionando && (
             <Button variant="secondary" icon={Plus} onPress={() => setAdicionando(true)}>
@@ -224,6 +233,57 @@ function TurmaCard({
         </>
       )}
     </Card>
+  );
+}
+
+function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string) => void }) {
+  const [aberto, setAberto] = useState(false);
+  const [dominio, setDominio] = useState<DominioAPI[] | null>(null);
+  const [carregando, setCarregando] = useState(false);
+
+  const abrir = () => {
+    const vaiAbrir = !aberto;
+    setAberto(vaiAbrir);
+    if (vaiAbrir && !dominio) {
+      setCarregando(true);
+      dominioDoAluno(aluno.id)
+        .then(setDominio)
+        .catch(() => notify("Não foi possível carregar o domínio deste aluno."))
+        .finally(() => setCarregando(false));
+    }
+  };
+
+  return (
+    <div className="student-table-expandable">
+      <button className="student-table student-table-button" onClick={abrir} aria-expanded={aberto}>
+        <div className="avatar">
+          {aluno.nome
+            .split(" ")
+            .map((n) => n[0])
+            .slice(0, 2)
+            .join("")
+            .toUpperCase()}
+        </div>
+        <div>
+          <strong>{aluno.nome}</strong>
+          <p className="muted">{aluno.email}</p>
+        </div>
+        <Badge tone="neutral">{aberto ? "Ocultar domínio" : "Ver domínio"}</Badge>
+      </button>
+      {aberto && (
+        <div className="student-domain">
+          {carregando ? (
+            <p className="muted">Carregando...</p>
+          ) : !dominio?.length ? (
+            <p className="muted">Ainda sem correções aprovadas para estimar o domínio.</p>
+          ) : (
+            dominio.map((d) => (
+              <Progress key={d.tema_id} value={d.percentual_dominio} label={d.tema} />
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -374,22 +434,85 @@ function AdicionarMembro({
     </Card>
   );
 }
+const TIPOS_DOCUMENTO: { value: DocumentoAPI["tipo"]; label: string }[] = [
+  { value: "APOSTILA", label: "Apostila" },
+  { value: "RUBRICA", label: "Rubrica de correção" },
+  { value: "GABARITO", label: "Gabarito" },
+  { value: "PLANO_DE_AULA", label: "Plano de aula" },
+];
+
 export function Materials({
   state,
   update,
   notify,
+  role,
+  currentUser,
 }: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
   notify: (s: string) => void;
+  role: Role;
+  currentUser?: UsuarioAtual | null;
 }) {
+  const real = !!currentUser && (role === "professor" || role === "gestor");
   const [adding, setAdding] = useState(false),
     [name, setName] = useState(""),
     [subject, setSubject] = useState("Redação ENEM"),
     [file, setFile] = useState<File | null>(null),
     [error, setError] = useState("");
-  const add = () => {
-    if (!name.trim() || !file) {
+
+  // modo real: materia/documentos vem do backend (por matéria, ja que /materias/{id}/documentos
+  // so lista os de uma materia por vez -- juntamos todas as materias da escola aqui)
+  const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
+  const [documentos, setDocumentos] = useState<(DocumentoAPI & { materiaNome: string })[] | null>(null);
+  const [materiaId, setMateriaId] = useState("");
+  const [tipo, setTipo] = useState<DocumentoAPI["tipo"]>("APOSTILA");
+  const [carregando, setCarregando] = useState(real);
+  const [salvando, setSalvando] = useState(false);
+
+  const recarregar = () => {
+    if (!real) return;
+    setCarregando(true);
+    listarMaterias()
+      .then((ms) => {
+        setMaterias(ms);
+        setMateriaId((id) => id || ms[0]?.id || "");
+        return Promise.all(
+          ms.map((m) => listarDocumentos(m.id).then((docs) => docs.map((d) => ({ ...d, materiaNome: m.nome })))),
+        );
+      })
+      .then((listas) => setDocumentos(listas.flat()))
+      .catch(() => notify("Não foi possível carregar os materiais."))
+      .finally(() => setCarregando(false));
+  };
+  useEffect(recarregar, [real, currentUser?.id]);
+
+  const add = async () => {
+    if (!file) {
+      setError("Selecione o documento.");
+      return;
+    }
+    if (real) {
+      if (!materiaId) {
+        setError("Escolha uma matéria.");
+        return;
+      }
+      setSalvando(true);
+      setError("");
+      try {
+        await enviarDocumento(materiaId, file, tipo);
+        setAdding(false);
+        setFile(null);
+        notify("Material enviado para a escola.");
+        recarregar();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Não foi possível enviar o material.");
+      } finally {
+        setSalvando(false);
+      }
+      return;
+    }
+    if (!name.trim()) {
       setError("Informe um título e selecione o documento.");
       return;
     }
@@ -430,38 +553,62 @@ export function Materials({
         <Card>
           <SectionTitle title="Novo material" />
           <div className="form-grid">
+            {real ? (
+              <>
+                <label>
+                  Matéria
+                  <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+                    {(materias ?? []).map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.nome}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Tipo
+                  <select value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoAPI["tipo"])}>
+                    {TIPOS_DOCUMENTO.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </>
+            ) : (
+              <>
+                <label>
+                  Título
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ex.: Rubrica de argumentação"
+                  />
+                </label>
+                <label>
+                  Matéria
+                  <select
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  >
+                    <option>Redação ENEM</option>
+                    <option>Matemática</option>
+                  </select>
+                </label>
+              </>
+            )}
             <label>
-              Título
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ex.: Rubrica de argumentação"
-              />
-            </label>
-            <label>
-              Matéria
-              <select
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-              >
-                <option>Redação ENEM</option>
-                <option>Matemática</option>
-              </select>
-            </label>
-            <label>
-              Documento (até 10 MB)
+              Documento (até {real ? "20" : "10"} MB)
               <input
                 type="file"
-                accept=".pdf,.docx,.txt"
+                accept={real ? undefined : ".pdf,.docx,.txt"}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (
-                    f &&
-                    (f.size > 10 * 1024 * 1024 ||
-                      !/\.(pdf|docx|txt)$/i.test(f.name))
-                  ) {
+                  const limite = real ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+                  if (f && (f.size > limite || (!real && !/\.(pdf|docx|txt)$/i.test(f.name)))) {
                     setFile(null);
-                    setError("Escolha PDF, DOCX ou TXT com até 10 MB.");
+                    setError(real ? "Arquivo maior que 20 MB." : "Escolha PDF, DOCX ou TXT com até 10 MB.");
                     e.target.value = "";
                   } else {
                     setFile(f || null);
@@ -476,33 +623,62 @@ export function Materials({
               {error}
             </p>
           )}
-          <Button onPress={add}>Salvar material demonstrativo</Button>
+          <Button disabled={salvando} onPress={add}>
+            {salvando ? "Enviando..." : real ? "Enviar material" : "Salvar material demonstrativo"}
+          </Button>
         </Card>
       )}
-      <Card>
-        {state.materials.map((m) => (
-          <div className="material-row" key={m.id}>
-            <div className="activity-icon">
-              <BookOpen size={21} />
+      {real ? (
+        <Card>
+          {carregando ? (
+            <p className="muted">Carregando...</p>
+          ) : !documentos?.length ? (
+            <Empty title="Nenhum material enviado" text="Envie apostilas, rubricas ou gabaritos para orientar as correções." />
+          ) : (
+            documentos.map((d) => (
+              <div className="material-row" key={d.id}>
+                <div className="activity-icon">
+                  <BookOpen size={21} />
+                </div>
+                <div className="activity-info">
+                  <strong>{d.nome_arquivo}</strong>
+                  <span>
+                    {d.materiaNome} · {TIPOS_DOCUMENTO.find((t) => t.value === d.tipo)?.label ?? d.tipo}
+                  </span>
+                </div>
+                <Badge tone={d.status_processamento === "PROCESSADO" ? "green" : "amber"}>
+                  {d.status_processamento === "PROCESSADO" ? "Base aprovada" : "Aguardando integração"}
+                </Badge>
+              </div>
+            ))
+          )}
+        </Card>
+      ) : (
+        <Card>
+          {state.materials.map((m) => (
+            <div className="material-row" key={m.id}>
+              <div className="activity-icon">
+                <BookOpen size={21} />
+              </div>
+              <div className="activity-info">
+                <strong>{m.name}</strong>
+                <span>
+                  {m.subject} · {m.fileName}
+                </span>
+              </div>
+              <Badge tone={m.approved ? "green" : "amber"}>
+                {m.approved ? "Base aprovada" : "Aguardando integração"}
+              </Badge>
             </div>
-            <div className="activity-info">
-              <strong>{m.name}</strong>
-              <span>
-                {m.subject} · {m.fileName}
-              </span>
-            </div>
-            <Badge tone={m.approved ? "green" : "amber"}>
-              {m.approved ? "Base aprovada" : "Aguardando integração"}
-            </Badge>
-          </div>
-        ))}
-      </Card>
+          ))}
+        </Card>
+      )}
       <div className="info-banner">
         <Check size={22} />
         <p>
-          A extração de temas e a aprovação de critérios dependem do
-          processamento real. Os materiais adicionados aqui ficam como registros
-          locais; não entram nas correções.
+          {real
+            ? "A extração de temas ainda depende do processamento do conteúdo (P2/P3); os arquivos já ficam salvos na escola."
+            : "A extração de temas e a aprovação de critérios dependem do processamento real. Os materiais adicionados aqui ficam como registros locais; não entram nas correções."}
         </p>
       </div>
     </>
