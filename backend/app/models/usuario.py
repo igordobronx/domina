@@ -79,7 +79,9 @@ class Tema(Base):
     # qualquer atividade). Preenchido = questao especifica de UMA atividade de exatas, com
     # seu proprio gabarito (nao faz sentido reaproveitar entre atividades diferentes).
     atividade_id = Column(UUID(as_uuid=True), ForeignKey("atividade.id"), nullable=True)
-    nome = Column(String(150), nullable=False)
+    # Text, nao String(150): para uma competencia da redacao (C1..C5) e so um nome curto, mas
+    # para uma questao de exatas e o enunciado inteiro digitado pelo professor (sem limite curto)
+    nome = Column(Text, nullable=False)
     habilidade_codigo = Column(String(20), nullable=False)
     # gabarito da questao; so preenchido quando atividade_id tambem esta preenchido
     resposta_correta = Column(Text, nullable=True)

@@ -139,3 +139,19 @@ def test_so_professor_ou_gestor_criam_materia():
     aluno = token("aluno@domina.com")
     r = client.post("/materias", headers=aluno, json={"nome": "Física", "tipo": "MATERIA_OBJETIVA"})
     assert r.status_code == 403
+
+
+def test_enunciado_longo_nao_quebra_a_criacao():
+    # bug real: Tema.nome era VARCHAR(150) no Postgres, mas um enunciado de prova discursiva
+    # (gerado por IA, com contexto/formatacao) facilmente passa disso -> 500 ("Failed to fetch"
+    # no navegador). Tema.nome agora e Text; este teste cobre a validacao do pydantic (max 2000).
+    prof = token("professor@domina.com")
+    turma_id, materia_id = criar_turma_e_materia(prof)
+    enunciado_longo = "### **Questão 1** (Geometria Plana) " + "Lorem ipsum dolor sit amet. " * 50
+    assert len(enunciado_longo) > 150
+    r = client.post("/atividades", headers=prof, json={
+        "materia_id": materia_id, "turma_id": turma_id, "titulo": "Prova discursiva", "tipo": "PROVA_DISCURSIVA",
+        "questoes": [{"enunciado": enunciado_longo, "resposta_correta": "x = 42"}],
+    })
+    assert r.status_code == 201, r.text
+    assert r.json()["questoes"][0]["enunciado"] == enunciado_longo.strip()
