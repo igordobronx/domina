@@ -30,7 +30,9 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
         student: nomeAluno, questoes, valorTotal: a.valor_total,
       };
     }
-    const aprovada = submissao.status === "APROVADA";
+    // o aluno pode gerar a propria correcao e ja ve a nota da IA, provisoria ate o professor
+    // aprovar (nota_professor so vem preenchida depois) -- por isso scores/feedback aparecem
+    // assim que existe correcao (submissao.criterios != null), nao so quando aprovada
     return {
       id: a.id,
       title: a.titulo,
@@ -41,8 +43,8 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
       student: nomeAluno,
       questoes,
       valorTotal: a.valor_total,
-      scores: aprovada ? (submissao.criterios ?? []).map((c) => c.nota_professor ?? c.nota) : undefined,
-      feedback: aprovada ? (submissao.feedback ?? undefined) : undefined,
+      scores: submissao.criterios ? submissao.criterios.map((c) => c.nota_professor ?? c.nota) : undefined,
+      feedback: submissao.feedback ?? undefined,
     };
   });
 }

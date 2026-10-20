@@ -151,6 +151,8 @@ class MinhaSubmissaoResponse(BaseModel):
     atividade_titulo: str
     status: str  #aguardado correcao | status.value da correcao, so se existir
     criado_em: datetime
-    nota: float | None #so preenche se Correcao.status == Aprovada
-    feedback: str | None #idem
-    criterios: list[CriterioResponse] | None = None  # detalhe por competencia, so se aprovada (RN-01)
+    # preenchido assim que existe correcao: nota_ia (provisoria) ate aprovar, nota_professor
+    # (final) depois -- o aluno pode gerar e ver a propria correcao antes da aprovacao
+    nota: float | None
+    feedback: str | None
+    criterios: list[CriterioResponse] | None = None  # idem; nota_professor vem nulo ate aprovar

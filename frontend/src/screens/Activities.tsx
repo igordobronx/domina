@@ -114,7 +114,7 @@ export function Activities({
   if (activity)
     return (
       <ActivityDetail
-        key={activity.id + activity.status}
+        key={activity.id + activity.status + (activity.scores ? "c" : "")}
         activity={activity}
         state={state}
         role={role}
@@ -122,6 +122,7 @@ export function Activities({
         notify={notify}
         onBack={() => select(null)}
         onSubmittedReal={real ? () => { select(null); recarregar(); } : undefined}
+        onCorrigidaReal={real ? recarregar : undefined}
       />
     );
   const list = activities.filter(
@@ -210,10 +211,12 @@ function ActivityDetail({
   notify,
   onBack,
   onSubmittedReal,
+  onCorrigidaReal,
 }: Omit<Props, "selected" | "select" | "reviewOnly" | "currentUser"> & {
   activity: Activity;
   onBack: () => void;
   onSubmittedReal?: () => void;
+  onCorrigidaReal?: () => void;
 }) {
   const [text, setText] = useState(state.drafts[a.id] || "");
   const [file, setFile] = useState<File | null>(null);
@@ -228,6 +231,20 @@ function ActivityDetail({
   );
   const [feedback, setFeedback] = useState(a.feedback || "");
   const [confirmApproval, setConfirmApproval] = useState(false);
+  const [gerandoCorrecao, setGerandoCorrecao] = useState(false);
+  const [erroCorrecao, setErroCorrecao] = useState("");
+  const gerarMinhaCorrecao = async () => {
+    setGerandoCorrecao(true);
+    setErroCorrecao("");
+    try {
+      await corrigirSubmissao(a.id);
+      onCorrigidaReal?.();
+    } catch (erro) {
+      setErroCorrecao(erro instanceof Error ? erro.message : "Não foi possível gerar a correção.");
+    } finally {
+      setGerandoCorrecao(false);
+    }
+  };
   const submit = async () => {
     if (mode === "texto" && text.trim().length < 40) {
       setError("Escreva pelo menos 40 caracteres para enviar sua resposta.");
@@ -453,20 +470,39 @@ function ActivityDetail({
             <Badge tone="neutral">Ambiente de demonstração</Badge>
           </Card>
         </div>
-      ) : a.status === "pendente" && !teacher ? (
+      ) : a.status === "pendente" && !teacher && !a.scores ? (
         <Card>
-          <Empty
-            title="Recebemos sua atividade!"
-            text="Seu professor vai revisar a correção. Assim que ele aprovar, você encontra a nota e as orientações nesta tela."
-          >
-            <Badge tone="amber">Aguardando revisão do professor</Badge>
-            <Button variant="secondary" onPress={onBack}>
-              Voltar às atividades
-            </Button>
-          </Empty>
+          {onCorrigidaReal ? (
+            <Empty
+              title="Recebemos sua atividade!"
+              text="Agora você já pode gerar sua correção por IA e ver o resultado na hora. Depois, seu professor confirma a nota final."
+            >
+              <Button icon={Sparkles} disabled={gerandoCorrecao} onPress={gerarMinhaCorrecao}>
+                {gerandoCorrecao ? "Gerando correção..." : "Gerar minha correção com IA"}
+              </Button>
+              {erroCorrecao && (
+                <p className="error" role="alert">
+                  {erroCorrecao}
+                </p>
+              )}
+              <Button variant="secondary" onPress={onBack}>
+                Voltar às atividades
+              </Button>
+            </Empty>
+          ) : (
+            <Empty
+              title="Recebemos sua atividade!"
+              text="Seu professor vai revisar a correção. Assim que ele aprovar, você encontra a nota e as orientações nesta tela."
+            >
+              <Badge tone="amber">Aguardando revisão do professor</Badge>
+              <Button variant="secondary" onPress={onBack}>
+                Voltar às atividades
+              </Button>
+            </Empty>
+          )}
         </Card>
       ) : (
-        visibleResult(a, role) && (
+        (visibleResult(a, role) || (role === "aluno" && !!a.scores)) && (
           <div className="detail-grid">
             <Card>
               <SectionTitle
@@ -478,8 +514,10 @@ function ActivityDetail({
               />
               <Badge tone={a.status === "aprovada" ? "green" : "amber"}>
                 {a.status === "aprovada"
-                  ? "Revisada pela professora Marina"
-                  : "Sugestão demonstrativa da IA · confiança média"}
+                  ? "Revisada pelo professor"
+                  : onCorrigidaReal
+                    ? "Sugestão da IA · aguardando confirmação do professor"
+                    : "Sugestão demonstrativa da IA · confiança média"}
               </Badge>
               <div className="score-total">
                 <strong>{scores.reduce((s, n) => s + n, 0)}</strong>
@@ -588,7 +626,9 @@ function ActivityDetail({
                 <ShieldCheck size={16} />
                 {a.status === "aprovada"
                   ? "Correção assistida por IA e validada por um professor."
-                  : "A sugestão só será publicada depois da sua aprovação."}
+                  : onCorrigidaReal
+                    ? "Essa é a nota da IA agora mesmo; seu professor ainda vai confirmar."
+                    : "A sugestão só será publicada depois da sua aprovação."}
               </div>
             </Card>
             <Card>

@@ -202,16 +202,18 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
     )
     original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota_maxima, settings.GEMINI_MODEL)
     try:
-        # aluno nao gera nem ve a nota da IA antes da aprovacao (RN-01)
-        assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=aluno, json={}).status_code == 403
-        r = client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={"tema": "tema x"})
+        # o proprio aluno pode gerar a correcao da sua submissao e ja ve o resultado,
+        # provisorio ate o professor aprovar
+        r = client.post(f"/submissoes/{sub['id']}/corrigir", headers=aluno, json={"tema": "tema x"})
         assert r.status_code == 201, r.text
         c = r.json()
         assert c["nota_ia"] == 1000 and c["status"] == "PENDENTE"
         assert [k["codigo"] for k in c["criterios"]] == ["C1", "C2", "C3", "C4", "C5"]
+        # ja existe correcao: nem o professor corrige de novo
         assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).status_code == 409
         assert client.get(f"/submissoes/{sub['id']}/correcao", headers=prof).json()["nota_ia"] == 1000
-        assert client.get(f"/submissoes/{sub['id']}/correcao", headers=aluno).status_code == 403
+        vista_aluno = client.get(f"/submissoes/{sub['id']}/correcao", headers=aluno).json()
+        assert vista_aluno["nota_ia"] == 1000 and vista_aluno["nota_professor"] is None
 
         # corrigida pelo modelo reserva: sempre "requer atencao", mesmo com confianca alta
         ia.corrigir = lambda texto, tema: (nota_maxima, settings.GEMINI_MODEL_RESERVA)
@@ -219,6 +221,47 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
                            data={"atividade_id": atividades[0]["id"], "aluno_id": aluno_id}).json()
         client.put(f"/submissoes/{sub2['id']}/confirmar", headers=prof, json={"texto": "redacao"})
         assert client.post(f"/submissoes/{sub2['id']}/corrigir", headers=prof, json={}).json()["status"] == "REQUER_ATENCAO"
+    finally:
+        ia.corrigir = original
+
+
+def test_aluno_gera_propria_correcao_e_professor_aprova_depois():
+    # fluxo 100% pelo aluno: envia, confirma, corrige e ve o resultado provisorio sozinho;
+    # o professor so confirma a nota final depois (RN-01 relaxada por pedido do Igor)
+    from app import correcao as ia
+
+    aluno = token("aluno@domina.com")
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade_id(), "texto": "minha redacao"}).json()
+
+    nota = ia.ResultadoIA(
+        competencias=[{"codigo": f"C{i}", "nota": 160, "justificativa": "ok"} for i in range(5, 0, -1)],
+        feedback_geral="bom trabalho", confianca=0.9,
+    )
+    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota, settings.GEMINI_MODEL)
+    try:
+        assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=aluno, json={}).status_code == 201
+
+        minha = client.get("/submissoes/minhas", headers=aluno).json()
+        desta = next(m for m in minha if m["id"] == sub["id"])
+        assert desta["status"] == "PENDENTE" and desta["nota"] == 800  # nota_ia provisoria
+        assert all(c["nota_professor"] is None for c in desta["criterios"])
+
+        prof = token("professor@domina.com")
+        aprovacao = client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
+            "notas": [{"codigo": f"C{i}", "nota": 160} for i in range(1, 6)],
+            "feedback": "confirmado",
+        })
+        assert aprovacao.status_code == 200, aprovacao.text
+
+        # aprovar continua so do professor, mesmo o aluno podendo gerar a propria correcao
+        assert client.put(f"/submissoes/{sub['id']}/aprovar", headers=aluno, json={
+            "notas": [{"codigo": f"C{i}", "nota": 160} for i in range(1, 6)],
+        }).status_code == 403
+
+        minha = client.get("/submissoes/minhas", headers=aluno).json()
+        desta = next(m for m in minha if m["id"] == sub["id"])
+        assert desta["status"] == "APROVADA" and desta["nota"] == 800
     finally:
         ia.corrigir = original
 

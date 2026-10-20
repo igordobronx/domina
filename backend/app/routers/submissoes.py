@@ -257,7 +257,9 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
         correcao = db.query(Correcao).filter_by(submissao_id=s.id).first()
         aprovada = correcao and correcao.status == StatusCorrecaoEnum.APROVADA
         criterios = None
-        if aprovada:
+        if correcao:
+            # o aluno ve a propria correcao assim que ela existe (nota_professor nulo ate
+            # aprovar): e provisoria, so o professor confirma depois (ver _pode_ver_correcao)
             linhas = (
                 db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
                 .filter(CorrecaoCriterio.correcao_id == correcao.id).order_by(Tema.habilidade_codigo)
@@ -276,8 +278,8 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
             atividade_titulo=db.get(Atividade, s.atividade_id).titulo,
             status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
             criado_em=s.criado_em,
-            nota=float(correcao.nota_professor) if aprovada else None,
-            feedback=correcao.feedback if aprovada else None,
+            nota=float(correcao.nota_professor if aprovada else correcao.nota_ia) if correcao else None,
+            feedback=correcao.feedback if correcao else None,
             criterios=criterios,
         ))
     return resposta
@@ -333,16 +335,31 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
 
 
 def _so_professor(db: Session, submissao: Submissao, usuario: Usuario):
-    # corrigir e aprovar sao acoes, nao so visualizacao: gestor nao entra aqui (RF-22)
+    # aprovar e uma acao, nao so visualizacao: gestor nao entra aqui (RF-22). So o professor
+    # confirma o resultado final -- isso nao mudou mesmo com o aluno podendo gerar a propria
+    # correcao (ver _pode_corrigir).
     if not _professor_da_turma(db, usuario, db.get(Atividade, submissao.atividade_id).turma_id):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o professor da turma realiza esta ação.")
 
 
+def _pode_corrigir(db: Session, submissao: Submissao, usuario: Usuario):
+    # o proprio aluno pode gerar a correcao da sua submissao (ve a nota da IA na hora,
+    # provisoria ate o professor confirmar), alem do professor da turma
+    if submissao.aluno_id == usuario.id:
+        return
+    if _professor_da_turma(db, usuario, db.get(Atividade, submissao.atividade_id).turma_id):
+        return
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o aluno dono da submissão ou o professor da turma geram a correção.")
+
+
 def _pode_ver_correcao(db: Session, submissao: Submissao, usuario: Usuario):
-    # a nota da IA so e vista pelo professor/gestor; o aluno so ve depois da aprovacao (RN-01)
+    # o aluno ve a propria correcao mesmo antes da aprovacao (e quem pode te-la gerado);
+    # o professor/gestor sempre veem. So terceiros ficam de fora.
+    if submissao.aluno_id == usuario.id:
+        return
     turma_id = db.get(Atividade, submissao.atividade_id).turma_id
     if not (_professor_da_turma(db, usuario, turma_id) or _gestor_da_escola(db, usuario, turma_id)):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o professor da turma ou um gestor vê a correção antes da aprovação.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não tem acesso a esta correção.")
 
 
 @router.post("/submissoes/{submissao_id}/corrigir", response_model=CorrecaoResponse, status_code=status.HTTP_201_CREATED)
@@ -353,7 +370,7 @@ def corrigir_submissao(
     db: Session = Depends(get_db),
 ):
     submissao = _submissao_visivel(db, submissao_id, usuario)
-    _so_professor(db, submissao, usuario)
+    _pode_corrigir(db, submissao, usuario)
     if submissao.texto_confirmado is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Confirme o texto antes de corrigir.")
     if db.query(Correcao).filter_by(submissao_id=submissao.id).first():

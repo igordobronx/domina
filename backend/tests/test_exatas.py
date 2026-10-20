@@ -121,6 +121,38 @@ def test_fluxo_completo_exatas():
         exatas_mod.gerar = original
 
 
+def test_aluno_gera_propria_correcao_exatas_e_professor_aprova_depois():
+    # mesma RN-01 relaxada do test_fluxo_envio.py, aqui pro lado de exatas
+    prof, aluno = token("professor@domina.com"), token("aluno2@domina.com")
+    turma_id, materia_id = criar_turma_e_materia(prof)
+    atividade = criar_atividade_com_gabarito(prof, turma_id, materia_id)
+
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade["id"], "texto": "x = 2 e x = 3"}).json()
+
+    original, exatas_mod.gerar = exatas_mod.gerar, _gemini_falso([200, 200])
+    try:
+        r = client.post(f"/submissoes/{sub['id']}/corrigir", headers=aluno, json={})
+        assert r.status_code == 201, r.text
+
+        minha = client.get("/submissoes/minhas", headers=aluno).json()
+        desta = next(m for m in minha if m["id"] == sub["id"])
+        # _gemini_falso usa um "modelo-falso" (nao o configurado), entao vai pra REQUER_ATENCAO;
+        # a nota provisoria (nota_ia) ja aparece pro aluno de qualquer jeito
+        assert desta["status"] == "REQUER_ATENCAO" and desta["nota"] == 1000  # 500 + 500, provisorio
+
+        aprovacao = client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
+            "notas": [{"codigo": "Q1", "nota": 500}, {"codigo": "Q2", "nota": 500}],
+        })
+        assert aprovacao.status_code == 200, aprovacao.text
+
+        minha = client.get("/submissoes/minhas", headers=aluno).json()
+        desta = next(m for m in minha if m["id"] == sub["id"])
+        assert desta["status"] == "APROVADA" and desta["nota"] == 1000
+    finally:
+        exatas_mod.gerar = original
+
+
 def test_aprovar_exige_todos_os_criterios():
     prof = token("professor@domina.com")
     turma_id, materia_id = criar_turma_e_materia(prof)

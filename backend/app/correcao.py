@@ -1,6 +1,8 @@
 """Correcao da redacao ENEM pelo Gemini nas 5 competencias do INEP.
 
-A nota NAO vai para o aluno aqui: fica PENDENTE ate o professor aprovar (RN-01).
+A nota fica PENDENTE ate o professor aprovar; o STATUS "APROVADA" (nao a visibilidade pro
+aluno) e o que muda aqui -- o aluno pode ver a nota da IA antes disso, mas so como provisoria
+(ver _pode_ver_correcao em app/routers/submissoes.py).
 """
 from typing import Literal
 
