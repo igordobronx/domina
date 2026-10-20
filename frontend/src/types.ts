@@ -12,6 +12,9 @@ export type Page =
 export type ActivityStatus = "disponivel" | "pendente" | "aprovada";
 export interface Activity {
   id: string;
+  // so quando ja existe submissao real (lado do aluno): id da submissao, distinto do id da
+  // atividade (a.id) -- /submissoes/{id}/corrigir precisa do id da submissao, nao da atividade
+  submissaoId?: string;
   title: string;
   subject: string;
   date: string;

@@ -35,6 +35,7 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
     // assim que existe correcao (submissao.criterios != null), nao so quando aprovada
     return {
       id: a.id,
+      submissaoId: submissao.id,
       title: a.titulo,
       subject: a.materia,
       date: paraData(submissao.criado_em),

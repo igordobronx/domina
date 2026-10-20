@@ -237,7 +237,7 @@ function ActivityDetail({
     setGerandoCorrecao(true);
     setErroCorrecao("");
     try {
-      await corrigirSubmissao(a.id);
+      await corrigirSubmissao(a.submissaoId ?? a.id);
       onCorrigidaReal?.();
     } catch (erro) {
       setErroCorrecao(erro instanceof Error ? erro.message : "Não foi possível gerar a correção.");
