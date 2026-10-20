@@ -42,7 +42,10 @@ def minha_evolucao(usuario: Usuario = Depends(get_current_user), db: Session = D
         num_criterios = num_criterios_por_correcao.get(correcao.id, 0)
         if not num_criterios or correcao.nota_professor is None:
             continue
-        percentual = float(correcao.nota_professor) / (num_criterios * 200) * 100
+        # redacao: sempre 5 x 200 = 1000 (valor_total nulo). Exatas: valor definido pelo
+        # professor na atividade (ver app/routers/submissoes.py::criar_atividade).
+        valor_total = float(atividade.valor_total) if atividade.valor_total is not None else num_criterios * 200
+        percentual = float(correcao.nota_professor) / valor_total * 100
         bucket = por_materia.setdefault(materia.id, {"nome": materia.nome, "pontos": []})
         bucket["pontos"].append(
             EvolucaoPontoResponse(

@@ -69,7 +69,7 @@ def test_evolucao_agrupa_por_materia_sem_tocar_dominio():
 
         evolucao = client.get("/evolucao/minha", headers=aluno).json()
         quimica = next(e for e in evolucao if e["materia"] == "Química")
-        assert quimica["media_percentual"] == 50.0  # 200/(2*200)*100
+        assert quimica["media_percentual"] == 20.0  # 200/1000 (valor_total padrao da atividade)
         assert quimica["num_atividades"] == 1
         assert len(quimica["historico"]) == 1
         assert quimica["historico"][0]["atividade_titulo"] == "Lista - Estequiometria"

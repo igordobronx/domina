@@ -19,6 +19,7 @@ export interface Activity {
   kind: "redacao" | "matematica";
   student: string;
   questoes?: { codigo: string; enunciado: string }[];
+  valorTotal?: number;
   text?: string;
   fileName?: string;
   aiScores?: number[];

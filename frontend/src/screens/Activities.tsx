@@ -100,7 +100,9 @@ export function Activities({
       />
     );
   if (activity && realReviewer)
-    return (
+    return activity.status === "disponivel" ? (
+      <AtividadeSemEnvio key={activity.id} activity={activity} onBack={() => select(null)} />
+    ) : (
       <RevisaoReal
         key={activity.id}
         activity={activity}
@@ -124,7 +126,6 @@ export function Activities({
     );
   const list = activities.filter(
     (a) =>
-      (!reviewOnly || a.status !== "disponivel") &&
       (filter === "todas" || a.status === filter) &&
       `${a.title} ${a.subject}`.toLowerCase().includes(search.toLowerCase()),
   );
@@ -482,7 +483,7 @@ function ActivityDetail({
               </Badge>
               <div className="score-total">
                 <strong>{scores.reduce((s, n) => s + n, 0)}</strong>
-                <span>/ {scores.length * 200} pontos</span>
+                <span>/ {a.valorTotal ?? scores.length * 200} pontos</span>
               </div>
               <div className="criteria-grid">
                 {scores.map((n, i) => (
@@ -729,30 +730,42 @@ function RevisaoReal({
                 </Badge>
                 <div className="score-total">
                   <strong>{nota}</strong>
-                  <span>/ 1000 pontos</span>
+                  <span>/ {a.valorTotal ?? 1000} pontos</span>
                 </div>
                 <div className="criteria-grid">
-                  {correcao.criterios.map((c) => (
-                    <label key={c.codigo}>
-                      <span>{c.codigo}</span>
-                      {!aprovada && !readOnly ? (
-                        <select
-                          aria-label={`Nota da competência ${c.codigo}`}
-                          value={notas[c.codigo] ?? c.nota}
-                          onChange={(e) =>
-                            setNotas({ ...notas, [c.codigo]: Number(e.target.value) })
-                          }
-                        >
-                          {NOTAS_ENEM.map((v) => (
-                            <option key={v}>{v}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <strong>{notas[c.codigo]}</strong>
-                      )}
-                      <small>{c.nome}</small>
-                    </label>
-                  ))}
+                  {correcao.criterios.map((c) => {
+                    // exatas (Q1..Qn): niveis dependem do valor da atividade, dividido pelas
+                    // questoes (ver app/routers/submissoes.py::aprovar_correcao). Redacao
+                    // (C1..C5): sempre a escala fixa de 0 a 200 do ENEM.
+                    const exatas = c.codigo.startsWith("Q");
+                    const valorPorQuestao = (a.valorTotal ?? 1000) / correcao.criterios.length;
+                    const niveis = exatas
+                      ? [0, 0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.round(f * valorPorQuestao * 100) / 100)
+                      : NOTAS_ENEM;
+                    return (
+                      <label key={c.codigo}>
+                        <span>{c.codigo}</span>
+                        {!aprovada && !readOnly ? (
+                          <select
+                            aria-label={`Nota de ${c.codigo}`}
+                            value={notas[c.codigo] ?? c.nota}
+                            onChange={(e) =>
+                              setNotas({ ...notas, [c.codigo]: Number(e.target.value) })
+                            }
+                          >
+                            {niveis.map((v) => (
+                              <option key={v} value={v}>
+                                {v}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <strong>{notas[c.codigo]}</strong>
+                        )}
+                        <small>{c.nome}</small>
+                      </label>
+                    );
+                  })}
                 </div>
                 <h3>{aprovada || readOnly ? "Orientação" : "Orientação ao aluno"}</h3>
                 {!aprovada && !readOnly ? (
@@ -813,6 +826,32 @@ function RevisaoReal({
   );
 }
 
+// atividade recem-criada que nenhum aluno enviou ainda: nao ha submissao pra revisar, so
+// confirma pro professor que a atividade existe e esta disponivel pra turma.
+function AtividadeSemEnvio({ activity: a, onBack }: { activity: Activity; onBack: () => void }) {
+  return (
+    <>
+      <button className="back-link" onClick={onBack}>
+        <ArrowLeft size={16} />
+        Voltar às atividades
+      </button>
+      <div className="page-heading">
+        <div>
+          <Badge tone="neutral">{a.subject}</Badge>
+          <h1 className="detail-heading">{a.title}</h1>
+          <p>{a.student}</p>
+        </div>
+      </div>
+      <Card>
+        <Empty
+          title="Nenhum envio ainda"
+          text="Esta atividade já está disponível para a turma. Assim que um aluno enviar, ela aparece aqui para revisão."
+        />
+      </Card>
+    </>
+  );
+}
+
 const TIPOS_ATIVIDADE: { value: string; label: string }[] = [
   { value: "REDACAO", label: "Redação" },
   { value: "PROVA_DISCURSIVA", label: "Prova discursiva" },
@@ -847,6 +886,7 @@ function NovaAtividade({
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
   const [questoes, setQuestoes] = useState([{ enunciado: "", resposta_correta: "" }]);
+  const [valorTotal, setValorTotal] = useState(1000);
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -912,6 +952,10 @@ function NovaAtividade({
       setError("Adicione ao menos uma questão com enunciado e resposta correta.");
       return;
     }
+    if (exigeGabarito && (!valorTotal || valorTotal <= 0)) {
+      setError("Informe o valor total da atividade.");
+      return;
+    }
     setSalvando(true);
     setError("");
     criarAtividade({
@@ -920,6 +964,7 @@ function NovaAtividade({
       titulo: titulo.trim(),
       tipo: tipo as AtividadeAPI["tipo"],
       questoes: exigeGabarito ? questoesValidas : undefined,
+      valor_total: exigeGabarito ? valorTotal : undefined,
     })
       .then(() => {
         notify("Atividade criada. Os alunos da turma já podem enviar.");
@@ -1042,6 +1087,19 @@ function NovaAtividade({
                 <p className="tiny muted">
                   A IA corrige comparando a resposta do aluno com a resposta correta de cada
                   questão — não é uma avaliação subjetiva, é uma conferência lógica.
+                </p>
+                <label>
+                  Valor total da atividade (pontos)
+                  <input
+                    type="number"
+                    min={1}
+                    value={valorTotal}
+                    onChange={(e) => setValorTotal(Number(e.target.value))}
+                  />
+                </label>
+                <p className="tiny muted">
+                  Dividido igualmente entre as {questoes.length} questão(ões): {" "}
+                  {(valorTotal / Math.max(questoes.length, 1)).toFixed(1)} pontos cada.
                 </p>
                 {questoes.map((q, i) => (
                   <div className="form-grid" key={i}>

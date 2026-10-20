@@ -4,7 +4,6 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.correcao import NOTAS_VALIDAS
 from app.models.enum import TipoEnvioEnum
 
 
@@ -54,14 +53,10 @@ class CorrecaoResponse(BaseModel):
 class NotaCriterioInput(BaseModel):
     # codigo livre: "C1".."C5" na redacao, "Q1".."Qn" em exatas (ver Tema.habilidade_codigo)
     codigo: str = Field(min_length=1, max_length=20)
-    nota: float
-
-    @field_validator("nota")
-    @classmethod
-    def nivel_do_enem(cls, v):
-        if v not in NOTAS_VALIDAS:
-            raise ValueError(f"nota deve ser uma das {sorted(NOTAS_VALIDAS)}")
-        return v
+    # faixa valida depende do criterio (200 fixo por competencia na redacao; valor_total /
+    # num_questoes em exatas, que o professor define por atividade) -- o router confere isso,
+    # pois so ele conhece a atividade.
+    nota: float = Field(ge=0)
 
 
 class AprovarRequest(BaseModel):
@@ -115,6 +110,9 @@ class AtividadeResponse(BaseModel):
     alunos: list[AlunoResumo]
     # so preenchido para materias de exatas (ver Tema.atividade_id); sem gabarito, que e so do professor
     questoes: list[QuestaoAtividadeResponse] | None = None
+    # pontuacao total da atividade; em exatas e dividida igualmente entre as questoes. Na
+    # redacao e sempre 1000 (5 competencias x 0..200), fixo, nao vem do professor.
+    valor_total: float = 1000
 
 
 class CriarAtividadeRequest(BaseModel):
@@ -125,6 +123,9 @@ class CriarAtividadeRequest(BaseModel):
     # gabarito: obrigatorio quando a materia e MATERIA_OBJETIVA/MATERIA_DISCURSIVA (exatas),
     # ignorado para redacao (usa as competencias C1..C5 da materia, nao da atividade)
     questoes: list[QuestaoInput] | None = None
+    # so para exatas: valor total da atividade, dividido igualmente entre as questoes
+    # (ex.: 4 questoes, 1000 pontos -> 250 cada). Sem isso, assume 1000.
+    valor_total: float | None = Field(default=None, gt=0, le=10_000)
 
 class EnviarTextoRequest(BaseModel):
     atividade_id: uuid.UUID
@@ -141,6 +142,7 @@ class SubmissaoRevisaoResponse(BaseModel):
     status: str  # AGUARDANDO_CORRECAO | status.value da correcao
     criado_em: datetime
     nota: float | None  # nota_professor, so se aprovada
+    valor_total: float  # pontuacao total da atividade (ver AtividadeResponse.valor_total)
 
 
 class MinhaSubmissaoResponse(BaseModel):

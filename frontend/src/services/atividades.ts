@@ -25,7 +25,10 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
     // "Redação" por engano numa atividade de exatas) -- questoes e que reflete a materia de verdade.
     const kind = questoes?.length ? "matematica" : "redacao";
     if (!submissao) {
-      return { id: a.id, title: a.titulo, subject: a.materia, date: "", status: "disponivel", kind, student: nomeAluno, questoes };
+      return {
+        id: a.id, title: a.titulo, subject: a.materia, date: "", status: "disponivel", kind,
+        student: nomeAluno, questoes, valorTotal: a.valor_total,
+      };
     }
     const aprovada = submissao.status === "APROVADA";
     return {
@@ -37,6 +40,7 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
       kind,
       student: nomeAluno,
       questoes,
+      valorTotal: a.valor_total,
       scores: aprovada ? (submissao.criterios ?? []).map((c) => c.nota_professor ?? c.nota) : undefined,
       feedback: aprovada ? (submissao.feedback ?? undefined) : undefined,
     };

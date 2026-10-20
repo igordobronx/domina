@@ -107,6 +107,9 @@ class Atividade(Base):
     turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), nullable=False)
     titulo = Column(String(200), nullable=False)
     tipo = Column(SQLEnum(TipoAtividadeEnum), nullable=False)
+    # so usado em materias de exatas (gabarito): valor total da atividade, dividido igualmente
+    # entre as questoes. Nulo = redacao, que usa sempre as 5 competencias de 0..200 (soma 1000).
+    valor_total = Column(Numeric(6, 2), nullable=True)
 
 
 class Submissao(Base):

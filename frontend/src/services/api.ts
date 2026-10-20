@@ -98,6 +98,9 @@ export interface AtividadeAPI {
   alunos: { id: string; nome: string }[];
   // so vem preenchido para materias de exatas (gabarito fica so com o professor)
   questoes: QuestaoAtividadeAPI[] | null;
+  // pontuacao total da atividade; em exatas e dividida igualmente entre as questoes. Sempre
+  // 1000 na redacao (5 competencias x 0..200).
+  valor_total: number;
 }
 
 export interface CriterioAPI {
@@ -194,6 +197,7 @@ export function criarAtividade(payload: {
   titulo: string;
   tipo: AtividadeAPI["tipo"];
   questoes?: { enunciado: string; resposta_correta: string }[];
+  valor_total?: number;
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>("/atividades", {
     method: "POST",
@@ -222,6 +226,7 @@ export interface SubmissaoRevisaoAPI {
   status: string;
   criado_em: string;
   nota: number | null;
+  valor_total: number;
 }
 
 export function listarSubmissoesRevisao(): Promise<SubmissaoRevisaoAPI[]> {

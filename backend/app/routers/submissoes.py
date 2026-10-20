@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app import correcao as ia
 from app import correcao_exatas as ia_exatas
+from app.correcao import NOTAS_VALIDAS
 from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.config import settings
@@ -89,6 +90,7 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
         materia=materia.nome, tipo=atividade.tipo.value,
         alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
         questoes=questoes,
+        valor_total=float(atividade.valor_total) if atividade.valor_total is not None else 1000.0,
     )
 
 
@@ -140,6 +142,7 @@ def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(g
     atividade = Atividade(
         materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
         tipo=TipoAtividadeEnum(payload.tipo),
+        valor_total=(payload.valor_total or 1000) if materia.tipo in MATERIAS_EXATAS else None,
     )
     db.add(atividade)
     db.flush()
@@ -237,6 +240,7 @@ def listar_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
             status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
             criado_em=s.criado_em,
             nota=float(correcao.nota_professor) if aprovada else None,
+            valor_total=float(atividade.valor_total) if atividade.valor_total is not None else 1000.0,
         ))
     return resposta
 
@@ -386,6 +390,14 @@ def corrigir_submissao(
         logger.exception("falha na correcao")
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Falha ao gerar a correção. Tente de novo.")
 
+    if materia.tipo in MATERIAS_EXATAS:
+        # a IA sempre avalia numa escala relativa de 0..200 por questao (ver correcao_exatas.py);
+        # aqui reescalamos para o valor real da atividade, dividido igualmente entre as questoes
+        # (RF do professor definir o valor total, em vez de cada questao valer 200 fixo)
+        valor_por_questao = float(atividade.valor_total or 1000) / len(temas)
+        for i in itens:
+            i.nota = round(i.nota / 200 * valor_por_questao, 2)
+
     # nota do modelo reserva (lite) e mais rasa: no teste deu 120 em tudo com "95% de confianca".
     # vai para o topo da fila do professor junto com as de baixa confianca
     atencao = resultado.confianca < CONFIANCA_MINIMA or modelo != settings.GEMINI_MODEL
@@ -460,6 +472,21 @@ def aprovar_correcao(
     }
     if sorted(n.codigo for n in payload.notas) != sorted(criterios):
         raise HTTPException(422, "Informe a nota de cada critério desta correção, uma vez cada.")
+
+    atividade = db.get(Atividade, submissao.atividade_id)
+    materia = db.get(Materia, atividade.materia_id)
+    if materia.tipo in MATERIAS_EXATAS:
+        # faixa valida depende do valor total da atividade (definido pelo professor), dividido
+        # igualmente entre as questoes -- nao e mais fixo em 0..200 como na redacao
+        valor_por_questao = float(atividade.valor_total or 1000) / len(criterios)
+        for nota in payload.notas:
+            if not (0 <= nota.nota <= valor_por_questao + 0.01):
+                raise HTTPException(422, f"a nota de {nota.codigo} deve estar entre 0 e {valor_por_questao:g}.")
+    else:
+        for nota in payload.notas:
+            if nota.nota not in NOTAS_VALIDAS:
+                raise HTTPException(422, f"a nota de {nota.codigo} deve ser uma das {sorted(NOTAS_VALIDAS)}.")
+
     for nota in payload.notas:
         criterios[nota.codigo][0].nota_professor = nota.nota
 
@@ -471,8 +498,6 @@ def aprovar_correcao(
     # RF-25/dominio real: so para redacao. As temas de exatas sao especificas de UMA atividade
     # (nunca se repetem), entao nao ha "evolucao" a acumular -- e um unico ponto fora da curva
     # dominaria /dominio/meu e /estudos/meu para sempre. O aluno ainda ve a nota/feedback normal.
-    atividade = db.get(Atividade, submissao.atividade_id)
-    materia = db.get(Materia, atividade.materia_id)
     if materia.tipo not in MATERIAS_EXATAS:
         _atualizar_dominio(db, submissao.aluno_id, {codigo: c for codigo, (c, _) in criterios.items()})
     registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
