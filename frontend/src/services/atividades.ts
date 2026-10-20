@@ -19,9 +19,13 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
 
   return atividades.map((a): Activity => {
     const submissao = porAtividade.get(a.id);
-    const kind = a.tipo === "REDACAO" ? "redacao" : "matematica";
+    const questoes = a.questoes ?? undefined;
+    // kind vem do gabarito real (a.questoes), nao de a.tipo: a.tipo e so um rotulo que o
+    // professor escolhe ao criar a atividade e pode nao bater com a materia (ex.: deixado em
+    // "Redação" por engano numa atividade de exatas) -- questoes e que reflete a materia de verdade.
+    const kind = questoes?.length ? "matematica" : "redacao";
     if (!submissao) {
-      return { id: a.id, title: a.titulo, subject: a.materia, date: "", status: "disponivel", kind, student: nomeAluno };
+      return { id: a.id, title: a.titulo, subject: a.materia, date: "", status: "disponivel", kind, student: nomeAluno, questoes };
     }
     const aprovada = submissao.status === "APROVADA";
     return {
@@ -32,6 +36,7 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
       status: paraStatus(submissao.status),
       kind,
       student: nomeAluno,
+      questoes,
       scores: aprovada ? (submissao.criterios ?? []).map((c) => c.nota_professor ?? c.nota) : undefined,
       feedback: aprovada ? (submissao.feedback ?? undefined) : undefined,
     };

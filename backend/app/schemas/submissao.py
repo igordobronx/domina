@@ -101,6 +101,11 @@ class AlunoResumo(BaseModel):
     nome: str
 
 
+class QuestaoAtividadeResponse(BaseModel):
+    codigo: str
+    enunciado: str
+
+
 class AtividadeResponse(BaseModel):
     id: uuid.UUID
     titulo: str
@@ -108,6 +113,8 @@ class AtividadeResponse(BaseModel):
     materia: str
     tipo: str
     alunos: list[AlunoResumo]
+    # so preenchido para materias de exatas (ver Tema.atividade_id); sem gabarito, que e so do professor
+    questoes: list[QuestaoAtividadeResponse] | None = None
 
 
 class CriarAtividadeRequest(BaseModel):

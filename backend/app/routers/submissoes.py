@@ -22,7 +22,8 @@ from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AprovarRequest, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse,
     CriarAtividadeRequest, CriarMateriaRequest, CorrigirRequest, CriterioResponse, EnviarTextoRequest,
-    MateriaResponse, MinhaSubmissaoResponse, SubmissaoResponse, SubmissaoRevisaoResponse,
+    MateriaResponse, MinhaSubmissaoResponse, QuestaoAtividadeResponse, SubmissaoResponse,
+    SubmissaoRevisaoResponse,
 )
 
 MATERIAS_EXATAS = (TipoMateriaEnum.MATERIA_OBJETIVA, TipoMateriaEnum.MATERIA_DISCURSIVA)
@@ -73,10 +74,21 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
     )
     if usuario.perfil == PerfilEnum.ALUNO:
         alunos = alunos.filter(Usuario.id == usuario.id)
+
+    materia = db.get(Materia, atividade.materia_id)
+    questoes = None
+    if materia.tipo in MATERIAS_EXATAS:
+        temas = (
+            db.query(Tema).filter_by(atividade_id=atividade.id)
+            .order_by(Tema.habilidade_codigo)
+        )
+        questoes = [QuestaoAtividadeResponse(codigo=t.habilidade_codigo, enunciado=t.nome) for t in temas]
+
     return AtividadeResponse(
         id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome,
-        materia=db.get(Materia, atividade.materia_id).nome, tipo=atividade.tipo.value,
+        materia=materia.nome, tipo=atividade.tipo.value,
         alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
+        questoes=questoes,
     )
 
 

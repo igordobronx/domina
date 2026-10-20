@@ -598,6 +598,14 @@ a {
 .muted {
   color: var(--muted);
 }
+.question-list {
+  margin: 0 0 16px;
+  padding-left: 20px;
+  color: var(--muted);
+}
+.question-list li {
+  margin-bottom: 8px;
+}
 .tiny {
   font-size: 11px;
 }

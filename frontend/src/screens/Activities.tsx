@@ -313,11 +313,23 @@ function ActivityDetail({
         <div className="detail-grid">
           <Card>
             <SectionTitle title="Sua resposta" />
-            <p className="muted">
-              {a.kind === "redacao"
-                ? "Escreva um texto dissertativo-argumentativo sobre o tema. Defenda seu ponto de vista e apresente uma proposta de intervenção."
-                : "Explique como a função f(x) = 2x + 5 representa o preço de uma corrida. Calcule o preço para 4 km e descreva seu raciocínio."}
-            </p>
+            {a.questoes?.length ? (
+              // gabarito real desta atividade (materias de exatas) -- nunca um texto fixo de outra atividade
+              <ol className="question-list">
+                {a.questoes.map((q) => (
+                  <li key={q.codigo}>{q.enunciado}</li>
+                ))}
+              </ol>
+            ) : a.kind === "redacao" ? (
+              <p className="muted">
+                Escreva um texto dissertativo-argumentativo sobre o tema. Defenda seu ponto de vista e
+                apresente uma proposta de intervenção.
+              </p>
+            ) : (
+              <p className="muted">
+                Responda a atividade conforme as instruções do seu professor.
+              </p>
+            )}
             <div className="tabs input-tabs">
               <button
                 className={mode === "texto" ? "active" : ""}
@@ -861,6 +873,11 @@ function NovaAtividade({
   const carregando = turmas === null || materias === null;
   const materiaSelecionada = materias?.find((m) => m.id === materiaId);
   const exigeGabarito = !!materiaSelecionada && MATERIAS_COM_GABARITO.includes(materiaSelecionada.tipo);
+  // "Redação" como tipo da atividade nao faz sentido numa materia de exatas; troca so se o
+  // professor ainda nao tiver escolhido outro tipo manualmente (evita rotular errado por engano)
+  useEffect(() => {
+    if (exigeGabarito && tipo === "REDACAO") setTipo("EXERCICIO");
+  }, [exigeGabarito]);
 
   const criarNovaMateria = () => {
     if (!novaMateriaNome.trim()) {

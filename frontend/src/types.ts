@@ -18,6 +18,7 @@ export interface Activity {
   status: ActivityStatus;
   kind: "redacao" | "matematica";
   student: string;
+  questoes?: { codigo: string; enunciado: string }[];
   text?: string;
   fileName?: string;
   aiScores?: number[];

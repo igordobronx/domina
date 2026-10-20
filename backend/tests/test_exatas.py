@@ -47,7 +47,13 @@ def criar_atividade_com_gabarito(prof, turma_id, materia_id):
     }
     r = client.post("/atividades", headers=prof, json=payload)
     assert r.status_code == 201, r.text
-    return r.json()
+    atividade = r.json()
+    # o aluno precisa ver o enunciado real de cada questao (nao um texto fixo de outra materia)
+    assert atividade["questoes"] == [
+        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7"},
+        {"codigo": "Q2", "enunciado": "Resolva 3x = 9"},
+    ]
+    return atividade
 
 
 def _gemini_falso(notas):

@@ -84,6 +84,11 @@ export function me(): Promise<UsuarioAtual> {
   return request<UsuarioAtual>("/usuarios/me");
 }
 
+export interface QuestaoAtividadeAPI {
+  codigo: string;
+  enunciado: string;
+}
+
 export interface AtividadeAPI {
   id: string;
   titulo: string;
@@ -91,6 +96,8 @@ export interface AtividadeAPI {
   materia: string;
   tipo: "REDACAO" | "PROVA_DISCURSIVA" | "PROVA_OBJETIVA" | "EXERCICIO";
   alunos: { id: string; nome: string }[];
+  // so vem preenchido para materias de exatas (gabarito fica so com o professor)
+  questoes: QuestaoAtividadeAPI[] | null;
 }
 
 export interface CriterioAPI {
