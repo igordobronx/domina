@@ -26,6 +26,7 @@ Atualizado em 20/10/2026 à noite (v14 fica; v18 a v20 testados). Versão anteri
 | v18 | C4: para 200, frases ligadas DENTRO de cada parágrafo | 49 | empate |
 | v19 | C3: regra explícita de quando é 120 | 60 | ❌ |
 | v20 | C1: 120 só com 7+ desvios | parado em 27/53, sem ganho | ❌ |
+| v21 | Nota do meio (20, 60, 100, 140, 180) permitida em todas as competências | 51 | ❌ (a IA usou nota do meio só 1 vez em 265; não muda nada) |
 Arquivos: `docs/calibracao/2026-10-20/` (`prompt_vNN.txt`, `inep_lite_vNN.jsonl`).
 
 **O que aprendemos (importante para não repetir)**
