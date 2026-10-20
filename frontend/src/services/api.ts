@@ -271,3 +271,16 @@ export interface DominioAPI {
 export function dominioMeu(): Promise<DominioAPI[]> {
   return request<DominioAPI[]>("/dominio/meu");
 }
+
+export interface ExercicioAPI {
+  habilidade_codigo: string;
+  titulo: string;
+  enunciado: string;
+  opcoes: string[];
+  resposta_correta: number;
+  explicacao: string;
+}
+
+export function meusExercicios(): Promise<ExercicioAPI[]> {
+  return request<ExercicioAPI[]>("/estudos/meu");
+}

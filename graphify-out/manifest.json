@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1792419925.9387321,
-    "seen": 1792419958.2340822,
-    "ast_hash": "82157d931055d2416c6693ddf91cde0b",
+    "mtime": 1792506709.5818455,
+    "seen": 1792507252.1914709,
+    "ast_hash": "e6f41cd70bccf86bbb4a145c2c10d6a7",
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Learning.tsx": {
-    "mtime": 1792502786.2015939,
-    "seen": 1792502984.4584346,
-    "ast_hash": "f42bde4dc4745525009930e0e37836b7",
+    "mtime": 1792507174.1849627,
+    "seen": 1792507252.1917627,
+    "ast_hash": "57735bb54abb51a4de923f489e4219fb",
     "semantic_hash": ""
   },
   "frontend/src/screens/Management.tsx": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1792506251.9377778,
-    "seen": 1792506422.0848067,
-    "ast_hash": "5b68ef699cd91aeb1fdbba5c9eecc4fe",
+    "mtime": 1792507075.0971112,
+    "seen": 1792507252.1917756,
+    "ast_hash": "d7a868a9969528cabc4b2f97529469fe",
     "semantic_hash": ""
   },
   "frontend/src/services/atividades.ts": {
@@ -573,6 +573,24 @@
     "mtime": 1792443676.6156583,
     "seen": 1792444075.5169497,
     "ast_hash": "54ede6b6d797c025f9b697fcd7949e0a",
+    "semantic_hash": ""
+  },
+  "backend/app/estudos.py": {
+    "mtime": 1792506897.5054505,
+    "seen": 1792507252.1914632,
+    "ast_hash": "374d9c399c0f24c1ceec226bf84df0b6",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/estudos.py": {
+    "mtime": 1792506900.921443,
+    "seen": 1792507252.1915243,
+    "ast_hash": "d4d5f1419d2afd3137555d1fadeaa488",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_estudos.py": {
+    "mtime": 1792507057.65714,
+    "seen": 1792507252.1916893,
+    "ast_hash": "326d42f7483deb837227a6499370710f",
     "semantic_hash": ""
   }
 }

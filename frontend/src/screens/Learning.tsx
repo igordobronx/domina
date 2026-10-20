@@ -3,23 +3,63 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  Clock3,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { topics, studyTasks } from "../data/demo";
 import type { DemoState } from "../types";
-import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
+import { Badge, Button, Card, Empty, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
-import type { UsuarioAtual } from "../services/api";
-import { carregarDominioReal, type Recomendacao } from "../services/dominio";
+import { meusExercicios, type ExercicioAPI, type UsuarioAtual } from "../services/api";
 
-// so os temas que de fato existem como pratica hoje (ver data/demo.ts); as demais competencias
-// (C1, C2, C5) ainda nao tem exercicio guiado, entao a recomendacao aparece so no texto.
-const CODIGO_PARA_TOPICO: Record<string, string> = {
+const HABILIDADE_NOME: Record<string, string> = {
+  C1: "Norma culta",
+  C2: "Compreensão do tema",
   C3: "Argumentação",
   C4: "Coesão textual",
+  C5: "Proposta de intervenção",
 };
+
+// formato comum pro card/exercicio, seja ele gerado pelo backend ou (so no fallback sem
+// conta real) um dos exercicios de demonstracao fixos em data/demo.ts
+interface ExercicioComum {
+  id: string;
+  topic: string;
+  type: string;
+  title: string;
+  description: string;
+  question: string;
+  options: string[];
+  answer: number;
+  explanation: string;
+}
+
+function doBackend(e: ExercicioAPI, i: number): ExercicioComum {
+  return {
+    id: `real-${i}`,
+    topic: HABILIDADE_NOME[e.habilidade_codigo] ?? e.habilidade_codigo,
+    type: "Gerado para você",
+    title: e.titulo,
+    description: `Baseado no seu desempenho real em ${e.habilidade_codigo}.`,
+    question: e.enunciado,
+    options: e.opcoes,
+    answer: e.resposta_correta,
+    explanation: e.explicacao,
+  };
+}
+function doDemo(t: (typeof studyTasks)[number]): ExercicioComum {
+  return {
+    id: t.id,
+    topic: t.topic,
+    type: t.type,
+    title: t.title,
+    description: t.description,
+    question: t.question,
+    options: t.options,
+    answer: t.answer,
+    explanation: t.explanation,
+  };
+}
 
 export function Evolution() {
   const [subject, setSubject] = useState("Todas");
@@ -104,20 +144,25 @@ export function Studies({
   currentUser?: UsuarioAtual | null;
 }) {
   const real = !!currentUser;
-  const [recomendacao, setRecomendacao] = useState<Recomendacao | null>(null);
+  const [exerciciosReais, setExerciciosReais] = useState<ExercicioAPI[] | null>(null);
+  const [carregando, setCarregando] = useState(real);
+  const [erro, setErro] = useState("");
   useEffect(() => {
     if (!real) return;
-    carregarDominioReal().then(({ recomendacao }) => setRecomendacao(recomendacao));
-  }, [real, currentUser?.id]);
-  const topicoRecomendado = recomendacao
-    ? CODIGO_PARA_TOPICO[recomendacao.habilidadeCodigo]
-    : null;
-  const tarefas = topicoRecomendado
-    ? [...studyTasks].sort((a, b) =>
-        (a.topic === topicoRecomendado ? 0 : 1) - (b.topic === topicoRecomendado ? 0 : 1),
+    setCarregando(true);
+    setErro("");
+    meusExercicios()
+      .then(setExerciciosReais)
+      .catch((e) =>
+        setErro(e instanceof Error ? e.message : "Não foi possível montar seu plano de estudo."),
       )
-    : studyTasks;
-  const task = studyTasks.find((t) => t.id === selected);
+      .finally(() => setCarregando(false));
+  }, [real, currentUser?.id]);
+
+  const tarefas: ExercicioComum[] = real
+    ? (exerciciosReais ?? []).map(doBackend)
+    : studyTasks.map(doDemo);
+  const task = tarefas.find((t) => t.id === selected);
   if (task)
     return (
       <Exercise
@@ -132,6 +177,15 @@ export function Studies({
         }
       />
     );
+  if (real && carregando)
+    return (
+      <Empty
+        title="Montando seu plano de estudo..."
+        text="Isso pode levar uns 20 a 30 segundos na primeira vez: estamos gerando exercícios específicos para o seu desempenho real."
+      />
+    );
+  if (real && erro)
+    return <Empty title="Ainda não dá para montar seu plano" text={erro} />;
   return (
     <>
       <div className="page-heading">
@@ -146,11 +200,9 @@ export function Studies({
         <div>
           <strong>Por que esses exercícios?</strong>
           <p>
-            {recomendacao
-              ? `Sua redação mostrou maior espaço para evoluir em ${recomendacao.habilidadeCodigo} (${recomendacao.tema}), hoje em ${recomendacao.percentual}%. Começamos por aí.`
-              : real
-                ? "Assim que o professor aprovar sua primeira correção, seu plano passa a seguir seu desempenho real."
-                : "Começamos pelos temas com maior espaço para evolução no seu mapa demonstrativo."}
+            {tarefas[0]
+              ? `Você começa por ${tarefas[0].topic}: é onde seu desempenho real mostra mais espaço para evoluir.`
+              : "Começamos pelos temas com maior espaço para evolução no seu mapa demonstrativo."}
           </p>
         </div>
       </div>
@@ -164,7 +216,7 @@ export function Studies({
                   <Check size={13} />
                   Concluído
                 </Badge>
-              ) : t.topic === topicoRecomendado ? (
+              ) : i === 0 ? (
                 <Badge>Recomendado para você</Badge>
               ) : (
                 <Badge tone="neutral">{t.type}</Badge>
@@ -173,10 +225,6 @@ export function Studies({
             <span className="eyebrow">{t.topic}</span>
             <h2>{t.title}</h2>
             <p>{t.description}</p>
-            <div className="study-meta">
-              <Clock3 size={15} />
-              {t.time}
-            </div>
             <Button
               variant={i === 0 ? "primary" : "secondary"}
               icon={ArrowRight}
@@ -190,8 +238,9 @@ export function Studies({
         ))}
       </div>
       <p className="tiny muted">
-        Exercícios demonstrativos com respostas predefinidas. A prática não
-        altera a estimativa de domínio nesta versão.
+        {real
+          ? "Exercícios gerados por IA a partir do seu desempenho real. A prática não altera a estimativa de domínio nesta versão."
+          : "Exercícios demonstrativos com respostas predefinidas. A prática não altera a estimativa de domínio nesta versão."}
       </p>
     </>
   );
@@ -201,7 +250,7 @@ function Exercise({
   onBack,
   onComplete,
 }: {
-  task: (typeof studyTasks)[number];
+  task: ExercicioComum;
   onBack: () => void;
   onComplete: () => void;
 }) {
@@ -214,7 +263,7 @@ function Exercise({
         Voltar ao plano de estudo
       </button>
       <Card className="exercise-card">
-        <Badge tone="neutral">{task.topic} · Prática demonstrativa</Badge>
+        <Badge tone="neutral">{task.topic} · {task.type}</Badge>
         <div className="exercise-step">EXERCÍCIO 01 / 01</div>
         <h1>{task.question}</h1>
         <fieldset className="options">
