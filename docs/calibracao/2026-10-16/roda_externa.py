@@ -3,7 +3,7 @@ import runpy, sys
 from pathlib import Path
 import openpyxl
 from calibracao import variantes
-BASE = next(p for p in (Path.cwd().parent / "essays" / n for n in ("base_redacoes_3_corretores.xlsm", "base_teste_externa.xlsm")) if p.exists())
+BASE = next(p for p in (Path.cwd().parent / "essays" / n for n in ("base_redacoes_segunda.xlsm", "base_redacoes_3_corretores.xlsm", "base_teste_externa.xlsm")) if p.exists())
 rows = [r for r in list(openpyxl.load_workbook(BASE, read_only=True, data_only=True)["Redações"].iter_rows(values_only=True))[1:] if r[0]]
 variantes.amostra = lambda a, b: [("aes" if str(r[10]).startswith("AES") else "ebr", r) for r in rows]
 variantes.VARIANTES["arq"] = (open(sys.argv[1], encoding="utf-8").read(), variantes.ResultadoIA, lambda r: r)

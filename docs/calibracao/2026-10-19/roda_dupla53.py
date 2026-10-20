@@ -6,7 +6,7 @@ from pathlib import Path
 import openpyxl
 from app import correcao
 E = Path.cwd().parent / "essays"
-rows = [r for r in list(openpyxl.load_workbook(E / "base_redacoes_inep.xlsm", read_only=True, data_only=True)["Redações"].iter_rows(values_only=True))[1:] if r[0]]
+rows = [r for r in list(openpyxl.load_workbook(E / "base_redacoes_final_inep.xlsm", read_only=True, data_only=True)["Redações"].iter_rows(values_only=True))[1:] if r[0]]
 ids = {r[0] for r in rows}
 rows += [tuple(r) for r in map(json.loads, open(E / "novas_51_53.jsonl", encoding="utf-8")) if r[0] not in ids]
 saida = Path(sys.argv[1])

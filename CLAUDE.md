@@ -73,9 +73,9 @@ A meta realista é a IA ficar a cerca de 100 pontos da média dos humanos, porqu
 
 | Arquivo | O que tem | Nota |
 |---|---|---|
-| `base_redacoes_primeira.xlsm` (na branch se chama `base_redacoes_enem_domina_ai.xlsm`) | 2.328 redações: cerca de 239 nota 1000 (cartilhas e sites) + cerca de 2.100 do Banco UOL (2007–2016) | A nota UOL não é do INEP e tem ruído. A amostra antiga é de 50 redações (semente 42). |
-| `base_redacoes_3_corretores.xlsm` (na branch se chama `base_teste_externa.xlsm`) | 80 redações: 50 AES-ENEM (USP, com 3 notas humanas) + 30 Essay-BR | Aba "Comparação corretores". É a melhor régua até agora. |
-| `base_redacoes_inep.xlsm` (**a ÚNICA base usada desde 19/10**) | **53 redações** (IDs 51–53 de 2024/2025, uma delas fraca, 560) com **nota oficial do INEP**: 34 de 14 conhecidos (2020–2025, fotos com nome e CPF tarjados) + 10 nota 1000 de sites (IDs 35–44) + 6 de conhecidos (IDs 45–50, 4 abaixo de 700) | As Observações dizem só "Participante X - ano", sem nomes. Agora são 5 abaixo de 700. O usuário NÃO quer mais testar nas bases UOL nem de 3 corretores. Os prints da "Vista Pedagógica" do INEP trazem nome e CPF: nunca copiar. |
+| `base_redacoes_primeira.xlsm` (antes `base_redacoes_enem_domina_ai.xlsm`) | 2.328 redações: cerca de 239 nota 1000 (cartilhas e sites) + cerca de 2.100 do Banco UOL (2007–2016) | A nota UOL não é do INEP e tem ruído. A amostra antiga é de 50 redações (semente 42). |
+| `base_redacoes_segunda.xlsm` (antes `base_redacoes_3_corretores.xlsm` / `base_teste_externa.xlsm`) | 80 redações: 50 AES-ENEM (USP, com 3 notas humanas) + 30 Essay-BR | Aba "Comparação corretores". É a melhor régua até agora. |
+| `base_redacoes_final_inep.xlsm` (antes `base_redacoes_inep.xlsm`; **a ÚNICA base usada desde 19/10**) | **53 redações** (IDs 51–53 de 2024/2025, uma delas fraca, 560) com **nota oficial do INEP**: 34 de 14 conhecidos (2020–2025, fotos com nome e CPF tarjados) + 10 nota 1000 de sites (IDs 35–44) + 6 de conhecidos (IDs 45–50, 4 abaixo de 700) | As Observações dizem só "Participante X - ano", sem nomes. Agora são 5 abaixo de 700. O usuário NÃO quer mais testar nas bases UOL nem de 3 corretores. Os prints da "Vista Pedagógica" do INEP trazem nome e CPF: nunca copiar. |
 
 Cuidado: antes de gravar uma planilha no Mac, peça para ela estar **fechada no Excel**. O Excel aberto já salvou a versão antiga por cima da nova.
 

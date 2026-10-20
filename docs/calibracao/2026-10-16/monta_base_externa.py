@@ -1,4 +1,4 @@
-"""Monta essays/base_teste_externa.xlsm a partir da original (molde) com amostra de AES-ENEM e Essay-BR.
+"""Monta essays/base_redacoes_segunda.xlsm a partir da original (molde) com amostra de AES-ENEM e Essay-BR.
 uso: backend/.venv/bin/python <este> (de dentro da raiz do repo)
 """
 import ast, collections, copy, csv, random, re, shutil, unicodedata
@@ -8,8 +8,8 @@ import openpyxl
 import pyarrow.parquet as pq
 
 RAIZ = Path.cwd()
-ORIG = RAIZ / "essays" / "base_redacoes_enem_domina_ai.xlsm"
-NOVA = RAIZ / "essays" / "base_teste_externa.xlsm"
+ORIG = RAIZ / "essays" / "base_redacoes_primeira.xlsm"
+NOVA = RAIZ / "essays" / "base_redacoes_segunda.xlsm"
 EXT = Path.home() / "Downloads" / "domina_dados_externos"
 CSV_CORRETORES = RAIZ / "docs" / "calibracao" / "2026-10-16" / "aes_enem_notas_corretores.csv"
 URL_AES = "https://huggingface.co/datasets/kamel-usp/aes_enem_dataset"

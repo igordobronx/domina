@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.correcao import PROMPT as V2, ResultadoIA
 
-PLANILHA = Path(__file__).resolve().parents[2] / "essays" / "base_redacoes_enem_domina_ai.xlsm"
+PLANILHA = Path(__file__).resolve().parents[2] / "essays" / "base_redacoes_primeira.xlsm"
 
 
 def amostra(n1000: int, nuol: int, seed: int = 42):
