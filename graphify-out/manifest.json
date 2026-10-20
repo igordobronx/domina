@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "backend/app/models/usuario.py": {
-    "mtime": 1792437714.3210397,
-    "seen": 1792437788.579947,
-    "ast_hash": "51a55f854df3ce71b7ba9d06bc7923fd",
+    "mtime": 1792507762.748437,
+    "seen": 1792508643.74975,
+    "ast_hash": "05563d64f6d23ab2a0ab971ef716f2aa",
     "semantic_hash": ""
   },
   "backend/app/ocr/__init__.py": {
@@ -138,15 +138,15 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1792496773.9462316,
-    "seen": 1792496919.3242564,
-    "ast_hash": "32bee1c129471ddf96f984122720c359",
+    "mtime": 1792507859.6603854,
+    "seen": 1792508643.7497613,
+    "ast_hash": "c6ba540a6a55e4937c2ca955f056316a",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
-    "mtime": 1792496760.286231,
-    "seen": 1792496919.3242722,
-    "ast_hash": "5a57162a6b7e2e52368dc59ad706d763",
+    "mtime": 1792507796.2004185,
+    "seen": 1792508643.7497702,
+    "ast_hash": "e0758a41d28c6bb9826528f3e8c6c451",
     "semantic_hash": ""
   },
   "backend/tests/test_fluxo_envio.py": {
@@ -276,9 +276,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Activities.tsx": {
-    "mtime": 1792502866.4175656,
-    "seen": 1792502984.4583986,
-    "ast_hash": "b18e5e0815ddb50c93b5764d8ab8a378",
+    "mtime": 1792508073.5242908,
+    "seen": 1792508643.7497911,
+    "ast_hash": "da9331366d969fccc417e2032944462d",
     "semantic_hash": ""
   },
   "frontend/src/screens/Dashboard.tsx": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1792507075.0971112,
-    "seen": 1792507252.1917756,
-    "ast_hash": "d7a868a9969528cabc4b2f97529469fe",
+    "mtime": 1792507941.7123463,
+    "seen": 1792508643.7497966,
+    "ast_hash": "f6877c06ad8a521635d146edb130a542",
     "semantic_hash": ""
   },
   "frontend/src/services/atividades.ts": {
@@ -591,6 +591,18 @@
     "mtime": 1792507057.65714,
     "seen": 1792507252.1916893,
     "ast_hash": "326d42f7483deb837227a6499370710f",
+    "semantic_hash": ""
+  },
+  "backend/app/correcao_exatas.py": {
+    "mtime": 1792507778.480428,
+    "seen": 1792508643.749742,
+    "ast_hash": "9b56ab2f59cb03fe5f1363a1eba43eb8",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_exatas.py": {
+    "mtime": 1792507901.0283654,
+    "seen": 1792508643.74978,
+    "ast_hash": "9fc58bc0995f4bf65d64d8b8ee5eb2f3",
     "semantic_hash": ""
   }
 }

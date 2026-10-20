@@ -6,21 +6,26 @@ from fastapi import APIRouter, Depends, Form, HTTPException, status, UploadFile
 from sqlalchemy.orm import Session
 
 from app import correcao as ia
+from app import correcao_exatas as ia_exatas
 from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.custo import registrar_uso
 from app.database import get_db
-from app.models.enum import PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, UsuarioTurmaPapelEnum
+from app.models.enum import (
+    PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, TipoMateriaEnum, UsuarioTurmaPapelEnum,
+)
 from app.models.usuario import (
     Atividade, Correcao, CorrecaoCriterio, DominioAluno, Materia, Submissao, Tema, Turma, Usuario, UsuarioTurma,
 )
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AprovarRequest, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse,
-    CriarAtividadeRequest, CorrigirRequest, CriterioResponse, EnviarTextoRequest, MateriaResponse,
-    MinhaSubmissaoResponse, SubmissaoResponse, SubmissaoRevisaoResponse,
+    CriarAtividadeRequest, CriarMateriaRequest, CorrigirRequest, CriterioResponse, EnviarTextoRequest,
+    MateriaResponse, MinhaSubmissaoResponse, SubmissaoResponse, SubmissaoRevisaoResponse,
 )
+
+MATERIAS_EXATAS = (TipoMateriaEnum.MATERIA_OBJETIVA, TipoMateriaEnum.MATERIA_DISCURSIVA)
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +87,18 @@ def listar_materias(usuario: Usuario = Depends(get_current_user), db: Session = 
     return [MateriaResponse(id=m.id, nome=m.nome, tipo=m.tipo.value) for m in materias]
 
 
+@router.post("/materias", response_model=MateriaResponse, status_code=status.HTTP_201_CREATED)
+def criar_materia(payload: CriarMateriaRequest, usuario: Usuario = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
+    if usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores criam matérias.")
+    materia = Materia(escola_id=usuario.escola_id, nome=payload.nome.strip(), tipo=TipoMateriaEnum(payload.tipo))
+    db.add(materia)
+    db.commit()
+    db.refresh(materia)
+    return MateriaResponse(id=materia.id, nome=materia.nome, tipo=materia.tipo.value)
+
+
 @router.get("/atividades", response_model=list[AtividadeResponse])
 def listar_atividades(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     # atividades das turmas do usuario, com os alunos de cada turma (o professor escolhe em nome de quem envia)
@@ -105,12 +122,24 @@ def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(g
     materia = db.get(Materia, payload.materia_id)
     if not materia or materia.escola_id != usuario.escola_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+    if materia.tipo in MATERIAS_EXATAS and not payload.questoes:
+        raise HTTPException(422, "Informe as questões e o gabarito desta atividade.")
 
     atividade = Atividade(
         materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
         tipo=TipoAtividadeEnum(payload.tipo),
     )
     db.add(atividade)
+    db.flush()
+
+    if materia.tipo in MATERIAS_EXATAS:
+        # um Tema por questao, especifico desta atividade (ver comentario em models/usuario.py::Tema)
+        for i, questao in enumerate(payload.questoes, start=1):
+            db.add(Tema(
+                materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
+                nome=questao.enunciado.strip(), resposta_correta=questao.resposta_correta.strip(),
+            ))
+
     db.commit()
     db.refresh(atividade)
     return _atividade_response(db, atividade, usuario)
@@ -315,14 +344,32 @@ def corrigir_submissao(
         raise HTTPException(status.HTTP_409_CONFLICT, "Esta redação já foi corrigida.")
 
     atividade = db.get(Atividade, submissao.atividade_id)
-    temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(materia_id=atividade.materia_id)}
-    if sorted(temas) != ["C1", "C2", "C3", "C4", "C5"]:
-        raise HTTPException(status.HTTP_409_CONFLICT, "A matéria desta atividade não tem as 5 competências do ENEM.")
+    materia = db.get(Materia, atividade.materia_id)
+
+    if materia.tipo in MATERIAS_EXATAS:
+        temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(atividade_id=atividade.id)}
+        if not temas:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Esta atividade não tem gabarito cadastrado.")
+    else:
+        temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(materia_id=materia.id, atividade_id=None)}
+        if sorted(temas) != ["C1", "C2", "C3", "C4", "C5"]:
+            raise HTTPException(status.HTTP_409_CONFLICT, "A matéria desta atividade não tem as 5 competências do ENEM.")
 
     if not settings.GEMINI_API_KEY:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Correção indisponível: servidor sem chave do Gemini.")
     try:
-        resultado, modelo = ia.corrigir(submissao.texto_confirmado, (payload.tema or "").strip() or atividade.titulo)
+        if materia.tipo in MATERIAS_EXATAS:
+            questoes = [(t.habilidade_codigo, t.nome, t.resposta_correta) for t in temas.values()]
+            resultado, modelo = ia_exatas.corrigir(submissao.texto_confirmado, materia.nome, questoes)
+            itens = resultado.questoes
+            versao_prompt = ia_exatas.VERSAO_PROMPT
+            acertos = sum(1 for q in itens if q.nota == 200)
+            feedback = f"{acertos}/{len(itens)} questões corretas."
+        else:
+            resultado, modelo = ia.corrigir(submissao.texto_confirmado, (payload.tema or "").strip() or atividade.titulo)
+            itens = resultado.competencias
+            versao_prompt = ia.VERSAO_PROMPT
+            feedback = resultado.feedback_geral
     except Exception:
         logger.exception("falha na correcao")
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Falha ao gerar a correção. Tente de novo.")
@@ -332,17 +379,17 @@ def corrigir_submissao(
     atencao = resultado.confianca < CONFIANCA_MINIMA or modelo != settings.GEMINI_MODEL
     correcao = Correcao(
         submissao_id=submissao.id,
-        nota_ia=sum(c.nota for c in resultado.competencias),
+        nota_ia=sum(i.nota for i in itens),
         confianca=round(resultado.confianca, 2),
         status=StatusCorrecaoEnum.REQUER_ATENCAO if atencao else StatusCorrecaoEnum.PENDENTE,
         modelo_usado=modelo,
-        versao_prompt=ia.VERSAO_PROMPT,
-        feedback=resultado.feedback_geral,
+        versao_prompt=versao_prompt,
+        feedback=feedback,
     )
     db.add(correcao)
     db.flush()
-    for c in resultado.competencias:
-        db.add(CorrecaoCriterio(correcao_id=correcao.id, tema_id=temas[c.codigo].id, nota=c.nota, justificativa=c.justificativa))
+    for i in itens:
+        db.add(CorrecaoCriterio(correcao_id=correcao.id, tema_id=temas[i.codigo].id, nota=i.nota, justificativa=i.justificativa))
     # ponytail: estimativa de tokens por tamanho do texto (sem usage_metadata real da API ainda)
     tokens_estimados = len(submissao.texto_confirmado) // 4
     registrar_uso(db, usuario.escola_id, tokens_llm=tokens_estimados)
@@ -395,19 +442,27 @@ def aprovar_correcao(
         raise HTTPException(status.HTTP_409_CONFLICT, "Esta correção já foi aprovada.")
 
     criterios = {
-        t.habilidade_codigo: c
+        t.habilidade_codigo: (c, t)
         for c, t in db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
         .filter(CorrecaoCriterio.correcao_id == correcao.id)
     }
+    if sorted(n.codigo for n in payload.notas) != sorted(criterios):
+        raise HTTPException(422, "Informe a nota de cada critério desta correção, uma vez cada.")
     for nota in payload.notas:
-        criterios[nota.codigo].nota_professor = nota.nota
+        criterios[nota.codigo][0].nota_professor = nota.nota
 
     correcao.nota_professor = sum(n.nota for n in payload.notas)
     correcao.revisado_por = usuario.id
     correcao.status = StatusCorrecaoEnum.APROVADA
     if payload.feedback is not None:
         correcao.feedback = payload.feedback.strip()
-    _atualizar_dominio(db, submissao.aluno_id, criterios)
+    # RF-25/dominio real: so para redacao. As temas de exatas sao especificas de UMA atividade
+    # (nunca se repetem), entao nao ha "evolucao" a acumular -- e um unico ponto fora da curva
+    # dominaria /dominio/meu e /estudos/meu para sempre. O aluno ainda ve a nota/feedback normal.
+    atividade = db.get(Atividade, submissao.atividade_id)
+    materia = db.get(Materia, atividade.materia_id)
+    if materia.tipo not in MATERIAS_EXATAS:
+        _atualizar_dominio(db, submissao.aluno_id, {codigo: c for codigo, (c, _) in criterios.items()})
     registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
     db.commit()
     return _correcao_response(db, correcao)

@@ -52,7 +52,8 @@ class CorrecaoResponse(BaseModel):
 
 
 class NotaCriterioInput(BaseModel):
-    codigo: Literal["C1", "C2", "C3", "C4", "C5"]
+    # codigo livre: "C1".."C5" na redacao, "Q1".."Qn" em exatas (ver Tema.habilidade_codigo)
+    codigo: str = Field(min_length=1, max_length=20)
     nota: float
 
     @field_validator("nota")
@@ -64,15 +65,18 @@ class NotaCriterioInput(BaseModel):
 
 
 class AprovarRequest(BaseModel):
-    # nota final por competencia, decidida pelo professor (pode so confirmar a da IA ou mudar)
-    notas: list[NotaCriterioInput] = Field(min_length=5, max_length=5)
+    # nota final por criterio (competencia da redacao OU questao de exatas), decidida pelo
+    # professor (pode so confirmar a da IA ou mudar). Quantidade varia por materia/atividade;
+    # o router confere que bate exatamente com os criterios desta correcao.
+    notas: list[NotaCriterioInput] = Field(min_length=1)
     feedback: str | None = Field(default=None, max_length=2000)
 
     @field_validator("notas")
     @classmethod
-    def uma_de_cada(cls, v):
-        if sorted(c.codigo for c in v) != ["C1", "C2", "C3", "C4", "C5"]:
-            raise ValueError("informe as 5 competencias (C1..C5), uma vez cada")
+    def sem_codigo_repetido(cls, v):
+        codigos = [c.codigo for c in v]
+        if len(set(codigos)) != len(codigos):
+            raise ValueError("cada criterio deve aparecer uma unica vez")
         return v
 
 
@@ -80,6 +84,16 @@ class MateriaResponse(BaseModel):
     id: uuid.UUID
     nome: str
     tipo: str
+
+
+class CriarMateriaRequest(BaseModel):
+    nome: str = Field(min_length=1, max_length=150)
+    tipo: Literal["REDACAO_ENEM", "REDACAO_OUTRO_VESTIBULAR", "MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"]
+
+
+class QuestaoInput(BaseModel):
+    enunciado: str = Field(min_length=1, max_length=2000)
+    resposta_correta: str = Field(min_length=1, max_length=500)
 
 
 class AlunoResumo(BaseModel):
@@ -101,6 +115,9 @@ class CriarAtividadeRequest(BaseModel):
     turma_id: uuid.UUID
     titulo: str = Field(min_length=1, max_length=200)
     tipo: Literal["REDACAO", "PROVA_DISCURSIVA", "PROVA_OBJETIVA", "EXERCICIO"]
+    # gabarito: obrigatorio quando a materia e MATERIA_OBJETIVA/MATERIA_DISCURSIVA (exatas),
+    # ignorado para redacao (usa as competencias C1..C5 da materia, nao da atividade)
+    questoes: list[QuestaoInput] | None = None
 
 class EnviarTextoRequest(BaseModel):
     atividade_id: uuid.UUID

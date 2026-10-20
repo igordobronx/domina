@@ -167,11 +167,18 @@ export function criarUsuario(payload: {
 export interface MateriaAPI {
   id: string;
   nome: string;
-  tipo: string;
+  tipo: "REDACAO_ENEM" | "REDACAO_OUTRO_VESTIBULAR" | "MATERIA_OBJETIVA" | "MATERIA_DISCURSIVA";
 }
 
 export function listarMaterias(): Promise<MateriaAPI[]> {
   return request<MateriaAPI[]>("/materias");
+}
+
+export function criarMateria(payload: {
+  nome: string;
+  tipo: MateriaAPI["tipo"];
+}): Promise<MateriaAPI> {
+  return request<MateriaAPI>("/materias", { method: "POST", body: JSON.stringify(payload) });
 }
 
 export function criarAtividade(payload: {
@@ -179,6 +186,7 @@ export function criarAtividade(payload: {
   turma_id: string;
   titulo: string;
   tipo: AtividadeAPI["tipo"];
+  questoes?: { enunciado: string; resposta_correta: string }[];
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>("/atividades", {
     method: "POST",

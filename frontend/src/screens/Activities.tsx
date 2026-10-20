@@ -7,6 +7,7 @@ import {
   Search,
   Send,
   Sparkles,
+  Trash2,
   Upload,
   ShieldCheck,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import {
   aprovarCorrecao,
   corrigirSubmissao,
   criarAtividade,
+  criarMateria,
   enviarTexto,
   listarMaterias,
   listarTurmasMinhas,
@@ -468,12 +470,12 @@ function ActivityDetail({
               </Badge>
               <div className="score-total">
                 <strong>{scores.reduce((s, n) => s + n, 0)}</strong>
-                <span>/ {a.kind === "redacao" ? "1000" : "10"} pontos</span>
+                <span>/ {scores.length * 200} pontos</span>
               </div>
               <div className="criteria-grid">
                 {scores.map((n, i) => (
                   <label key={i}>
-                    <span>{a.kind === "redacao" ? `C${i + 1}` : "Nota"}</span>
+                    <span>{a.kind === "redacao" ? `C${i + 1}` : `Q${i + 1}`}</span>
                     {teacher && a.status !== "aprovada" ? (
                       <select
                         aria-label={
@@ -806,6 +808,17 @@ const TIPOS_ATIVIDADE: { value: string; label: string }[] = [
   { value: "EXERCICIO", label: "Exercício" },
 ];
 
+const TIPOS_MATERIA: { value: MateriaAPI["tipo"]; label: string }[] = [
+  { value: "MATERIA_OBJETIVA", label: "Exatas (matemática, física, química...)" },
+  { value: "REDACAO_ENEM", label: "Redação ENEM" },
+  { value: "REDACAO_OUTRO_VESTIBULAR", label: "Redação (outro vestibular)" },
+  { value: "MATERIA_DISCURSIVA", label: "Outra matéria discursiva" },
+];
+
+// correcao por gabarito (nao e a rubrica de redacao): a atividade precisa das questoes e da
+// resposta correta de cada uma
+const MATERIAS_COM_GABARITO: MateriaAPI["tipo"][] = ["MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"];
+
 function NovaAtividade({
   onBack,
   onCriada,
@@ -821,8 +834,20 @@ function NovaAtividade({
   const [materiaId, setMateriaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
+  const [questoes, setQuestoes] = useState([{ enunciado: "", resposta_correta: "" }]);
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
+
+  const [criandoMateria, setCriandoMateria] = useState(false);
+  const [novaMateriaNome, setNovaMateriaNome] = useState("");
+  const [novaMateriaTipo, setNovaMateriaTipo] = useState(TIPOS_MATERIA[0].value);
+  const [salvandoMateria, setSalvandoMateria] = useState(false);
+
+  const recarregarMaterias = () =>
+    listarMaterias().then((m) => {
+      setMaterias(m);
+      return m;
+    });
 
   useEffect(() => {
     Promise.all([listarTurmasMinhas(), listarMaterias()]).then(([t, m]) => {
@@ -834,6 +859,25 @@ function NovaAtividade({
   }, []);
 
   const carregando = turmas === null || materias === null;
+  const materiaSelecionada = materias?.find((m) => m.id === materiaId);
+  const exigeGabarito = !!materiaSelecionada && MATERIAS_COM_GABARITO.includes(materiaSelecionada.tipo);
+
+  const criarNovaMateria = () => {
+    if (!novaMateriaNome.trim()) {
+      setError("Dê um nome para a matéria.");
+      return;
+    }
+    setSalvandoMateria(true);
+    setError("");
+    criarMateria({ nome: novaMateriaNome.trim(), tipo: novaMateriaTipo })
+      .then((nova) => recarregarMaterias().then(() => {
+        setMateriaId(nova.id);
+        setCriandoMateria(false);
+        setNovaMateriaNome("");
+      }))
+      .catch((erro) => setError(erro instanceof Error ? erro.message : "Não foi possível criar a matéria."))
+      .finally(() => setSalvandoMateria(false));
+  };
 
   const salvar = () => {
     if (!titulo.trim()) {
@@ -844,6 +888,13 @@ function NovaAtividade({
       setError("Escolha uma turma e uma matéria.");
       return;
     }
+    const questoesValidas = questoes
+      .map((q) => ({ enunciado: q.enunciado.trim(), resposta_correta: q.resposta_correta.trim() }))
+      .filter((q) => q.enunciado && q.resposta_correta);
+    if (exigeGabarito && !questoesValidas.length) {
+      setError("Adicione ao menos uma questão com enunciado e resposta correta.");
+      return;
+    }
     setSalvando(true);
     setError("");
     criarAtividade({
@@ -851,6 +902,7 @@ function NovaAtividade({
       turma_id: turmaId,
       titulo: titulo.trim(),
       tipo: tipo as AtividadeAPI["tipo"],
+      questoes: exigeGabarito ? questoesValidas : undefined,
     })
       .then(() => {
         notify("Atividade criada. Os alunos da turma já podem enviar.");
@@ -878,10 +930,10 @@ function NovaAtividade({
       <Card>
         {carregando ? (
           <p className="muted">Carregando turmas e matérias...</p>
-        ) : !turmas!.length || !materias!.length ? (
+        ) : !turmas!.length ? (
           <Empty
-            title="Nenhuma turma ou matéria disponível"
-            text="Peça para um gestor cadastrar sua turma e a matéria da escola antes de criar atividades."
+            title="Nenhuma turma disponível"
+            text="Peça para um gestor cadastrar sua turma antes de criar atividades."
           />
         ) : (
           <>
@@ -925,6 +977,102 @@ function NovaAtividade({
                 </select>
               </label>
             </div>
+
+            {!criandoMateria ? (
+              <Button variant="secondary" icon={Plus} onPress={() => setCriandoMateria(true)}>
+                Nova matéria
+              </Button>
+            ) : (
+              <Card>
+                <SectionTitle title="Nova matéria" />
+                <div className="form-grid">
+                  <label>
+                    Nome
+                    <input
+                      value={novaMateriaNome}
+                      onChange={(e) => setNovaMateriaNome(e.target.value)}
+                      placeholder="Ex.: Matemática"
+                    />
+                  </label>
+                  <label>
+                    Tipo
+                    <select
+                      value={novaMateriaTipo}
+                      onChange={(e) => setNovaMateriaTipo(e.target.value as MateriaAPI["tipo"])}
+                    >
+                      {TIPOS_MATERIA.map((t) => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="form-actions">
+                  <Button variant="secondary" onPress={() => setCriandoMateria(false)}>
+                    Cancelar
+                  </Button>
+                  <Button disabled={salvandoMateria} onPress={criarNovaMateria}>
+                    {salvandoMateria ? "Salvando..." : "Criar matéria"}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {exigeGabarito && (
+              <Card>
+                <SectionTitle title="Questões e gabarito" />
+                <p className="tiny muted">
+                  A IA corrige comparando a resposta do aluno com a resposta correta de cada
+                  questão — não é uma avaliação subjetiva, é uma conferência lógica.
+                </p>
+                {questoes.map((q, i) => (
+                  <div className="form-grid" key={i}>
+                    <label>
+                      {`Questão ${i + 1}`}
+                      <input
+                        value={q.enunciado}
+                        onChange={(e) => {
+                          const copia = [...questoes];
+                          copia[i] = { ...copia[i], enunciado: e.target.value };
+                          setQuestoes(copia);
+                        }}
+                        placeholder="Ex.: Resolva 2x + 3 = 7"
+                      />
+                    </label>
+                    <label>
+                      Resposta correta
+                      <input
+                        value={q.resposta_correta}
+                        onChange={(e) => {
+                          const copia = [...questoes];
+                          copia[i] = { ...copia[i], resposta_correta: e.target.value };
+                          setQuestoes(copia);
+                        }}
+                        placeholder="Ex.: x = 2"
+                      />
+                    </label>
+                    {questoes.length > 1 && (
+                      <button
+                        className="back-link"
+                        onClick={() => setQuestoes(questoes.filter((_, j) => j !== i))}
+                      >
+                        <Trash2 size={14} />
+                        Remover questão
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  variant="secondary"
+                  icon={Plus}
+                  onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "" }])}
+                >
+                  Adicionar questão
+                </Button>
+              </Card>
+            )}
+
             {error && (
               <p className="error" role="alert">
                 {error}

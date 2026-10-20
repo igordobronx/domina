@@ -75,8 +75,14 @@ class Tema(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=False)
+    # nulo = competencia generica da materia toda (ex.: C1..C5 da redacao, reaproveitada em
+    # qualquer atividade). Preenchido = questao especifica de UMA atividade de exatas, com
+    # seu proprio gabarito (nao faz sentido reaproveitar entre atividades diferentes).
+    atividade_id = Column(UUID(as_uuid=True), ForeignKey("atividade.id"), nullable=True)
     nome = Column(String(150), nullable=False)
     habilidade_codigo = Column(String(20), nullable=False)
+    # gabarito da questao; so preenchido quando atividade_id tambem esta preenchido
+    resposta_correta = Column(Text, nullable=True)
 
 class DocumentoBase(Base):
     __tablename__ = "documento_base"
