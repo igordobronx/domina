@@ -18,8 +18,8 @@ from app.models.usuario import (
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AprovarRequest, AtividadeResponse, ConfirmarTextoRequest, CorrecaoResponse,
-    CriarAtividadeRequest, CorrigirRequest, CriterioResponse, EnviarTextoRequest, MinhaSubmissaoResponse,
-    SubmissaoResponse, SubmissaoRevisaoResponse,
+    CriarAtividadeRequest, CorrigirRequest, CriterioResponse, EnviarTextoRequest, MateriaResponse,
+    MinhaSubmissaoResponse, SubmissaoResponse, SubmissaoRevisaoResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,13 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
         materia=db.get(Materia, atividade.materia_id).nome, tipo=atividade.tipo.value,
         alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
     )
+
+
+# materias da escola do usuario, para o professor/gestor escolher ao criar uma atividade
+@router.get("/materias", response_model=list[MateriaResponse])
+def listar_materias(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    materias = db.query(Materia).filter_by(escola_id=usuario.escola_id)
+    return [MateriaResponse(id=m.id, nome=m.nome, tipo=m.tipo.value) for m in materias]
 
 
 @router.get("/atividades", response_model=list[AtividadeResponse])

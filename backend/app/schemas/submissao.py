@@ -76,6 +76,12 @@ class AprovarRequest(BaseModel):
         return v
 
 
+class MateriaResponse(BaseModel):
+    id: uuid.UUID
+    nome: str
+    tipo: str
+
+
 class AlunoResumo(BaseModel):
     id: uuid.UUID
     nome: str

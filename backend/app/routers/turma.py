@@ -28,6 +28,23 @@ def criar_turma(payload: CriarTurmaRequest, usuario_atual: Usuario = Depends(get
     return turma
 
 
+# literal: GET /turmas/minhas antes de um eventual GET /turmas/{turma_id} evitaria o mesmo
+# problema de roteamento ja visto em /submissoes/minhas; nao ha essa rota ainda, mas o padrao se mantem
+@router.get("/minhas", response_model=list[TurmaResponse])
+def minhas_turmas(usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    if usuario_atual.perfil == PerfilEnum.GESTOR:
+        turmas = db.query(Turma).filter_by(escola_id=usuario_atual.escola_id)
+    elif usuario_atual.perfil == PerfilEnum.PROFESSOR:
+        turma_ids = [
+            ut.turma_id for ut in
+            db.query(UsuarioTurma).filter_by(usuario_id=usuario_atual.id, papel=UsuarioTurmaPapelEnum.PROFESSOR)
+        ]
+        turmas = db.query(Turma).filter(Turma.id.in_(turma_ids))
+    else:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores usam esta rota.")
+    return list(turmas)
+
+
 @router.post("/{turma_id}/matricular", response_model=TurmaResponse, status_code=status.HTTP_201_CREATED)
 def matricular(turma_id, payload: MatricularRequest, usuario_atual: Usuario = Depends(get_current_user),
                 db: Session = Depends(get_db)):

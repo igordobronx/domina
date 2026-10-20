@@ -115,6 +115,38 @@ export function listarAtividades(): Promise<AtividadeAPI[]> {
   return request<AtividadeAPI[]>("/atividades");
 }
 
+export interface TurmaAPI {
+  id: string;
+  nome: string;
+  ano: number;
+}
+
+export function listarTurmasMinhas(): Promise<TurmaAPI[]> {
+  return request<TurmaAPI[]>("/turmas/minhas");
+}
+
+export interface MateriaAPI {
+  id: string;
+  nome: string;
+  tipo: string;
+}
+
+export function listarMaterias(): Promise<MateriaAPI[]> {
+  return request<MateriaAPI[]>("/materias");
+}
+
+export function criarAtividade(payload: {
+  materia_id: string;
+  turma_id: string;
+  titulo: string;
+  tipo: AtividadeAPI["tipo"];
+}): Promise<AtividadeAPI> {
+  return request<AtividadeAPI>("/atividades", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function minhasSubmissoes(): Promise<MinhaSubmissaoAPI[]> {
   return request<MinhaSubmissaoAPI[]>("/submissoes/minhas");
 }

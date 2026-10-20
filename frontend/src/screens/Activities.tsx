@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Check,
   FileText,
+  Plus,
   Search,
   Send,
   Sparkles,
@@ -21,10 +22,16 @@ import {
 import {
   aprovarCorrecao,
   corrigirSubmissao,
+  criarAtividade,
   enviarTexto,
+  listarMaterias,
+  listarTurmasMinhas,
   verCorrecao,
   verSubmissao,
+  type AtividadeAPI,
   type CorrecaoAPI,
+  type MateriaAPI,
+  type TurmaAPI,
 } from "../services/api";
 import { carregarAtividadesDoAluno } from "../services/atividades";
 import { carregarRevisoes } from "../services/revisoes";
@@ -52,6 +59,7 @@ export function Activities({
 }: Props) {
   const [filter, setFilter] = useState("todas");
   const [search, setSearch] = useState("");
+  const [criando, setCriando] = useState(false);
   // modo real: aluno autenticado de verdade manda/ve suas proprias atividades;
   // professor autenticado de verdade revisa a fila real de submissoes
   const real = !!currentUser && role === "aluno";
@@ -79,6 +87,14 @@ export function Activities({
   if ((real || realProfessor) && loadingReal && !activity)
     return (
       <Empty title="Carregando..." text="Buscando dados no servidor." />
+    );
+  if (realProfessor && criando)
+    return (
+      <NovaAtividade
+        onBack={() => setCriando(false)}
+        onCriada={() => { setCriando(false); recarregar(); }}
+        notify={notify}
+      />
     );
   if (activity && realProfessor)
     return (
@@ -122,6 +138,11 @@ export function Activities({
               : "Cada atividade é uma oportunidade de aprender algo novo."}
           </p>
         </div>
+        {realProfessor && (
+          <Button icon={Plus} onPress={() => setCriando(true)}>
+            Nova atividade
+          </Button>
+        )}
       </div>
       <Card>
         <div className="list-toolbar">
@@ -768,6 +789,147 @@ function RevisaoReal({
           </Card>
         </div>
       )}
+    </>
+  );
+}
+
+const TIPOS_ATIVIDADE: { value: string; label: string }[] = [
+  { value: "REDACAO", label: "Redação" },
+  { value: "PROVA_DISCURSIVA", label: "Prova discursiva" },
+  { value: "PROVA_OBJETIVA", label: "Prova objetiva" },
+  { value: "EXERCICIO", label: "Exercício" },
+];
+
+function NovaAtividade({
+  onBack,
+  onCriada,
+  notify,
+}: {
+  onBack: () => void;
+  onCriada: () => void;
+  notify: (s: string) => void;
+}) {
+  const [turmas, setTurmas] = useState<TurmaAPI[] | null>(null);
+  const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
+  const [turmaId, setTurmaId] = useState("");
+  const [materiaId, setMateriaId] = useState("");
+  const [titulo, setTitulo] = useState("");
+  const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
+  const [error, setError] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    Promise.all([listarTurmasMinhas(), listarMaterias()]).then(([t, m]) => {
+      setTurmas(t);
+      setMaterias(m);
+      setTurmaId(t[0]?.id ?? "");
+      setMateriaId(m[0]?.id ?? "");
+    });
+  }, []);
+
+  const carregando = turmas === null || materias === null;
+
+  const salvar = () => {
+    if (!titulo.trim()) {
+      setError("Dê um título para a atividade.");
+      return;
+    }
+    if (!turmaId || !materiaId) {
+      setError("Escolha uma turma e uma matéria.");
+      return;
+    }
+    setSalvando(true);
+    setError("");
+    criarAtividade({
+      materia_id: materiaId,
+      turma_id: turmaId,
+      titulo: titulo.trim(),
+      tipo: tipo as AtividadeAPI["tipo"],
+    })
+      .then(() => {
+        notify("Atividade criada. Os alunos da turma já podem enviar.");
+        onCriada();
+      })
+      .catch((erro) =>
+        setError(erro instanceof Error ? erro.message : "Não foi possível criar a atividade."),
+      )
+      .finally(() => setSalvando(false));
+  };
+
+  return (
+    <>
+      <button className="back-link" onClick={onBack}>
+        <ArrowLeft size={16} />
+        Voltar às revisões
+      </button>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">PROPONHA O PRÓXIMO PASSO</div>
+          <h1>Nova atividade</h1>
+          <p>Crie uma atividade para a turma enviar.</p>
+        </div>
+      </div>
+      <Card>
+        {carregando ? (
+          <p className="muted">Carregando turmas e matérias...</p>
+        ) : !turmas!.length || !materias!.length ? (
+          <Empty
+            title="Nenhuma turma ou matéria disponível"
+            text="Peça para um gestor cadastrar sua turma e a matéria da escola antes de criar atividades."
+          />
+        ) : (
+          <>
+            <div className="form-grid">
+              <label>
+                Título
+                <input
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                  placeholder="Ex.: Redação 2 - meio ambiente"
+                />
+              </label>
+              <label>
+                Turma
+                <select value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
+                  {turmas!.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Matéria
+                <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+                  {materias!.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Tipo
+                <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                  {TIPOS_ATIVIDADE.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {error && (
+              <p className="error" role="alert">
+                {error}
+              </p>
+            )}
+            <Button disabled={salvando} onPress={salvar}>
+              {salvando ? "Criando..." : "Criar atividade"}
+            </Button>
+          </>
+        )}
+      </Card>
     </>
   );
 }
