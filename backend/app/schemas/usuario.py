@@ -15,3 +15,4 @@ class UsuarioResponse(BaseModel):
     nome: str
     email: str
     perfil: str
+    escola_nome: str

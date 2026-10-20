@@ -3,7 +3,6 @@ import { useWindowDimensions } from "react-native";
 import {
   BookOpen,
   ChartNoAxesCombined,
-  ChevronDown,
   CircleHelp,
   ClipboardCheck,
   Home,
@@ -85,6 +84,10 @@ const navItems: {
     roles: ["professor"],
   },
 ];
+function iniciais(nome: string): string {
+  return nome.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+}
+
 export function App() {
   const { width } = useWindowDimensions();
   const mobile = width <= 760;
@@ -103,6 +106,9 @@ export function App() {
   >(null);
   const [query, setQuery] = useState("");
   const [currentUser, setCurrentUser] = useState<UsuarioAtual | null>(null);
+  // enquanto nao sabemos se o token salvo ainda e valido, nao da pra decidir entre
+  // mostrar a tela de login ou o app -- sem token, ja sabemos de cara (nada a checar)
+  const [authChecked, setAuthChecked] = useState(() => !getToken());
   const [loginEmail, setLoginEmail] = useState("");
   const [loginSenha, setLoginSenha] = useState("");
   const [loginErro, setLoginErro] = useState("");
@@ -114,7 +120,8 @@ export function App() {
         setCurrentUser(usuario);
         setRole(perfilParaRole(usuario.perfil));
       })
-      .catch(() => apiLogout());
+      .catch(() => apiLogout())
+      .finally(() => setAuthChecked(true));
   }, []);
   const [updateReady, setUpdateReady] = useState(false);
   const updateWorker = useRef<((reload?: boolean) => Promise<void>) | null>(
@@ -241,15 +248,6 @@ export function App() {
   const install = async () => {
     if (!(await pwa.install())) setModal("install");
   };
-  const changeRole = (next: Role) => {
-    if (currentUser) {
-      apiLogout();
-      setCurrentUser(null);
-    }
-    setRole(next);
-    navigate("inicio");
-    notify(`Visualizando como ${next}. Todos os dados são demonstrativos.`);
-  };
   const handleLogin = async () => {
     setLoginCarregando(true);
     setLoginErro("");
@@ -274,6 +272,50 @@ export function App() {
     notify("Você saiu da sua conta.");
   };
   const count = state.activities.filter((a) => a.status === "pendente").length;
+  if (!authChecked) return <div className="login-screen" />;
+  if (!currentUser)
+    return (
+      <div className="login-screen">
+        <div className="modal login-card">
+          <Logo />
+          <h1>Entrar no Domina</h1>
+          <p>Use o e-mail e a senha da sua escola para continuar.</p>
+          <div className="form-grid">
+            <label>
+              Email
+              <input
+                type="email"
+                value={loginEmail}
+                autoFocus
+                onChange={(e) => setLoginEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              />
+            </label>
+            <label>
+              Senha
+              <input
+                type="password"
+                value={loginSenha}
+                onChange={(e) => setLoginSenha(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              />
+            </label>
+          </div>
+          {loginErro && (
+            <p className="tiny error" role="alert">
+              {loginErro}
+            </p>
+          )}
+          <Button
+            variant="primary"
+            disabled={loginCarregando || !loginEmail.trim() || !loginSenha}
+            onPress={handleLogin}
+          >
+            {loginCarregando ? "Entrando..." : "Entrar"}
+          </Button>
+        </div>
+      </div>
+    );
   return (
     <div className="app-shell">
       <a
@@ -311,12 +353,10 @@ export function App() {
           </button>
         </div>
         <div className="workspace">
-          <span className="school-avatar">H</span>
+          <span className="school-avatar">{currentUser.escola_nome[0] ?? "E"}</span>
           <div>
-            <strong>Escola Horizonte</strong>
-            <span>Pré-ENEM · 2026</span>
+            <strong>{currentUser.escola_nome}</strong>
           </div>
-          <ChevronDown size={14} />
         </div>
         <div className="nav-caption">SEU ESPAÇO</div>
         <nav aria-label="Navegação principal">
@@ -377,33 +417,14 @@ export function App() {
             Preferências
           </button>
           <div className="sidebar-profile">
-            {(() => {
-              const nomeExibido =
-                currentUser?.nome ??
-                (role === "aluno" ? state.name : role === "professor" ? "Marina Costa" : "Gestão escolar");
-              return (
-                <>
-                  <div className="avatar">
-                    {nomeExibido
-                      .split(" ")
-                      .map((n) => n[0])
-                      .slice(0, 2)
-                      .join("")}
-                  </div>
-                  <div>
-                    <strong>{nomeExibido}</strong>
-                    <span>
-                      {role === "aluno" ? "Estudante" : role === "professor" ? "Professor(a)" : "Gestor(a)"}
-                    </span>
-                  </div>
-                </>
-              );
-            })()}
-            <button
-              aria-label={currentUser ? "Conta" : "Acesso demonstrativo"}
-              className="profile-button"
-              onClick={() => setModal("login")}
-            >
+            <div className="avatar">{iniciais(currentUser.nome)}</div>
+            <div>
+              <strong>{currentUser.nome}</strong>
+              <span>
+                {role === "aluno" ? "Estudante" : role === "professor" ? "Professor(a)" : "Gestor(a)"}
+              </span>
+            </div>
+            <button aria-label="Conta" className="profile-button" onClick={() => setModal("login")}>
               <LogIn size={18} />
             </button>
           </div>
@@ -428,21 +449,6 @@ export function App() {
             </span>
           </div>
           <div className="topbar-actions">
-            <span className="demo-pill">DEMONSTRAÇÃO</span>
-            <label className="role-selector">
-              <span className="sr-only">Perfil de demonstração</span>
-              <select
-                aria-label="Perfil de demonstração"
-                value={role}
-                onChange={(e) => changeRole(e.target.value as Role)}
-              >
-                <option value="aluno">Aluno</option>
-                <option value="professor">Professor</option>
-                <option value="gestor">Gestor</option>
-              </select>
-              <ChevronDown size={13} />
-            </label>
-            <div className="toolbar-divider" />
             <IconButton
               icon={Search}
               label="Buscar no Domina"
@@ -459,7 +465,7 @@ export function App() {
               />
               <span />
             </div>
-            <span className="top-avatar">{role === "aluno" ? "AS" : "MC"}</span>
+            <span className="top-avatar">{iniciais(currentUser.nome)}</span>
           </div>
         </header>
         {pwa.offline && (
@@ -494,6 +500,7 @@ export function App() {
                 state={state}
                 navigate={navigate}
                 openActivity={openActivity}
+                currentUser={currentUser}
               />
             )}
             {(page === "atividades" || page === "revisoes") && (
@@ -576,7 +583,7 @@ export function App() {
               : modal === "search"
                 ? "O que você procura?"
                 : modal === "login"
-                  ? "Explore o Domina"
+                  ? "Sua conta"
                   : "Suas notificações"
           }
           onClose={() => setModal(null)}
@@ -714,7 +721,7 @@ export function App() {
               </div>
             </>
           )}
-          {modal === "login" && currentUser && (
+          {modal === "login" && (
             <>
               <Logo />
               <p>
@@ -723,60 +730,6 @@ export function App() {
               <Button variant="secondary" onPress={handleLogout}>
                 Sair da conta
               </Button>
-            </>
-          )}
-          {modal === "login" && !currentUser && (
-            <>
-              <Logo />
-              <p>Entre com a conta da sua escola.</p>
-              <div className="form-grid">
-                <label>
-                  Email
-                  <input
-                    type="email"
-                    value={loginEmail}
-                    autoFocus
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                  />
-                </label>
-                <label>
-                  Senha
-                  <input
-                    type="password"
-                    value={loginSenha}
-                    onChange={(e) => setLoginSenha(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                  />
-                </label>
-              </div>
-              {loginErro && <p className="tiny error">{loginErro}</p>}
-              <Button
-                variant="primary"
-                disabled={loginCarregando || !loginEmail.trim() || !loginSenha}
-                onPress={handleLogin}
-              >
-                {loginCarregando ? "Entrando..." : "Entrar"}
-              </Button>
-              <p className="tiny muted">Ou explore sem conta:</p>
-              <div className="demo-roles">
-                {(["aluno", "professor", "gestor"] as Role[]).map((r) => (
-                  <Button
-                    key={r}
-                    variant={r === role ? "primary" : "secondary"}
-                    onPress={() => {
-                      changeRole(r);
-                      setModal(null);
-                    }}
-                  >
-                    Entrar como {r}
-                  </Button>
-                ))}
-              </div>
-              <p className="tiny muted">
-                O modo demonstração não representa autenticação; os dados ficam só
-                neste navegador.
-              </p>
             </>
           )}
         </Modal>

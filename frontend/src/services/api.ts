@@ -53,6 +53,7 @@ export interface UsuarioAtual {
   nome: string;
   email: string;
   perfil: "ALUNO" | "PROFESSOR" | "GESTOR" | "ADMIN";
+  escola_nome: string;
 }
 
 export function perfilParaRole(perfil: UsuarioAtual["perfil"]): Role {

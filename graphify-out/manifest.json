@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "backend/seed.py": {
-    "mtime": 1791977300.0934238,
-    "seen": 1792096848.8795516,
-    "ast_hash": "e984d8f1728547b89f4bb37725bfdce1",
+    "mtime": 1792498475.410039,
+    "seen": 1792498564.5981128,
+    "ast_hash": "a6f97e549498a7eecccd85b9fca0f9d7",
     "semantic_hash": ""
   },
   "backend/requirements.txt": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1792443727.50767,
-    "seen": 1792444075.5169015,
-    "ast_hash": "81afe19b3b9be3d7ff9c28362c2a8585",
+    "mtime": 1792498406.1180508,
+    "seen": 1792498564.5981324,
+    "ast_hash": "3bec13897b7101435c123df72ad6bf8f",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
@@ -282,15 +282,15 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Dashboard.tsx": {
-    "mtime": 1792443723.347669,
-    "seen": 1792444075.516922,
-    "ast_hash": "a3ce0299258c23d1ae9bb5386ea89ce8",
+    "mtime": 1792498387.9700537,
+    "seen": 1792498564.598162,
+    "ast_hash": "cb904774e8b72a3ae64fefe857f23841",
     "semantic_hash": ""
   },
   "frontend/src/screens/EducatorDashboard.tsx": {
-    "mtime": 1792008998.5807838,
-    "seen": 1792096848.8795648,
-    "ast_hash": "eaf4dde5ef76a13e56e27811983f358d",
+    "mtime": 1792498403.1180513,
+    "seen": 1792498564.5981655,
+    "ast_hash": "b40a492b117bdb0a4c05e0e76fb8930d",
     "semantic_hash": ""
   },
   "frontend/src/screens/Learning.tsx": {
@@ -486,9 +486,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/usuario.py": {
-    "mtime": 1792438009.6491878,
-    "seen": 1792438025.0321403,
-    "ast_hash": "529c96cb753279e5f58ceda155eb60a3",
+    "mtime": 1792498193.402086,
+    "seen": 1792498564.5980523,
+    "ast_hash": "df5de0fbf963366e89a4e9325681a069",
     "semantic_hash": ""
   },
   "backend/app/schemas/turma.py": {
@@ -498,9 +498,9 @@
     "semantic_hash": ""
   },
   "backend/app/schemas/usuario.py": {
-    "mtime": 1792158890.0986419,
-    "seen": 1792180224.4835806,
-    "ast_hash": "944f669f682f11b6605108421ec9e953",
+    "mtime": 1792498185.8100872,
+    "seen": 1792498564.5980902,
+    "ast_hash": "7edb5d5e42c43fbb45ba300a123a70cc",
     "semantic_hash": ""
   },
   "backend/app/routers/documento.py": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1792496801.6702328,
-    "seen": 1792496919.324315,
-    "ast_hash": "3a9d6a29cb13f2fe88a52880ee429b0a",
+    "mtime": 1792498267.8780737,
+    "seen": 1792498564.5981805,
+    "ast_hash": "7455f7e36513c176c0b2eaa70f15dec0",
     "semantic_hash": ""
   },
   "frontend/src/services/atividades.ts": {

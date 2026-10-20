@@ -17,26 +17,32 @@ import { ActivityRow } from "./Dashboard";
 import { EvolutionChart } from "../components/Chart";
 import { topics } from "../data/demo";
 import type { Activity, DemoState, Page, Role } from "../types";
+import type { UsuarioAtual } from "../services/api";
 export function EducatorDashboard({
   role,
   state,
   navigate,
   openActivity,
+  currentUser,
 }: {
   role: Role;
   state: DemoState;
   navigate: (p: Page) => void;
   openActivity: (a: Activity) => void;
+  currentUser?: UsuarioAtual | null;
 }) {
   const pending = state.activities.filter((a) => a.status === "pendente");
   const teacher = role === "professor";
+  const primeiroNome = currentUser?.nome.split(" ")[0];
   return (
     <>
       <div className="page-heading">
         <div>
           <div className="eyebrow">ENSINAR É TRANSFORMAR</div>
           <h1>
-            {teacher ? "Olá, professora Marina." : "Uma visão do que importa."}
+            {teacher
+              ? `Olá, ${primeiroNome ?? "professor(a)"}.`
+              : "Uma visão do que importa."}
           </h1>
           <p>
             {teacher

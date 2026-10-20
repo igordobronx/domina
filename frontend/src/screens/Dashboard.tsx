@@ -62,7 +62,7 @@ export function Dashboard({
           </div>
           <h1>
             {student
-              ? `Bom te ver, ${state.name.split(" ")[0]}.`
+              ? `Bom te ver, ${(currentUser?.nome ?? state.name).split(" ")[0]}.`
               : role === "professor"
                 ? "Olá, professora Marina."
                 : "Uma visão do que importa."}
