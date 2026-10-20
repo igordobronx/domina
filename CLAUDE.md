@@ -1,6 +1,50 @@
 # CLAUDE.md: domina, correção de redação do ENEM por IA
 
-Atualizado em 19/10/2026 (noite, 3ª versão; as anteriores estão em docs/handoff_CLAUDE_2026-10-19.md e docs/handoff_CLAUDE_2026-10-19b.md). Responda sempre em português, de forma curta e simples, sem números difíceis.
+Atualizado em 20/10/2026 à noite (v14 fica; v18 a v20 testados). Versão anterior: `docs/handoff_CLAUDE_2026-10-20b.md`. Responda sempre em português, de forma curta e simples, sem números difíceis.
+
+## 0. Estado em 20/10/2026 à noite (leia primeiro)
+
+> **REGRA PRINCIPAL DO USUÁRIO (20/10): NÃO mude o prompt "de jeito louco".** Não fique trocando
+> a regra de uma competência só porque outra deu errado, nem encadeie versões uma atrás da outra.
+> Antes de qualquer teste: (1) olhe os resultados e ache a CAUSA do erro (quais redações, em qual
+> competência, para que lado, se se repete nas 2 rodadas); (2) explique ao usuário, em poucas
+> frases, por que aquela mudança deve melhorar o prompt; (3) espere o ok dele; (4) teste UMA
+> mudança. Se não houver uma causa clara, não mude nada: diga isso ao usuário.
+
+**Onde estamos**
+- O app corrige **1 vez** com o prompt **v14** (`VERSAO_PROMPT = "v14"` em `backend/app/correcao.py`; 12 testes passam). Texto: `docs/calibracao/2026-10-20/prompt_v14.txt`.
+- v14 nas 53 do INEP (flash-lite), 2 rodadas: **erro total 48 e 48**, 46 e 45 de 53 a menos de 100 pontos. É o melhor até agora.
+- O usuário decidiu ficar com o v14 na entrega de 20/10.
+
+**Tudo o que foi testado em 20/10 (flash-lite, 53 redações; v14 = 48)**
+| Versão | Mudança (em cima do v14) | Erro | |
+|---|---|---|---|
+| v13 | C4 mais branda (falha isolada = 160) | 53 | ❌ |
+| v15 | C1: 200 = até 3 desvios | 57 | ❌ |
+| v16 | C1: 2 desvios do mesmo tipo podem ser 200 | 62 | ❌ |
+| v17 | C1: tabela do usuário (desvio grave tira 200; parágrafo de um período = 120) | 59 | ❌ |
+| v18 | C4: para 200, frases ligadas DENTRO de cada parágrafo | 49 | empate |
+| v19 | C3: regra explícita de quando é 120 | 60 | ❌ |
+| v20 | C1: 120 só com 7+ desvios | parado em 27/53, sem ganho | ❌ |
+Arquivos: `docs/calibracao/2026-10-20/` (`prompt_vNN.txt`, `inep_lite_vNN.jsonl`).
+
+**O que aprendemos (importante para não repetir)**
+1. Comparando as 2 rodadas do v14, o erro NÃO tem direção: em C1, C2 e C3 a IA erra quase o mesmo tanto para cima e para baixo. Por isso endurecer ou afrouxar uma regra só troca um erro pelo outro (foi o que aconteceu do v15 ao v20).
+2. Metade do erro grande vem de 5 redações que a IA erra igual nas duas rodadas: IDs 5 (real 740, IA 860), 9 (real 780, IA 920; INEP deu 20 na C3), 27 (real 900, IA 1000), 29 (real 880, IA 760) e 31 (real 720, IA 960). Mudar regra geral não conserta isso.
+3. Ruído entre rodadas: 5 a 10 pontos no erro total. Só aceite ganho de 6 ou mais, e de preferência confirme com 2 rodadas.
+4. Pedir para a IA ACHAR/COPIAR prova de autoria na C3 piora (v10, v11).
+
+**Próximos passos sugeridos (combine com o usuário ANTES de testar; ele pediu isso)**
+1. **Confirmar no modelo do app (`gemini-3.5-flash`)**: só 3 de 15 rodaram em 20/10 (503 e depois cota). Nas 3, ficou parecido com o flash-lite. Rodar as 15: `IDS=46,3,51,48,53,34,21,45,52,25,14,8,42,35,41 DATABASE_URL=sqlite:// JWT_SECRET=x PYTHONPATH=. python ../docs/calibracao/2026-10-20/roda_inep_ids.py ../docs/calibracao/2026-10-20/prompt_v14.txt <saida.jsonl> gemini-3.5-flash` (de `backend/`; a saída retoma de onde parou, então pode usar `flash_v14_parcial3.jsonl`). Cota do flash: ~20 por dia.
+2. **Olhar as 5 redações que erram sempre** (IDs acima): ler a justificativa da IA e o texto, e ver se o problema é de transcrição, de tema ou de um critério que a IA não enxerga (ex.: ID 31, que a IA dá 200 em quase tudo). Só depois propor UMA regra.
+3. Mais redações fracas com nota oficial (só 5 abaixo de 700).
+
+**Como rodar (sozinho, sem o usuário)**
+- A thread NÃO pode estar conectada ao Mac: com a conexão a rede bloqueia o Gemini (403). A chave `GEMINI_API_KEY` está no cloud environment.
+- Copie a pasta para um scratch (`cp -r /mnt/project-files/domina/{backend,essays,docs} <scratch>/`), `pip install -r backend/requirements.txt`, e de `backend/`: `DATABASE_URL=sqlite:// JWT_SECRET=x PYTHONPATH=. python ../docs/calibracao/2026-10-19/roda_inep53.py <prompt.txt> <saida.jsonl> gemini-3.5-flash-lite`; depois `python ../docs/calibracao/2026-10-18/analisa_inep.py <saida.jsonl>`. Cada rodada leva uns 6 min. Rode em background e espere com until-loop. Não use `pkill -f roda_inep53` (mata o próprio shell).
+- Cota: se o flash-lite acabar, use `gemini-3.1-flash-lite` ou `gemini-2.5-flash-lite`, mas rode o v14 de novo no mesmo modelo como base.
+
+**Regras de trabalho:** português, curto e simples; sempre usar o graphify (`graphify update .` depois de editar código); nada de nomes/CPF; uma mudança por versão e **perguntar ao usuário antes de testar cada mudança**; mudanças na cópia compartilhada `/mnt/project-files/domina`; ao fim de cada versão testada, atualize este arquivo.
 
 ## 1. Objetivo do prompt
 
@@ -17,10 +61,7 @@ A meta realista é a IA ficar a cerca de 100 pontos da média dos humanos, porqu
   - `db35f46`: planilha externa, prompts testados, resultados e scripts em `docs/calibracao/2026-10-16/`.
   - `4b35e86` (18/10): prompt **v9** em `correcao.py` (`VERSAO_PROMPT = "v9"`) + testes em `docs/calibracao/2026-10-18/`.
   - commit de 19/10: teste do v9 nas 53 do INEP, prompt v10 (não adotado) e scripts em `docs/calibracao/2026-10-19/`.
-  - commit de 19/10 (noite, 2): app com **v12**; correção dupla testada e descartada (seção 5).
-  - commit de 19/10 (noite): v11 (pior, não adotado) e v12 (melhor total, ainda NÃO aplicado em `correcao.py`), com prompts, resultados e scripts em `docs/calibracao/2026-10-19/`.
 - **O prompt fica em** `backend/app/correcao.py` (constante `PROMPT`, chamada em `corrigir()`).
-- **Rede (19/10):** quando a thread se conecta ao Mac (ferramentas de pasta), o container perde o acesso a `generativelanguage.googleapis.com` (403). Para o Claude rodar o Gemini sozinho, a thread NÃO deve se conectar ao Mac: as redações 51–53 já estão em `essays/novas_51_53.jsonl` e `docs/calibracao/2026-10-19/roda_inep53.py` junta elas às 50 da planilha (de `backend/`, com `DATABASE_URL=sqlite:// JWT_SECRET=x PYTHONPATH=.`). Se não der, o usuário roda `bash docs/calibracao/2026-10-19/roda_v12.sh` no terminal do Mac.
 - **Rodar os testes (19/10):** o usuário quer que o Claude rode TUDO sozinho. Ele colocou `GEMINI_API_KEY` como variável do cloud environment do projeto, então no container: `pip install -r backend/requirements.txt` e rodar o `roda_inep.py` (de `backend/`, com `PYTHONPATH=.`). Atenção: a planilha em `/mnt/project-files/domina/essays/` tem só 50 redações; a do Mac tem 53 (IDs 51–53 novas). Se não conseguir copiar a do Mac (`device_stage_files` dá 401), monte as 3 novas lendo via `device_bash` e confira com hash. O VM do Mac não tem internet.
 - **Scripts de teste:** `backend/calibracao/` (`calibra.py` para o Gemini, `calibra_groq.py` para a Groq, `analisa.py` para o score, `variantes.py` para as versões) `docs/calibracao/2026-10-16/analisa_externa.py` (base externa) e, para a base INEP, `docs/calibracao/2026-10-18/roda_inep.py` + `analisa_inep.py` (uso: de `backend/`, `PYTHONPATH=. python ../docs/calibracao/2026-10-18/roda_inep.py <prompt.txt> <saida.jsonl> gemini-3.5-flash-lite`).
 - **Chaves:** `backend/.env` (`GEMINI_API_KEY`, `GROQ_API_KEY`). O arquivo fica fora do git. Nunca imprima nem commite as chaves.
@@ -53,9 +94,7 @@ Cuidado: antes de gravar uma planilha no Mac, peça para ela estar **fechada no 
 | v8 | v7 + C3 com marcação "desenvolvido/apenas afirmado" por parágrafo e teto 160 | C3 piorou (23→28), total 71. ❌ (previsível NÃO é 120: no INEP o 160 aceita "ainda previsíveis") |
 | v9 nas 53 (19/10) | mesma v9, base INEP com as 3 novas | **erro total 53, 45/53 a menos de 100**, C1 18, C2 15, C3 20 (viés +8), C4 11, C5 12. Fracas: IA 544 x real 564. ✅ |
 | v10 | v9 + C3 com as 4 falhas do usuário (argumento não explicado, repete a coletânea, informação solta, conclusão contradiz) checadas sim/não + pergunta "há AUTORIA?"; qualquer falha impede 200 | **Piorou:** total 63, viés +11; a IA deu 200 na C3 em 28 de 53 (v9: 20). Perguntar "há autoria?" faz a IA dizer sim. ❌ |
-| v11 | v9 + C3 pedindo para a IA copiar um trecho de interpretação própria; 160 padrão | **Piorou:** total 55, viés +26, C3 erro 25; deu 200 na C3 em 35/53. Pedir para a IA achar prova de autoria faz ela sempre achar. ❌ |
-| **v12** | v9 + só a regra da C3: 160 é o nível mais comum, 200 raro (todos os parágrafos com explicação/exemplo próprio), na dúvida 160; sem pedir trecho | Base INEP (53): **erro total 46 (v9: 53), 46/53 a menos de 100, viés -5**; C3 erro 20 (igual), viés -2, mas a IA dá 160 em 40/53. Ganho no total perto do ruído (~5). Melhor total até agora. ⚠️ |
-| **v9 (atual)** | v7 + C3 com os **descritores oficiais do INEP** (160 aceita previsível se organizado; 200 = autoria) | **Base INEP: erro médio 60 pts no total, 41/50 a menos de 100 (v6: 67 e 37/50).** C1 14, C2 15, C3 23 (viés +12), C4 16, C5 10. ✅ |
+| v9 | v7 + C3 com os **descritores oficiais do INEP** (160 aceita previsível se organizado; 200 = autoria) | **Base INEP: erro médio 60 pts no total, 41/50 a menos de 100 (v6: 67 e 37/50).** C1 14, C2 15, C3 23 (viés +12), C4 16, C5 10. ✅ |
 
 Lições:
 - Não ajuste o prompt para acertar uma redação só: isso decora o caso e piora os outros. Use regras gerais e teste na base inteira.
@@ -65,21 +104,18 @@ Lições:
 - **Como o INEP nota:** cada corretor dá notas de 40 em 40; a nota oficial é a média de 2 corretores (por isso 140, 180 etc., sempre múltiplo de 20). 3º corretor só se a diferença passar de 80 numa competência ou de 100 no total. A IA age como UM corretor: diferença de 20 por competência conta como acerto.
 - A contagem da C1 (2 desvios para 200, 5 para 160) é o critério usado por corretores e cursinhos, não um número oficial do INEP.
 
-## 5. Próximos passos
+## 5. Próximos passos antigos (19/10; vale o que está na seção 0)
 
-1. **Estado do app (19/10 noite):** `backend/app/correcao.py` usa o prompt **v12** (`VERSAO_PROMPT = "v12"`) com **1 correção** (como antes). Foi testada a correção dupla (2 chamadas, média por competência, 3ª se discrepar): nas 53 do INEP deu erro total 49, 45/53 a menos de 100, viés -9 (v12 sozinho: 46 e 46/53), ou seja, sem melhora além do ruído (~5) e com o dobro de chamadas. O usuário decidiu **voltar para 1 correção**. A versão com 2 correções está no commit `095c693` (código) e o resultado em `docs/calibracao/2026-10-19/inep_lite_v12_dupla.jsonl`; use `git show 095c693:backend/app/correcao.py` se quiser retomar (inclui `confianca` pela divergência entre correções).
-   - **PRÓXIMA TAREFA (combinada com o usuário, thread nova): melhorar o prompt e testar** só na base INEP (53). Ideias em aberto: C1 (viés -8, a IA é dura demais), C2 (viés -6), nota 1000 (IA 948 em média). Não mexer na C3 (v8, v10, v11 pioraram). Testar com `docs/calibracao/2026-10-19/roda_inep53.py` (flash-lite); o container só alcança o Gemini se a thread NÃO se conectar ao Mac.
-   - Push só se o usuário decidir que melhorou.
-2. **C3:** NÃO mexer mais por enquanto. Tentativas: v8, v10, v11 pioraram; v12 corrigiu só o viés. Uma regra pós-prompt (limitar a C3 a 160 quando outra competência não é 200) foi simulada nos resultados do v9 e não ajudou (erro total 52–54). A IA dá 200 em 20 redações e o INEP deu menos em 11, mas as outras competências delas também eram 200: nada separa esses casos.
-3. **Redações fracas e médias:** na base INEP só 5 abaixo de 700. Conseguir mais redações com nota oficial baixa (espelho do INEP de conhecidos, com consentimento; para menor de idade, o do responsável). Os prints da "Vista Pedagógica" trazem nome e CPF: nunca copiar.
-4. Opcional: detectar anulação (fuga ao tema, cópia, texto curto) antes de corrigir.
-5. Confirmar a versão final no `gemini-3.5-flash` (20 chamadas por dia) e levar para a `main` só quando o usuário pedir. Push e PR só quando ele pedir. O push não funciona do Mac-VM nem do container: pedir ao usuário rodar `git push -u origin correcao-prompt-analise` no terminal dele.
+1. **C3:** ainda é a pior (erro 20, viés +8; o gabarito mais comum é 180 e a IA dá 200). O v10 mostrou que perguntar direto "há autoria?" piora. Próxima ideia: inverter o padrão, dizendo que 160 é o nível comum da C3 (como deu certo na C1 no v7) e 200 só quando a IA consegue citar um trecho de interpretação própria que NÃO está nos textos motivadores. O texto do usuário sobre a C3 (níveis + onde se perde ponto) está em `docs/calibracao/2026-10-19/prompt_v10.txt`; ele disse que não é verdade absoluta.
+2. **Redações fracas e médias:** na base INEP só 4 abaixo de 700 (IA 540 contra 565). Conseguir mais redações com nota oficial baixa (espelho do INEP de conhecidos, com consentimento; para menor de idade, o do responsável). Os prints do usuário só ajudam se vierem com o texto da redação.
+4. Opcional: detectar anulação (fuga ao tema, cópia, texto curto) antes de corrigir; trocar a "confiança" por duas correções independentes.
+5. Confirmar a versão final no `gemini-3.5-flash` (20 chamadas por dia) e levar para a `main` só quando o usuário pedir. Push e PR só quando ele pedir.
 
 Regras de trabalho: sempre usar o graphify; não dar push sem o usuário pedir; não chamar API paga sem confirmação; nada de nomes ou CPF nas planilhas ou arquivos; o usuário gosta de respostas curtas e simples. Mudanças de código vão na cópia compartilhada (`/mnt/project-files/domina`) e/ou na branch a pedido dele.
 
-## 6. Prompts
+## 6. Prompt antigo (v9; o atual é o v14, ver seção 0)
 
-Em `backend/app/correcao.py` hoje está o **v12** (`docs/calibracao/2026-10-19/prompt_v12.txt`, `VERSAO_PROMPT = "v12"`): igual ao v9, só com a regra da C3 mais dura (160 comum, 200 raro), com 1 correção. Texto do v9 em `docs/calibracao/2026-10-18/prompt_v9.txt`; da v6 em `docs/calibracao/2026-10-16/prompt_v6.txt`.
+O texto exato está em `backend/app/correcao.py` (constante `PROMPT`) e em `docs/calibracao/2026-10-18/prompt_v9.txt`. Mudanças em relação à v6 (que está em `docs/calibracao/2026-10-16/prompt_v6.txt`): regra de contagem da C1 (160 comum, 120 só com 6+ desvios, falha de estrutura = período quebrado) e C3 com os descritores oficiais.
 
 ## graphify
 
@@ -90,3 +126,14 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+
+## 7. Commit e push (usuário cola no terminal do Mac, na pasta do projeto)
+
+Antes, copie da pasta compartilhada `backend/app/correcao.py`, `backend/tests/test_fluxo_envio.py` e `docs/` para a pasta do Mac (planilha fechada no Excel). Depois:
+
+```
+git add backend/app/correcao.py backend/tests/test_fluxo_envio.py docs
+git commit -m "Prompt v14 fica; testes v15 a v20 e flash na base INEP; novo CLAUDE.md"
+git push
+```

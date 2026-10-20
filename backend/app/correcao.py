@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.ocr.gemini import gerar
 
-VERSAO_PROMPT = "v12"  # v12: v9 + C3 com 160 como nivel comum e 200 raro (na duvida, 160)
-NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}  # o ENEM so usa esses niveis por competencia
+VERSAO_PROMPT = "v14"  # v12 + C2 com piso 160 (repertorio externo legitimo e pertinente); uma correcao so
+NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}  # cada corretor do ENEM so usa esses niveis por competencia
 
 PROMPT = """Você é um corretor experiente da redação do ENEM, treinado na matriz de referência do INEP.
 Você vai corrigir a redação abaixo em DUAS ETAPAS. Não pule direto para a nota.
@@ -92,8 +92,11 @@ C2 - Compreensão da proposta e desenvolvimento do tema no texto dissertativo-ar
     0: fuga total ao tema ou não atende ao tipo dissertativo-argumentativo.
   LIMITE: sem pelo menos UM repertório EXTERNO (que não venha dos textos motivadores) que seja
   legítimo e pertinente ao tema, a C2 NÃO passa de 120. Usar só informações dos textos motivadores
-  conta como sem repertório. Repertório legítimo e pertinente, mas só citado e não ligado ao
-  argumento (sem produtividade), fica em 120 a 160, nunca 200.
+  conta como sem repertório. PISO: se há pelo menos UM repertório externo legítimo e pertinente ao
+  tema, a C2 é no mínimo 160, mesmo que ele seja pouco aprofundado; 120 fica só para quem não
+  tem repertório externo pertinente. A produtividade separa o 160 do 200: repertório ligado ao
+  argumento (o texto explica o que ele prova) em pelo menos um parágrafo de desenvolvimento = 200;
+  repertório só citado e abandonado = 160.
 
 C3 - Seleção, relação, organização e interpretação de informações, fatos e opiniões em defesa de um ponto de vista
   (descritores oficiais do INEP)
@@ -189,7 +192,8 @@ Tema proposto: {tema}
 Redação:
 \"\"\"
 {texto}
-\"\"\""""
+\"\"\"
+"""
 
 class CompetenciaIA(BaseModel):
     codigo: Literal["C1", "C2", "C3", "C4", "C5"]
@@ -220,8 +224,7 @@ class ResultadoIA(BaseModel):
 
 def corrigir(texto: str, tema: str) -> tuple[ResultadoIA, str]:
     # devolve (resultado, modelo_usado). Levanta excecao se o modelo nao devolver JSON valido.
-    # ponytail: "confianca" e autoavaliacao do modelo; trocar por medida real
-    # (ex.: divergencia entre 2 correcoes) quando houver dados de concordancia com professor
+    # A IA age como UM corretor; a correcao dupla (media de 2) foi testada e nao melhorou o erro.
     response, modelo = gerar(
         PROMPT.format(tema=tema, texto=texto),
         types.GenerateContentConfig(

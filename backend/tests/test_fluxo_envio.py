@@ -237,3 +237,25 @@ def test_nota_da_ia_vira_nivel_valido_do_enem():
         raise AssertionError("aceitou competencia repetida")
     except ValueError:
         pass
+
+
+def test_corrigir_faz_uma_correcao_so():
+    from app import correcao as ia
+
+    chamadas = []
+
+    def gerar_falso(contents, config):
+        chamadas.append(config.temperature)
+        corpo = {"competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x"}
+                                  for i, n in zip(range(1, 6), [160, 200, 160, 120, 200])],
+                 "feedback_geral": "x", "confianca": 0.7}
+        return type("R", (), {"text": __import__("json").dumps(corpo)})(), settings.GEMINI_MODEL
+
+    original = ia.gerar
+    ia.gerar = gerar_falso
+    try:
+        r, modelo = ia.corrigir("texto", "tema")
+        assert [c.nota for c in r.competencias] == [160, 200, 160, 120, 200]
+        assert chamadas == [0] and modelo == settings.GEMINI_MODEL and r.confianca == 0.7
+    finally:
+        ia.gerar = original
