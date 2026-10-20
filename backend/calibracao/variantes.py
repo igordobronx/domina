@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.correcao import PROMPT as V2, ResultadoIA
 
-PLANILHA = Path(__file__).resolve().parents[2] / "essays" / "base_redacoes_enem_domina_ai.xlsm"
+PLANILHA = Path(__file__).resolve().parents[2] / "essays" / "base_redacoes_primeira.xlsm"
 
 
 def amostra(n1000: int, nuol: int, seed: int = 42):
@@ -58,7 +58,7 @@ class ResultadoV3(BaseModel):
 def para_v2(r: ResultadoV3) -> ResultadoIA:
     # reaproveita as validacoes da v2 (niveis do ENEM, C1..C5 uma vez cada)
     return ResultadoIA.model_validate({
-        "competencias": [{"codigo": c.codigo, "nota": c.nota, "justificativa": c.analise} for c in r.competencias],
+        "competencias": [{"codigo": c.codigo, "analise": c.analise, "nota": c.nota, "justificativa": c.analise} for c in r.competencias],
         "feedback_geral": r.feedback_geral, "confianca": r.confianca})
 
 

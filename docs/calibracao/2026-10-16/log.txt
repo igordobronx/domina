@@ -1,0 +1,7 @@
+amostra 50 (20 nota 1000 + 30 UOL), ja feitas 0, modelo openai/gpt-oss-120b
+mil 2287 real=1000 ia=880 (4.8s)
+mil 2152 real=1000 ia=920 (4.2s)
+  2130: 429, esperando 22s
+mil 2130 real=1000 ia=880 (6.2s)
+  2313: ReadTimeout The read operation timed out
+  2313: ConnectError [Errno 8] nodename nor servname provided, or not known

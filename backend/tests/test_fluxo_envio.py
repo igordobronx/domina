@@ -197,7 +197,7 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
     assert client.put(f"/submissoes/{sub['id']}/confirmar", headers=prof, json={"texto": "redacao"}).status_code == 200
 
     nota_maxima = ia.ResultadoIA(
-        competencias=[{"codigo": f"C{i}", "nota": 200, "justificativa": "ok"} for i in range(5, 0, -1)],
+        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 200, "justificativa": "ok"} for i in range(5, 0, -1)],
         feedback_geral="muito bom", confianca=0.9,
     )
     original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota_maxima, settings.GEMINI_MODEL)
@@ -227,13 +227,35 @@ def test_nota_da_ia_vira_nivel_valido_do_enem():
     from app.correcao import ResultadoIA
 
     r = ResultadoIA.model_validate({
-        "competencias": [{"codigo": f"C{i}", "nota": n, "justificativa": "x"} for i, n in zip(range(1, 6), [130, 200, 15, 199, 60])],
+        "competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x"} for i, n in zip(range(1, 6), [130, 200, 15, 199, 60])],
         "feedback_geral": "x", "confianca": 0.5,
     })
     assert [c.nota for c in r.competencias] == [120, 200, 0, 200, 40]
     try:
-        ResultadoIA.model_validate({"competencias": [{"codigo": "C1", "nota": 0, "justificativa": "x"}] * 5,
+        ResultadoIA.model_validate({"competencias": [{"codigo": "C1", "analise": "x", "nota": 0, "justificativa": "x"}] * 5,
                                     "feedback_geral": "x", "confianca": 0.5})
         raise AssertionError("aceitou competencia repetida")
     except ValueError:
         pass
+
+
+def test_corrigir_faz_uma_correcao_so():
+    from app import correcao as ia
+
+    chamadas = []
+
+    def gerar_falso(contents, config):
+        chamadas.append(config.temperature)
+        corpo = {"competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x"}
+                                  for i, n in zip(range(1, 6), [160, 200, 160, 120, 200])],
+                 "feedback_geral": "x", "confianca": 0.7}
+        return type("R", (), {"text": __import__("json").dumps(corpo)})(), settings.GEMINI_MODEL
+
+    original = ia.gerar
+    ia.gerar = gerar_falso
+    try:
+        r, modelo = ia.corrigir("texto", "tema")
+        assert [c.nota for c in r.competencias] == [160, 200, 160, 120, 200]
+        assert chamadas == [0] and modelo == settings.GEMINI_MODEL and r.confianca == 0.7
+    finally:
+        ia.gerar = original
