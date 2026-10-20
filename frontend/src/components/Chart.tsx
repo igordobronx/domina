@@ -1,3 +1,37 @@
+// sparkline real a partir do historico de correcoes aprovadas (sem lib de grafico: poucos pontos, linha simples)
+export function RealSparkline({ pontos }: { pontos: { percentual: number; atividade_titulo: string }[] }) {
+  if (pontos.length < 2) return null;
+  const w = 640;
+  const h = 160;
+  const pad = 12;
+  const step = (w - pad * 2) / (pontos.length - 1);
+  const coords = pontos.map((p, i) => [
+    pad + i * step,
+    h - pad - (Math.min(100, Math.max(0, p.percentual)) / 100) * (h - pad * 2),
+  ]);
+  const linha = coords.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x},${y}`).join(" ");
+  const area = `${linha} L${coords[coords.length - 1][0]},${h - pad} L${coords[0][0]},${h - pad}Z`;
+  return (
+    <div className="chart">
+      <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="Evolução real ao longo das atividades corrigidas">
+        <defs>
+          <linearGradient id="area-real" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2E9E73" stopOpacity=".18" />
+            <stop offset="100%" stopColor="#2E9E73" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#area-real)" />
+        <path d={linha} fill="none" stroke="#2E9E73" strokeWidth="3" />
+        {coords.map(([x, y], i) => (
+          <circle key={i} cx={x} cy={y} r="4" fill="#2E9E73" stroke="white" strokeWidth="2">
+            <title>{`${pontos[i].atividade_titulo}: ${pontos[i].percentual}%`}</title>
+          </circle>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
 export function EvolutionChart() {
   return (
     <div className="chart">

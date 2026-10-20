@@ -6,11 +6,19 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { topics, studyTasks } from "../data/demo";
+import { studyTasks } from "../data/demo";
 import type { DemoState } from "../types";
 import { Badge, Button, Card, Empty, Progress, SectionTitle } from "../components/ui";
-import { EvolutionChart } from "../components/Chart";
-import { meusExercicios, type ExercicioAPI, type UsuarioAtual } from "../services/api";
+import { RealSparkline } from "../components/Chart";
+import {
+  dominioMeu,
+  evolucaoMinha,
+  meusExercicios,
+  type DominioAPI,
+  type EvolucaoMateriaAPI,
+  type ExercicioAPI,
+  type UsuarioAtual,
+} from "../services/api";
 
 const HABILIDADE_NOME: Record<string, string> = {
   C1: "Norma culta",
@@ -61,8 +69,57 @@ function doDemo(t: (typeof studyTasks)[number]): ExercicioComum {
   };
 }
 
-export function Evolution() {
+export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }) {
   const [subject, setSubject] = useState("Todas");
+  const [porMateria, setPorMateria] = useState<EvolucaoMateriaAPI[] | null>(null);
+  const [dominio, setDominio] = useState<DominioAPI[] | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
+
+  useEffect(() => {
+    if (!currentUser) return;
+    setCarregando(true);
+    setErro("");
+    Promise.all([evolucaoMinha(), dominioMeu()])
+      .then(([ev, dom]) => {
+        setPorMateria(ev);
+        setDominio(dom);
+      })
+      .catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível carregar sua evolução."))
+      .finally(() => setCarregando(false));
+  }, [currentUser?.id]);
+
+  if (carregando) return <Empty title="Carregando sua evolução..." text="Isso leva só um instante." />;
+  if (erro) return <Empty title="Ainda não dá para ver sua evolução" text={erro} />;
+
+  const materias = porMateria ?? [];
+  if (!materias.length) {
+    return (
+      <Empty
+        title="Sua evolução aparece aqui em breve"
+        text="Assim que o professor aprovar a primeira correção de uma atividade sua, o histórico desta matéria passa a aparecer aqui."
+      />
+    );
+  }
+
+  const subjects = ["Todas", ...materias.map((m) => m.materia)];
+  const visiveis = subject === "Todas" ? materias : materias.filter((m) => m.materia === subject);
+  const totalAtividades = visiveis.reduce((acc, m) => acc + m.num_atividades, 0);
+  const mediaGeral = totalAtividades
+    ? Math.round(
+        visiveis.reduce((acc, m) => acc + m.media_percentual * m.num_atividades, 0) / totalAtividades,
+      )
+    : 0;
+  const historico = visiveis
+    .flatMap((m) => m.historico)
+    .sort((a, b) => a.data.localeCompare(b.data));
+  const crescimento =
+    historico.length > 1 ? Math.round(historico[historico.length - 1].percentual - historico[0].percentual) : 0;
+  // C1-C5 so fazem sentido para redacao: exatas nao alimenta o dominio por tema (ver backend).
+  // o nome exato da materia varia (ex.: "Redação ENEM"), entao basta comecar com "Redação".
+  const mostraCompetencias = subject === "Todas" || subject.toLowerCase().startsWith("redação");
+  const competenciasRedacao = mostraCompetencias ? (dominio ?? []).filter((d) => d.num_evidencias > 0) : [];
+
   return (
     <>
       <div className="page-heading">
@@ -71,28 +128,31 @@ export function Evolution() {
           <h1>Olha o quanto você avançou.</h1>
           <p>Compare você com você. Cada conquista tem seu valor.</p>
         </div>
-        <Badge tone="neutral">Dados ilustrativos</Badge>
       </div>
       <Card>
         <SectionTitle title="Seu domínio ao longo do tempo" />
         <div className="evolution-highlight">
           <strong>
-            67<span>%</span>
+            {mediaGeral}
+            <span>%</span>
           </strong>
-          <Badge>
-            <TrendingUp size={13} /> +12 pontos no mês
-          </Badge>
+          {historico.length > 1 && (
+            <Badge>
+              <TrendingUp size={13} />
+              {crescimento >= 0 ? ` +${crescimento}` : ` ${crescimento}`} pontos desde a primeira correção
+            </Badge>
+          )}
         </div>
-        <EvolutionChart />
+        <RealSparkline pontos={historico} />
         <p className="tiny muted">
-          Histórico demonstrativo · agosto a outubro de 2026. O cálculo real de
-          domínio será fornecido pelo backend.
+          Baseado em {totalAtividades} atividade(s) corrigida(s) e aprovada(s) pelo professor
+          {subject !== "Todas" ? ` em ${subject}` : ""}.
         </p>
       </Card>
       <Card>
-        <SectionTitle title="Cada tema, uma conquista" />
+        <SectionTitle title="Cada matéria, uma conquista" />
         <div className="tabs input-tabs">
-          {["Todas", "Redação", "Matemática"].map((s) => (
+          {subjects.map((s) => (
             <button
               key={s}
               aria-pressed={subject === s}
@@ -104,24 +164,38 @@ export function Evolution() {
           ))}
         </div>
         <div className="topic-cards">
-          {topics
-            .filter((t) => subject === "Todas" || t.subject === subject)
-            .map((t) => (
-              <div className="topic-detail" key={t.name}>
-                <Badge tone="neutral">{t.subject}</Badge>
-                <h3>{t.name}</h3>
-                <div className="topic-large">
-                  {t.value}
-                  <small>%</small>
-                  <span>+{t.growth} pontos</span>
-                </div>
-                <Progress value={t.value} label={t.name} />
-                <p className="tiny muted">
-                  Com base em {t.evidence} correções aprovadas
-                </p>
+          {visiveis.map((m) => (
+            <div className="topic-detail" key={m.materia_id}>
+              <Badge tone="neutral">{m.materia}</Badge>
+              <h3>{m.materia}</h3>
+              <div className="topic-large">
+                {Math.round(m.media_percentual)}
+                <small>%</small>
               </div>
-            ))}
+              <Progress value={m.media_percentual} label={m.materia} />
+              <p className="tiny muted">Com base em {m.num_atividades} atividade(s) corrigida(s)</p>
+            </div>
+          ))}
         </div>
+        {competenciasRedacao.length > 0 && (
+          <>
+            <SectionTitle title="Competências da redação (C1 a C5)" />
+            <div className="topic-cards">
+              {competenciasRedacao.map((d) => (
+                <div className="topic-detail" key={d.tema_id}>
+                  <Badge tone="neutral">{d.habilidade_codigo}</Badge>
+                  <h3>{HABILIDADE_NOME[d.habilidade_codigo] ?? d.tema}</h3>
+                  <div className="topic-large">
+                    {Math.round(d.percentual_dominio)}
+                    <small>%</small>
+                  </div>
+                  <Progress value={d.percentual_dominio} label={d.tema} />
+                  <p className="tiny muted">Com base em {d.num_evidencias} correções aprovadas</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         <div className="card-note">
           O domínio é uma estimativa de aprendizagem, não uma nota oficial nem
           previsão de resultado no ENEM.

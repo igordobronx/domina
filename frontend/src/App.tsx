@@ -515,7 +515,7 @@ export function App() {
                 currentUser={currentUser}
               />
             )}
-            {page === "evolucao" && <Evolution />}
+            {page === "evolucao" && <Evolution currentUser={currentUser} />}
             {page === "estudos" && (
               <Studies
                 state={state}

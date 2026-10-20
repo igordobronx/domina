@@ -280,6 +280,24 @@ export function dominioMeu(): Promise<DominioAPI[]> {
   return request<DominioAPI[]>("/dominio/meu");
 }
 
+export interface EvolucaoPontoAPI {
+  atividade_titulo: string;
+  percentual: number;
+  data: string;
+}
+
+export interface EvolucaoMateriaAPI {
+  materia_id: string;
+  materia: string;
+  media_percentual: number;
+  num_atividades: number;
+  historico: EvolucaoPontoAPI[];
+}
+
+export function evolucaoMinha(): Promise<EvolucaoMateriaAPI[]> {
+  return request<EvolucaoMateriaAPI[]>("/evolucao/minha");
+}
+
 export interface ExercicioAPI {
   habilidade_codigo: string;
   titulo: string;
