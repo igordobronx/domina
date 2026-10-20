@@ -88,5 +88,11 @@
   "86": "E4 Correção por IA — Nota estimada, feedback e nível de confiança",
   "87": "vitest.config.ts",
   "88": "vite-env.d.ts",
-  "89": "LGPD (Lei Geral de Proteção de Dados)"
+  "89": "LGPD (Lei Geral de Proteção de Dados)",
+  "90": "models/usuario.py",
+  "91": "routers/usuario.py",
+  "92": "routers/auth.py",
+  "93": "routers/turma.py",
+  "94": "PerfilEnum",
+  "95": "routers/dominio.py"
 }

@@ -123,6 +123,7 @@ def run_seed():
         escola = get_or_create(db, Escola, nome="COLEGIO PREPARA ENEM", defaults=dict(cnpj="12345678000190"))
 
         professor = usuario(db, escola, "Beto Andrade", "professor@domina.com", PerfilEnum.PROFESSOR)
+        usuario(db, escola, "Marina Alves", "gestor@domina.com", PerfilEnum.GESTOR)
 
         turma = get_or_create(db, Turma, escola_id=escola.id, nome="3º Ano A", defaults=dict(ano=2026))
         get_or_create(db, UsuarioTurma, usuario_id=professor.id, turma_id=turma.id,
@@ -145,6 +146,7 @@ def run_seed():
         print("\nseed ok")
         print(f"escola:    {escola.nome}")
         print(f"professor: professor@domina.com / {SENHA}")
+        print(f"gestor:    gestor@domina.com / {SENHA}")
 
         for info in ALUNOS:
             aluno = usuario(db, escola, info["nome"], info["email"], PerfilEnum.ALUNO)

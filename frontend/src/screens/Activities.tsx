@@ -61,11 +61,12 @@ export function Activities({
   const [search, setSearch] = useState("");
   const [criando, setCriando] = useState(false);
   // modo real: aluno autenticado de verdade manda/ve suas proprias atividades;
-  // professor autenticado de verdade revisa a fila real de submissoes
+  // professor/gestor autenticado de verdade ve a fila real de submissoes (so o professor corrige/aprova, RN-01)
   const real = !!currentUser && role === "aluno";
   const realProfessor = !!currentUser && role === "professor" && !!reviewOnly;
+  const realReviewer = !!currentUser && (role === "professor" || role === "gestor") && !!reviewOnly;
   const [realActivities, setRealActivities] = useState<Activity[] | null>(null);
-  const [loadingReal, setLoadingReal] = useState(real || realProfessor);
+  const [loadingReal, setLoadingReal] = useState(real || realReviewer);
   const recarregar = () => {
     if (real && currentUser) {
       setLoadingReal(true);
@@ -73,7 +74,7 @@ export function Activities({
         .then(setRealActivities)
         .catch(() => notify("Não foi possível carregar suas atividades."))
         .finally(() => setLoadingReal(false));
-    } else if (realProfessor) {
+    } else if (realReviewer) {
       setLoadingReal(true);
       carregarRevisoes()
         .then(setRealActivities)
@@ -81,10 +82,10 @@ export function Activities({
         .finally(() => setLoadingReal(false));
     }
   };
-  useEffect(recarregar, [real, realProfessor, currentUser?.id]);
-  const activities = real || realProfessor ? (realActivities ?? []) : state.activities;
+  useEffect(recarregar, [real, realReviewer, currentUser?.id]);
+  const activities = real || realReviewer ? (realActivities ?? []) : state.activities;
   const activity = activities.find((a) => a.id === selected);
-  if ((real || realProfessor) && loadingReal && !activity)
+  if ((real || realReviewer) && loadingReal && !activity)
     return (
       <Empty title="Carregando..." text="Buscando dados no servidor." />
     );
@@ -96,13 +97,14 @@ export function Activities({
         notify={notify}
       />
     );
-  if (activity && realProfessor)
+  if (activity && realReviewer)
     return (
       <RevisaoReal
         key={activity.id}
         activity={activity}
         onBack={() => select(null)}
         onApproved={() => { select(null); recarregar(); }}
+        readOnly={role === "gestor"}
       />
     );
   if (activity)
@@ -603,10 +605,12 @@ function RevisaoReal({
   activity: a,
   onBack,
   onApproved,
+  readOnly,
 }: {
   activity: Activity;
   onBack: () => void;
   onApproved: () => void;
+  readOnly?: boolean;
 }) {
   const [texto, setTexto] = useState<string | null>(null);
   const [correcao, setCorrecao] = useState<CorrecaoAPI | null>(null);
@@ -691,9 +695,11 @@ function RevisaoReal({
             {!correcao ? (
               <>
                 <p className="muted">Esta redação ainda não tem correção da IA.</p>
-                <Button icon={Sparkles} disabled={corrigindo} onPress={gerarCorrecao}>
-                  {corrigindo ? "Gerando correção..." : "Gerar correção com IA"}
-                </Button>
+                {!readOnly && (
+                  <Button icon={Sparkles} disabled={corrigindo} onPress={gerarCorrecao}>
+                    {corrigindo ? "Gerando correção..." : "Gerar correção com IA"}
+                  </Button>
+                )}
                 {error && (
                   <p role="alert" className="error">
                     {error}
@@ -715,7 +721,7 @@ function RevisaoReal({
                   {correcao.criterios.map((c) => (
                     <label key={c.codigo}>
                       <span>{c.codigo}</span>
-                      {!aprovada ? (
+                      {!aprovada && !readOnly ? (
                         <select
                           aria-label={`Nota da competência ${c.codigo}`}
                           value={notas[c.codigo] ?? c.nota}
@@ -734,8 +740,8 @@ function RevisaoReal({
                     </label>
                   ))}
                 </div>
-                <h3>{aprovada ? "Orientação enviada" : "Orientação ao aluno"}</h3>
-                {!aprovada ? (
+                <h3>{aprovada || readOnly ? "Orientação" : "Orientação ao aluno"}</h3>
+                {!aprovada && !readOnly ? (
                   <textarea
                     aria-label="Feedback do professor"
                     className="text-area"
@@ -744,14 +750,14 @@ function RevisaoReal({
                     onChange={(e) => setFeedback(e.target.value)}
                   />
                 ) : (
-                  <p className="feedback-text">{feedback}</p>
+                  <p className="feedback-text">{feedback || "Ainda sem orientação registrada."}</p>
                 )}
                 {error && (
                   <p role="alert" className="error">
                     {error}
                   </p>
                 )}
-                {!aprovada &&
+                {!aprovada && !readOnly &&
                   (confirmApproval ? (
                     <div className="confirmation">
                       <strong>Publicar esta correção?</strong>

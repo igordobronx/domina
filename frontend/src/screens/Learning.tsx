@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,6 +11,15 @@ import { topics, studyTasks } from "../data/demo";
 import type { DemoState } from "../types";
 import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
+import type { UsuarioAtual } from "../services/api";
+import { carregarDominioReal, type Recomendacao } from "../services/dominio";
+
+// so os temas que de fato existem como pratica hoje (ver data/demo.ts); as demais competencias
+// (C1, C2, C5) ainda nao tem exercicio guiado, entao a recomendacao aparece so no texto.
+const CODIGO_PARA_TOPICO: Record<string, string> = {
+  C3: "Argumentação",
+  C4: "Coesão textual",
+};
 
 export function Evolution() {
   const [subject, setSubject] = useState("Todas");
@@ -86,12 +95,28 @@ export function Studies({
   update,
   selected,
   select,
+  currentUser,
 }: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
   selected: string | null;
   select: (s: string | null) => void;
+  currentUser?: UsuarioAtual | null;
 }) {
+  const real = !!currentUser;
+  const [recomendacao, setRecomendacao] = useState<Recomendacao | null>(null);
+  useEffect(() => {
+    if (!real) return;
+    carregarDominioReal().then(({ recomendacao }) => setRecomendacao(recomendacao));
+  }, [real, currentUser?.id]);
+  const topicoRecomendado = recomendacao
+    ? CODIGO_PARA_TOPICO[recomendacao.habilidadeCodigo]
+    : null;
+  const tarefas = topicoRecomendado
+    ? [...studyTasks].sort((a, b) =>
+        (a.topic === topicoRecomendado ? 0 : 1) - (b.topic === topicoRecomendado ? 0 : 1),
+      )
+    : studyTasks;
   const task = studyTasks.find((t) => t.id === selected);
   if (task)
     return (
@@ -121,13 +146,16 @@ export function Studies({
         <div>
           <strong>Por que esses exercícios?</strong>
           <p>
-            Começamos pelos temas com maior espaço para evolução no seu mapa
-            demonstrativo.
+            {recomendacao
+              ? `Sua redação mostrou maior espaço para evoluir em ${recomendacao.habilidadeCodigo} (${recomendacao.tema}), hoje em ${recomendacao.percentual}%. Começamos por aí.`
+              : real
+                ? "Assim que o professor aprovar sua primeira correção, seu plano passa a seguir seu desempenho real."
+                : "Começamos pelos temas com maior espaço para evolução no seu mapa demonstrativo."}
           </p>
         </div>
       </div>
       <div className="study-grid">
-        {studyTasks.map((t, i) => (
+        {tarefas.map((t, i) => (
           <Card key={t.id} className="study-task">
             <div className="section-title">
               <span className="task-number">0{i + 1}</span>
@@ -136,6 +164,8 @@ export function Studies({
                   <Check size={13} />
                   Concluído
                 </Badge>
+              ) : t.topic === topicoRecomendado ? (
+                <Badge>Recomendado para você</Badge>
               ) : (
                 <Badge tone="neutral">{t.type}</Badge>
               )}

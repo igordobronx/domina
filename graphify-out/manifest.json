@@ -126,9 +126,9 @@
     "semantic_hash": ""
   },
   "backend/seed.py": {
-    "mtime": 1792498475.410039,
-    "seen": 1792498564.5981128,
-    "ast_hash": "a6f97e549498a7eecccd85b9fca0f9d7",
+    "mtime": 1792502796.8935897,
+    "seen": 1792502984.4582465,
+    "ast_hash": "25345f0e349d7777028b2c30e550f56a",
     "semantic_hash": ""
   },
   "backend/requirements.txt": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1792498406.1180508,
-    "seen": 1792498564.5981324,
-    "ast_hash": "3bec13897b7101435c123df72ad6bf8f",
+    "mtime": 1792502947.9095433,
+    "seen": 1792502984.458311,
+    "ast_hash": "993bc3829fe8b3a0ac51c598b078b1a1",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
@@ -276,9 +276,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Activities.tsx": {
-    "mtime": 1792496872.1942341,
-    "seen": 1792496919.324305,
-    "ast_hash": "1d8501bc4de833e634baeb02d9ecd384",
+    "mtime": 1792502866.4175656,
+    "seen": 1792502984.4583986,
+    "ast_hash": "b18e5e0815ddb50c93b5764d8ab8a378",
     "semantic_hash": ""
   },
   "frontend/src/screens/Dashboard.tsx": {
@@ -294,9 +294,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Learning.tsx": {
-    "mtime": 1792008998.5807838,
-    "seen": 1792096848.8795655,
-    "ast_hash": "99497ac737e7dbcdb9a535136ba7c161",
+    "mtime": 1792502786.2015939,
+    "seen": 1792502984.4584346,
+    "ast_hash": "f42bde4dc4745525009930e0e37836b7",
     "semantic_hash": ""
   },
   "frontend/src/screens/Management.tsx": {
@@ -324,9 +324,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/navigation.ts": {
-    "mtime": 1792008998.5847838,
-    "seen": 1792096848.8795702,
-    "ast_hash": "9139d111ff6b06ac9b6215ed1cb920f3",
+    "mtime": 1792502951.1215427,
+    "seen": 1792502984.4585357,
+    "ast_hash": "b017b818b51f43c6c8faed39c03804f5",
     "semantic_hash": ""
   },
   "frontend/src/theme.ts": {

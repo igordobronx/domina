@@ -69,7 +69,7 @@ const navItems: {
     id: "revisoes",
     label: "Revisões",
     icon: ClipboardCheck,
-    roles: ["professor"],
+    roles: ["professor", "gestor"],
   },
   {
     id: "turmas",
@@ -522,6 +522,7 @@ export function App() {
                 update={update}
                 selected={study}
                 select={setStudy}
+                currentUser={currentUser}
               />
             )}
             {page === "turmas" && <Classes state={state} />}
