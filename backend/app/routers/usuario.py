@@ -25,6 +25,15 @@ def meu_usuario(usuario_atual: Usuario = Depends(get_current_user), db: Session 
     return _resposta(db, usuario_atual)
 
 
+# lista a escola toda, para o gestor escolher quem matricular numa turma
+@router.get("", response_model=list[UsuarioResponse])
+def listar_usuarios(usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    if usuario_atual.perfil != PerfilEnum.GESTOR:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "somente gestores podem listar usuarios")
+    usuarios = db.query(Usuario).filter_by(escola_id=usuario_atual.escola_id)
+    return [_resposta(db, u) for u in usuarios]
+
+
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def criar_usuario(payload: CriarUsuarioRequest, usuario_atual: Usuario = Depends(get_current_user),
                    db: Session = Depends(get_db)):

@@ -525,7 +525,9 @@ export function App() {
                 currentUser={currentUser}
               />
             )}
-            {page === "turmas" && <Classes state={state} />}
+            {page === "turmas" && (
+              <Classes state={state} role={role} currentUser={currentUser} notify={notify} />
+            )}
             {page === "materiais" && (
               <Materials state={state} update={update} notify={notify} />
             )}

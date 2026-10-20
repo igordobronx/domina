@@ -126,6 +126,44 @@ export function listarTurmasMinhas(): Promise<TurmaAPI[]> {
   return request<TurmaAPI[]>("/turmas/minhas");
 }
 
+export function criarTurma(payload: { nome: string; ano: number }): Promise<TurmaAPI> {
+  return request<TurmaAPI>("/turmas", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export interface MembroTurmaAPI {
+  id: string;
+  nome: string;
+  email: string;
+  papel: "ALUNO" | "PROFESSOR";
+}
+
+export function membrosTurma(turmaId: string): Promise<MembroTurmaAPI[]> {
+  return request<MembroTurmaAPI[]>(`/turmas/${turmaId}/membros`);
+}
+
+export function matricular(
+  turmaId: string,
+  payload: { usuario_id: string; papel: "ALUNO" | "PROFESSOR" },
+): Promise<TurmaAPI> {
+  return request<TurmaAPI>(`/turmas/${turmaId}/matricular`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function listarUsuarios(): Promise<UsuarioAtual[]> {
+  return request<UsuarioAtual[]>("/usuarios");
+}
+
+export function criarUsuario(payload: {
+  nome: string;
+  email: string;
+  senha: string;
+  perfil: "ALUNO" | "PROFESSOR";
+}): Promise<UsuarioAtual> {
+  return request<UsuarioAtual>("/usuarios", { method: "POST", body: JSON.stringify(payload) });
+}
+
 export interface MateriaAPI {
   id: string;
   nome: string;

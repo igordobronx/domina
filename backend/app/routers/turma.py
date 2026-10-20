@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
 from app.models.usuario import Turma, Usuario, UsuarioTurma
 from app.routers.submissoes import _na_turma
-from app.schemas.turma import CriarTurmaRequest, MatricularRequest, TurmaResponse
+from app.schemas.turma import CriarTurmaRequest, MatricularRequest, MembroTurmaResponse, TurmaResponse
 
 router = APIRouter(prefix="/turmas", tags=["turmas"])
 
@@ -43,6 +43,26 @@ def minhas_turmas(usuario_atual: Usuario = Depends(get_current_user), db: Sessio
     else:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores usam esta rota.")
     return list(turmas)
+
+
+# literal: GET /turmas/minhas fica antes e nao conflita com estas, que tem 2 segmentos
+@router.get("/{turma_id}/membros", response_model=list[MembroTurmaResponse])
+def membros_turma(turma_id, usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    turma = db.get(Turma, turma_id)
+    if not turma or turma.escola_id != usuario_atual.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
+    if usuario_atual.perfil not in (PerfilEnum.GESTOR, PerfilEnum.PROFESSOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores veem os membros da turma.")
+
+    linhas = (
+        db.query(Usuario, UsuarioTurma.papel)
+        .join(UsuarioTurma, UsuarioTurma.usuario_id == Usuario.id)
+        .filter(UsuarioTurma.turma_id == turma_id)
+    )
+    return [
+        MembroTurmaResponse(id=u.id, nome=u.nome, email=u.email, papel=papel.value)
+        for u, papel in linhas
+    ]
 
 
 @router.post("/{turma_id}/matricular", response_model=TurmaResponse, status_code=status.HTTP_201_CREATED)

@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1792502947.9095433,
-    "seen": 1792502984.458311,
-    "ast_hash": "993bc3829fe8b3a0ac51c598b078b1a1",
+    "mtime": 1792506287.885783,
+    "seen": 1792506422.0847926,
+    "ast_hash": "1bbec264618ace8f7267b03090fd99b0",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
@@ -300,9 +300,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Management.tsx": {
-    "mtime": 1792008998.5807838,
-    "seen": 1792096848.8795667,
-    "ast_hash": "9dab7b0a3f1927fb577c5529de000bf3",
+    "mtime": 1792506346.7977915,
+    "seen": 1792506422.0848043,
+    "ast_hash": "ffc1d3c2253d0f0b017a6c39b6191ebe",
     "semantic_hash": ""
   },
   "frontend/src/screens/Settings.tsx": {
@@ -480,21 +480,21 @@
     "semantic_hash": ""
   },
   "backend/app/routers/turma.py": {
-    "mtime": 1792496756.550231,
-    "seen": 1792496919.324259,
-    "ast_hash": "dbaf23d88189365b9c07586ccd8d93df",
+    "mtime": 1792506218.345773,
+    "seen": 1792506422.0847676,
+    "ast_hash": "f403380e9b80b999b762b8a8c6c36b25",
     "semantic_hash": ""
   },
   "backend/app/routers/usuario.py": {
-    "mtime": 1792498193.402086,
-    "seen": 1792498564.5980523,
-    "ast_hash": "df5de0fbf963366e89a4e9325681a069",
+    "mtime": 1792506225.493774,
+    "seen": 1792506422.0847697,
+    "ast_hash": "0960f3467765d1fec1637dc2da0b0134",
     "semantic_hash": ""
   },
   "backend/app/schemas/turma.py": {
-    "mtime": 1792496764.9902313,
-    "seen": 1792496919.3242736,
-    "ast_hash": "26a08e7545db4a9d4d499005afb2fd97",
+    "mtime": 1792506206.0257711,
+    "seen": 1792506422.084779,
+    "ast_hash": "6af29ff92bc72f86d63425d2aea4dc4a",
     "semantic_hash": ""
   },
   "backend/app/schemas/usuario.py": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1792498267.8780737,
-    "seen": 1792498564.5981805,
-    "ast_hash": "7455f7e36513c176c0b2eaa70f15dec0",
+    "mtime": 1792506251.9377778,
+    "seen": 1792506422.0848067,
+    "ast_hash": "5b68ef699cd91aeb1fdbba5c9eecc4fe",
     "semantic_hash": ""
   },
   "frontend/src/services/atividades.ts": {
