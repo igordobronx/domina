@@ -56,6 +56,13 @@ function todosOsPontos(criterios: { codigo: string; pontos: Ponto[] }[]) {
   return criterios.flatMap((c) => c.pontos.map((p) => ({ ...p, criterio: c.codigo })));
 }
 
+// so exatas por foto tem caixa (redacao sempre aponta no texto transcrito, nunca na imagem
+// crua, mesmo quando o envio original foi uma foto) -- decide pela caixa existir de verdade,
+// nao pelo tipo de envio, senao a redacao por foto mostraria a imagem crua sem destaque nenhum
+function temCaixa(criterios: { codigo: string; pontos: Ponto[] }[]): boolean {
+  return todosOsPontos(criterios).some((p) => p.caixa);
+}
+
 // destaca, no texto completo, o trecho de cada ponto (acerto em verde, erro em vermelho).
 // match exato; se a IA citou algo que nao bate 100% com o texto (ruido de OCR, paragrafo
 // levemente diferente) esse ponto simplesmente nao fica destacado, sem erro
@@ -809,7 +816,7 @@ function ActivityDetail({
             <Card>
               <SectionTitle title="Texto enviado" />
               <div className="essay">
-                {a.tipoEnvio === "IMAGEM" && a.submissaoId && a.criterios ? (
+                {a.criterios && temCaixa(a.criterios) && a.submissaoId ? (
                   <ImagemComCaixas submissaoId={a.submissaoId} criterios={a.criterios} />
                 ) : a.text && a.criterios ? (
                   destacarTrechos(a.text, a.criterios)
@@ -849,7 +856,6 @@ function RevisaoReal({
   readOnly?: boolean;
 }) {
   const [texto, setTexto] = useState<string | null>(null);
-  const [tipoEnvio, setTipoEnvio] = useState<string | null>(null);
   const [correcao, setCorrecao] = useState<CorrecaoAPI | null>(null);
   const [notas, setNotas] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState("");
@@ -870,7 +876,6 @@ function RevisaoReal({
     Promise.all([verSubmissao(a.id), verCorrecao(a.id).catch(() => null)]).then(([s, c]) => {
       if (!ativo) return;
       setTexto(s.texto_confirmado ?? s.texto_ocr ?? "");
-      setTipoEnvio(s.tipo_envio);
       if (c) aplicarCorrecao(c);
       setCarregando(false);
     });
@@ -1043,7 +1048,7 @@ function RevisaoReal({
           <Card>
             <SectionTitle title="Texto enviado" />
             <div className="essay">
-              {tipoEnvio === "IMAGEM" && correcao ? (
+              {correcao && temCaixa(correcao.criterios) ? (
                 <ImagemComCaixas submissaoId={a.id} criterios={correcao.criterios} />
               ) : texto && correcao ? (
                 destacarTrechos(texto, correcao.criterios)
