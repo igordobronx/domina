@@ -1,0 +1,16 @@
+amostra 53 (0 nota 1000 + 0 UOL), ja feitas 42, modelo gemini-3.5-flash-lite
+inep 43 real=1000 ia=960 (20.1s)
+  44: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+inep 44 real=1000 ia=1000 (18.9s)
+  45: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+inep 45 real=840 ia=960 (17.3s)
+  46: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+inep 46 real=440 ia=400 (19.8s)
+  47: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+inep 47 real=640 ia=560 (14.7s)
+inep 48 real=620 ia=720 (13.2s)
+inep 49 real=800 ia=640 (4.2s)
+inep 50 real=880 ia=880 (4.2s)
+inep 51 real=560 ia=480 (4.3s)
+inep 52 real=920 ia=960 (3.7s)
+inep 53 real=840 ia=880 (7.6s)

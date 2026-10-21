@@ -70,8 +70,10 @@ for grupo, r in amostra:
         try:
             corpo = chamar(PROMPT.format(tema=r[2], texto=r[3]))
             comp = corpo["competencias"]
+            if isinstance(comp, list):  # formato atual do prompt: lista com "codigo" C1..C5
+                comp = {str(x["codigo"]).lower(): x for x in comp}
             ia = [float(comp[c]["nota"]) for c in CODIGOS]
-            justificativas = [comp[c]["justificativa"] for c in CODIGOS]
+            justificativas = [comp[c].get("justificativa") or comp[c].get("analise", "") for c in CODIGOS]
             confianca = float(corpo.get("confianca", 0))
             break
         except TimeoutError as e:

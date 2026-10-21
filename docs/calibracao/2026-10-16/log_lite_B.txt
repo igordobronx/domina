@@ -1,0 +1,62 @@
+amostra 50 (20 nota 1000 + 30 UOL), ja feitas 0, modelo gemini-3.5-flash-lite
+mil 2287 real=1000 ia=960 (8.0s)
+mil 2152 real=1000 ia=960 (9.2s)
+mil 2130 real=1000 ia=1000 (9.4s)
+mil 2313 real=1000 ia=1000 (18.6s)
+mil 2194 real=1000 ia=960 (17.7s)
+mil 2186 real=1000 ia=1000 (6.7s)
+  2181: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+mil 2181 real=1000 ia=1000 (7.5s)
+mil 2159 real=1000 ia=1000 (9.6s)
+mil 2312 real=1000 ia=1000 (11.8s)
+mil 2150 real=1000 ia=1000 (6.7s)
+mil 2297 real=1000 ia=960 (10.0s)
+mil 2263 real=1000 ia=1000 (7.9s)
+mil 2146 real=1000 ia=920 (7.6s)
+  2275: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+mil 2275 real=1000 ia=1000 (8.2s)
+mil 2232 real=1000 ia=1000 (8.1s)
+mil 2132 real=1000 ia=960 (7.6s)
+mil 2131 real=1000 ia=960 (7.9s)
+mil 2147 real=1000 ia=960 (9.8s)
+  2179: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+mil 2179 real=1000 ia=1000 (7.5s)
+mil 2183 real=1000 ia=960 (7.1s)
+uol 1707 real=350 ia=600 (11.3s)
+uol 1907 real=0 ia=360 (9.4s)
+uol 0116 real=300 ia=160 (8.4s)
+uol 1821 real=350 ia=720 (8.7s)
+uol 0672 real=150 ia=440 (7.7s)
+uol 2123 real=250 ia=520 (10.6s)
+uol 2003 real=250 ia=600 (8.1s)
+uol 2100 real=300 ia=760 (7.9s)
+uol 1790 real=250 ia=520 (5.4s)
+uol 1472 real=350 ia=520 (8.4s)
+  0472: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+uol 0472 real=600 ia=480 (7.7s)
+  1053: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+uol 1053 real=550 ia=600 (10.0s)
+uol 1419 real=500 ia=560 (6.8s)
+uol 0623 real=400 ia=640 (12.4s)
+uol 2105 real=600 ia=560 (9.3s)
+  0010: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+uol 0010 real=550 ia=480 (7.8s)
+uol 1931 real=500 ia=720 (7.7s)
+uol 2101 real=550 ia=680 (10.4s)
+uol 0291 real=600 ia=600 (6.7s)
+  1711: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+  1711: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+uol 1711 real=500 ia=760 (29.7s)
+  1031: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+uol 1031 real=750 ia=960 (7.0s)
+  0850: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+uol 0850 real=1000 ia=640 (8.9s)
+uol 0723 real=1000 ia=960 (6.2s)
+uol 0440 real=800 ia=600 (26.3s)
+uol 0577 real=950 ia=720 (10.8s)
+uol 1838 real=700 ia=800 (8.3s)
+  0841: ServerError 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently exp
+uol 0841 real=850 ia=720 (5.8s)
+uol 0339 real=800 ia=520 (9.8s)
+uol 0326 real=750 ia=680 (9.7s)
+uol 0946 real=850 ia=880 (8.3s)

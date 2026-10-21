@@ -1,0 +1,20 @@
+Calibracao 16/10/2026 - prompt da correcao (Gemini 3.5 flash-lite, temperatura 0)
+
+Base externa: essays/base_teste_externa.xlsm (80 redacoes: 50 AES-ENEM/USP com 3 notas humanas, 30 Essay-BR).
+Montada por monta_base_externa.py; rodada por roda_externa.py (de backend/); analisada por analisa_externa.py.
+Nenhuma nota e oficial do INEP: sao de corretores dos sites e de 2 corretores extras (AES-ENEM).
+
+AES-ENEM, distancia media na nota total (menor = melhor)
+                              v4b   v6
+  IA x media dos 3 humanos    105   97
+  IA x corretor A             118  106
+  IA x corretor B             112   98
+  humanos entre si: corretor A x corretor B = 104 | site x A = 201 | site x B = 194
+  spearman IA x media humana: v4b 0,71 | v6 0,78 (A x B: 0,73)
+
+Essay-BR (so nota do site): distancia v4b 161 | v6 133; spearman v4b 0,51 | v6 0,67
+
+Conclusao: v6 (prompt_v6.txt) concorda com os humanos tanto quanto eles entre si; foi para backend/app/correcao.py.
+Ponto fraco: C5 (IA da ~23 pontos a menos que os humanos).
+Na base antiga (UOL 2007-2016, escala 0/50/.../200) o v6 parecia pior que a v4b (lite_v4b x lite_v6),
+mas essa base e menos confiavel (outra escala, temas e epoca).
