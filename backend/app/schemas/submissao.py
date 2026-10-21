@@ -35,6 +35,8 @@ class CriterioResponse(BaseModel):
     nota: float
     nota_professor: float | None
     justificativa: str
+    trecho: str | None = None
+    caixa: dict | None = None
 
 
 class CorrecaoResponse(BaseModel):
@@ -156,3 +158,5 @@ class MinhaSubmissaoResponse(BaseModel):
     nota: float | None
     feedback: str | None
     criterios: list[CriterioResponse] | None = None  # idem; nota_professor vem nulo ate aprovar
+    texto: str | None = None  # texto confirmado (ou OCR, se ainda nao confirmado)
+    tipo_envio: str  # "TEXTO" | "IMAGEM" -- pro frontend saber se busca a foto original

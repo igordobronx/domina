@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   Check,
@@ -30,6 +30,7 @@ import {
   enviarTexto,
   listarMaterias,
   listarTurmasMinhas,
+  urlImagemSubmissao,
   verCorrecao,
   verSubmissao,
   type AtividadeAPI,
@@ -41,6 +42,83 @@ import {
 import { carregarAtividadesDoAluno } from "../services/atividades";
 import { carregarRevisoes } from "../services/revisoes";
 import type { UsuarioAtual } from "../services/api";
+
+// cores por indice de criterio (C1..C5 ou Q1..Qn), reaproveitadas no texto e na foto
+const CORES_TRECHO = ["trecho-0", "trecho-1", "trecho-2", "trecho-3", "trecho-4", "trecho-5"];
+
+// destaca, no texto completo, o trecho citado por cada criterio (match exato; se a IA citou
+// algo que nao bate 100% com o texto -- ruido de OCR, paragrafo levemente diferente -- esse
+// item simplesmente nao fica destacado, sem erro)
+function destacarTrechos(
+  texto: string,
+  criterios: { trecho: string | null }[],
+): ReactNode[] {
+  const achados = criterios
+    .map((c, i) => ({ i, trecho: (c.trecho ?? "").trim() }))
+    .filter((t) => t.trecho && texto.includes(t.trecho))
+    .map((t) => ({ ...t, pos: texto.indexOf(t.trecho) }))
+    .sort((a, b) => a.pos - b.pos);
+
+  const partes: ReactNode[] = [];
+  let cursor = 0;
+  for (const { i, trecho, pos } of achados) {
+    if (pos < cursor) continue; // trechos sobrepostos: fica so com o primeiro encontrado
+    partes.push(texto.slice(cursor, pos));
+    partes.push(
+      <mark key={i} className={`trecho ${CORES_TRECHO[i % CORES_TRECHO.length]}`}>
+        {trecho}
+      </mark>,
+    );
+    cursor = pos + trecho.length;
+  }
+  partes.push(texto.slice(cursor));
+  return partes;
+}
+
+// foto original (exatas por imagem) com uma caixa por questao, posicionada pela IA
+function ImagemComCaixas({
+  submissaoId,
+  criterios,
+}: {
+  submissaoId: string;
+  criterios: {
+    justificativa: string;
+    caixa: { x: number; y: number; largura: number; altura: number } | null;
+  }[];
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let ativo = true;
+    urlImagemSubmissao(submissaoId)
+      .then((u) => ativo && setUrl(u))
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
+  }, [submissaoId]);
+
+  if (!url) return <p className="tiny">Carregando foto...</p>;
+  return (
+    <div className="imagem-com-caixas">
+      <img src={url} alt="Prova enviada" />
+      {criterios.map((c, i) =>
+        c.caixa ? (
+          <div
+            key={i}
+            className={`caixa ${CORES_TRECHO[i % CORES_TRECHO.length]}`}
+            title={c.justificativa}
+            style={{
+              left: `${c.caixa.x * 100}%`,
+              top: `${c.caixa.y * 100}%`,
+              width: `${c.caixa.largura * 100}%`,
+              height: `${c.caixa.altura * 100}%`,
+            }}
+          />
+        ) : null,
+      )}
+    </div>
+  );
+}
 
 type Props = {
   state: DemoState;
@@ -634,16 +712,22 @@ function ActivityDetail({
                       <strong>{n}</strong>
                     )}
                     <small>
-                      {a.kind === "redacao"
-                        ? [
-                            "Norma culta",
-                            "Tema",
-                            "Argumentação",
-                            "Coesão",
-                            "Intervenção",
-                          ][i]
-                        : "Raciocínio"}
+                      {a.criterios?.[i]?.nome ??
+                        (a.kind === "redacao"
+                          ? [
+                              "Norma culta",
+                              "Tema",
+                              "Argumentação",
+                              "Coesão",
+                              "Intervenção",
+                            ][i]
+                          : "Raciocínio")}
                     </small>
+                    {a.criterios?.[i]?.justificativa && (
+                      <small className="justificativa-texto">
+                        {a.criterios[i].justificativa}
+                      </small>
+                    )}
                   </label>
                 ))}
               </div>
@@ -715,15 +799,21 @@ function ActivityDetail({
             <Card>
               <SectionTitle title="Texto enviado" />
               <div className="essay">
-                {a.text || (
-                  <>
-                    <FileText size={24} />
-                    <p>{a.fileName}</p>
-                    <p>
-                      O arquivo não é armazenado neste protótipo. A visualização
-                      e o OCR dependem da integração.
-                    </p>
-                  </>
+                {a.tipoEnvio === "IMAGEM" && a.submissaoId && a.criterios ? (
+                  <ImagemComCaixas submissaoId={a.submissaoId} criterios={a.criterios} />
+                ) : a.text && a.criterios ? (
+                  destacarTrechos(a.text, a.criterios)
+                ) : (
+                  a.text || (
+                    <>
+                      <FileText size={24} />
+                      <p>{a.fileName}</p>
+                      <p>
+                        O arquivo não é armazenado neste protótipo. A visualização
+                        e o OCR dependem da integração.
+                      </p>
+                    </>
+                  )
                 )}
               </div>
             </Card>
@@ -749,6 +839,7 @@ function RevisaoReal({
   readOnly?: boolean;
 }) {
   const [texto, setTexto] = useState<string | null>(null);
+  const [tipoEnvio, setTipoEnvio] = useState<string | null>(null);
   const [correcao, setCorrecao] = useState<CorrecaoAPI | null>(null);
   const [notas, setNotas] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState("");
@@ -769,6 +860,7 @@ function RevisaoReal({
     Promise.all([verSubmissao(a.id), verCorrecao(a.id).catch(() => null)]).then(([s, c]) => {
       if (!ativo) return;
       setTexto(s.texto_confirmado ?? s.texto_ocr ?? "");
+      setTipoEnvio(s.tipo_envio);
       if (c) aplicarCorrecao(c);
       setCarregando(false);
     });
@@ -884,6 +976,7 @@ function RevisaoReal({
                           <strong>{notas[c.codigo]}</strong>
                         )}
                         <small>{c.nome}</small>
+                        {c.justificativa && <small className="justificativa-texto">{c.justificativa}</small>}
                       </label>
                     );
                   })}
@@ -939,7 +1032,15 @@ function RevisaoReal({
           </Card>
           <Card>
             <SectionTitle title="Texto enviado" />
-            <div className="essay">{texto}</div>
+            <div className="essay">
+              {tipoEnvio === "IMAGEM" && correcao ? (
+                <ImagemComCaixas submissaoId={a.id} criterios={correcao.criterios} />
+              ) : texto && correcao ? (
+                destacarTrechos(texto, correcao.criterios)
+              ) : (
+                texto
+              )}
+            </div>
           </Card>
         </div>
       )}

@@ -172,6 +172,9 @@ C5 - Proposta de intervenção respeitando os direitos humanos
 - Na justificativa de cada competência, cite pelo menos um trecho da redação. Se a nota for
   menor que 200, diga o problema concreto (com trecho) que impediu o nível acima. Se a nota for
   200, diga por que atinge o máximo e NÃO sugira melhorias: no 200 não falta nada.
+- "trecho": copie EXATAMENTE (sem corrigir nem resumir) o trecho da redação que você citou na
+  justificativa dessa competência — vai ser usado para destacar esse pedaço na tela. Se não
+  houver um trecho específico citável (ex.: fuga total ao tema), deixe "".
 - "confianca" (0 a 1): o quanto você está seguro da nota total. Use valores baixos se o texto
   estiver incompleto, muito ilegível, perto de fugir do tema, ou se alguma competência ficou
   genuinamente no limiar entre dois níveis.
@@ -180,11 +183,11 @@ C5 - Proposta de intervenção respeitando os direitos humanos
 Responda em JSON com esta estrutura:
 {{
   "competencias": [
-    {{"codigo": "C1", "analise": "...", "nota": 0, "justificativa": "..."}},
-    {{"codigo": "C2", "analise": "...", "nota": 0, "justificativa": "..."}},
-    {{"codigo": "C3", "analise": "...", "nota": 0, "justificativa": "..."}},
-    {{"codigo": "C4", "analise": "...", "nota": 0, "justificativa": "..."}},
-    {{"codigo": "C5", "analise": "...", "nota": 0, "justificativa": "..."}}
+    {{"codigo": "C1", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
+    {{"codigo": "C2", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
+    {{"codigo": "C3", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
+    {{"codigo": "C4", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
+    {{"codigo": "C5", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}}
   ],
   "confianca": 0.0,
   "feedback_geral": "..."
@@ -203,6 +206,7 @@ class CompetenciaIA(BaseModel):
     analise: str  # evidencias/raciocinio da Etapa 1, ANTES da nota -- forca pensar antes de decidir
     nota: int
     justificativa: str
+    trecho: str  # copia literal citada na justificativa, pra destacar na tela (pode ser "")
 
     @field_validator("nota")
     @classmethod

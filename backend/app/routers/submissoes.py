@@ -1,8 +1,10 @@
 import logging
+import mimetypes
 import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status, UploadFile
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app import correcao as ia
@@ -268,7 +270,7 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
                 CriterioResponse(
                     codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
                     nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
-                    justificativa=c.justificativa,
+                    justificativa=c.justificativa, trecho=c.trecho, caixa=c.caixa,
                 )
                 for c, t in linhas
             ]
@@ -281,6 +283,8 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
             nota=float(correcao.nota_professor if aprovada else correcao.nota_ia) if correcao else None,
             feedback=correcao.feedback if correcao else None,
             criterios=criterios,
+            texto=s.texto_confirmado or s.texto_ocr,
+            tipo_envio=s.tipo_envio.value,
         ))
     return resposta
 
@@ -288,6 +292,20 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
 @router.get("/submissoes/{submissao_id}", response_model=SubmissaoResponse)
 def ver_submissao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     return _submissao_visivel(db, submissao_id, usuario)
+
+
+# serve a foto original (RF-11): usada para desenhar a caixa da IA em cima da imagem.
+# mesma regra de visibilidade das outras rotas de submissao (aluno dono, professor, gestor).
+@router.get("/submissoes/{submissao_id}/imagem")
+def ver_imagem_submissao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    submissao = _submissao_visivel(db, submissao_id, usuario)
+    if submissao.tipo_envio != TipoEnvioEnum.IMAGEM or not submissao.conteudo_bruto:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Esta submissão não tem foto.")
+    caminho = Path(submissao.conteudo_bruto)
+    if not caminho.exists():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Foto não encontrada.")
+    mime, _ = mimetypes.guess_type(str(caminho))
+    return FileResponse(caminho, media_type=mime or "image/jpeg")
 
 
 @router.put("/submissoes/{submissao_id}/confirmar", response_model=SubmissaoResponse)
@@ -327,7 +345,7 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
             CriterioResponse(
                 codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
                 nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
-                justificativa=c.justificativa,
+                justificativa=c.justificativa, trecho=c.trecho, caixa=c.caixa,
             )
             for c, t in criterios
         ],
@@ -396,7 +414,13 @@ def corrigir_submissao(
     try:
         if exatas:
             questoes = [(t.habilidade_codigo, t.nome, t.resposta_correta) for t in temas.values()]
-            resultado, modelo = ia_exatas.corrigir(submissao.texto_confirmado, materia.nome, questoes)
+            imagem = None
+            if submissao.tipo_envio == TipoEnvioEnum.IMAGEM and submissao.conteudo_bruto:
+                caminho_foto = Path(submissao.conteudo_bruto)
+                if caminho_foto.exists():
+                    mime, _ = mimetypes.guess_type(str(caminho_foto))
+                    imagem = (caminho_foto.read_bytes(), mime or "image/jpeg")
+            resultado, modelo = ia_exatas.corrigir(submissao.texto_confirmado, materia.nome, questoes, imagem=imagem)
             itens = resultado.questoes
             versao_prompt = ia_exatas.VERSAO_PROMPT
             modelo_principal = ia_exatas.MODELO_PRINCIPAL
@@ -435,7 +459,11 @@ def corrigir_submissao(
     db.add(correcao)
     db.flush()
     for i in itens:
-        db.add(CorrecaoCriterio(correcao_id=correcao.id, tema_id=temas[i.codigo].id, nota=i.nota, justificativa=i.justificativa))
+        caixa = getattr(i, "caixa", None)
+        db.add(CorrecaoCriterio(
+            correcao_id=correcao.id, tema_id=temas[i.codigo].id, nota=i.nota, justificativa=i.justificativa,
+            trecho=i.trecho, caixa=caixa.model_dump() if caixa else None,
+        ))
     # ponytail: estimativa de tokens por tamanho do texto (sem usage_metadata real da API ainda)
     tokens_estimados = len(submissao.texto_confirmado) // 4
     registrar_uso(db, usuario.escola_id, tokens_llm=tokens_estimados)

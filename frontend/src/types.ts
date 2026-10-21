@@ -28,6 +28,17 @@ export interface Activity {
   aiScores?: number[];
   scores?: number[];
   feedback?: string;
+  // por criterio (competencia/questao): usado para destacar o trecho citado pela IA no texto,
+  // ou a caixa na foto (so em exatas enviadas por imagem)
+  criterios?: {
+    codigo: string;
+    nome: string;
+    justificativa: string;
+    trecho: string | null;
+    caixa: { x: number; y: number; largura: number; altura: number } | null;
+  }[];
+  // "TEXTO" | "IMAGEM": se "IMAGEM", a foto original pode ser buscada por submissaoId
+  tipoEnvio?: string;
 }
 export interface Topic {
   name: string;

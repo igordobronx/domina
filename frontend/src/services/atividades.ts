@@ -46,6 +46,9 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
       valorTotal: a.valor_total,
       scores: submissao.criterios ? submissao.criterios.map((c) => c.nota_professor ?? c.nota) : undefined,
       feedback: submissao.feedback ?? undefined,
+      text: submissao.texto ?? undefined,
+      criterios: submissao.criterios ?? undefined,
+      tipoEnvio: submissao.tipo_envio,
     };
   });
 }

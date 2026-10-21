@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.config import settings
 from app.correcao import NOTAS_VALIDAS
-from app.ocr.gemini import gerar
+from app.ocr.gemini import gerar, reduzir
 
 VERSAO_PROMPT = "exatas-v1"
 MODELO_PRINCIPAL = settings.GEMINI_MODEL
@@ -38,6 +38,10 @@ gabarito, 0 se não bate. Só use valores intermediários (40, 80, 120, 160) se 
 múltiplas partes e o aluno acertou só parte delas. Na justificativa, cite objetivamente a
 resposta que o aluno deu e a resposta do gabarito, em 1-2 frases.
 
+"trecho": copie literalmente, da transcrição das respostas do aluno acima, o pedaço que
+corresponde à resposta daquela questão (vai ser usado para destacar esse pedaço na tela). Se
+não achar nada que corresponda, deixe "".
+{instrucao_caixa}
 "confianca" (0 a 1): o quanto você está seguro de ter identificado corretamente a resposta do
 aluno para CADA questão (baixa se a letra/transcrição estiver ambígua, incompleta, ou se
 alguma questão não foi respondida).
@@ -45,16 +49,35 @@ alguma questão não foi respondida).
 Responda em JSON com esta estrutura, uma entrada por questão, na mesma ordem recebida:
 {{
   "questoes": [
-    {{"codigo": "Q1", "nota": 200, "justificativa": "..."}}
+    {{"codigo": "Q1", "nota": 200, "justificativa": "...", "trecho": "..."{exemplo_caixa}}}
   ],
   "confianca": 0.0
 }}"""
+
+INSTRUCAO_CAIXA = """
+"caixa": além do trecho, a imagem enviada é a prova original do aluno. Para cada questão,
+diga também ONDE na imagem está a resposta daquela questão, como uma caixa delimitadora:
+{"x": 0.0, "y": 0.0, "largura": 0.0, "altura": 0.0}, todos os valores entre 0 e 1 (frações
+da largura/altura da imagem inteira; x/y é o canto superior-esquerdo da caixa). Se não
+conseguir localizar com confiança, omita "caixa" ou deixe null -- não invente uma posição.
+"""
+EXEMPLO_CAIXA = ', "caixa": {"x": 0.1, "y": 0.2, "largura": 0.3, "altura": 0.1}'
+
+
+class CaixaIA(BaseModel):
+    # bounding box normalizada (0..1) de onde a resposta aparece na foto da prova
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+    largura: float = Field(ge=0, le=1)
+    altura: float = Field(ge=0, le=1)
 
 
 class QuestaoCorrigida(BaseModel):
     codigo: str
     nota: float
     justificativa: str
+    trecho: str = ""  # resposta literal transcrita, pra destacar quando nao ha foto
+    caixa: CaixaIA | None = None  # so quando a resposta veio por foto (ver corrigir())
 
     @field_validator("nota")
     @classmethod
@@ -69,13 +92,32 @@ class ResultadoExatasIA(BaseModel):
     confianca: float = Field(ge=0, le=1)
 
 
-def corrigir(respostas_aluno: str, materia_nome: str, questoes: list[tuple[str, str, str]]) -> tuple[ResultadoExatasIA, str]:
+def corrigir(
+    respostas_aluno: str,
+    materia_nome: str,
+    questoes: list[tuple[str, str, str]],
+    imagem: tuple[bytes, str] | None = None,
+) -> tuple[ResultadoExatasIA, str]:
     # questoes: lista de (codigo, enunciado, resposta_correta), na ordem em que serao exibidas
+    # imagem: (bytes, mime_type) da foto original, so quando a resposta foi enviada por foto --
+    # nesse caso a IA tambem devolve "caixa" (onde na foto esta cada resposta)
     texto_questoes = "\n".join(
         f"{codigo}) {enunciado}\n   Gabarito: {resposta}" for codigo, enunciado, resposta in questoes
     )
+    prompt = PROMPT.format(
+        materia=materia_nome,
+        questoes=texto_questoes,
+        respostas=respostas_aluno,
+        instrucao_caixa=INSTRUCAO_CAIXA if imagem else "",
+        exemplo_caixa=EXEMPLO_CAIXA if imagem else "",
+    )
+    if imagem:
+        imagem_bytes, mime_type = reduzir(*imagem)
+        contents = [types.Part.from_bytes(data=imagem_bytes, mime_type=mime_type), prompt]
+    else:
+        contents = prompt
     response, modelo = gerar(
-        PROMPT.format(materia=materia_nome, questoes=texto_questoes, respostas=respostas_aluno),
+        contents,
         types.GenerateContentConfig(
             temperature=0, response_mime_type="application/json", response_schema=ResultadoExatasIA,
         ),

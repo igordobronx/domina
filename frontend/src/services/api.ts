@@ -104,12 +104,21 @@ export interface AtividadeAPI {
   valor_total: number;
 }
 
+export interface CaixaAPI {
+  x: number;
+  y: number;
+  largura: number;
+  altura: number;
+}
+
 export interface CriterioAPI {
   codigo: string;
   nome: string;
   nota: number;
   nota_professor: number | null;
   justificativa: string;
+  trecho: string | null;
+  caixa: CaixaAPI | null;
 }
 
 export interface MinhaSubmissaoAPI {
@@ -121,6 +130,8 @@ export interface MinhaSubmissaoAPI {
   nota: number | null;
   feedback: string | null;
   criterios: CriterioAPI[] | null;
+  texto: string | null;
+  tipo_envio: string;
 }
 
 export function listarAtividades(): Promise<AtividadeAPI[]> {
@@ -246,6 +257,17 @@ export interface SubmissaoAPI {
 
 export function verSubmissao(id: string): Promise<SubmissaoAPI> {
   return request<SubmissaoAPI>(`/submissoes/${id}`);
+}
+
+// a rota exige o Bearer token, entao nao da pra usar a URL direto num <img src>: busca como
+// blob e devolve uma URL local (revogada pelo chamador quando nao precisar mais)
+export async function urlImagemSubmissao(id: string): Promise<string> {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/submissoes/${id}/imagem`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new ApiError("Não foi possível carregar a foto.");
+  return URL.createObjectURL(await response.blob());
 }
 
 export function enviarImagem(atividadeId: string, file: File): Promise<SubmissaoAPI> {
