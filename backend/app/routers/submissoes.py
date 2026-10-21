@@ -388,20 +388,25 @@ def corrigir_submissao(
         if sorted(temas) != ["C1", "C2", "C3", "C4", "C5"]:
             raise HTTPException(status.HTTP_409_CONFLICT, "A matéria desta atividade não tem as 5 competências do ENEM.")
 
-    if not settings.GEMINI_API_KEY:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Correção indisponível: servidor sem chave do Gemini.")
+    exatas = materia.tipo in MATERIAS_EXATAS
+    # exatas continua no Gemini; a nota da redacao agora vem do Claude (ver app/llm/claude.py)
+    if not (settings.GEMINI_API_KEY if exatas else settings.ANTHROPIC_API_KEY):
+        provedor = "do Gemini" if exatas else "do Claude"
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"Correção indisponível: servidor sem chave {provedor}.")
     try:
-        if materia.tipo in MATERIAS_EXATAS:
+        if exatas:
             questoes = [(t.habilidade_codigo, t.nome, t.resposta_correta) for t in temas.values()]
             resultado, modelo = ia_exatas.corrigir(submissao.texto_confirmado, materia.nome, questoes)
             itens = resultado.questoes
             versao_prompt = ia_exatas.VERSAO_PROMPT
+            modelo_principal = ia_exatas.MODELO_PRINCIPAL
             acertos = sum(1 for q in itens if q.nota == 200)
             feedback = f"{acertos}/{len(itens)} questões corretas."
         else:
             resultado, modelo = ia.corrigir(submissao.texto_confirmado, (payload.tema or "").strip() or atividade.titulo)
             itens = resultado.competencias
             versao_prompt = ia.VERSAO_PROMPT
+            modelo_principal = ia.MODELO_PRINCIPAL
             feedback = resultado.feedback_geral
     except Exception:
         logger.exception("falha na correcao")
@@ -415,9 +420,9 @@ def corrigir_submissao(
         for i in itens:
             i.nota = round(i.nota / 200 * valor_por_questao, 2)
 
-    # nota do modelo reserva (lite) e mais rasa: no teste deu 120 em tudo com "95% de confianca".
-    # vai para o topo da fila do professor junto com as de baixa confianca
-    atencao = resultado.confianca < CONFIANCA_MINIMA or modelo != settings.GEMINI_MODEL
+    # modelo diferente do principal (ex.: reserva do Gemini) e mais raso: no teste deu 120 em
+    # tudo com "95% de confianca". Vai para o topo da fila do professor junto com as de baixa confianca
+    atencao = resultado.confianca < CONFIANCA_MINIMA or modelo != modelo_principal
     correcao = Correcao(
         submissao_id=submissao.id,
         nota_ia=sum(i.nota for i in itens),

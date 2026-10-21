@@ -10,6 +10,7 @@ _tmp = tempfile.mkdtemp()
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{_tmp}/teste.db")
 os.environ.setdefault("JWT_SECRET", "x" * 32)
 os.environ.setdefault("GEMINI_API_KEY", "falsa")
+os.environ.setdefault("ANTHROPIC_API_KEY", "falsa")
 os.environ.setdefault("UPLOAD_DIR", f"{_tmp}/uploads")
 
 import json  # noqa: E402
@@ -32,18 +33,18 @@ def token(email):
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
-def _gemini_falso():
+def _claude_falso():
     # devolve um exercicio por competencia pedida no prompt, na mesma ordem (ja vem
     # ordenada da pior para a melhor, pelo router) -- assim o teste confere a ordem real.
-    def gerar(prompt, config):
+    def gerar_json(prompt, schema, temperature=0, model=None):
         codigos = re.findall(r"^- (C\d)", prompt, re.MULTILINE)
         payload = {"exercicios": [
             {"habilidade_codigo": codigo, "titulo": "t", "enunciado": "e",
              "opcoes": ["a", "b", "c", "d"], "resposta_correta": 0, "explicacao": "x"}
             for codigo in codigos
         ]}
-        return SimpleNamespace(text=json.dumps(payload)), "modelo-falso"
-    return gerar
+        return schema.model_validate(payload), "modelo-falso"
+    return gerar_json
 
 
 def test_professor_nao_usa_a_rota():
@@ -68,11 +69,11 @@ def test_sem_correcao_aprovada_responde_409():
 def test_gera_exercicios_para_as_piores_competencias_e_usa_cache():
     chamadas = []
 
-    def gerar_contado(prompt, config):
-        chamadas.append(1)
-        return _gemini_falso()(prompt, config)
+    def gerar_contado(prompt, schema, temperature=0, model=None):
+        chamadas.append(model)
+        return _claude_falso()(prompt, schema)
 
-    original, estudos_mod.gerar = estudos_mod.gerar, gerar_contado
+    original, estudos_mod.gerar_json = estudos_mod.gerar_json, gerar_contado
     try:
         r1 = client.get("/estudos/meu", headers=token("aluno@domina.com"))
         assert r1.status_code == 200, r1.text
@@ -80,20 +81,20 @@ def test_gera_exercicios_para_as_piores_competencias_e_usa_cache():
         assert len(exercicios) == 3
         assert exercicios[0]["habilidade_codigo"] == "C4"  # ponto fraco de proposito do seed (ver seed.py)
 
-        # segunda chamada: mesmo perfil de dominio -> vem do cache, nao chama o Gemini de novo
+        # segunda chamada: mesmo perfil de dominio -> vem do cache, nao chama o Claude de novo
         r2 = client.get("/estudos/meu", headers=token("aluno@domina.com"))
         assert r2.json() == exercicios
-        assert len(chamadas) == 1
+        assert chamadas == [estudos_mod.settings.ANTHROPIC_MODEL_HAIKU]
     finally:
-        estudos_mod.gerar = original
+        estudos_mod.gerar_json = original
 
 
-def test_sem_chave_do_gemini_responde_503():
+def test_sem_chave_do_claude_responde_503():
     from app.config import settings
 
-    original, settings.GEMINI_API_KEY = settings.GEMINI_API_KEY, None
+    original, settings.ANTHROPIC_API_KEY = settings.ANTHROPIC_API_KEY, None
     try:
         r = client.get("/estudos/meu", headers=token("aluno2@domina.com"))
         assert r.status_code == 503
     finally:
-        settings.GEMINI_API_KEY = original
+        settings.ANTHROPIC_API_KEY = original

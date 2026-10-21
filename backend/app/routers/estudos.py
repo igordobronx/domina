@@ -15,7 +15,9 @@ router = APIRouter(prefix="/estudos", tags=["estudos"])
 # RF: plano de estudo personalizado -- exercicios gerados a partir do dominio REAL do aluno
 # (so competencias com pelo menos 1 correcao aprovada; sem evidencia nao ha o que personalizar)
 @router.get("/meu", response_model=list[ExercicioGerado])
-def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def meus_exercicios(
+    recarregar: bool = False, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db),
+):
     if usuario.perfil != PerfilEnum.ALUNO:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos usam esta rota.")
 
@@ -25,11 +27,11 @@ def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = 
             status.HTTP_409_CONFLICT,
             "Ainda não há correções aprovadas para montar seu plano personalizado.",
         )
-    if not settings.GEMINI_API_KEY:
+    if not settings.ANTHROPIC_API_KEY:
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE,
-            "Geração de exercícios indisponível: servidor sem chave do Gemini.",
+            "Geração de exercícios indisponível: servidor sem chave do Claude.",
         )
 
     piores = sorted(evidenciado, key=lambda d: d.percentual_dominio)[:3]
-    return gerar_exercicios(usuario.id, piores)
+    return gerar_exercicios(usuario.id, piores, forcar=recarregar)

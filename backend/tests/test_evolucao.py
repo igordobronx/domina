@@ -11,6 +11,7 @@ _tmp = tempfile.mkdtemp()
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{_tmp}/teste.db")
 os.environ.setdefault("JWT_SECRET", "x" * 32)
 os.environ.setdefault("GEMINI_API_KEY", "falsa")
+os.environ.setdefault("ANTHROPIC_API_KEY", "falsa")
 os.environ.setdefault("UPLOAD_DIR", f"{_tmp}/uploads")
 
 from fastapi.testclient import TestClient  # noqa: E402

@@ -1550,7 +1550,8 @@ a {
   font-size: 13px;
 }
 .form-grid input,
-.form-grid select {
+.form-grid select,
+.form-grid textarea {
   border: 1px solid #dcd8cc;
   background: #fcfbf8;
   border-radius: 8px;
@@ -1558,6 +1559,10 @@ a {
   min-width: 0;
   width: 100%;
   color: #141a2e;
+}
+.form-grid textarea {
+  resize: vertical;
+  font-family: inherit;
 }
 .material-row {
   display: flex;

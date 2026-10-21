@@ -10,6 +10,7 @@ _tmp = tempfile.mkdtemp()
 os.environ["DATABASE_URL"] = f"sqlite:///{_tmp}/teste.db"
 os.environ["JWT_SECRET"] = "x" * 32
 os.environ["GEMINI_API_KEY"] = "falsa"
+os.environ["ANTHROPIC_API_KEY"] = "falsa"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
 
 from fastapi.testclient import TestClient  # noqa: E402
@@ -200,7 +201,7 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
         competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 200, "justificativa": "ok"} for i in range(5, 0, -1)],
         feedback_geral="muito bom", confianca=0.9,
     )
-    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota_maxima, settings.GEMINI_MODEL)
+    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota_maxima, ia.MODELO_PRINCIPAL)
     try:
         # o proprio aluno pode gerar a correcao da sua submissao e ja ve o resultado,
         # provisorio ate o professor aprovar
@@ -215,8 +216,8 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
         vista_aluno = client.get(f"/submissoes/{sub['id']}/correcao", headers=aluno).json()
         assert vista_aluno["nota_ia"] == 1000 and vista_aluno["nota_professor"] is None
 
-        # corrigida pelo modelo reserva: sempre "requer atencao", mesmo com confianca alta
-        ia.corrigir = lambda texto, tema: (nota_maxima, settings.GEMINI_MODEL_RESERVA)
+        # corrigida por um modelo diferente do principal: sempre "requer atencao", mesmo com confianca alta
+        ia.corrigir = lambda texto, tema: (nota_maxima, "outro-modelo")
         sub2 = client.post("/submissoes/imagem", headers=prof, files=FOTO,
                            data={"atividade_id": atividades[0]["id"], "aluno_id": aluno_id}).json()
         client.put(f"/submissoes/{sub2['id']}/confirmar", headers=prof, json={"texto": "redacao"})
@@ -238,7 +239,7 @@ def test_aluno_gera_propria_correcao_e_professor_aprova_depois():
         competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 160, "justificativa": "ok"} for i in range(5, 0, -1)],
         feedback_geral="bom trabalho", confianca=0.9,
     )
-    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota, settings.GEMINI_MODEL)
+    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
     try:
         assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=aluno, json={}).status_code == 201
 
@@ -287,18 +288,18 @@ def test_corrigir_faz_uma_correcao_so():
 
     chamadas = []
 
-    def gerar_falso(contents, config):
-        chamadas.append(config.temperature)
+    def gerar_json_falso(prompt, schema, temperature=0):
+        chamadas.append(temperature)
         corpo = {"competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x"}
                                   for i, n in zip(range(1, 6), [160, 200, 160, 120, 200])],
                  "feedback_geral": "x", "confianca": 0.7}
-        return type("R", (), {"text": __import__("json").dumps(corpo)})(), settings.GEMINI_MODEL
+        return schema.model_validate(corpo), ia.MODELO_PRINCIPAL
 
-    original = ia.gerar
-    ia.gerar = gerar_falso
+    original = ia.gerar_json
+    ia.gerar_json = gerar_json_falso
     try:
         r, modelo = ia.corrigir("texto", "tema")
         assert [c.nota for c in r.competencias] == [160, 200, 160, 120, 200]
-        assert chamadas == [0] and modelo == settings.GEMINI_MODEL and r.confianca == 0.7
+        assert chamadas == [0] and modelo == ia.MODELO_PRINCIPAL and r.confianca == 0.7
     finally:
-        ia.gerar = original
+        ia.gerar_json = original

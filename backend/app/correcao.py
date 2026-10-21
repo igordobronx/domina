@@ -6,12 +6,13 @@ aluno) e o que muda aqui -- o aluno pode ver a nota da IA antes disso, mas so co
 """
 from typing import Literal
 
-from google.genai import types
 from pydantic import BaseModel, Field, field_validator
 
-from app.ocr.gemini import gerar
+from app.config import settings
+from app.llm.claude import gerar_json
 
 VERSAO_PROMPT = "v14"  # v12 + C2 com piso 160 (repertorio externo legitimo e pertinente); uma correcao so
+MODELO_PRINCIPAL = settings.ANTHROPIC_MODEL
 NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}  # cada corretor do ENEM so usa esses niveis por competencia
 
 PROMPT = """Você é um corretor experiente da redação do ENEM, treinado na matriz de referência do INEP.
@@ -227,12 +228,4 @@ class ResultadoIA(BaseModel):
 def corrigir(texto: str, tema: str) -> tuple[ResultadoIA, str]:
     # devolve (resultado, modelo_usado). Levanta excecao se o modelo nao devolver JSON valido.
     # A IA age como UM corretor; a correcao dupla (media de 2) foi testada e nao melhorou o erro.
-    response, modelo = gerar(
-        PROMPT.format(tema=tema, texto=texto),
-        types.GenerateContentConfig(
-            temperature=0,
-            response_mime_type="application/json",
-            response_schema=ResultadoIA,
-        ),
-    )
-    return ResultadoIA.model_validate_json(response.text), modelo
+    return gerar_json(PROMPT.format(tema=tema, texto=texto), ResultadoIA, temperature=0)

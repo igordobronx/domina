@@ -1,13 +1,12 @@
-"""Geracao de exercicios de pratica (plano de estudo) via Gemini, a partir do dominio real do aluno.
-
-Mesmo padrao do app/correcao.py: prompt -> JSON tipado pelo Pydantic. Aqui a temperatura
-nao e 0 (como na correcao) porque isto e pratica, nao avaliacao -- um pouco de variacao
-entre gerações é desejável.
+"""Geracao de exercicios de pratica (plano de estudo) pelo Claude Haiku, a partir do dominio
+real do aluno. Mesmo padrao do app/correcao.py: prompt -> JSON tipado pelo Pydantic. Usa o
+Haiku (nao o Sonnet da correcao) porque isto e pratica, nao avaliacao -- nao precisa do
+raciocinio mais forte, e sai mais barato/rapido.
 """
-from google.genai import types
 from pydantic import BaseModel, Field
 
-from app.ocr.gemini import gerar
+from app.config import settings
+from app.llm.claude import gerar_json
 from app.schemas.dominio import DominioResponse
 
 PROMPT = """Você é um professor de redação do ENEM. Crie exercícios de prática rápida (múltipla
@@ -57,22 +56,20 @@ class _RespostaIA(BaseModel):
 _cache: dict[tuple, list[ExercicioGerado]] = {}
 
 
-def gerar_exercicios(aluno_id, competencias: list[DominioResponse]) -> list[ExercicioGerado]:
+def gerar_exercicios(
+    aluno_id, competencias: list[DominioResponse], forcar: bool = False,
+) -> list[ExercicioGerado]:
     chave = (str(aluno_id), tuple((c.habilidade_codigo, round(c.percentual_dominio)) for c in competencias))
-    if chave in _cache:
+    if not forcar and chave in _cache:
         return _cache[chave]
 
     texto = "\n".join(
         f"- {c.habilidade_codigo} ({c.tema}): {round(c.percentual_dominio)}% de domínio estimado"
         for c in competencias
     )
-    response, _ = gerar(
-        PROMPT.format(competencias=texto),
-        types.GenerateContentConfig(
-            temperature=0.4, response_mime_type="application/json", response_schema=_RespostaIA,
-            thinking_config=types.ThinkingConfig(thinking_level="minimal"),
-        ),
+    resultado, _ = gerar_json(
+        PROMPT.format(competencias=texto), _RespostaIA, model=settings.ANTHROPIC_MODEL_HAIKU,
     )
-    exercicios = _RespostaIA.model_validate_json(response.text).exercicios
+    exercicios = resultado.exercicios
     _cache[chave] = exercicios
     return exercicios

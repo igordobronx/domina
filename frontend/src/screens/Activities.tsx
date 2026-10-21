@@ -411,7 +411,7 @@ function ActivityDetail({
               // gabarito real desta atividade (materias de exatas) -- nunca um texto fixo de outra atividade
               <ol className="question-list">
                 {a.questoes.map((q) => (
-                  <li key={q.codigo}>{q.enunciado}</li>
+                  <li key={q.codigo} style={{ whiteSpace: "pre-wrap" }}>{q.enunciado}</li>
                 ))}
               </ol>
             ) : a.kind === "redacao" ? (
@@ -991,6 +991,15 @@ const TIPOS_MATERIA: { value: MateriaAPI["tipo"]; label: string }[] = [
 // resposta correta de cada uma
 const MATERIAS_COM_GABARITO: MateriaAPI["tipo"][] = ["MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"];
 
+// uma questao pode ter itens (a, b, c...); o backend so guarda um enunciado de texto por
+// questao, entao os itens viram linhas "a) ...", "b) ..." dentro dele (ver compoeEnunciado)
+const LETRAS = "abcdefghijklmnopqrstuvwxyz";
+function compoeEnunciado(q: { enunciado: string; itens: string[] }): string {
+  const itens = q.itens.map((it) => it.trim()).filter(Boolean);
+  const partes = itens.map((it, i) => `${LETRAS[i] ?? i + 1}) ${it}`);
+  return [q.enunciado.trim(), ...partes].filter(Boolean).join("\n");
+}
+
 function NovaAtividade({
   onBack,
   onCriada,
@@ -1006,7 +1015,7 @@ function NovaAtividade({
   const [materiaId, setMateriaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
-  const [questoes, setQuestoes] = useState([{ enunciado: "", resposta_correta: "" }]);
+  const [questoes, setQuestoes] = useState([{ enunciado: "", itens: [""], resposta_correta: "" }]);
   const [valorTotal, setValorTotal] = useState(1000);
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -1067,7 +1076,7 @@ function NovaAtividade({
       return;
     }
     const questoesValidas = questoes
-      .map((q) => ({ enunciado: q.enunciado.trim(), resposta_correta: q.resposta_correta.trim() }))
+      .map((q) => ({ enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim() }))
       .filter((q) => q.enunciado && q.resposta_correta);
     if (exigeGabarito && !questoesValidas.length) {
       setError("Adicione ao menos uma questão com enunciado e resposta correta.");
@@ -1225,27 +1234,71 @@ function NovaAtividade({
                 {questoes.map((q, i) => (
                   <div className="form-grid" key={i}>
                     <label>
-                      {`Questão ${i + 1}`}
-                      <input
+                      {`Questão ${i + 1}${q.itens.length > 1 ? " (enunciado comum, se houver)" : ""}`}
+                      <textarea
                         value={q.enunciado}
                         onChange={(e) => {
                           const copia = [...questoes];
                           copia[i] = { ...copia[i], enunciado: e.target.value };
                           setQuestoes(copia);
                         }}
-                        placeholder="Ex.: Resolva 2x + 3 = 7"
+                        placeholder="Ex.: Resolva 2x + 3 = 7 (ou o contexto, se a questão tiver itens a, b, c...)"
+                        rows={3}
                       />
                     </label>
+                    {q.itens.map((item, j) => (
+                      <label key={j}>
+                        {`Item ${LETRAS[j] ?? j + 1})`}
+                        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                          <textarea
+                            value={item}
+                            onChange={(e) => {
+                              const copia = [...questoes];
+                              const itens = [...copia[i].itens];
+                              itens[j] = e.target.value;
+                              copia[i] = { ...copia[i], itens };
+                              setQuestoes(copia);
+                            }}
+                            placeholder={`Ex.: ${LETRAS[j] ?? j + 1}) determine o valor de x`}
+                            rows={2}
+                          />
+                          {q.itens.length > 1 && (
+                            <button
+                              className="back-link"
+                              onClick={() => {
+                                const copia = [...questoes];
+                                copia[i] = { ...copia[i], itens: copia[i].itens.filter((_, k) => k !== j) };
+                                setQuestoes(copia);
+                              }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </label>
+                    ))}
+                    <button
+                      className="back-link"
+                      onClick={() => {
+                        const copia = [...questoes];
+                        copia[i] = { ...copia[i], itens: [...copia[i].itens, ""] };
+                        setQuestoes(copia);
+                      }}
+                    >
+                      <Plus size={14} />
+                      Adicionar item ({LETRAS[q.itens.length] ?? q.itens.length + 1})
+                    </button>
                     <label>
-                      Resposta correta
-                      <input
+                      Resposta correta (de cada item, se houver)
+                      <textarea
                         value={q.resposta_correta}
                         onChange={(e) => {
                           const copia = [...questoes];
                           copia[i] = { ...copia[i], resposta_correta: e.target.value };
                           setQuestoes(copia);
                         }}
-                        placeholder="Ex.: x = 2"
+                        placeholder="Ex.: a) x = 2  b) y = 5"
+                        rows={2}
                       />
                     </label>
                     {questoes.length > 1 && (
@@ -1262,7 +1315,7 @@ function NovaAtividade({
                 <Button
                   variant="secondary"
                   icon={Plus}
-                  onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "" }])}
+                  onPress={() => setQuestoes([...questoes, { enunciado: "", itens: [""], resposta_correta: "" }])}
                 >
                   Adicionar questão
                 </Button>

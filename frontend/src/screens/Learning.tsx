@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  RotateCcw,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -220,17 +221,22 @@ export function Studies({
   const real = !!currentUser;
   const [exerciciosReais, setExerciciosReais] = useState<ExercicioAPI[] | null>(null);
   const [carregando, setCarregando] = useState(real);
+  const [recarregando, setRecarregando] = useState(false);
   const [erro, setErro] = useState("");
-  useEffect(() => {
+  const carregar = (recarregar = false) => {
     if (!real) return;
-    setCarregando(true);
+    (recarregar ? setRecarregando : setCarregando)(true);
     setErro("");
-    meusExercicios()
+    meusExercicios(recarregar)
       .then(setExerciciosReais)
       .catch((e) =>
         setErro(e instanceof Error ? e.message : "Não foi possível montar seu plano de estudo."),
       )
-      .finally(() => setCarregando(false));
+      .finally(() => (recarregar ? setRecarregando : setCarregando)(false));
+  };
+  useEffect(() => {
+    carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [real, currentUser?.id]);
 
   const tarefas: ExercicioComum[] = real
@@ -280,6 +286,18 @@ export function Studies({
           </p>
         </div>
       </div>
+      {real && (
+        <div className="form-actions left">
+          <Button
+            variant="secondary"
+            icon={RotateCcw}
+            disabled={recarregando}
+            onPress={() => carregar(true)}
+          >
+            {recarregando ? "Recarregando..." : "Recarregar plano de estudo (usa pouco)"}
+          </Button>
+        </div>
+      )}
       <div className="study-grid">
         {tarefas.map((t, i) => (
           <Card key={t.id} className="study-task">

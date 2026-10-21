@@ -13,6 +13,17 @@ class Settings(BaseSettings):
     # reserva quando o principal estoura cota (gratis: 20 chamadas/dia) ou esta sobrecarregado.
     # mais rapido, mas erra mais palavra em letra cursiva -- a confirmacao do aluno cobre
     GEMINI_MODEL_RESERVA: str = "gemini-3.5-flash-lite"
+    # nota da redacao (app/correcao.py): o Gemini divergia demais do corretor humano do INEP,
+    # a nota da redacao passou a ser pelo Claude. OCR da foto e exatas continuam no Gemini.
+    ANTHROPIC_API_KEY: str | None = None
+    ANTHROPIC_MODEL: str = "claude-sonnet-5-5"
+    # mais barato/rapido: gera os exercicios de pratica (app/estudos.py), que nao precisam do
+    # raciocinio mais forte do Sonnet -- so a nota da redacao usa o Sonnet
+    ANTHROPIC_MODEL_HAIKU: str = "claude-haiku-5-5"
+    # so preciso numa chave de avaliacao gratuita (tipo "sk-ant-usr-..."), que vale pra
+    # qualquer workspace da conta e exige dizer qual usar. Uma chave normal de workspace
+    # (tipo "sk-ant-api03-...") nao precisa disso
+    ANTHROPIC_WORKSPACE_ID: str | None = None
     # onde ficam as fotos originais das redacoes (Submissao.conteudo_bruto aponta pra ca)
     UPLOAD_DIR: str = "uploads"
 

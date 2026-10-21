@@ -334,8 +334,8 @@ export interface ExercicioAPI {
   explicacao: string;
 }
 
-export function meusExercicios(): Promise<ExercicioAPI[]> {
-  return request<ExercicioAPI[]>("/estudos/meu");
+export function meusExercicios(recarregar = false): Promise<ExercicioAPI[]> {
+  return request<ExercicioAPI[]>(`/estudos/meu${recarregar ? "?recarregar=true" : ""}`);
 }
 
 export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {

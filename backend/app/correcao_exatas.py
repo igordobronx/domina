@@ -8,10 +8,12 @@ o motivo em 1-2 frases objetivas.
 from google.genai import types
 from pydantic import BaseModel, Field, field_validator
 
+from app.config import settings
 from app.correcao import NOTAS_VALIDAS
 from app.ocr.gemini import gerar
 
 VERSAO_PROMPT = "exatas-v1"
+MODELO_PRINCIPAL = settings.GEMINI_MODEL
 
 PROMPT = """Você é um corretor de exercícios de {materia}. Confira se as respostas do aluno batem
 com o gabarito, questão por questão. Isto NÃO é uma avaliação subjetiva: é uma conferência
