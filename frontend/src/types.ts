@@ -28,14 +28,18 @@ export interface Activity {
   aiScores?: number[];
   scores?: number[];
   feedback?: string;
-  // por criterio (competencia/questao): usado para destacar o trecho citado pela IA no texto,
-  // ou a caixa na foto (so em exatas enviadas por imagem)
+  // por criterio (competencia/questao): "pontos" sao os acertos/erros concretos que a IA
+  // aponta, cada um com o trecho (ou caixa na foto, so exatas por imagem) a destacar na tela
   criterios?: {
     codigo: string;
     nome: string;
     justificativa: string;
-    trecho: string | null;
-    caixa: { x: number; y: number; largura: number; altura: number } | null;
+    pontos: {
+      trecho: string;
+      tipo: "acerto" | "erro";
+      comentario: string;
+      caixa: { x: number; y: number; largura: number; altura: number } | null;
+    }[];
   }[];
   // "TEXTO" | "IMAGEM": se "IMAGEM", a foto original pode ser buscada por submissaoId
   tipoEnvio?: string;

@@ -43,75 +43,85 @@ import { carregarAtividadesDoAluno } from "../services/atividades";
 import { carregarRevisoes } from "../services/revisoes";
 import type { UsuarioAtual } from "../services/api";
 
-// cores por indice de criterio (C1..C5 ou Q1..Qn), reaproveitadas no texto e na foto
-const CORES_TRECHO = ["trecho-0", "trecho-1", "trecho-2", "trecho-3", "trecho-4", "trecho-5"];
+type Ponto = {
+  trecho: string;
+  tipo: "acerto" | "erro";
+  comentario: string;
+  caixa: { x: number; y: number; largura: number; altura: number } | null;
+};
 
-// destaca, no texto completo, o trecho citado por cada criterio (match exato; se a IA citou
-// algo que nao bate 100% com o texto -- ruido de OCR, paragrafo levemente diferente -- esse
-// item simplesmente nao fica destacado, sem erro)
-function destacarTrechos(
-  texto: string,
-  criterios: { trecho: string | null }[],
-): ReactNode[] {
-  const achados = criterios
-    .map((c, i) => ({ i, trecho: (c.trecho ?? "").trim() }))
-    .filter((t) => t.trecho && texto.includes(t.trecho))
-    .map((t) => ({ ...t, pos: texto.indexOf(t.trecho) }))
+// achata os pontos (acertos/erros) de todos os criterios num unico array, com o codigo do
+// criterio dono pra compor o tooltip (ex.: "C1 · erro: ...")
+function todosOsPontos(criterios: { codigo: string; pontos: Ponto[] }[]) {
+  return criterios.flatMap((c) => c.pontos.map((p) => ({ ...p, criterio: c.codigo })));
+}
+
+// destaca, no texto completo, o trecho de cada ponto (acerto em verde, erro em vermelho).
+// match exato; se a IA citou algo que nao bate 100% com o texto (ruido de OCR, paragrafo
+// levemente diferente) esse ponto simplesmente nao fica destacado, sem erro
+function destacarTrechos(texto: string, criterios: { codigo: string; pontos: Ponto[] }[]): ReactNode[] {
+  const achados = todosOsPontos(criterios)
+    .map((p, i) => ({ ...p, i, trecho: p.trecho.trim() }))
+    .filter((p) => p.trecho && texto.includes(p.trecho))
+    .map((p) => ({ ...p, pos: texto.indexOf(p.trecho) }))
     .sort((a, b) => a.pos - b.pos);
 
   const partes: ReactNode[] = [];
   let cursor = 0;
-  for (const { i, trecho, pos } of achados) {
-    if (pos < cursor) continue; // trechos sobrepostos: fica so com o primeiro encontrado
-    partes.push(texto.slice(cursor, pos));
+  for (const p of achados) {
+    if (p.pos < cursor) continue; // trechos sobrepostos: fica so com o primeiro encontrado
+    partes.push(texto.slice(cursor, p.pos));
     partes.push(
-      <mark key={i} className={`trecho ${CORES_TRECHO[i % CORES_TRECHO.length]}`}>
-        {trecho}
+      <mark
+        key={p.i}
+        className={`ponto ponto-${p.tipo}`}
+        title={`${p.criterio} · ${p.tipo === "acerto" ? "acerto" : "erro"}: ${p.comentario}`}
+      >
+        {p.trecho}
       </mark>,
     );
-    cursor = pos + trecho.length;
+    cursor = p.pos + p.trecho.length;
   }
   partes.push(texto.slice(cursor));
   return partes;
 }
 
-// foto original (exatas por imagem) com uma caixa por questao, posicionada pela IA
+// foto original (exatas por imagem) com uma caixa por ponto (acerto/erro), posicionada pela IA
 function ImagemComCaixas({
   submissaoId,
   criterios,
 }: {
   submissaoId: string;
-  criterios: {
-    justificativa: string;
-    caixa: { x: number; y: number; largura: number; altura: number } | null;
-  }[];
+  criterios: { codigo: string; pontos: Ponto[] }[];
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [erro, setErro] = useState(false);
   useEffect(() => {
     let ativo = true;
     urlImagemSubmissao(submissaoId)
       .then((u) => ativo && setUrl(u))
-      .catch(() => {});
+      .catch(() => ativo && setErro(true));
     return () => {
       ativo = false;
     };
   }, [submissaoId]);
 
+  if (erro) return <p className="tiny">Não foi possível carregar a foto original.</p>;
   if (!url) return <p className="tiny">Carregando foto...</p>;
   return (
     <div className="imagem-com-caixas">
       <img src={url} alt="Prova enviada" />
-      {criterios.map((c, i) =>
-        c.caixa ? (
+      {todosOsPontos(criterios).map((p, i) =>
+        p.caixa ? (
           <div
             key={i}
-            className={`caixa ${CORES_TRECHO[i % CORES_TRECHO.length]}`}
-            title={c.justificativa}
+            className={`caixa ponto-${p.tipo}`}
+            title={`${p.criterio} · ${p.tipo === "acerto" ? "acerto" : "erro"}: ${p.comentario}`}
             style={{
-              left: `${c.caixa.x * 100}%`,
-              top: `${c.caixa.y * 100}%`,
-              width: `${c.caixa.largura * 100}%`,
-              height: `${c.caixa.altura * 100}%`,
+              left: `${p.caixa.x * 100}%`,
+              top: `${p.caixa.y * 100}%`,
+              width: `${p.caixa.largura * 100}%`,
+              height: `${p.caixa.altura * 100}%`,
             }}
           />
         ) : null,

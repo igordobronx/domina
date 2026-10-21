@@ -9,7 +9,7 @@ from google.genai import types
 from pydantic import BaseModel, Field, field_validator
 
 from app.config import settings
-from app.correcao import NOTAS_VALIDAS
+from app.correcao import NOTAS_VALIDAS, PontoIA
 from app.ocr.gemini import gerar, reduzir
 
 VERSAO_PROMPT = "exatas-v1"
@@ -38,9 +38,12 @@ gabarito, 0 se não bate. Só use valores intermediários (40, 80, 120, 160) se 
 múltiplas partes e o aluno acertou só parte delas. Na justificativa, cite objetivamente a
 resposta que o aluno deu e a resposta do gabarito, em 1-2 frases.
 
-"trecho": copie literalmente, da transcrição das respostas do aluno acima, o pedaço que
-corresponde à resposta daquela questão (vai ser usado para destacar esse pedaço na tela). Se
-não achar nada que corresponda, deixe "".
+"pontos": 1 ou mais pontos concretos para esta questão (um por parte, se a questão tiver
+várias partes com resultado diferente), cada um com:
+- "trecho": copie literalmente, da transcrição das respostas do aluno acima, o pedaço a que
+  esse ponto se refere. Deixe "" se não achar nada que corresponda.
+- "tipo": "acerto" se esse pedaço bate com o gabarito, "erro" se não bate.
+- "comentario": 1 frase objetiva (o que o aluno respondeu vs. o gabarito, nesse ponto).
 {instrucao_caixa}
 "confianca" (0 a 1): o quanto você está seguro de ter identificado corretamente a resposta do
 aluno para CADA questão (baixa se a letra/transcrição estiver ambígua, incompleta, ou se
@@ -49,35 +52,28 @@ alguma questão não foi respondida).
 Responda em JSON com esta estrutura, uma entrada por questão, na mesma ordem recebida:
 {{
   "questoes": [
-    {{"codigo": "Q1", "nota": 200, "justificativa": "...", "trecho": "..."{exemplo_caixa}}}
+    {{"codigo": "Q1", "nota": 200, "justificativa": "...", "pontos": [
+      {{"trecho": "...", "tipo": "acerto", "comentario": "..."{exemplo_caixa}}}
+    ]}}
   ],
   "confianca": 0.0
 }}"""
 
 INSTRUCAO_CAIXA = """
-"caixa": além do trecho, a imagem enviada é a prova original do aluno. Para cada questão,
-diga também ONDE na imagem está a resposta daquela questão, como uma caixa delimitadora:
-{"x": 0.0, "y": 0.0, "largura": 0.0, "altura": 0.0}, todos os valores entre 0 e 1 (frações
-da largura/altura da imagem inteira; x/y é o canto superior-esquerdo da caixa). Se não
-conseguir localizar com confiança, omita "caixa" ou deixe null -- não invente uma posição.
+Além disso, a imagem enviada é a prova original do aluno: em CADA ponto, diga também ONDE na
+imagem está aquele trecho, com "caixa": {"x": 0.0, "y": 0.0, "largura": 0.0, "altura": 0.0},
+todos os valores entre 0 e 1 (frações da largura/altura da imagem inteira; x/y é o canto
+superior-esquerdo da caixa). Se não conseguir localizar com confiança, omita "caixa" ou deixe
+null -- não invente uma posição.
 """
 EXEMPLO_CAIXA = ', "caixa": {"x": 0.1, "y": 0.2, "largura": 0.3, "altura": 0.1}'
-
-
-class CaixaIA(BaseModel):
-    # bounding box normalizada (0..1) de onde a resposta aparece na foto da prova
-    x: float = Field(ge=0, le=1)
-    y: float = Field(ge=0, le=1)
-    largura: float = Field(ge=0, le=1)
-    altura: float = Field(ge=0, le=1)
 
 
 class QuestaoCorrigida(BaseModel):
     codigo: str
     nota: float
     justificativa: str
-    trecho: str = ""  # resposta literal transcrita, pra destacar quando nao ha foto
-    caixa: CaixaIA | None = None  # so quando a resposta veio por foto (ver corrigir())
+    pontos: list[PontoIA] = Field(default_factory=list)
 
     @field_validator("nota")
     @classmethod

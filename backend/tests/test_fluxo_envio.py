@@ -198,7 +198,7 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
     assert client.put(f"/submissoes/{sub['id']}/confirmar", headers=prof, json={"texto": "redacao"}).status_code == 200
 
     nota_maxima = ia.ResultadoIA(
-        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 200, "justificativa": "ok", "trecho": "ok"} for i in range(5, 0, -1)],
+        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 200, "justificativa": "ok", "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(5, 0, -1)],
         feedback_geral="muito bom", confianca=0.9,
     )
     original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota_maxima, ia.MODELO_PRINCIPAL)
@@ -236,7 +236,7 @@ def test_aluno_gera_propria_correcao_e_professor_aprova_depois():
                       json={"atividade_id": atividade_id(), "texto": "minha redacao"}).json()
 
     nota = ia.ResultadoIA(
-        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 160, "justificativa": "ok", "trecho": "ok"} for i in range(5, 0, -1)],
+        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 160, "justificativa": "ok", "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(5, 0, -1)],
         feedback_geral="bom trabalho", confianca=0.9,
     )
     original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
@@ -271,12 +271,12 @@ def test_nota_da_ia_vira_nivel_valido_do_enem():
     from app.correcao import ResultadoIA
 
     r = ResultadoIA.model_validate({
-        "competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x", "trecho": "x"} for i, n in zip(range(1, 6), [130, 200, 15, 199, 60])],
+        "competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x", "pontos": [{"trecho": "x", "tipo": "acerto", "comentario": "x"}]} for i, n in zip(range(1, 6), [130, 200, 15, 199, 60])],
         "feedback_geral": "x", "confianca": 0.5,
     })
     assert [c.nota for c in r.competencias] == [120, 200, 0, 200, 40]
     try:
-        ResultadoIA.model_validate({"competencias": [{"codigo": "C1", "analise": "x", "nota": 0, "justificativa": "x", "trecho": "x"}] * 5,
+        ResultadoIA.model_validate({"competencias": [{"codigo": "C1", "analise": "x", "nota": 0, "justificativa": "x", "pontos": [{"trecho": "x", "tipo": "acerto", "comentario": "x"}]}] * 5,
                                     "feedback_geral": "x", "confianca": 0.5})
         raise AssertionError("aceitou competencia repetida")
     except ValueError:
@@ -290,7 +290,7 @@ def test_corrigir_faz_uma_correcao_so():
 
     def gerar_json_falso(prompt, schema, temperature=0):
         chamadas.append(temperature)
-        corpo = {"competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x", "trecho": "x"}
+        corpo = {"competencias": [{"codigo": f"C{i}", "analise": "x", "nota": n, "justificativa": "x", "pontos": [{"trecho": "x", "tipo": "acerto", "comentario": "x"}]}
                                   for i, n in zip(range(1, 6), [160, 200, 160, 120, 200])],
                  "feedback_geral": "x", "confianca": 0.7}
         return schema.model_validate(corpo), ia.MODELO_PRINCIPAL

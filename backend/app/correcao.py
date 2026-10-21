@@ -172,22 +172,32 @@ C5 - Proposta de intervenção respeitando os direitos humanos
 - Na justificativa de cada competência, cite pelo menos um trecho da redação. Se a nota for
   menor que 200, diga o problema concreto (com trecho) que impediu o nível acima. Se a nota for
   200, diga por que atinge o máximo e NÃO sugira melhorias: no 200 não falta nada.
-- "trecho": copie EXATAMENTE (sem corrigir nem resumir) o trecho da redação que você citou na
-  justificativa dessa competência — vai ser usado para destacar esse pedaço na tela. Se não
-  houver um trecho específico citável (ex.: fuga total ao tema), deixe "".
+- "pontos": de 1 a 4 pontos concretos desta competência (a mesma evidência que você já levantou
+  na Etapa 1), cada um com:
+  - "trecho": copie EXATAMENTE (sem corrigir nem resumir) o trecho da redação a que esse ponto
+    se refere. Deixe "" só se não houver um trecho específico citável (ex.: fuga total ao tema).
+  - "tipo": "acerto" se o trecho mostra algo que a redação faz bem nessa competência, "erro" se
+    mostra o problema concreto que impede o nível acima.
+  - "comentario": 1 frase curta e objetiva sobre esse trecho específico (não repita a
+    justificativa inteira).
+  Se a nota for 200, todos os pontos são "acerto" (não invente erro só para ter um). Varie os
+  trechos entre os pontos — não repita o mesmo trecho em pontos diferentes.
 - "confianca" (0 a 1): o quanto você está seguro da nota total. Use valores baixos se o texto
   estiver incompleto, muito ilegível, perto de fugir do tema, ou se alguma competência ficou
   genuinamente no limiar entre dois níveis.
 - "feedback_geral": 2 a 4 frases para o aluno sobre o que mais vale a pena melhorar.
 
-Responda em JSON com esta estrutura:
+Responda em JSON com esta estrutura (exemplo de "pontos" só na primeira, mas toda competência precisa):
 {{
   "competencias": [
-    {{"codigo": "C1", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
-    {{"codigo": "C2", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
-    {{"codigo": "C3", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
-    {{"codigo": "C4", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}},
-    {{"codigo": "C5", "analise": "...", "nota": 0, "justificativa": "...", "trecho": "..."}}
+    {{"codigo": "C1", "analise": "...", "nota": 0, "justificativa": "...", "pontos": [
+      {{"trecho": "...", "tipo": "erro", "comentario": "..."}},
+      {{"trecho": "...", "tipo": "acerto", "comentario": "..."}}
+    ]}},
+    {{"codigo": "C2", "analise": "...", "nota": 0, "justificativa": "...", "pontos": [...]}},
+    {{"codigo": "C3", "analise": "...", "nota": 0, "justificativa": "...", "pontos": [...]}},
+    {{"codigo": "C4", "analise": "...", "nota": 0, "justificativa": "...", "pontos": [...]}},
+    {{"codigo": "C5", "analise": "...", "nota": 0, "justificativa": "...", "pontos": [...]}}
   ],
   "confianca": 0.0,
   "feedback_geral": "..."
@@ -201,12 +211,29 @@ Redação:
 \"\"\"
 """
 
+class CaixaIA(BaseModel):
+    # bounding box normalizada (0..1) de onde um ponto aparece na foto da prova (so exatas)
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+    largura: float = Field(ge=0, le=1)
+    altura: float = Field(ge=0, le=1)
+
+
+class PontoIA(BaseModel):
+    # um acerto ou erro concreto, com o trecho exato a que se refere -- pra destacar na tela
+    # (varios por competencia/questao, nao so um resumo geral)
+    trecho: str
+    tipo: Literal["acerto", "erro"]
+    comentario: str
+    caixa: CaixaIA | None = None  # so quando a resposta veio por foto (ver correcao_exatas.py)
+
+
 class CompetenciaIA(BaseModel):
     codigo: Literal["C1", "C2", "C3", "C4", "C5"]
     analise: str  # evidencias/raciocinio da Etapa 1, ANTES da nota -- forca pensar antes de decidir
     nota: int
     justificativa: str
-    trecho: str  # copia literal citada na justificativa, pra destacar na tela (pode ser "")
+    pontos: list[PontoIA] = Field(min_length=1, max_length=6)
 
     @field_validator("nota")
     @classmethod

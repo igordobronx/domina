@@ -111,14 +111,20 @@ export interface CaixaAPI {
   altura: number;
 }
 
+export interface PontoAPI {
+  trecho: string;
+  tipo: "acerto" | "erro";
+  comentario: string;
+  caixa: CaixaAPI | null;
+}
+
 export interface CriterioAPI {
   codigo: string;
   nome: string;
   nota: number;
   nota_professor: number | null;
   justificativa: string;
-  trecho: string | null;
-  caixa: CaixaAPI | null;
+  pontos: PontoAPI[];
 }
 
 export interface MinhaSubmissaoAPI {

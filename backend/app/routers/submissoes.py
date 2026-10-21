@@ -270,7 +270,7 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
                 CriterioResponse(
                     codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
                     nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
-                    justificativa=c.justificativa, trecho=c.trecho, caixa=c.caixa,
+                    justificativa=c.justificativa, pontos=c.pontos or [],
                 )
                 for c, t in linhas
             ]
@@ -345,7 +345,7 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
             CriterioResponse(
                 codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
                 nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
-                justificativa=c.justificativa, trecho=c.trecho, caixa=c.caixa,
+                justificativa=c.justificativa, pontos=c.pontos or [],
             )
             for c, t in criterios
         ],
@@ -459,10 +459,9 @@ def corrigir_submissao(
     db.add(correcao)
     db.flush()
     for i in itens:
-        caixa = getattr(i, "caixa", None)
         db.add(CorrecaoCriterio(
             correcao_id=correcao.id, tema_id=temas[i.codigo].id, nota=i.nota, justificativa=i.justificativa,
-            trecho=i.trecho, caixa=caixa.model_dump() if caixa else None,
+            pontos=[p.model_dump() for p in i.pontos],
         ))
     # ponytail: estimativa de tokens por tamanho do texto (sem usage_metadata real da API ainda)
     tokens_estimados = len(submissao.texto_confirmado) // 4

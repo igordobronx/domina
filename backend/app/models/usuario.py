@@ -158,9 +158,9 @@ class CorrecaoCriterio(Base):
     nota = Column(Numeric(6, 2), nullable=False)  # nota da IA
     nota_professor = Column(Numeric(6, 2), nullable=True)  # nota final, editada na aprovacao (RF-21)
     justificativa = Column(Text, nullable=False)
-    trecho = Column(Text, nullable=True)  # copia literal citada pela IA, pra destacar na tela
-    # {x,y,largura,altura} (0..1) de onde a resposta aparece na foto -- so em exatas por foto
-    caixa = Column(JSON, nullable=True)
+    # lista de pontos [{trecho, tipo: "acerto"|"erro", comentario, caixa?}], pra destacar na
+    # tela exatamente onde a IA viu cada acerto/erro (caixa so em exatas por foto)
+    pontos = Column(JSON, nullable=True)
 
 
 class DominioAluno(Base):

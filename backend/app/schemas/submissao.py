@@ -29,14 +29,20 @@ class CorrigirRequest(BaseModel):
     tema: str | None = Field(default=None, max_length=500)
 
 
+class PontoResponse(BaseModel):
+    trecho: str
+    tipo: Literal["acerto", "erro"]
+    comentario: str
+    caixa: dict | None = None
+
+
 class CriterioResponse(BaseModel):
     codigo: str
     nome: str
     nota: float
     nota_professor: float | None
     justificativa: str
-    trecho: str | None = None
-    caixa: dict | None = None
+    pontos: list[PontoResponse] = []
 
 
 class CorrecaoResponse(BaseModel):
