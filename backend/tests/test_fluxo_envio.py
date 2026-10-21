@@ -235,7 +235,7 @@ def test_aluno_gera_propria_correcao_e_professor_aprova_depois():
                       json={"atividade_id": atividade_id(), "texto": "minha redacao"}).json()
 
     nota = ia.ResultadoIA(
-        competencias=[{"codigo": f"C{i}", "nota": 160, "justificativa": "ok"} for i in range(5, 0, -1)],
+        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 160, "justificativa": "ok"} for i in range(5, 0, -1)],
         feedback_geral="bom trabalho", confianca=0.9,
     )
     original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota, settings.GEMINI_MODEL)
