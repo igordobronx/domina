@@ -1,10 +1,35 @@
 # Domina
 
-Plataforma que corrige redações do ENEM com IA e deixa o professor revisar e aprovar a nota.
-Este README explica o **fluxo do agente de correção da redação**: o que entra, o que ele faz e o
-que sai. Para o frontend, veja [`frontend/README.md`](frontend/README.md).
+Plataforma de correção com IA para escolas: a IA corrige e o professor revisa e aprova a nota.
 
-## Visão geral
+## O objetivo: um modelo próprio, treinado por matéria
+
+> **A intenção do Domina é ter o seu PRÓPRIO modelo de IA, personalizado, e NÃO depender só de
+> chamadas de API de terceiros (Gemini, Claude etc.).** As chamadas de API usadas hoje são só o
+> ponto de partida do MVP, para validar o produto e calibrar a correção contra notas reais.
+
+O Domina vai cobrir **todas as matérias**, e cada escola vai poder ensinar a IA a corrigir a
+matéria dela. Exemplo, numa escola de música:
+
+1. O professor entra no Domina e cria uma **nova matéria** (ex.: Teoria Musical).
+2. Abre a aba **"Treinar IA"**.
+3. Envia os materiais da matéria (apostilas, rubricas, gabaritos; por exemplo, 5 arquivos).
+4. A IA é treinada com esses materiais, aprende o conteúdo e guarda tudo o que precisa para
+   corrigir aquela matéria.
+5. A partir daí, as atividades dessa matéria são corrigidas com base no que ela aprendeu.
+
+**O que o MVP tem hoje:**
+- **Redação no estilo ENEM** (C1 a C5), corrigida pelo agente descrito abaixo.
+- **Matemática** (e outras exatas), corrigida questão por questão contra o gabarito do
+  professor (`backend/app/correcao_exatas.py`).
+- O envio de materiais de uma matéria já existe (`POST /materias/{id}/documentos`), mas por
+  enquanto só guarda os arquivos. Treinar a IA com eles é o próximo passo.
+
+O resto deste README explica o **fluxo do agente de correção da redação** como ele está hoje:
+o que entra, o que ele faz e o que sai. Para o frontend, veja
+[`frontend/README.md`](frontend/README.md).
+
+## Visão geral do fluxo da redação
 
 ```mermaid
 flowchart LR
