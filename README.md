@@ -55,9 +55,10 @@ nasce confirmado, sem etapa de OCR.
 **Tema:** vem no corpo de `POST /submissoes/{id}/corrigir` (`{"tema": "..."}`, até 500
 caracteres). Se não vier, usa o título da atividade. O tema importa para a C2 (fuga ou tangência).
 
-**Quem pode corrigir:** o próprio aluno dono da redação ou o professor da turma. A matéria precisa
-ter as 5 competências (C1 a C5) cadastradas, e cada redação só é corrigida uma vez (a segunda
-tentativa dá 409).
+**Quem dispara a correção da IA:** o aluno dono da redação ou o professor da turma. O aluno só
+**pede** a correção automática e vê a nota da IA como provisória; ele não dá nem muda nota. A
+nota final é sempre do professor (ver 2.5). A matéria precisa ter as 5 competências (C1 a C5)
+cadastradas, e cada redação passa pela IA uma vez só (a segunda tentativa dá 409).
 
 ## 2. Lógica (o que o agente faz)
 
