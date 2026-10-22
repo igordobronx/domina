@@ -42,9 +42,9 @@
     "semantic_hash": ""
   },
   "backend/app/config.py": {
-    "mtime": 1792590132.9580936,
-    "seen": 1792608317.4167542,
-    "ast_hash": "3585b5f2c5989fc7a231c29b6b544fe8",
+    "mtime": 1792612232.85689,
+    "seen": 1792690896.1306639,
+    "ast_hash": "55b326cf3a35abe98f106e819356f62f",
     "semantic_hash": ""
   },
   "backend/app/database.py": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1792521216.5087814,
-    "seen": 1792608317.416766,
-    "ast_hash": "422753599e5379ce759b26131565213f",
+    "mtime": 1792612238.660893,
+    "seen": 1792690896.130676,
+    "ast_hash": "e4277098aecdb9cad20691c33de38aaa",
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
@@ -276,9 +276,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Activities.tsx": {
-    "mtime": 1792610249.4558306,
-    "seen": 1792610277.1015246,
-    "ast_hash": "528d22c7051d4eae0887ad8e4c705fb3",
+    "mtime": 1792611319.3363154,
+    "seen": 1792690896.130744,
+    "ast_hash": "febe638468673bc876b5998e7e1f57cd",
     "semantic_hash": ""
   },
   "frontend/src/screens/Dashboard.tsx": {

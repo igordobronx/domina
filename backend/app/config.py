@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     ANTHROPIC_WORKSPACE_ID: str | None = None
     # onde ficam as fotos originais das redacoes (Submissao.conteudo_bruto aponta pra ca)
     UPLOAD_DIR: str = "uploads"
+    # dominios que podem chamar a API (separados por virgula) -- em produção, acrescentar a
+    # URL do frontend (ex.: https://domina.vercel.app) sem remover as de localhost
+    ALLOWED_ORIGINS: str = "http://localhost:8000,http://localhost:5173"
 
     model_config = SettingsConfigDict(
         env_file=".env",
