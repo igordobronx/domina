@@ -19,79 +19,110 @@ matéria dela. Exemplo, numa escola de música:
 5. A partir daí, as atividades dessa matéria são corrigidas com base no que ela aprendeu.
 
 **O que o MVP tem hoje:**
-- **Redação no estilo ENEM** (C1 a C5), corrigida pelo agente descrito abaixo.
-- **Matemática** (e outras exatas), corrigida questão por questão contra o gabarito do
-  professor (`backend/app/correcao_exatas.py`).
+- **Redação no estilo ENEM** (C1 a C5), corrigida por competência.
+- **Matemática** (e outras exatas), corrigida questão por questão contra o gabarito do professor.
 - O envio de materiais de uma matéria já existe (`POST /materias/{id}/documentos`), mas por
   enquanto só guarda os arquivos. Treinar a IA com eles é o próximo passo.
 
-O resto deste README explica o **fluxo do agente de correção da redação** como ele está hoje:
-o que entra, o que ele faz e o que sai. Para o frontend, veja
+O resto deste README explica o **fluxo do agente de correção** como ele está hoje, para a
+redação e para matemática: o que entra, o que ele faz e o que sai. Para o frontend, veja
 [`frontend/README.md`](frontend/README.md).
 
-## Visão geral do fluxo da redação
+## Visão geral do fluxo
 
 ```mermaid
 flowchart LR
-    A[Foto da redação] -->|POST /submissoes/imagem| B[OCR no Gemini]
+    P[Professor cria a atividade<br/>redação, ou questões + gabarito + valor] --> A
+    A[Foto da resposta] -->|POST /submissoes/imagem| B[OCR no Gemini]
     B --> C[Aluno confere e confirma o texto]
     T[Texto digitado] -->|POST /submissoes/texto| D
     C -->|PUT /submissoes/:id/confirmar| D[Texto confirmado]
-    D -->|POST /submissoes/:id/corrigir| E[Claude corrige C1 a C5<br/>prompt v14]
-    E --> F[Validação das notas<br/>0, 40, 80, 120, 160, 200]
+    D -->|POST /submissoes/:id/corrigir| E{Tipo da matéria}
+    E -->|Redação| R[Claude corrige C1 a C5<br/>prompt v14]
+    E -->|Matemática / exatas| M[Gemini confere cada<br/>questão com o gabarito]
+    R --> F[Validação e nota total]
+    M --> F
     F --> G[Correção salva<br/>PENDENTE ou REQUER_ATENCAO]
     G -->|PUT /submissoes/:id/aprovar| H[Professor aprova<br/>status APROVADA]
 ```
 
-A IA nunca dá a nota final sozinha. Ela gera uma nota **provisória**; o professor da turma confirma
-ou muda cada competência antes de a correção virar **APROVADA**.
+O caminho é o mesmo para as duas matérias até a hora de corrigir. Aí a correção se divide pelo
+tipo da matéria. A IA nunca dá a nota final sozinha: ela gera uma nota **provisória**, e o
+professor da turma confirma ou muda cada critério antes de a correção virar **APROVADA**.
 
 | Etapa | Onde está no código | Modelo |
 |---|---|---|
 | Ler a foto (OCR) | `backend/app/ocr/gemini.py`, `backend/app/routers/ocr.py` | Gemini (`gemini-3.5-flash`, reserva `gemini-3.5-flash-lite`) |
 | Corrigir a redação | `backend/app/correcao.py`, `backend/app/llm/claude.py` | Claude (`claude-sonnet-5-5`) |
+| Corrigir matemática / exatas | `backend/app/correcao_exatas.py` | Gemini (`gemini-3.5-flash`, mesma reserva) |
 | Rotas do fluxo | `backend/app/routers/submissoes.py` | |
 | Formato de entrada e saída | `backend/app/schemas/submissao.py` | |
 
+Tipos de matéria (`TipoMateriaEnum`): `REDACAO_ENEM` e `REDACAO_OUTRO_VESTIBULAR` vão para a
+correção de redação; `MATERIA_OBJETIVA` e `MATERIA_DISCURSIVA` (matemática, física, química...)
+vão para a correção de exatas.
+
 ## 1. Entrada (inputs)
 
-O agente corrige um **texto confirmado** e um **tema**. O texto chega de dois jeitos:
+### 1.1 A atividade (o professor prepara)
 
-**a) Foto da redação** (`POST /submissoes/imagem`, multipart com `file`, `atividade_id` e,
-se quem envia é o professor, `aluno_id`)
+`POST /atividades` com `materia_id`, `turma_id`, `titulo` e `tipo`:
+- **Redação:** não precisa de mais nada. A matéria já tem as 5 competências (C1 a C5)
+  cadastradas, e a atividade vale sempre 1000.
+- **Matemática / exatas:** o professor também manda as **questões com o gabarito**
+  (`questoes: [{"enunciado", "resposta_correta"}]`, obrigatório) e, se quiser, o **valor total**
+  da atividade (`valor_total`; se não mandar, vale 1000). Cada questão vira um critério `Q1`,
+  `Q2`, ... O gabarito só o professor vê.
+
+### 1.2 A resposta do aluno
+
+O agente corrige um **texto confirmado**. Ele chega de dois jeitos, iguais para redação e
+matemática:
+
+**a) Foto** (`POST /submissoes/imagem`, multipart com `file`, `atividade_id` e, se quem envia é
+o professor, `aluno_id`)
 1. A imagem precisa ser `image/*` e ter até 10 MB.
 2. Uma cópia reduzida (lado maior de 1600 px, já desvirada pelo EXIF) vai ao Gemini. A foto
    original fica salva em `UPLOAD_DIR` para o professor ver depois.
-3. O prompt de OCR pede para transcrever **palavra por palavra, sem corrigir nada** (os erros do
-   aluno contam na C1), escrever `[ilegível]` no que não der para ler, pular trechos riscados e
-   ignorar o cabeçalho (nome, CPF, inscrição) e a numeração das linhas.
+3. O prompt de OCR pede para transcrever **palavra por palavra, sem corrigir nada** (na redação,
+   os erros do aluno contam na C1), escrever `[ilegível]` no que não der para ler, pular trechos
+   riscados e ignorar o cabeçalho (nome, CPF, inscrição) e a numeração das linhas.
 4. Se o Gemini principal estiver sem cota ou sobrecarregado (erro 429, 503, 504 ou tempo
    esgotado), tenta o modelo reserva.
 5. O texto lido fica em `texto_ocr`. O aluno (ou professor) confere, corrige o que o OCR leu
    errado e confirma com `PUT /submissoes/{id}/confirmar` (`{"texto": "..."}`). Depois de
    confirmado, o texto não muda mais.
 
-Erros do OCR: sem chave do Gemini = 503; nenhum texto na foto = 422; redação já publicada na
+Erros do OCR: sem chave do Gemini = 503; nenhum texto na foto = 422; texto já publicado na
 internet (o Google bloqueia por "recitation") = 422; outra falha = 502, sem vazar detalhe interno.
 
 **b) Texto digitado** (`POST /submissoes/texto`, `{"atividade_id", "aluno_id"?, "texto"}`): já
 nasce confirmado, sem etapa de OCR.
 
-**Tema:** vem no corpo de `POST /submissoes/{id}/corrigir` (`{"tema": "..."}`, até 500
-caracteres). Se não vier, usa o título da atividade. O tema importa para a C2 (fuga ou tangência).
+### 1.3 O que mais vai para a IA
 
-**Quem dispara a correção da IA:** o aluno dono da redação ou o professor da turma. O aluno só
+- **Redação:** o **tema**, que vem no corpo de `POST /submissoes/{id}/corrigir`
+  (`{"tema": "..."}`, até 500 caracteres). Se não vier, usa o título da atividade. O tema
+  importa para a C2 (fuga ou tangência).
+- **Matemática / exatas:** o nome da matéria e as questões com o gabarito da atividade. Se a
+  resposta veio por **foto**, a foto original também vai junto, para a IA apontar **onde** na
+  folha está cada resposta.
+
+**Quem dispara a correção da IA:** o aluno dono da resposta ou o professor da turma. O aluno só
 **pede** a correção automática e vê a nota da IA como provisória; ele não dá nem muda nota. A
-nota final é sempre do professor (ver 2.5). A matéria precisa ter as 5 competências (C1 a C5)
-cadastradas, e cada redação passa pela IA uma vez só (a segunda tentativa dá 409).
+nota final é sempre do professor (ver 2.5). Cada resposta passa pela IA uma vez só (a segunda
+tentativa dá 409).
 
 ## 2. Lógica (o que o agente faz)
 
-A função `corrigir(texto, tema)` em `backend/app/correcao.py` monta o prompt e faz **uma única
-chamada** ao Claude. A IA age como **um corretor** do ENEM. (A correção dupla, com média de dois
-corretores, foi testada e não melhorou o erro.)
+`corrigir_submissao` (`backend/app/routers/submissoes.py`) olha o tipo da matéria e chama um
+de dois corretores. Os dois fazem **uma única chamada** à IA por resposta.
 
-### 2.1 O prompt (versão v14)
+### 2.1 Redação: o prompt (versão v14)
+
+A função `corrigir(texto, tema)` em `backend/app/correcao.py` monta o prompt e chama o Claude.
+A IA age como **um corretor** do ENEM. (A correção dupla, com média de dois corretores, foi
+testada e não melhorou o erro.)
 
 O prompt fica na constante `PROMPT`, e a versão em `VERSAO_PROMPT = "v14"`. Ele obriga a IA a
 corrigir em **duas etapas**:
@@ -126,31 +157,50 @@ A evolução do prompt (v1 a v21), com os resultados de cada teste, está em
 [`docs/calibracao/historico_versoes_prompt.md`](docs/calibracao/historico_versoes_prompt.md).
 O texto completo do v14 também está em `docs/calibracao/2026-10-20/prompt_v14.txt`.
 
-### 2.2 Chamada ao modelo
-
-`backend/app/llm/claude.py` chama o Claude (`ANTHROPIC_MODEL`, padrão `claude-sonnet-5-5`) e força
-a resposta no formato do schema `ResultadoIA` por meio de uma *tool* (`responder_correcao`). Usa até
-16.000 tokens de saída, porque a Etapa 1 gera bastante texto.
+**Chamada ao modelo:** `backend/app/llm/claude.py` chama o Claude (`ANTHROPIC_MODEL`, padrão
+`claude-sonnet-5-5`) e força a resposta no formato do schema `ResultadoIA` por meio de uma *tool*
+(`responder_correcao`). Usa até 16.000 tokens de saída, porque a Etapa 1 gera bastante texto.
 
 > Os números de calibração do v14 (erro médio de 48 pontos nas 53 redações com nota oficial do
 > INEP) foram medidos com o Gemini flash-lite, antes da troca do provedor da nota para o Claude.
 
+### 2.2 Matemática e exatas: conferir com o gabarito
+
+A função `corrigir(respostas, materia, questoes, imagem)` em `backend/app/correcao_exatas.py`
+(versão `exatas-v1`) chama o Gemini. Aqui **não há rubrica subjetiva** nem avaliação de estilo:
+é uma conferência objetiva, questão por questão.
+
+- O prompt manda cada questão com o enunciado e o gabarito, e as respostas do aluno como foram
+  transcritas. As respostas podem estar fora de ordem ou sem número; a IA associa cada trecho à
+  questão certa pelo conteúdo.
+- A resposta conta como **certa mesmo em outro formato**: `1/2` = `0,5`, `x = 3` = `3`, unidades
+  equivalentes. Conta como **errada** se o valor final for diferente do gabarito, mesmo que o
+  método pareça certo.
+- Cada questão ganha uma nota relativa de **0 a 200**: 200 se acertou, 0 se errou. Valores no
+  meio (40, 80, 120, 160) só quando a questão tem várias partes e o aluno acertou parte delas.
+- A justificativa cita, em 1 ou 2 frases, o que o aluno respondeu e o que diz o gabarito.
+- Se a resposta veio por **foto**, a IA também devolve uma `caixa` em cada ponto (posição na
+  imagem, de 0 a 1), para a tela marcar a resposta direto na folha.
+- O Gemini é chamado com temperatura 0 e formato JSON obrigatório (`response_schema`). Se o
+  principal estiver sem cota, usa o modelo reserva.
+
 ### 2.3 Validação
 
-O schema Pydantic em `correcao.py` confere a resposta da IA:
+**Redação** (schema Pydantic em `correcao.py`):
 - **`NOTAS_VALIDAS = {0, 40, 80, 120, 160, 200}`**: cada corretor do ENEM só usa esses níveis.
   Nota fora disso é arredondada para o nível mais próximo; no empate (ex.: 60) fica com o menor,
   para não inflar a nota.
 - Precisa vir **C1 a C5, uma vez cada** (a lista é ordenada por código).
 - Cada competência tem de 1 a 6 `pontos`; `confianca` entre 0 e 1.
-- Se o modelo não devolver um JSON válido, a rota responde 502 e nada é salvo.
 
-**Matemática e outras exatas** (`backend/app/correcao_exatas.py`, no Gemini): não há rubrica
-subjetiva, a IA só confere cada questão contra o gabarito do professor, aceitando formas
-equivalentes (`1/2` = `0,5`, `x = 3` = `3`). Ela dá a cada questão uma nota relativa de 0 a 200:
-200 se acertou, 0 se errou, e valores intermediários só quando a questão tem várias partes e o
-aluno acertou parte delas. A mesma regra de `NOTAS_VALIDAS` arredonda essa nota, e a IA precisa
-responder exatamente as questões da atividade.
+**Matemática e exatas** (schema em `correcao_exatas.py`):
+- A nota de 0 a 200 de cada questão passa pela mesma regra de `NOTAS_VALIDAS` (arredonda para
+  o nível mais próximo).
+- A IA precisa responder **exatamente as questões da atividade** (`Q1`, `Q2`, ...), nem mais
+  nem menos.
+- `confianca` entre 0 e 1: baixa quando a resposta do aluno está ambígua, incompleta ou faltando.
+
+Nos dois casos, se o modelo não devolver um JSON válido, a rota responde 502 e nada é salvo.
 
 ### 2.4 Nota total e status
 
@@ -160,22 +210,32 @@ Em `corrigir_submissao` (`backend/app/routers/submissoes.py`):
   ao criar a atividade; se não escolher, vale 1000). Esse valor é **dividido igualmente entre as
   questões**. Exemplo: atividade de 50 pontos com 5 questões = 10 pontos por questão. A nota de
   0 a 200 que a IA deu em cada questão é convertida para essa escala (200 = 10 pontos, 120 = 6
-  pontos) e `nota_ia` = soma das questões. Na aprovação, o professor pode dar a cada questão
-  qualquer nota de 0 até o valor dela.
-- O status nasce **PENDENTE**, ou **REQUER_ATENCAO** (vai para o topo da fila do professor) quando
-  a `confianca` é menor que **0,6** ou quando o modelo usado não foi o principal.
-- Fica gravado o `modelo_usado` e a `versao_prompt`, para saber depois qual prompt gerou cada nota.
+  pontos) e `nota_ia` = soma das questões. O feedback é o placar, por exemplo
+  "4/5 questões corretas."
+- Nos dois casos, o status nasce **PENDENTE**, ou **REQUER_ATENCAO** (vai para o topo da fila do
+  professor) quando a `confianca` é menor que **0,6** ou quando o modelo usado não foi o
+  principal (ex.: caiu no Gemini reserva).
+- Fica gravado o `modelo_usado` e a `versao_prompt` (`v14` ou `exatas-v1`), para saber depois
+  qual prompt gerou cada nota.
 
 ### 2.5 Aprovação do professor
 
-`PUT /submissoes/{id}/aprovar` com `{"notas": [{"codigo": "C1", "nota": 160}, ...], "feedback"?}`:
-o professor manda a nota final de cada competência (também só valores de `NOTAS_VALIDAS`).
-`nota_professor` = soma delas, o status vira **APROVADA** e as notas atualizam o domínio do aluno
-em cada competência (média móvel). O aluno vê a nota da IA antes disso, mas como provisória.
+`PUT /submissoes/{id}/aprovar` com `{"notas": [{"codigo": "...", "nota": ...}, ...], "feedback"?}`.
+O professor manda a nota final de **cada critério, uma vez cada**:
+- **Redação:** `C1` a `C5`, só com valores de `NOTAS_VALIDAS` (0, 40, ..., 200).
+- **Matemática / exatas:** `Q1` a `Qn`, qualquer nota de 0 até o valor da questão (no exemplo
+  acima, de 0 a 10).
+
+`nota_professor` = soma delas e o status vira **APROVADA**. Na redação, as notas também
+atualizam o domínio do aluno em cada competência (média móvel), para acompanhar a evolução.
+Em exatas isso não acontece, porque cada questão é única daquela atividade e não se repete.
+O aluno vê a nota da IA antes da aprovação, mas como provisória.
 
 ## 3. Saída (outputs)
 
-**O que a IA devolve** (`ResultadoIA`):
+### 3.1 O que a IA devolve
+
+**Redação** (`ResultadoIA`):
 
 ```json
 {
@@ -199,27 +259,51 @@ em cada competência (média móvel). O aluno vê a nota da IA antes disso, mas 
 A `analise` fica antes da `nota` de propósito: força a IA a pensar antes de decidir. Ela não é
 salva nem mostrada; serve só para a IA chegar na nota.
 
-**O que a API devolve** (`CorrecaoResponse`, em `POST /submissoes/{id}/corrigir` e
-`GET /submissoes/{id}/correcao`):
+**Matemática / exatas** (`ResultadoExatasIA`):
+
+```json
+{
+  "questoes": [
+    {
+      "codigo": "Q1",
+      "nota": 200,
+      "justificativa": "O aluno respondeu 0,5 e o gabarito é 1/2: mesma resposta.",
+      "pontos": [
+        {"trecho": "x = 0,5", "tipo": "acerto", "comentario": "bate com o gabarito",
+         "caixa": {"x": 0.1, "y": 0.2, "largura": 0.3, "altura": 0.1}}
+      ]
+    }
+  ],
+  "confianca": 0.9
+}
+```
+
+A `caixa` só aparece quando a resposta veio por foto.
+
+### 3.2 O que a API devolve
+
+A mesma resposta para as duas matérias (`CorrecaoResponse`, em `POST /submissoes/{id}/corrigir`
+e `GET /submissoes/{id}/correcao`):
 
 | Campo | O que é |
 |---|---|
-| `nota_ia` | Soma das 5 competências dada pela IA (0 a 1000) |
+| `nota_ia` | Nota total da IA: soma das 5 competências (redação, até 1000) ou das questões já convertidas para o valor da atividade (exatas) |
 | `nota_professor` | Soma das notas do professor; `null` até aprovar |
 | `confianca` | De 0 a 1, o quanto a IA está segura |
 | `status` | `PENDENTE`, `REQUER_ATENCAO` ou `APROVADA` |
 | `modelo_usado` | Modelo que fez a correção |
-| `feedback` | `feedback_geral` da IA (o professor pode trocar ao aprovar) |
-| `criterios[]` | Uma linha por competência: `codigo`, `nome`, `nota`, `nota_professor`, `justificativa` e `pontos` (trecho, tipo acerto/erro, comentário) |
+| `feedback` | Redação: `feedback_geral` da IA. Exatas: o placar ("4/5 questões corretas."). O professor pode trocar ao aprovar |
+| `criterios[]` | Uma linha por competência (`C1`..`C5`) ou questão (`Q1`..`Qn`): `codigo`, `nome` (nome da competência ou enunciado da questão), `nota`, `nota_professor`, `justificativa` e `pontos` (trecho, tipo acerto/erro, comentário e, em exatas por foto, `caixa`) |
 
-Os `pontos` servem para o frontend destacar na redação cada trecho com acerto ou erro.
+Os `pontos` servem para o frontend destacar cada trecho com acerto ou erro: no texto da redação,
+ou direto na foto da prova de matemática (pela `caixa`).
 
 ## 4. Como rodar
 
 ```sh
 # 1. configurar as chaves
 cp backend/.env.example backend/.env
-# preencher GEMINI_API_KEY (OCR) e ANTHROPIC_API_KEY (nota da redação)
+# preencher GEMINI_API_KEY (OCR e matemática) e ANTHROPIC_API_KEY (nota da redação)
 
 # 2. subir banco + API
 docker compose up -d --build
@@ -229,8 +313,8 @@ docker compose exec api python seed.py   # dados de exemplo
 A API fica em `http://localhost:8000` (documentação em `/docs`). Para testar OCR e correção
 direto no navegador, abra **`http://localhost:8000/laboratorio/`**.
 
-Sem `GEMINI_API_KEY` a API sobe, mas o OCR responde 503. Sem `ANTHROPIC_API_KEY`, corrigir
-redação responde 503.
+Sem `GEMINI_API_KEY` a API sobe, mas o OCR e a correção de matemática respondem 503. Sem
+`ANTHROPIC_API_KEY`, corrigir redação responde 503.
 
 ## 5. Como testar
 
@@ -241,9 +325,13 @@ python -m pytest
 ```
 
 Os testes usam SQLite temporário e trocam o OCR e a IA por versões falsas, então não gastam cota
-nem precisam de chave. Os que cobrem o agente estão em `backend/tests/test_fluxo_envio.py`:
-foto → OCR → confirmação → correção → aprovação, arredondamento para níveis válidos do ENEM,
-uma correção só por redação e status `REQUER_ATENCAO` com modelo diferente do principal.
+nem precisam de chave.
+- **Redação** (`backend/tests/test_fluxo_envio.py`): foto → OCR → confirmação → correção →
+  aprovação, arredondamento para níveis válidos do ENEM, uma correção só por redação e status
+  `REQUER_ATENCAO` com modelo diferente do principal.
+- **Matemática / exatas** (`backend/tests/test_exatas.py`): atividade exige gabarito, fluxo
+  completo, aluno gera a correção e o professor aprova depois, aprovação exige todas as questões
+  e valor total configurável e dividido igualmente entre as questões.
 
-Para medir o prompt contra notas reais do INEP, use os scripts de calibração em
+Para medir o prompt da redação contra notas reais do INEP, use os scripts de calibração em
 `backend/calibracao/` e `docs/calibracao/` (explicados no `CLAUDE.md` e no histórico de versões).
