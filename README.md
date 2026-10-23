@@ -145,10 +145,23 @@ O schema Pydantic em `correcao.py` confere a resposta da IA:
 - Cada competência tem de 1 a 6 `pontos`; `confianca` entre 0 e 1.
 - Se o modelo não devolver um JSON válido, a rota responde 502 e nada é salvo.
 
+**Matemática e outras exatas** (`backend/app/correcao_exatas.py`, no Gemini): não há rubrica
+subjetiva, a IA só confere cada questão contra o gabarito do professor, aceitando formas
+equivalentes (`1/2` = `0,5`, `x = 3` = `3`). Ela dá a cada questão uma nota relativa de 0 a 200:
+200 se acertou, 0 se errou, e valores intermediários só quando a questão tem várias partes e o
+aluno acertou parte delas. A mesma regra de `NOTAS_VALIDAS` arredonda essa nota, e a IA precisa
+responder exatamente as questões da atividade.
+
 ### 2.4 Nota total e status
 
 Em `corrigir_submissao` (`backend/app/routers/submissoes.py`):
-- **`nota_ia` = soma das 5 competências** (0 a 1000).
+- **Redação ENEM:** `nota_ia` = soma das 5 competências (0 a 1000, fixo).
+- **Matemática e outras exatas:** o **professor escolhe quanto a atividade vale** (`valor_total`,
+  ao criar a atividade; se não escolher, vale 1000). Esse valor é **dividido igualmente entre as
+  questões**. Exemplo: atividade de 50 pontos com 5 questões = 10 pontos por questão. A nota de
+  0 a 200 que a IA deu em cada questão é convertida para essa escala (200 = 10 pontos, 100 = 5
+  pontos) e `nota_ia` = soma das questões. Na aprovação, o professor pode dar a cada questão
+  qualquer nota de 0 até o valor dela.
 - O status nasce **PENDENTE**, ou **REQUER_ATENCAO** (vai para o topo da fila do professor) quando
   a `confianca` é menor que **0,6** ou quando o modelo usado não foi o principal.
 - Fica gravado o `modelo_usado` e a `versao_prompt`, para saber depois qual prompt gerou cada nota.
