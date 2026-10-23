@@ -159,7 +159,7 @@ Em `corrigir_submissao` (`backend/app/routers/submissoes.py`):
 - **Matemática e outras exatas:** o **professor escolhe quanto a atividade vale** (`valor_total`,
   ao criar a atividade; se não escolher, vale 1000). Esse valor é **dividido igualmente entre as
   questões**. Exemplo: atividade de 50 pontos com 5 questões = 10 pontos por questão. A nota de
-  0 a 200 que a IA deu em cada questão é convertida para essa escala (200 = 10 pontos, 100 = 5
+  0 a 200 que a IA deu em cada questão é convertida para essa escala (200 = 10 pontos, 120 = 6
   pontos) e `nota_ia` = soma das questões. Na aprovação, o professor pode dar a cada questão
   qualquer nota de 0 até o valor dela.
 - O status nasce **PENDENTE**, ou **REQUER_ATENCAO** (vai para o topo da fila do professor) quando
