@@ -1,6 +1,6 @@
 # Documentação do frontend Domina
 
-Versão: 0.1.0 · Entrega de 6 de outubro de 2026 · Responsável pelo frontend: Lucas.
+Versão: 0.1.0 · Entrega de 6 de outubro de 2026.
 
 ## 1. Objetivo e decisões
 
