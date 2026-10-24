@@ -1,11 +1,11 @@
 # Publicar o Domina na Vercel
 
-O projeto já contém `vercel.json` com as configurações de build. A publicação não exige variáveis de ambiente nem backend.
+O projeto já contém `vercel.json` com as configurações de build. O frontend precisa do backend no ar: configure `VITE_API_URL` com o endereço da API e acrescente a URL da Vercel em `ALLOWED_ORIGINS` no backend.
 
 1. Acesse sua conta na Vercel e escolha **Add New → Project**.
 2. Conecte sua conta GitHub, se necessário, e permita acesso ao repositório do Domina.
-3. Importe o repositório `domina-front`.
-4. Mantenha **Root Directory** na raiz (`./`).
+3. Importe o repositório do Domina.
+4. Em **Root Directory**, escolha `frontend` (o frontend fica nessa pasta do repositório).
 5. Confira estas opções:
 
 | Campo | Valor |
@@ -15,7 +15,7 @@ O projeto já contém `vercel.json` com as configurações de build. A publicaç
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
 | Node.js | 24.x |
-| Environment Variables | Nenhuma |
+| Environment Variables | `VITE_API_URL` = URL pública da API |
 
 6. Clique em **Deploy** e aguarde o build.
 7. Abra o endereço HTTPS fornecido pela Vercel no computador e no celular.
@@ -24,7 +24,7 @@ As rotas usam fragmentos como `/#aluno/atividades`, portanto não precisam de re
 
 ## Verificação no celular
 
-- Confira o envio demonstrativo, a troca de perfis e a aprovação.
+- Confira o login, o envio, a correção e a aprovação.
 - No Android/Chrome, use **Instalar app** na página inicial.
 - No iPhone/Safari, use **Compartilhar → Adicionar à Tela de Início**.
 - Abra pelo ícone instalado: o convite de instalação deve desaparecer.
