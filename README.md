@@ -6,7 +6,7 @@ Plataforma de correção com IA para escolas: a IA corrige e o professor revisa 
 
 > **O Domina está desenvolvendo e treinando o seu PRÓPRIO modelo de IA, personalizado por
 > matéria.** O produto é o agente somado a esse modelo: o agente orquestra o fluxo de correção e
-> o modelo próprio, **ainda em desenvolvimento e treinamento**, vai aprender o conteúdo de cada
+> o modelo próprio, vai aprender o conteúdo de cada
 > matéria e corrigir. O modelo é acessado por uma camada única de inferência
 > (`backend/app/llm/`, `backend/app/ocr/`), de modo que cada versão treinada entra no fluxo sem
 > mudar o resto do sistema.
