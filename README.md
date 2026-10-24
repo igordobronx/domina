@@ -21,6 +21,8 @@ matéria dela. Exemplo, numa escola de música:
 **O que o MVP tem hoje:**
 - **Redação no estilo ENEM** (C1 a C5), corrigida por competência.
 - **Matemática** (e outras exatas), corrigida questão por questão contra o gabarito do professor.
+- **Agente de correção**: o Claude decide sozinho os passos de cada envio e usa as IAs de
+  correção como ferramentas (veja a seção "O agente de correção").
 - O envio de materiais de uma matéria já existe (`POST /materias/{id}/documentos`), mas por
   enquanto só guarda os arquivos. Treinar a IA com eles é o próximo passo.
 
@@ -52,6 +54,7 @@ professor da turma confirma ou muda cada critério antes de a correção virar *
 
 | Etapa | Onde está no código | Modelo |
 |---|---|---|
+| Agente (decide os passos) | `backend/app/agente.py`, `backend/app/routers/agente.py` | Claude (`ANTHROPIC_MODEL`, padrão `claude-sonnet-5-5`) |
 | Ler a foto (OCR) | `backend/app/ocr/gemini.py`, `backend/app/routers/ocr.py` | Gemini (`gemini-3.5-flash`, reserva `gemini-3.5-flash-lite`) |
 | Corrigir a redação | `backend/app/correcao.py`, `backend/app/llm/claude.py` | Claude (`claude-sonnet-5-5`) |
 | Corrigir matemática / exatas | `backend/app/correcao_exatas.py` | Gemini (`gemini-3.5-flash`, mesma reserva) |
@@ -61,6 +64,53 @@ professor da turma confirma ou muda cada critério antes de a correção virar *
 Tipos de matéria (`TipoMateriaEnum`): `REDACAO_ENEM` e `REDACAO_OUTRO_VESTIBULAR` vão para a
 correção de redação; `MATERIA_OBJETIVA` e `MATERIA_DISCURSIVA` (matemática, física, química...)
 vão para a correção de exatas.
+
+## O agente de correção (o Claude decide os passos)
+
+Além do fluxo fixo acima (foto → texto → nota), existe o **agente**: em vez de o código seguir uma
+ordem fixa, o **Claude recebe um objetivo e decide sozinho quais ferramentas usar**. As IAs que
+já existiam (correção da redação, correção de exatas, gerador de exercícios) viram *ferramentas*
+dele. O agente **não corrige de um jeito novo**: ele decide **quando** e **qual** peça usar.
+
+**Rotas:** `POST /submissoes/{id}/agente` (roda o agente; aceita `{"tema"?}`) e
+`GET /submissoes/{id}/agente` (devolve o último passo a passo gravado). Quem pode rodar é o
+mesmo de `/corrigir`: o aluno dono da resposta ou o professor da turma, e o texto precisa estar
+confirmado. Sem `ANTHROPIC_API_KEY`, responde 503.
+
+**O objetivo dado ao agente:** deixar tudo pronto para o professor revisar e para o aluno
+estudar. Um caminho típico:
+1. `ler_envio`: confere se o texto está legível e completo. Se estiver ilegível, vazio ou
+   cortado (OCR ruim), usa `pedir_nova_foto` e termina sem corrigir.
+2. Escolhe o corretor certo: `corrigir_redacao_enem` ou `corrigir_exatas` (a ferramenta errada
+   para o tipo da matéria devolve erro, e o agente se corrige).
+3. `consultar_historico_aluno`: compara a nota de agora com o domínio por competência e as
+   últimas notas.
+4. Se for redação, `gerar_exercicios_reforco` para as 1 a 3 competências mais fracas.
+5. `sinalizar_professor` **só quando há motivo real** (confiança baixa, queda grande, nota
+   muito baixa, suspeita de fuga ao tema, texto muito curto). Isso coloca a correção como
+   `REQUER_ATENCAO`, no topo da fila.
+6. `finalizar`: sempre o último passo, com uma mensagem motivadora para o aluno e um resumo para
+   o professor.
+
+**Regras e travas:**
+- **A nota final continua sendo do professor.** A do agente é provisória, igual à do fluxo normal.
+- O agente **não inventa nota**: usa só o que as ferramentas devolvem, e **não escolhe o tema da
+  redação** (o tema vem do professor ou do título da atividade). Antes, quando ele podia
+  escolher, um tema inventado mudava a C2 e piorava a nota.
+- Máximo de **10 passos** por execução. Cada ferramenta recebe um "motivo" (uma frase), que o
+  professor lê na tela.
+- Se o agente cair no meio (erro, recusa, tempo), a **correção direta ainda sai**: o sistema
+  roda a correção normal e grava um aviso no passo a passo.
+- Cada execução grava no **log de auditoria** (`AGENTE_CORRIGIR`) e os **tokens do agente entram
+  no custo da escola**.
+
+**O que fica salvo** (tabela `agente_execucao`, uma por envio; rodar de novo sobrescreve): os
+`passos` (pensamento, ferramenta com motivo, entrada e resultado, ou aviso), a `mensagem_aluno`,
+o `resumo_professor`, os `exercicios` de reforço e o `modelo_usado`. A resposta da API
+(`AgenteResponse`) traz isso mais a `correcao` completa (mesmo formato de `CorrecaoResponse`).
+
+**Na tela:** na revisão do professor (`frontend/src/screens/Activities.tsx`) aparece o card
+**"Passo a passo do agente"**, com cada decisão e o motivo.
 
 ## 1. Entrada (inputs)
 
@@ -314,7 +364,11 @@ A API fica em `http://localhost:8000` (documentação em `/docs`). Para testar O
 direto no navegador, abra **`http://localhost:8000/laboratorio/`**.
 
 Sem `GEMINI_API_KEY` a API sobe, mas o OCR e a correção de matemática respondem 503. Sem
-`ANTHROPIC_API_KEY`, corrigir redação responde 503.
+`ANTHROPIC_API_KEY`, corrigir redação e rodar o agente respondem 503.
+
+Em produção, acrescente a URL do frontend (ex.: `https://domina.vercel.app`) em
+`ALLOWED_ORIGINS` (domínios separados por vírgula, sem tirar os de localhost): é a lista de
+quem pode chamar a API pelo navegador.
 
 ## 5. Como testar
 
@@ -332,6 +386,8 @@ nem precisam de chave.
 - **Matemática / exatas** (`backend/tests/test_exatas.py`): atividade exige gabarito, fluxo
   completo, aluno gera a correção e o professor aprova depois, aprovação exige todas as questões
   e valor total configurável e dividido igualmente entre as questões.
+- **Agente** (`backend/tests/test_agente.py`): o agente decide os passos e grava o passo a passo,
+  e, se ele cair, a correção direta ainda é entregue.
 
 Para medir o prompt da redação contra notas reais do INEP, use os scripts de calibração em
 `backend/calibracao/` e `docs/calibracao/` (explicados no `CLAUDE.md` e no histórico de versões).
