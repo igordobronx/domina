@@ -12,8 +12,10 @@ from sqlalchemy.orm import Session
 
 from app import agente
 from app.agente import ErroFerramenta, Ferramenta
+from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.config import settings
+from app.custo import registrar_uso
 from app.database import get_db
 from app.estudos import gerar_exercicios
 from app.models.enum import StatusCorrecaoEnum
@@ -218,11 +220,12 @@ def rodar_agente(
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Agente indisponível: servidor sem chave do Claude.")
 
     estado: dict = {}
+    tokens = 0
     pedido = "Há um novo envio de um aluno para você cuidar. Comece lendo o envio."
     if payload.tema:
         pedido += f" O professor informou o tema da proposta: {payload.tema.strip()}"
     try:
-        passos, modelo = agente.rodar(pedido, _ferramentas(db, submissao, usuario, estado), lambda: estado.get("fim", False))
+        passos, modelo, tokens = agente.rodar(pedido, _ferramentas(db, submissao, usuario, estado), lambda: estado.get("fim", False))
     except Exception as e:  # noqa: BLE001 -- se o agente cair, a correcao normal ainda sai
         logger.exception("falha no agente")
         passos, modelo = [{"tipo": "aviso", "texto": f"O agente parou ({type(e).__name__}); usei a correção direta."}], settings.ANTHROPIC_MODEL
@@ -241,6 +244,9 @@ def rodar_agente(
     execucao.resumo_professor = estado.get("resumo_professor")
     execucao.exercicios = estado.get("exercicios")
     execucao.modelo_usado = modelo
+    # RF-42/RF-43: quem rodou o agente fica no log de auditoria e os tokens dele entram no custo da escola
+    registrar(db, usuario.id, "AGENTE_CORRIGIR", "Submissao", submissao.id)
+    registrar_uso(db, usuario.escola_id, tokens_llm=tokens)
     db.commit()
     return _resposta(db, execucao)
 

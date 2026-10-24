@@ -75,15 +75,16 @@ def _resumo(resultado: dict, limite: int = 600) -> str:
     return texto if len(texto) <= limite else texto[:limite] + "..."
 
 
-def rodar(pedido: str, ferramentas: list[Ferramenta], terminou: Callable[[], bool]) -> tuple[list[dict], str]:
+def rodar(pedido: str, ferramentas: list[Ferramenta], terminou: Callable[[], bool]) -> tuple[list[dict], str, int]:
     """Roda o loop ate o agente chamar a ferramenta de fim (terminou() vira True) ou parar.
 
-    Devolve (passos, modelo). Cada passo e um dict que vai direto para o banco e para a tela.
+    Devolve (passos, modelo, tokens gastos pelo agente). Cada passo e um dict que vai direto para o banco e para a tela.
     """
     modelo = settings.ANTHROPIC_MODEL
     por_nome = {f.nome: f for f in ferramentas}
     mensagens: list = [{"role": "user", "content": pedido}]
     passos: list[dict] = []
+    tokens = 0
 
     for _ in range(MAX_PASSOS):
         resposta = _client().with_options(timeout=90.0).messages.create(
@@ -94,6 +95,8 @@ def rodar(pedido: str, ferramentas: list[Ferramenta], terminou: Callable[[], boo
             tool_choice={"type": "auto"},
             messages=mensagens,
         )
+        uso = getattr(resposta, "usage", None)
+        tokens += (getattr(uso, "input_tokens", 0) or 0) + (getattr(uso, "output_tokens", 0) or 0)
         if resposta.stop_reason == "refusal":
             raise RuntimeError("o modelo recusou o pedido")
         # devolve o conteudo inteiro (inclusive os blocos de thinking) na proxima chamada
@@ -134,4 +137,4 @@ def rodar(pedido: str, ferramentas: list[Ferramenta], terminou: Callable[[], boo
         if terminou():
             break
 
-    return passos, modelo
+    return passos, modelo, tokens

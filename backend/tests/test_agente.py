@@ -5,6 +5,7 @@ Mesma base de tests/test_fluxo_envio.py (sqlite temporario, sem chamar API de ve
 """
 import os
 import tempfile
+import uuid
 
 _tmp = tempfile.mkdtemp()
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{_tmp}/teste.db")
@@ -24,7 +25,7 @@ from app import correcao as ia  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
 from app.estudos import ExercicioGerado  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models.usuario import Atividade  # noqa: E402
+from app.models.usuario import Atividade, AuditLog, CustoUso  # noqa: E402
 
 seed.run_seed()
 client = TestClient(app)
@@ -51,7 +52,8 @@ def _cliente_roteirizado(roteiro):
 
     def create(**kwargs):
         pedidos.append(kwargs)
-        return SimpleNamespace(stop_reason="tool_use", content=roteiro[len(pedidos) - 1])
+        return SimpleNamespace(stop_reason="tool_use", content=roteiro[len(pedidos) - 1],
+                               usage=SimpleNamespace(input_tokens=100, output_tokens=20))
 
     falso = SimpleNamespace(messages=SimpleNamespace(create=create))
     falso.with_options = lambda **_: falso
@@ -101,6 +103,12 @@ def test_agente_decide_os_passos_e_grava_o_passo_a_passo():
     assert corpo["correcao"]["nota_ia"] == 680 and corpo["correcao"]["status"] == "REQUER_ATENCAO"
     assert corpo["exercicios"][0]["titulo"] == "Argumento"
     assert corpo["mensagem_aluno"] == "Mandou bem!" and corpo["resumo_professor"] == "Olhar a C3."
+
+    # log de auditoria (RF-42) e custo (RF-43): 7 chamadas ao Claude x 120 tokens
+    with SessionLocal() as db:
+        log = db.query(AuditLog).filter_by(acao="AGENTE_CORRIGIR", entidade_id=uuid.UUID(sub["id"])).all()
+        assert len(log) == 1
+        assert db.query(CustoUso).first().tokens_llm >= 7 * 120
 
     # o professor ve o mesmo passo a passo depois
     visto = client.get(f"/submissoes/{sub['id']}/agente", headers=prof)
