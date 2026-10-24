@@ -10,11 +10,6 @@ Plataforma de correção com IA para escolas: a IA corrige e o professor revisa 
 > MVP**: servem para validar o fluxo e calibrar a correção contra notas reais, e foram isolados
 > em poucos pontos do código justamente para serem trocados pelo modelo próprio.
 
-**Honestidade sobre o estado atual:** hoje o agente e os corretores ainda **chamam as APIs do
-Claude e do Gemini** por baixo. O modelo próprio ainda **não existe**; o que existe é o resto
-da estrutura que ele vai usar (fluxo, ferramentas, prompts calibrados, notas por critério,
-revisão do professor e upload de materiais).
-
 O Domina vai cobrir **todas as matérias**, e cada escola vai poder ensinar a IA a corrigir a
 matéria dela. Exemplo, numa escola de música:
 
@@ -27,7 +22,7 @@ matéria dela. Exemplo, numa escola de música:
 
 **O que o MVP tem hoje:**
 - **Redação no estilo ENEM** (C1 a C5), corrigida por competência.
-- **Matemática** (e outras exatas), corrigida questão por questão contra o gabarito do professor.
+- **Matemática**, corrigida questão por questão contra o gabarito do professor.
 - **Agente de correção**: decide sozinho os passos de cada envio e usa os corretores como
   ferramentas (veja a seção "O agente de correção"). No MVP, o "cérebro" dele ainda é o Claude.
 - O envio de materiais de uma matéria já existe (`POST /materias/{id}/documentos`), mas por
@@ -48,7 +43,7 @@ flowchart LR
     C -->|PUT /submissoes/:id/confirmar| D[Texto confirmado]
     D -->|POST /submissoes/:id/corrigir| E{Tipo da matéria}
     E -->|Redação| R[Claude corrige C1 a C5<br/>prompt v14]
-    E -->|Matemática / exatas| M[Gemini confere cada<br/>questão com o gabarito]
+    E -->|Matemática| M[Gemini confere cada<br/>questão com o gabarito]
     R --> F[Validação e nota total]
     M --> F
     F --> G[Correção salva<br/>PENDENTE ou REQUER_ATENCAO]
@@ -133,7 +128,7 @@ o `resumo_professor`, os `exercicios` de reforço e o `modelo_usado`. A resposta
 `POST /atividades` com `materia_id`, `turma_id`, `titulo` e `tipo`:
 - **Redação:** não precisa de mais nada. A matéria já tem as 5 competências (C1 a C5)
   cadastradas, e a atividade vale sempre 1000.
-- **Matemática / exatas:** o professor também manda as **questões com o gabarito**
+- **Matemática:** o professor também manda as **questões com o gabarito**
   (`questoes: [{"enunciado", "resposta_correta"}]`, obrigatório) e, se quiser, o **valor total**
   da atividade (`valor_total`; se não mandar, vale 1000). Cada questão vira um critério `Q1`,
   `Q2`, ... O gabarito só o professor vê.
@@ -168,7 +163,7 @@ nasce confirmado, sem etapa de OCR.
 - **Redação:** o **tema**, que vem no corpo de `POST /submissoes/{id}/corrigir`
   (`{"tema": "..."}`, até 500 caracteres). Se não vier, usa o título da atividade. O tema
   importa para a C2 (fuga ou tangência).
-- **Matemática / exatas:** o nome da matéria e as questões com o gabarito da atividade. Se a
+- **Matemática:** o nome da matéria e as questões com o gabarito da atividade. Se a
   resposta veio por **foto**, a foto original também vai junto, para a IA apontar **onde** na
   folha está cada resposta.
 
@@ -230,7 +225,7 @@ O texto completo do v14 também está em `docs/calibracao/2026-10-20/prompt_v14.
 > Claude. Esse trabalho (prompt, regras e base de teste com notas do INEP) é o que vale para o
 > modelo próprio: ele será medido na mesma base.
 
-### 2.2 Matemática e exatas: conferir com o gabarito
+### 2.2 Matemática: conferir com o gabarito
 
 A função `corrigir(respostas, materia, questoes, imagem)` em `backend/app/correcao_exatas.py`
 (versão `exatas-v1`) chama o Gemini. Aqui **não há rubrica subjetiva** nem avaliação de estilo:
@@ -272,7 +267,7 @@ Nos dois casos, se o modelo não devolver um JSON válido, a rota responde 502 e
 
 Em `corrigir_submissao` (`backend/app/routers/submissoes.py`):
 - **Redação ENEM:** `nota_ia` = soma das 5 competências (0 a 1000, fixo).
-- **Matemática e outras exatas:** o **professor escolhe quanto a atividade vale** (`valor_total`,
+- **Matemática:** o **professor escolhe quanto a atividade vale** (`valor_total`,
   ao criar a atividade; se não escolher, vale 1000). Esse valor é **dividido igualmente entre as
   questões**. Exemplo: atividade de 50 pontos com 5 questões = 10 pontos por questão. A nota de
   0 a 200 que a IA deu em cada questão é convertida para essa escala (200 = 10 pontos, 120 = 6
@@ -289,7 +284,7 @@ Em `corrigir_submissao` (`backend/app/routers/submissoes.py`):
 `PUT /submissoes/{id}/aprovar` com `{"notas": [{"codigo": "...", "nota": ...}, ...], "feedback"?}`.
 O professor manda a nota final de **cada critério, uma vez cada**:
 - **Redação:** `C1` a `C5`, só com valores de `NOTAS_VALIDAS` (0, 40, ..., 200).
-- **Matemática / exatas:** `Q1` a `Qn`, qualquer nota de 0 até o valor da questão (no exemplo
+- **Matemática:** `Q1` a `Qn`, qualquer nota de 0 até o valor da questão (no exemplo
   acima, de 0 a 10).
 
 `nota_professor` = soma delas e o status vira **APROVADA**. Na redação, as notas também
@@ -325,7 +320,7 @@ O aluno vê a nota da IA antes da aprovação, mas como provisória.
 A `analise` fica antes da `nota` de propósito: força a IA a pensar antes de decidir. Ela não é
 salva nem mostrada; serve só para a IA chegar na nota.
 
-**Matemática / exatas** (`ResultadoExatasIA`):
+**Matemática** (`ResultadoExatasIA`):
 
 ```json
 {
@@ -400,7 +395,7 @@ nem precisam de chave.
 - **Redação** (`backend/tests/test_fluxo_envio.py`): foto → OCR → confirmação → correção →
   aprovação, arredondamento para níveis válidos do ENEM, uma correção só por redação e status
   `REQUER_ATENCAO` com modelo diferente do principal.
-- **Matemática / exatas** (`backend/tests/test_exatas.py`): atividade exige gabarito, fluxo
+- **Matemática** (`backend/tests/test_exatas.py`): atividade exige gabarito, fluxo
   completo, aluno gera a correção e o professor aprova depois, aprovação exige todas as questões
   e valor total configurável e dividido igualmente entre as questões.
 - **Agente** (`backend/tests/test_agente.py`): o agente decide os passos e grava o passo a passo,
