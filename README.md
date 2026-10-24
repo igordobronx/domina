@@ -65,7 +65,7 @@ Tipos de matéria (`TipoMateriaEnum`): `REDACAO_ENEM` e `REDACAO_OUTRO_VESTIBULA
 correção de redação; `MATERIA_OBJETIVA` e `MATERIA_DISCURSIVA` (matemática, física, química...)
 vão para a correção de exatas.
 
-## O agente de correção (o Claude decide os passos)
+## O agente de correção
 
 Além do fluxo fixo acima (foto → texto → nota), existe o **agente**: em vez de o código seguir uma
 ordem fixa, o **Claude recebe um objetivo e decide sozinho quais ferramentas usar**. As IAs que
