@@ -4,9 +4,16 @@ Plataforma de correção com IA para escolas: a IA corrige e o professor revisa 
 
 ## O objetivo: um modelo próprio, treinado por matéria
 
-> **A intenção do Domina é ter o seu PRÓPRIO modelo de IA, personalizado, e NÃO depender só de
-> chamadas de API de terceiros (Gemini, Claude etc.).** As chamadas de API usadas hoje são só o
-> ponto de partida do MVP, para validar o produto e calibrar a correção contra notas reais.
+> **A intenção do Domina é ter o seu PRÓPRIO modelo de IA, treinado e personalizado por matéria, e
+> NÃO depender de IAs de terceiros (Gemini, Claude etc.).** O produto é o agente e o modelo
+> próprio. Os modelos de terceiros que aparecem neste README são só o **motor provisório do
+> MVP**: servem para validar o fluxo e calibrar a correção contra notas reais, e foram isolados
+> em poucos pontos do código justamente para serem trocados pelo modelo próprio.
+
+**Honestidade sobre o estado atual:** hoje o agente e os corretores ainda **chamam as APIs do
+Claude e do Gemini** por baixo. O modelo próprio ainda **não existe**; o que existe é o resto
+da estrutura que ele vai usar (fluxo, ferramentas, prompts calibrados, notas por critério,
+revisão do professor e upload de materiais).
 
 O Domina vai cobrir **todas as matérias**, e cada escola vai poder ensinar a IA a corrigir a
 matéria dela. Exemplo, numa escola de música:
@@ -21,8 +28,8 @@ matéria dela. Exemplo, numa escola de música:
 **O que o MVP tem hoje:**
 - **Redação no estilo ENEM** (C1 a C5), corrigida por competência.
 - **Matemática** (e outras exatas), corrigida questão por questão contra o gabarito do professor.
-- **Agente de correção**: o Claude decide sozinho os passos de cada envio e usa as IAs de
-  correção como ferramentas (veja a seção "O agente de correção").
+- **Agente de correção**: decide sozinho os passos de cada envio e usa os corretores como
+  ferramentas (veja a seção "O agente de correção"). No MVP, o "cérebro" dele ainda é o Claude.
 - O envio de materiais de uma matéria já existe (`POST /materias/{id}/documentos`), mas por
   enquanto só guarda os arquivos. Treinar a IA com eles é o próximo passo.
 
@@ -52,7 +59,10 @@ O caminho é o mesmo para as duas matérias até a hora de corrigir. Aí a corre
 tipo da matéria. A IA nunca dá a nota final sozinha: ela gera uma nota **provisória**, e o
 professor da turma confirma ou muda cada critério antes de a correção virar **APROVADA**.
 
-| Etapa | Onde está no código | Modelo |
+Os modelos abaixo são o **motor provisório do MVP**, cada um atrás de uma única função, para ser
+substituído pelo modelo próprio do Domina.
+
+| Etapa | Onde está no código | Motor provisório (hoje) |
 |---|---|---|
 | Agente (decide os passos) | `backend/app/agente.py`, `backend/app/routers/agente.py` | Claude (`ANTHROPIC_MODEL`, padrão `claude-sonnet-5-5`) |
 | Ler a foto (OCR) | `backend/app/ocr/gemini.py`, `backend/app/routers/ocr.py` | Gemini (`gemini-3.5-flash`, reserva `gemini-3.5-flash-lite`) |
@@ -68,9 +78,13 @@ vão para a correção de exatas.
 ## O agente de correção
 
 Além do fluxo fixo acima (foto → texto → nota), existe o **agente**: em vez de o código seguir uma
-ordem fixa, o **Claude recebe um objetivo e decide sozinho quais ferramentas usar**. As IAs que
-já existiam (correção da redação, correção de exatas, gerador de exercícios) viram *ferramentas*
-dele. O agente **não corrige de um jeito novo**: ele decide **quando** e **qual** peça usar.
+ordem fixa, a IA **recebe um objetivo e decide sozinha quais ferramentas usar**. Os corretores
+que já existiam (redação, exatas, gerador de exercícios) viram *ferramentas* dela. O agente
+**não corrige de um jeito novo**: ele decide **quando** e **qual** peça usar.
+
+O que é do Domina e fica: o objetivo, as ferramentas, as regras, o passo a passo gravado e a
+revisão do professor. O que é provisório: **o modelo que faz o papel de cérebro**, que hoje é
+o Claude (`ANTHROPIC_MODEL`) e deve passar a ser o modelo próprio.
 
 **Rotas:** `POST /submissoes/{id}/agente` (roda o agente; aceita `{"tema"?}`) e
 `GET /submissoes/{id}/agente` (devolve o último passo a passo gravado). Quem pode rodar é o
@@ -207,12 +221,14 @@ A evolução do prompt (v1 a v21), com os resultados de cada teste, está em
 [`docs/calibracao/historico_versoes_prompt.md`](docs/calibracao/historico_versoes_prompt.md).
 O texto completo do v14 também está em `docs/calibracao/2026-10-20/prompt_v14.txt`.
 
-**Chamada ao modelo:** `backend/app/llm/claude.py` chama o Claude (`ANTHROPIC_MODEL`, padrão
+**Chamada ao modelo (provisória):** `backend/app/llm/claude.py` chama o Claude (`ANTHROPIC_MODEL`, padrão
 `claude-sonnet-5-5`) e força a resposta no formato do schema `ResultadoIA` por meio de uma *tool*
 (`responder_correcao`). Usa até 16.000 tokens de saída, porque a Etapa 1 gera bastante texto.
 
 > Os números de calibração do v14 (erro médio de 48 pontos nas 53 redações com nota oficial do
-> INEP) foram medidos com o Gemini flash-lite, antes da troca do provedor da nota para o Claude.
+> INEP) foram medidos com o Gemini flash-lite, antes da troca do motor provisório da nota para o
+> Claude. Esse trabalho (prompt, regras e base de teste com notas do INEP) é o que vale para o
+> modelo próprio: ele será medido na mesma base.
 
 ### 2.2 Matemática e exatas: conferir com o gabarito
 
@@ -353,7 +369,8 @@ ou direto na foto da prova de matemática (pela `caixa`).
 ```sh
 # 1. configurar as chaves
 cp backend/.env.example backend/.env
-# preencher GEMINI_API_KEY (OCR e matemática) e ANTHROPIC_API_KEY (nota da redação)
+# preencher as chaves do motor provisório: GEMINI_API_KEY (OCR e matemática) e
+# ANTHROPIC_API_KEY (nota da redação e agente). Quando o modelo próprio entrar, elas saem.
 
 # 2. subir banco + API
 docker compose up -d --build
