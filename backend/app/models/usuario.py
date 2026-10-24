@@ -230,3 +230,17 @@ class AuditLog(Base):
     entidade = Column(String(50), nullable=False)
     entidade_id = Column(UUID(as_uuid=True), nullable=False)
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+
+class AgenteExecucao(Base):
+    # passo a passo do agente de correcao (app/agente.py): o que ele decidiu e por que.
+    # uma por submissao; rodar o agente de novo sobrescreve.
+    __tablename__ = "agente_execucao"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    submissao_id = Column(UUID(as_uuid=True), ForeignKey("submissao.id"), unique=True, nullable=False)
+    passos = Column(JSON, nullable=False)
+    mensagem_aluno = Column(Text, nullable=True)
+    resumo_professor = Column(Text, nullable=True)
+    exercicios = Column(JSON, nullable=True)
+    modelo_usado = Column(String(100), nullable=False)
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)

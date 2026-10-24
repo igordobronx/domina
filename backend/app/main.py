@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import compliance, documento, dominio, estudos, evolucao, health, auth, ocr, submissoes, usuario, turma
+from app.config import settings
+from app.routers import agente, compliance, documento, dominio, estudos, evolucao, health, auth, ocr, submissoes, usuario, turma
 from app.database import Base, engine
 from app.models import usuario as _  # garante que os modelos estão registrados antes do create_all
 
@@ -14,10 +15,7 @@ Base.metadata.create_all(bind=engine)  # cria as tabelas se nao existirem (proto
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:8000",
-    "http://localhost:5173",
-]
+origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +36,7 @@ app.include_router(dominio.router)
 app.include_router(estudos.router)
 app.include_router(evolucao.router)
 app.include_router(compliance.router)
+app.include_router(agente.router)
 
 logger = logging.getLogger(__name__)
 
