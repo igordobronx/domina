@@ -168,10 +168,9 @@ nasce confirmado, sem etapa de OCR.
   resposta veio por **foto**, a foto original também vai junto, para a IA apontar **onde** na
   folha está cada resposta.
 
-**Quem dispara a correção da IA:** o aluno dono da resposta ou o professor da turma. O aluno só
-**pede** a correção automática e vê a nota da IA como provisória; ele não dá nem muda nota. A
-nota final é sempre do professor (ver 2.5). Cada resposta passa pela IA uma vez só (a segunda
-tentativa dá 409).
+**O papel do aluno:** o aluno apenas **envia a resposta** (e, na foto, confere o texto lido). Ele
+não dá nem muda nota. A correção é feita pelo agente e a nota fica **provisória** até o professor
+aprovar. Cada resposta passa pela IA uma vez só (a segunda tentativa dá 409).
 
 ## 2. Lógica (o que o agente faz)
 
