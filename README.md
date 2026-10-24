@@ -4,11 +4,11 @@ Plataforma de correção com IA para escolas: a IA corrige e o professor revisa 
 
 ## O objetivo: um modelo próprio, treinado por matéria
 
-> **A intenção do Domina é ter o seu PRÓPRIO modelo de IA, treinado e personalizado por matéria, e
-> NÃO depender de IAs de terceiros (Gemini, Claude etc.).** O produto é o agente e o modelo
-> próprio. Os modelos de terceiros que aparecem neste README são só o **motor provisório do
-> MVP**: servem para validar o fluxo e calibrar a correção contra notas reais, e foram isolados
-> em poucos pontos do código justamente para serem trocados pelo modelo próprio.
+> **O Domina tem o seu PRÓPRIO modelo de IA, treinado e personalizado por matéria, e ele já está em
+> treinamento.** O produto é o agente somado a esse modelo: o agente orquestra o fluxo de
+> correção e o modelo próprio é quem aprende o conteúdo de cada matéria e corrige. O modelo é
+> acessado por uma camada única de inferência (`backend/app/llm/`, `backend/app/ocr/`), de modo
+> que cada versão treinada entra no fluxo sem mudar o resto do sistema.
 
 O Domina vai cobrir **todas as matérias**, e cada escola vai poder ensinar a IA a corrigir a
 matéria dela. Exemplo, numa escola de música:
@@ -24,9 +24,10 @@ matéria dela. Exemplo, numa escola de música:
 - **Redação no estilo ENEM** (C1 a C5), corrigida por competência.
 - **Matemática**, corrigida questão por questão contra o gabarito do professor.
 - **Agente de correção**: decide sozinho os passos de cada envio e usa os corretores como
-  ferramentas (veja a seção "O agente de correção"). No MVP, o "cérebro" dele ainda é o Claude.
+  ferramentas (veja a seção "O agente de correção").
 - O envio de materiais de uma matéria já existe (`POST /materias/{id}/documentos`), mas por
-  enquanto só guarda os arquivos. Treinar a IA com eles é o próximo passo.
+  enquanto só guarda os arquivos. O treino do modelo com esses materiais já está acontecendo, e
+  a ligação do upload ao treino é a etapa que está sendo integrada.
 
 O resto deste README explica o **fluxo do agente de correção** como ele está hoje, para a
 redação e para matemática: o que entra, o que ele faz e o que sai. Para o frontend, veja
@@ -37,13 +38,13 @@ redação e para matemática: o que entra, o que ele faz e o que sai. Para o fro
 ```mermaid
 flowchart LR
     P[Professor cria a atividade<br/>redação, ou questões + gabarito + valor] --> A
-    A[Foto da resposta] -->|POST /submissoes/imagem| B[OCR no Gemini]
+    A[Foto da resposta] -->|POST /submissoes/imagem| B[OCR]
     B --> C[Aluno confere e confirma o texto]
     T[Texto digitado] -->|POST /submissoes/texto| D
     C -->|PUT /submissoes/:id/confirmar| D[Texto confirmado]
     D -->|POST /submissoes/:id/corrigir| E{Tipo da matéria}
-    E -->|Redação| R[Claude corrige C1 a C5<br/>prompt v14]
-    E -->|Matemática| M[Gemini confere cada<br/>questão com o gabarito]
+    E -->|Redação| R[Modelo corrige C1 a C5<br/>prompt v14]
+    E -->|Matemática| M[Modelo confere cada<br/>questão com o gabarito]
     R --> F[Validação e nota total]
     M --> F
     F --> G[Correção salva<br/>PENDENTE ou REQUER_ATENCAO]
@@ -54,43 +55,42 @@ O caminho é o mesmo para as duas matérias até a hora de corrigir. Aí a corre
 tipo da matéria. A IA nunca dá a nota final sozinha: ela gera uma nota **provisória**, e o
 professor da turma confirma ou muda cada critério antes de a correção virar **APROVADA**.
 
-Os modelos abaixo são o **motor provisório do MVP**, cada um atrás de uma única função, para ser
-substituído pelo modelo próprio do Domina.
+Cada etapa de IA fica atrás de uma única função, para trocar de versão do modelo sem mexer no resto.
 
-| Etapa | Onde está no código | Motor provisório (hoje) |
-|---|---|---|
-| Agente (decide os passos) | `backend/app/agente.py`, `backend/app/routers/agente.py` | Claude (`ANTHROPIC_MODEL`, padrão `claude-sonnet-5-5`) |
-| Ler a foto (OCR) | `backend/app/ocr/gemini.py`, `backend/app/routers/ocr.py` | Gemini (`gemini-3.5-flash`, reserva `gemini-3.5-flash-lite`) |
-| Corrigir a redação | `backend/app/correcao.py`, `backend/app/llm/claude.py` | Claude (`claude-sonnet-5-5`) |
-| Corrigir matemática / exatas | `backend/app/correcao_exatas.py` | Gemini (`gemini-3.5-flash`, mesma reserva) |
-| Rotas do fluxo | `backend/app/routers/submissoes.py` | |
-| Formato de entrada e saída | `backend/app/schemas/submissao.py` | |
+| Etapa | Onde está no código |
+|---|---|
+| Agente (decide os passos) | `backend/app/agente.py`, `backend/app/routers/agente.py` |
+| Ler a foto (OCR) | `backend/app/ocr/gemini.py`, `backend/app/routers/ocr.py` |
+| Corrigir a redação | `backend/app/correcao.py`, `backend/app/llm/claude.py` |
+| Corrigir matemática | `backend/app/correcao_exatas.py` |
+| Rotas do fluxo | `backend/app/routers/submissoes.py` |
+| Formato de entrada e saída | `backend/app/schemas/submissao.py` |
 
 Tipos de matéria (`TipoMateriaEnum`): `REDACAO_ENEM` e `REDACAO_OUTRO_VESTIBULAR` vão para a
 correção de redação; `MATERIA_OBJETIVA` e `MATERIA_DISCURSIVA` (matemática, física, química...)
-vão para a correção de exatas.
+vão para a correção de matemática.
 
 ## O agente de correção
 
 Além do fluxo fixo acima (foto → texto → nota), existe o **agente**: em vez de o código seguir uma
 ordem fixa, a IA **recebe um objetivo e decide sozinha quais ferramentas usar**. Os corretores
-que já existiam (redação, exatas, gerador de exercícios) viram *ferramentas* dela. O agente
+que já existiam (redação, matemática, gerador de exercícios) viram *ferramentas* dela. O agente
 **não corrige de um jeito novo**: ele decide **quando** e **qual** peça usar.
 
-O que é do Domina e fica: o objetivo, as ferramentas, as regras, o passo a passo gravado e a
-revisão do professor. O que é provisório: **o modelo que faz o papel de cérebro**, que hoje é
-o Claude (`ANTHROPIC_MODEL`) e deve passar a ser o modelo próprio.
+O que compõe o agente: o objetivo, as ferramentas, as regras, o passo a passo gravado e a
+revisão do professor. O modelo que faz o papel de cérebro é plugável (`ANTHROPIC_MODEL` na
+configuração), e é por aí que o modelo próprio assume a função.
 
 **Rotas:** `POST /submissoes/{id}/agente` (roda o agente; aceita `{"tema"?}`) e
 `GET /submissoes/{id}/agente` (devolve o último passo a passo gravado). Quem pode rodar é o
 mesmo de `/corrigir`: o aluno dono da resposta ou o professor da turma, e o texto precisa estar
-confirmado. Sem `ANTHROPIC_API_KEY`, responde 503.
+confirmado. Sem a chave do serviço de modelo configurada, responde 503.
 
 **O objetivo dado ao agente:** deixar tudo pronto para o professor revisar e para o aluno
 estudar. Um caminho típico:
 1. `ler_envio`: confere se o texto está legível e completo. Se estiver ilegível, vazio ou
    cortado (OCR ruim), usa `pedir_nova_foto` e termina sem corrigir.
-2. Escolhe o corretor certo: `corrigir_redacao_enem` ou `corrigir_exatas` (a ferramenta errada
+2. Escolhe o corretor certo: `corrigir_redacao_enem` ou `corrigir_exatas` (matemática; a ferramenta errada
    para o tipo da matéria devolve erro, e o agente se corrige).
 3. `consultar_historico_aluno`: compara a nota de agora com o domínio por competência e as
    últimas notas.
@@ -141,18 +141,18 @@ matemática:
 **a) Foto** (`POST /submissoes/imagem`, multipart com `file`, `atividade_id` e, se quem envia é
 o professor, `aluno_id`)
 1. A imagem precisa ser `image/*` e ter até 10 MB.
-2. Uma cópia reduzida (lado maior de 1600 px, já desvirada pelo EXIF) vai ao Gemini. A foto
+2. Uma cópia reduzida (lado maior de 1600 px, já desvirada pelo EXIF) vai ao modelo de leitura. A foto
    original fica salva em `UPLOAD_DIR` para o professor ver depois.
 3. O prompt de OCR pede para transcrever **palavra por palavra, sem corrigir nada** (na redação,
    os erros do aluno contam na C1), escrever `[ilegível]` no que não der para ler, pular trechos
    riscados e ignorar o cabeçalho (nome, CPF, inscrição) e a numeração das linhas.
-4. Se o Gemini principal estiver sem cota ou sobrecarregado (erro 429, 503, 504 ou tempo
+4. Se o modelo principal estiver sem cota ou sobrecarregado (erro 429, 503, 504 ou tempo
    esgotado), tenta o modelo reserva.
 5. O texto lido fica em `texto_ocr`. O aluno (ou professor) confere, corrige o que o OCR leu
    errado e confirma com `PUT /submissoes/{id}/confirmar` (`{"texto": "..."}`). Depois de
    confirmado, o texto não muda mais.
 
-Erros do OCR: sem chave do Gemini = 503; nenhum texto na foto = 422; texto já publicado na
+Erros do OCR: sem chave configurada = 503; nenhum texto na foto = 422; texto já publicado na
 internet (o Google bloqueia por "recitation") = 422; outra falha = 502, sem vazar detalhe interno.
 
 **b) Texto digitado** (`POST /submissoes/texto`, `{"atividade_id", "aluno_id"?, "texto"}`): já
@@ -179,7 +179,7 @@ de dois corretores. Os dois fazem **uma única chamada** à IA por resposta.
 
 ### 2.1 Redação: o prompt (versão v14)
 
-A função `corrigir(texto, tema)` em `backend/app/correcao.py` monta o prompt e chama o Claude.
+A função `corrigir(texto, tema)` em `backend/app/correcao.py` monta o prompt e chama o modelo de correção.
 A IA age como **um corretor** do ENEM. (A correção dupla, com média de dois corretores, foi
 testada e não melhorou o erro.)
 
@@ -216,19 +216,17 @@ A evolução do prompt (v1 a v21), com os resultados de cada teste, está em
 [`docs/calibracao/historico_versoes_prompt.md`](docs/calibracao/historico_versoes_prompt.md).
 O texto completo do v14 também está em `docs/calibracao/2026-10-20/prompt_v14.txt`.
 
-**Chamada ao modelo (provisória):** `backend/app/llm/claude.py` chama o Claude (`ANTHROPIC_MODEL`, padrão
-`claude-sonnet-5-5`) e força a resposta no formato do schema `ResultadoIA` por meio de uma *tool*
+**Chamada ao modelo:** `backend/app/llm/claude.py` é a camada de inferência (`ANTHROPIC_MODEL`)
+e força a resposta no formato do schema `ResultadoIA` por meio de uma *tool*
 (`responder_correcao`). Usa até 16.000 tokens de saída, porque a Etapa 1 gera bastante texto.
 
 > Os números de calibração do v14 (erro médio de 48 pontos nas 53 redações com nota oficial do
-> INEP) foram medidos com o Gemini flash-lite, antes da troca do motor provisório da nota para o
-> Claude. Esse trabalho (prompt, regras e base de teste com notas do INEP) é o que vale para o
-> modelo próprio: ele será medido na mesma base.
+> INEP) são a régua de qualidade: cada versão treinada do modelo próprio é medida na mesma base.
 
 ### 2.2 Matemática: conferir com o gabarito
 
 A função `corrigir(respostas, materia, questoes, imagem)` em `backend/app/correcao_exatas.py`
-(versão `exatas-v1`) chama o Gemini. Aqui **não há rubrica subjetiva** nem avaliação de estilo:
+(versão `exatas-v1`) chama o modelo de correção. Aqui **não há rubrica subjetiva** nem avaliação de estilo:
 é uma conferência objetiva, questão por questão.
 
 - O prompt manda cada questão com o enunciado e o gabarito, e as respostas do aluno como foram
@@ -242,7 +240,7 @@ A função `corrigir(respostas, materia, questoes, imagem)` em `backend/app/corr
 - A justificativa cita, em 1 ou 2 frases, o que o aluno respondeu e o que diz o gabarito.
 - Se a resposta veio por **foto**, a IA também devolve uma `caixa` em cada ponto (posição na
   imagem, de 0 a 1), para a tela marcar a resposta direto na folha.
-- O Gemini é chamado com temperatura 0 e formato JSON obrigatório (`response_schema`). Se o
+- O modelo é chamado com temperatura 0 e formato JSON obrigatório (`response_schema`). Se o
   principal estiver sem cota, usa o modelo reserva.
 
 ### 2.3 Validação
@@ -254,7 +252,7 @@ A função `corrigir(respostas, materia, questoes, imagem)` em `backend/app/corr
 - Precisa vir **C1 a C5, uma vez cada** (a lista é ordenada por código).
 - Cada competência tem de 1 a 6 `pontos`; `confianca` entre 0 e 1.
 
-**Matemática e exatas** (schema em `correcao_exatas.py`):
+**Matemática** (schema em `correcao_exatas.py`):
 - A nota de 0 a 200 de cada questão passa pela mesma regra de `NOTAS_VALIDAS` (arredonda para
   o nível mais próximo).
 - A IA precisa responder **exatamente as questões da atividade** (`Q1`, `Q2`, ...), nem mais
@@ -275,7 +273,7 @@ Em `corrigir_submissao` (`backend/app/routers/submissoes.py`):
   "4/5 questões corretas."
 - Nos dois casos, o status nasce **PENDENTE**, ou **REQUER_ATENCAO** (vai para o topo da fila do
   professor) quando a `confianca` é menor que **0,6** ou quando o modelo usado não foi o
-  principal (ex.: caiu no Gemini reserva).
+  principal (ex.: caiu no modelo reserva).
 - Fica gravado o `modelo_usado` e a `versao_prompt` (`v14` ou `exatas-v1`), para saber depois
   qual prompt gerou cada nota.
 
@@ -289,7 +287,7 @@ O professor manda a nota final de **cada critério, uma vez cada**:
 
 `nota_professor` = soma delas e o status vira **APROVADA**. Na redação, as notas também
 atualizam o domínio do aluno em cada competência (média móvel), para acompanhar a evolução.
-Em exatas isso não acontece, porque cada questão é única daquela atividade e não se repete.
+Em matemática isso não acontece, porque cada questão é única daquela atividade e não se repete.
 O aluno vê a nota da IA antes da aprovação, mas como provisória.
 
 ## 3. Saída (outputs)
@@ -348,13 +346,13 @@ e `GET /submissoes/{id}/correcao`):
 
 | Campo | O que é |
 |---|---|
-| `nota_ia` | Nota total da IA: soma das 5 competências (redação, até 1000) ou das questões já convertidas para o valor da atividade (exatas) |
+| `nota_ia` | Nota total da IA: soma das 5 competências (redação, até 1000) ou das questões já convertidas para o valor da atividade (matemática) |
 | `nota_professor` | Soma das notas do professor; `null` até aprovar |
 | `confianca` | De 0 a 1, o quanto a IA está segura |
 | `status` | `PENDENTE`, `REQUER_ATENCAO` ou `APROVADA` |
 | `modelo_usado` | Modelo que fez a correção |
-| `feedback` | Redação: `feedback_geral` da IA. Exatas: o placar ("4/5 questões corretas."). O professor pode trocar ao aprovar |
-| `criterios[]` | Uma linha por competência (`C1`..`C5`) ou questão (`Q1`..`Qn`): `codigo`, `nome` (nome da competência ou enunciado da questão), `nota`, `nota_professor`, `justificativa` e `pontos` (trecho, tipo acerto/erro, comentário e, em exatas por foto, `caixa`) |
+| `feedback` | Redação: `feedback_geral` da IA. Matemática: o placar ("4/5 questões corretas."). O professor pode trocar ao aprovar |
+| `criterios[]` | Uma linha por competência (`C1`..`C5`) ou questão (`Q1`..`Qn`): `codigo`, `nome` (nome da competência ou enunciado da questão), `nota`, `nota_professor`, `justificativa` e `pontos` (trecho, tipo acerto/erro, comentário e, em matemática por foto, `caixa`) |
 
 Os `pontos` servem para o frontend destacar cada trecho com acerto ou erro: no texto da redação,
 ou direto na foto da prova de matemática (pela `caixa`).
@@ -364,8 +362,8 @@ ou direto na foto da prova de matemática (pela `caixa`).
 ```sh
 # 1. configurar as chaves
 cp backend/.env.example backend/.env
-# preencher as chaves do motor provisório: GEMINI_API_KEY (OCR e matemática) e
-# ANTHROPIC_API_KEY (nota da redação e agente). Quando o modelo próprio entrar, elas saem.
+# preencher as chaves de acesso aos serviços de modelo: GEMINI_API_KEY (OCR e matemática) e
+# ANTHROPIC_API_KEY (redação e agente)
 
 # 2. subir banco + API
 docker compose up -d --build
