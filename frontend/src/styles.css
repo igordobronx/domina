@@ -2549,3 +2549,36 @@ mark.ponto {
 .sidebar {
   overflow-y: auto;
 }
+
+/* passo a passo do agente de correcao (Activities.tsx::PassoAPassoAgente) */
+.agente-coluna {
+  display: grid;
+  gap: 22px;
+  min-width: 0;
+}
+.agente-passos {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.agente-passo strong {
+  display: block;
+}
+.agente-passo span,
+.agente-passo small {
+  color: #565d6b;
+}
+.agente-passo.erro strong {
+  color: #b54708;
+}
+.agente-pensamento {
+  font-style: italic;
+}
+.agente-resumo {
+  margin: 14px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}

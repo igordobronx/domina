@@ -23,16 +23,18 @@ import {
 import {
   aprovarCorrecao,
   confirmarTexto,
-  corrigirSubmissao,
   criarAtividade,
   criarMateria,
   enviarImagem,
   enviarTexto,
   listarMaterias,
   listarTurmasMinhas,
+  rodarAgente,
   urlImagemSubmissao,
+  verAgente,
   verCorrecao,
   verSubmissao,
+  type AgenteAPI,
   type AtividadeAPI,
   type CorrecaoAPI,
   type MateriaAPI,
@@ -356,7 +358,7 @@ function ActivityDetail({
     setGerandoCorrecao(true);
     setErroCorrecao("");
     try {
-      await corrigirSubmissao(a.submissaoId ?? a.id);
+      await rodarAgente(a.submissaoId ?? a.id);
       onCorrigidaReal?.();
     } catch (erro) {
       setErroCorrecao(erro instanceof Error ? erro.message : "Não foi possível gerar a correção.");
@@ -864,6 +866,7 @@ function RevisaoReal({
   const [aprovando, setAprovando] = useState(false);
   const [confirmApproval, setConfirmApproval] = useState(false);
   const [error, setError] = useState("");
+  const [agente, setAgente] = useState<AgenteAPI | null>(null);
 
   const aplicarCorrecao = (c: CorrecaoAPI) => {
     setCorrecao(c);
@@ -873,10 +876,15 @@ function RevisaoReal({
 
   useEffect(() => {
     let ativo = true;
-    Promise.all([verSubmissao(a.id), verCorrecao(a.id).catch(() => null)]).then(([s, c]) => {
+    Promise.all([
+      verSubmissao(a.id),
+      verCorrecao(a.id).catch(() => null),
+      verAgente(a.id).catch(() => null),
+    ]).then(([s, c, ag]) => {
       if (!ativo) return;
       setTexto(s.texto_confirmado ?? s.texto_ocr ?? "");
       if (c) aplicarCorrecao(c);
+      setAgente(ag);
       setCarregando(false);
     });
     return () => {
@@ -887,8 +895,11 @@ function RevisaoReal({
   const gerarCorrecao = () => {
     setCorrigindo(true);
     setError("");
-    corrigirSubmissao(a.id)
-      .then(aplicarCorrecao)
+    rodarAgente(a.id)
+      .then((r) => {
+        setAgente(r);
+        if (r.correcao) aplicarCorrecao(r.correcao);
+      })
       .catch((erro) =>
         setError(erro instanceof Error ? erro.message : "Não foi possível gerar a correção."),
       )
@@ -940,7 +951,7 @@ function RevisaoReal({
                 <p className="muted">Esta redação ainda não tem correção da IA.</p>
                 {!readOnly && (
                   <Button icon={Sparkles} disabled={corrigindo} onPress={gerarCorrecao}>
-                    {corrigindo ? "Gerando correção..." : "Gerar correção com IA"}
+                    {corrigindo ? "Agente trabalhando..." : "Corrigir com o agente de IA"}
                   </Button>
                 )}
                 {error && (
@@ -1045,6 +1056,8 @@ function RevisaoReal({
               </>
             )}
           </Card>
+          <div className="agente-coluna">
+          {agente && <PassoAPassoAgente agente={agente} />}
           <Card>
             <SectionTitle title="Texto enviado" />
             <div className="essay">
@@ -1057,9 +1070,57 @@ function RevisaoReal({
               )}
             </div>
           </Card>
+          </div>
         </div>
       )}
     </>
+  );
+}
+
+// nomes das ferramentas do agente (backend/app/routers/agente.py) como o professor le na tela
+const NOMES_FERRAMENTAS: Record<string, string> = {
+  ler_envio: "Leu o envio",
+  corrigir_redacao_enem: "Corrigiu a redação (C1 a C5)",
+  corrigir_exatas: "Corrigiu pelo gabarito",
+  consultar_historico_aluno: "Consultou o histórico do aluno",
+  gerar_exercicios_reforco: "Gerou exercícios de reforço",
+  sinalizar_professor: "Chamou a atenção do professor",
+  pedir_nova_foto: "Pediu uma nova foto",
+  finalizar: "Finalizou",
+};
+
+function PassoAPassoAgente({ agente }: { agente: AgenteAPI }) {
+  const passos = agente.passos.filter((p) => p.tipo !== "pensamento" || p.texto);
+  return (
+    <Card>
+      <SectionTitle title="Passo a passo do agente" />
+      <ol className="agente-passos">
+        {passos.map((p, i) => (
+          <li key={i} className={p.erro ? "agente-passo erro" : "agente-passo"}>
+            {p.tipo === "ferramenta" ? (
+              <>
+                <strong>{NOMES_FERRAMENTAS[p.ferramenta ?? ""] ?? p.ferramenta}</strong>
+                {p.motivo && <span>{p.motivo}</span>}
+                {p.erro && <small>Não deu certo; o agente mudou o caminho.</small>}
+              </>
+            ) : (
+              <span className="agente-pensamento">{p.texto}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+      {agente.resumo_professor && (
+        <p className="agente-resumo">
+          <strong>Para o professor:</strong> {agente.resumo_professor}
+        </p>
+      )}
+      {agente.exercicios && agente.exercicios.length > 0 && (
+        <p className="agente-resumo">
+          <strong>Exercícios enviados ao aluno:</strong>{" "}
+          {agente.exercicios.map((e) => `${e.habilidade_codigo} · ${e.titulo}`).join("; ")}
+        </p>
+      )}
+    </Card>
   );
 }
 

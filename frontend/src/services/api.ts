@@ -308,6 +308,36 @@ export function corrigirSubmissao(id: string, tema?: string): Promise<CorrecaoAP
   });
 }
 
+export interface PassoAgenteAPI {
+  tipo: "pensamento" | "ferramenta" | "aviso";
+  texto?: string;
+  ferramenta?: string;
+  motivo?: string;
+  resultado?: string;
+  erro?: boolean;
+}
+
+export interface AgenteAPI {
+  passos: PassoAgenteAPI[];
+  mensagem_aluno: string | null;
+  resumo_professor: string | null;
+  exercicios: { habilidade_codigo: string; titulo: string }[] | null;
+  modelo_usado: string;
+  correcao: CorrecaoAPI | null;
+}
+
+// agente de correcao (backend/app/agente.py): o Claude decide os passos e usa as IAs como ferramentas
+export function rodarAgente(id: string, tema?: string): Promise<AgenteAPI> {
+  return request<AgenteAPI>(`/submissoes/${id}/agente`, {
+    method: "POST",
+    body: JSON.stringify({ tema: tema ?? null }),
+  });
+}
+
+export function verAgente(id: string): Promise<AgenteAPI> {
+  return request<AgenteAPI>(`/submissoes/${id}/agente`);
+}
+
 export function verCorrecao(id: string): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/correcao`);
 }

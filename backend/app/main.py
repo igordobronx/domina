@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import compliance, documento, dominio, estudos, evolucao, health, auth, ocr, submissoes, usuario, turma
+from app.routers import agente, compliance, documento, dominio, estudos, evolucao, health, auth, ocr, submissoes, usuario, turma
 from app.database import Base, engine
 from app.models import usuario as _  # garante que os modelos estão registrados antes do create_all
 
@@ -36,6 +36,7 @@ app.include_router(dominio.router)
 app.include_router(estudos.router)
 app.include_router(evolucao.router)
 app.include_router(compliance.router)
+app.include_router(agente.router)
 
 logger = logging.getLogger(__name__)
 
