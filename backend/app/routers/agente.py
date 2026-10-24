@@ -44,7 +44,9 @@ def _resposta(db: Session, execucao: AgenteExecucao) -> AgenteResponse:
     )
 
 
-def _ferramentas(db: Session, submissao: Submissao, usuario: Usuario, estado: dict) -> list[Ferramenta]:
+def _ferramentas(
+    db: Session, submissao: Submissao, usuario: Usuario, estado: dict, tema_professor: str | None,
+) -> list[Ferramenta]:
     atividade = db.get(Atividade, submissao.atividade_id)
     materia = db.get(Materia, atividade.materia_id)
     exatas = materia.tipo in MATERIAS_EXATAS
@@ -86,7 +88,9 @@ def _ferramentas(db: Session, submissao: Submissao, usuario: Usuario, estado: di
     def corrigir_redacao(entrada):
         if exatas:
             raise ErroFerramenta("Esta atividade é de exatas; use corrigir_exatas.")
-        return _corrigir(entrada.get("tema"))
+        # o tema vem so do professor (ou do titulo da atividade, como no fluxo sem agente): se o
+        # agente pudesse escolher, um tema inventado por ele mudaria a C2 e a nota
+        return _corrigir(tema_professor)
 
     def corrigir_mat(_):
         if not exatas:
@@ -165,7 +169,7 @@ def _ferramentas(db: Session, submissao: Submissao, usuario: Usuario, estado: di
             "corrigir_redacao_enem",
             "Corrige uma redação do ENEM nas 5 competências (C1 a C5, 0 a 200 cada) com o corretor "
             "calibrado contra notas do INEP. Grava a correção provisória para o professor revisar.",
-            {"tema": {"type": "string", "description": "Tema da proposta, se souber (opcional)."}},
+            {},
             corrigir_redacao,
         ),
         Ferramenta(
@@ -225,7 +229,7 @@ def rodar_agente(
     if payload.tema:
         pedido += f" O professor informou o tema da proposta: {payload.tema.strip()}"
     try:
-        passos, modelo, tokens = agente.rodar(pedido, _ferramentas(db, submissao, usuario, estado), lambda: estado.get("fim", False))
+        passos, modelo, tokens = agente.rodar(pedido, _ferramentas(db, submissao, usuario, estado, payload.tema), lambda: estado.get("fim", False))
     except Exception as e:  # noqa: BLE001 -- se o agente cair, a correcao normal ainda sai
         logger.exception("falha no agente")
         passos, modelo = [{"tipo": "aviso", "texto": f"O agente parou ({type(e).__name__}); usei a correção direta."}], settings.ANTHROPIC_MODEL
