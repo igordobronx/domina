@@ -80,9 +80,7 @@ def rodar(pedido: str, ferramentas: list[Ferramenta], terminou: Callable[[], boo
 
     Devolve (passos, modelo). Cada passo e um dict que vai direto para o banco e para a tela.
     """
-    # o "cerebro" so escolhe ferramentas: o Haiku basta e gasta bem menos. A nota da redacao
-    # continua no Sonnet (dentro da ferramenta corrigir_redacao_enem).
-    modelo = settings.ANTHROPIC_MODEL_HAIKU
+    modelo = settings.ANTHROPIC_MODEL
     por_nome = {f.nome: f for f in ferramentas}
     mensagens: list = [{"role": "user", "content": pedido}]
     passos: list[dict] = []
