@@ -17,7 +17,7 @@ um com as suas telas.
 **Aluno**
 - **Início:** visão geral do aluno, com o domínio por competência.
 - **Atividades:** envia a resposta por **texto** ou por **foto**; na foto, confere e corrige o
-  texto que a IA leu antes de confirmar. Ele apenas envia a resposta; a nota da IA aparece como **provisória** até o professor aprovar.
+  texto que a IA leu antes de confirmar. Pede a correção (o agente roda) e vê a nota da IA como **provisória**.
 - **Evolução:** histórico de notas e de domínio por matéria.
 - **Estudos:** exercícios de reforço gerados para as competências mais fracas.
 
@@ -132,7 +132,7 @@ geral).
 
 1. Entre como **Aluno**, abra **Atividades** e escolha uma redação.
 2. Digite a resposta (ou envie uma foto e confira o texto lido), confirme e envie.
-3. A correção do agente fica pronta e a nota aparece como provisória.
+3. Peça a correção: a nota da IA aparece como provisória.
 4. Entre como **Professor**, abra a redação na **fila de revisões** e veja o passo a passo do agente.
 5. Ajuste as notas, escreva o feedback e aprove.
 6. Volte ao **Aluno** e abra a atividade para ver o resultado final.
