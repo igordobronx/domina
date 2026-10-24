@@ -4,11 +4,12 @@ Plataforma de correção com IA para escolas: a IA corrige e o professor revisa 
 
 ## O objetivo: um modelo próprio, treinado por matéria
 
-> **O Domina tem o seu PRÓPRIO modelo de IA, treinado e personalizado por matéria, e ele já está em
-> treinamento.** O produto é o agente somado a esse modelo: o agente orquestra o fluxo de
-> correção e o modelo próprio é quem aprende o conteúdo de cada matéria e corrige. O modelo é
-> acessado por uma camada única de inferência (`backend/app/llm/`, `backend/app/ocr/`), de modo
-> que cada versão treinada entra no fluxo sem mudar o resto do sistema.
+> **O Domina está desenvolvendo e treinando o seu PRÓPRIO modelo de IA, personalizado por
+> matéria.** O produto é o agente somado a esse modelo: o agente orquestra o fluxo de correção e
+> o modelo próprio, **ainda em desenvolvimento e treinamento**, vai aprender o conteúdo de cada
+> matéria e corrigir. O modelo é acessado por uma camada única de inferência
+> (`backend/app/llm/`, `backend/app/ocr/`), de modo que cada versão treinada entra no fluxo sem
+> mudar o resto do sistema.
 
 O Domina vai cobrir **todas as matérias**, e cada escola vai poder ensinar a IA a corrigir a
 matéria dela. Exemplo, numa escola de música:
@@ -16,7 +17,7 @@ matéria dela. Exemplo, numa escola de música:
 1. O professor entra no Domina e cria uma **nova matéria** (ex.: Teoria Musical).
 2. Abre a aba **"Treinar IA"**.
 3. Envia os materiais da matéria (apostilas, rubricas, gabaritos; por exemplo, 5 arquivos).
-4. A IA é treinada com esses materiais, aprende o conteúdo e guarda tudo o que precisa para
+4. A IA é treinada com esses materiais, aprende o conteúdo e passa a guardar tudo o que precisa para
    corrigir aquela matéria.
 5. A partir daí, as atividades dessa matéria são corrigidas com base no que ela aprendeu.
 
@@ -26,8 +27,8 @@ matéria dela. Exemplo, numa escola de música:
 - **Agente de correção**: decide sozinho os passos de cada envio e usa os corretores como
   ferramentas (veja a seção "O agente de correção").
 - O envio de materiais de uma matéria já existe (`POST /materias/{id}/documentos`), mas por
-  enquanto só guarda os arquivos. O treino do modelo com esses materiais já está acontecendo, e
-  a ligação do upload ao treino é a etapa que está sendo integrada.
+  enquanto só guarda os arquivos. O treino do modelo com esses materiais está em desenvolvimento,
+  e a ligação do upload ao treino é a etapa que está sendo integrada.
 
 O resto deste README explica o **fluxo do agente de correção** como ele está hoje, para a
 redação e para matemática: o que entra, o que ele faz e o que sai. Para o frontend, veja
@@ -79,7 +80,7 @@ que já existiam (redação, matemática, gerador de exercícios) viram *ferrame
 
 O que compõe o agente: o objetivo, as ferramentas, as regras, o passo a passo gravado e a
 revisão do professor. O modelo que faz o papel de cérebro é plugável (`ANTHROPIC_MODEL` na
-configuração), e é por aí que o modelo próprio assume a função.
+configuração), e é por aí que o modelo próprio assumirá a função quando estiver pronto.
 
 **Rotas:** `POST /submissoes/{id}/agente` (roda o agente; aceita `{"tema"?}`) e
 `GET /submissoes/{id}/agente` (devolve o último passo a passo gravado). Quem pode rodar é o
