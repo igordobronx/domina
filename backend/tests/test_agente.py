@@ -52,7 +52,10 @@ def _cliente_roteirizado(roteiro):
 
     def create(**kwargs):
         pedidos.append(kwargs)
-        return SimpleNamespace(stop_reason="tool_use", content=roteiro[len(pedidos) - 1],
+        item = roteiro[len(pedidos) - 1]
+        if isinstance(item, Exception):  # simula a API caindo naquele passo
+            raise item
+        return SimpleNamespace(stop_reason="tool_use", content=item,
                                usage=SimpleNamespace(input_tokens=100, output_tokens=20))
 
     falso = SimpleNamespace(messages=SimpleNamespace(create=create))
@@ -139,3 +142,51 @@ def test_agente_que_cai_ainda_entrega_a_correcao():
         agente_mod._client, ia.corrigir = originais
     assert r.status_code == 200, r.text
     assert r.json()["passos"][0]["tipo"] == "aviso" and r.json()["correcao"]["nota_ia"] == 600
+
+
+def test_agente_nao_roda_de_novo_sem_refazer():
+    aluno = token("aluno@domina.com")
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade_id(), "texto": "terceira redacao"}).json()
+    nota = ia.ResultadoIA(
+        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 120, "justificativa": "ok",
+                       "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(1, 6)],
+        feedback_geral="ok", confianca=0.9,
+    )
+    roteiro = [[_chamada("finalizar", mensagem_aluno="ok", resumo_professor="ok")]] * 2
+    falso, pedidos = _cliente_roteirizado(roteiro)
+    originais = (agente_mod._client, ia.corrigir)
+    agente_mod._client = lambda: falso
+    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    try:
+        url = f"/submissoes/{sub['id']}/agente"
+        assert client.post(url, headers=aluno, json={}).status_code == 200
+        assert client.post(url, headers=aluno, json={}).status_code == 200
+        assert len(pedidos) == 1  # a segunda devolveu o salvo
+        assert client.post(url, headers=aluno, json={"refazer": True}).status_code == 200
+        assert len(pedidos) == 2
+    finally:
+        agente_mod._client, ia.corrigir = originais
+
+
+def test_sinalizar_nao_grava_sozinho_se_o_agente_cai():
+    aluno = token("aluno@domina.com")
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade_id(), "texto": "quarta redacao"}).json()
+    nota = ia.ResultadoIA(
+        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 120, "justificativa": "ok",
+                       "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(1, 6)],
+        feedback_geral="ok", confianca=0.9,
+    )
+    roteiro = [[_chamada("corrigir_redacao_enem")], [_chamada("sinalizar_professor", aviso="x")],
+               RuntimeError("fora")]
+    falso, _ = _cliente_roteirizado(roteiro)
+    originais = (agente_mod._client, ia.corrigir)
+    agente_mod._client = lambda: falso
+    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    try:
+        r = client.post(f"/submissoes/{sub['id']}/agente", headers=aluno, json={})
+    finally:
+        agente_mod._client, ia.corrigir = originais
+    assert r.status_code == 200, r.text
+    assert r.json()["correcao"]["status"] != "REQUER_ATENCAO"

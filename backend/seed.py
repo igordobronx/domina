@@ -13,7 +13,7 @@ from app.models.enum import (
 from app.models.usuario import (
     Atividade, Correcao, CorrecaoCriterio, Escola, Materia, Submissao, Tema, Turma, Usuario, UsuarioTurma,
 )
-from app.routers.submissoes import _atualizar_dominio
+from app.routers.correcoes import _atualizar_dominio
 
 SENHA = "senha123"
 

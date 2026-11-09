@@ -21,10 +21,8 @@ from app.estudos import gerar_exercicios
 from app.models.enum import StatusCorrecaoEnum
 from app.models.usuario import AgenteExecucao, Atividade, Correcao, Materia, Submissao, Usuario
 from app.routers.dominio import _dominio_de
-from app.routers.submissoes import (
-    MATERIAS_EXATAS, _correcao_response, _pode_corrigir, _pode_ver_correcao, _submissao_visivel,
-    corrigir_submissao,
-)
+from app.routers.correcoes import _correcao_response, _pode_corrigir, _pode_ver_correcao, corrigir_submissao
+from app.routers.submissoes import MATERIAS_EXATAS, _submissao_visivel
 from app.schemas.agente import AgenteRequest, AgenteResponse
 from app.schemas.dominio import DominioResponse
 from app.schemas.submissao import CorrigirRequest
@@ -147,8 +145,9 @@ def _ferramentas(
         if not correcao:
             raise ErroFerramenta("Ainda não há correção para sinalizar.")
         if correcao.status != StatusCorrecaoEnum.APROVADA:
+            # sem commit aqui: o status grava junto com o passo a passo, na rota
             correcao.status = StatusCorrecaoEnum.REQUER_ATENCAO
-            db.commit()
+            db.flush()
         estado["sinalizado"] = entrada.get("aviso", "")
         return {"ok": True, "status": correcao.status.value}
 
@@ -220,6 +219,9 @@ def rodar_agente(
     _pode_corrigir(db, submissao, usuario)
     if submissao.texto_confirmado is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Confirme o texto antes de corrigir.")
+    anterior = db.query(AgenteExecucao).filter_by(submissao_id=submissao.id).first()
+    if anterior and not payload.refazer:
+        return _resposta(db, anterior)  # ja rodou: nao gasta tokens de novo (use refazer=true)
     if not settings.ANTHROPIC_API_KEY:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Agente indisponível: servidor sem chave do Claude.")
 
@@ -239,7 +241,7 @@ def rodar_agente(
 
     if estado.get("nova_foto") and not estado.get("mensagem_aluno"):
         estado["mensagem_aluno"] = estado["nova_foto"]
-    execucao = db.query(AgenteExecucao).filter_by(submissao_id=submissao.id).first()
+    execucao = anterior
     if execucao is None:
         execucao = AgenteExecucao(submissao_id=submissao.id)
         db.add(execucao)

@@ -2,7 +2,7 @@
 
 A nota fica PENDENTE ate o professor aprovar; o STATUS "APROVADA" (nao a visibilidade pro
 aluno) e o que muda aqui -- o aluno pode ver a nota da IA antes disso, mas so como provisoria
-(ver _pode_ver_correcao em app/routers/submissoes.py).
+(ver _pode_ver_correcao em app/routers/correcoes.py).
 """
 from typing import Literal
 

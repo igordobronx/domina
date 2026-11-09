@@ -6,6 +6,7 @@ from app.schemas.submissao import CorrecaoResponse
 
 class AgenteRequest(BaseModel):
     tema: str | None = Field(default=None, max_length=500)
+    refazer: bool = False  # sem isso, um envio que o agente ja tratou devolve o resultado salvo
 
 
 class AgenteResponse(BaseModel):

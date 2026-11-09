@@ -85,18 +85,22 @@ def rodar(pedido: str, ferramentas: list[Ferramenta], terminou: Callable[[], boo
     mensagens: list = [{"role": "user", "content": pedido}]
     passos: list[dict] = []
     tokens = 0
+    tools = [f.para_api() for f in ferramentas]
+    tools[-1]["cache_control"] = {"type": "ephemeral"}  # o loop reenvia sistema+ferramentas a cada passo
 
     for _ in range(MAX_PASSOS):
         resposta = _client().with_options(timeout=90.0).messages.create(
             model=modelo,
             max_tokens=4000,
-            system=SISTEMA,
-            tools=[f.para_api() for f in ferramentas],
+            system=[{"type": "text", "text": SISTEMA, "cache_control": {"type": "ephemeral"}}],
+            tools=tools,
             tool_choice={"type": "auto"},
             messages=mensagens,
         )
         uso = getattr(resposta, "usage", None)
-        tokens += (getattr(uso, "input_tokens", 0) or 0) + (getattr(uso, "output_tokens", 0) or 0)
+        tokens += sum(getattr(uso, k, 0) or 0 for k in (
+            "input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+        logger.info("agente: cache lido=%s", getattr(uso, "cache_read_input_tokens", 0))
         if resposta.stop_reason == "refusal":
             raise RuntimeError("o modelo recusou o pedido")
         # devolve o conteudo inteiro (inclusive os blocos de thinking) na proxima chamada

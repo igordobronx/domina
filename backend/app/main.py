@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import agente, compliance, documento, dominio, estudos, evolucao, health, auth, ocr, submissoes, usuario, turma
+from app.routers import agente, compliance, correcoes, documento, dominio, estudos, evolucao, health, auth, ocr, submissoes, usuario, turma
 from app.database import Base, engine
 from app.models import usuario as _  # garante que os modelos estão registrados antes do create_all
 
@@ -29,6 +29,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(ocr.router)
 app.include_router(submissoes.router)
+app.include_router(correcoes.router)
 app.include_router(usuario.router)
 app.include_router(turma.router)
 app.include_router(documento.router)
