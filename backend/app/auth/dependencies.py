@@ -5,7 +5,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.auth.security import decode_access_token
+from app.auth.security import decode_access_token, verify_password
 from app.database import get_db
 from app.models.enum import PerfilEnum
 from app.models.usuario import Escola, Usuario
@@ -70,3 +70,13 @@ def escola_do_escopo(db: Session, usuario: Usuario, escola_id: uuid.UUID | None)
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Instituição não encontrada.")
         return usuario.escola_id
     raise HTTPException(status.HTTP_403_FORBIDDEN, "Seu perfil não tem acesso a isto.")
+
+
+def confirmar_senha(usuario: Usuario, senha: str | None) -> None:
+    """Reautenticacao em acao sensivel: o JWT roubado/esquecido aberto nao basta, pede a senha de novo.
+
+    A senha vem no cabecalho X-Confirmar-Senha (nunca na URL, que iria para o access log do proxy).
+    A recusa e um 403, que o middleware ja grava como ACESSO_NEGADO com a rota.
+    """
+    if not senha or not verify_password(senha, usuario.senha_hash):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Confirme sua senha para realizar esta ação.")

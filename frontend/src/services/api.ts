@@ -212,8 +212,12 @@ export function criarUsuario(payload: {
   perfil: "ALUNO" | "PROFESSOR" | "GESTOR";
   escola_id?: string;
   turma_id?: string; // ja matricula na turma ao criar
-}): Promise<UsuarioAtual> {
-  return request<UsuarioAtual>("/usuarios", { method: "POST", body: JSON.stringify(payload) });
+}, confirmarSenha?: string): Promise<UsuarioAtual> {
+  // criar GESTOR exige a senha de novo (reautenticacao), enviada em cabecalho e nunca na URL
+  return request<UsuarioAtual>("/usuarios", {
+    method: "POST", body: JSON.stringify(payload),
+    headers: confirmarSenha ? { "X-Confirmar-Senha": confirmarSenha } : undefined,
+  });
 }
 
 export interface MateriaAPI {
@@ -532,8 +536,12 @@ export function criarEscola(payload: {
 export function editarEscola(
   id: string,
   payload: Partial<Pick<EscolaAPI, "nome" | "cnpj" | "plano_fixo" | "valor_por_aluno" | "ativa">>,
+  confirmarSenha?: string, // desativar/reativar exige a senha de novo
 ): Promise<EscolaAPI> {
-  return request<EscolaAPI>(`/escolas/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+  return request<EscolaAPI>(`/escolas/${id}`, {
+    method: "PUT", body: JSON.stringify(payload),
+    headers: confirmarSenha ? { "X-Confirmar-Senha": confirmarSenha } : undefined,
+  });
 }
 
 export interface ResumoEscolaAPI {
@@ -608,3 +616,21 @@ export function editarEvento(id: string, p: EventoPayload): Promise<ItemCalendar
 export function apagarEvento(id: string): Promise<void> {
   return request<void>(`/eventos/${id.replace("evento:", "")}`, { method: "DELETE" });
 }
+
+// ---- logs (admin: tudo; gestor: so a auditoria da propria escola) ----
+export interface EventoSegurancaAPI {
+  seq: number | null; criado_em: string; tipo: string; usuario: string | null;
+  email_tentado: string | null; ip: string; request_id: string; detalhe: string | null;
+}
+export interface AuditoriaAPI {
+  seq: number | null; criado_em: string; usuario: string | null; escola: string | null; acao: string;
+  entidade: string; entidade_id: string; resultado: string | null; ip: string | null; request_id: string | null;
+}
+export interface IntegridadeAPI { seguranca_ok: boolean; seguranca: string; auditoria_ok: boolean; auditoria: string }
+export interface FiltroLog { tipo?: string; acao?: string; ip?: string; de?: string; ate?: string; pular?: number }
+
+const consulta = (f: FiltroLog) =>
+  new URLSearchParams(Object.entries({ limite: 50, ...f }).filter(([, v]) => v !== undefined && v !== "") as [string, string][]);
+export const logsSeguranca = (f: FiltroLog) => request<EventoSegurancaAPI[]>(`/logs/seguranca?${consulta(f)}`);
+export const logsAuditoria = (f: FiltroLog) => request<AuditoriaAPI[]>(`/logs/auditoria?${consulta(f)}`);
+export const logsIntegridade = () => request<IntegridadeAPI>("/logs/integridade");

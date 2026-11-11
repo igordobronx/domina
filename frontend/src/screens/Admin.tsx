@@ -185,6 +185,7 @@ function NovaConta({
   const [turmas, setTurmas] = useState<TurmaAPI[]>([]);
   const [turmaId, setTurmaId] = useState("");
   const [erro, setErro] = useState("");
+  const [minhaSenha, setMinhaSenha] = useState(""); // reautenticacao ao criar gestor
   const [salvando, setSalvando] = useState(false);
   useEffect(() => {
     setTurmaId("");
@@ -203,12 +204,13 @@ function NovaConta({
       const novo = await criarUsuario({
         nome: nome.trim(), email: email.trim(), senha, perfil, escola_id: escolaId,
         turma_id: perfil === "GESTOR" ? undefined : turmaId || undefined,
-      });
+      }, perfil === "GESTOR" ? minhaSenha : undefined);
       const turma = turmas.find((t) => t.id === turmaId);
       notify(`${novo.nome} cadastrado(a) como ${ROTULO[perfil].toLowerCase()}${turma && perfil !== "GESTOR" ? ` na turma ${turma.nome}` : ""}.`);
       setNome("");
       setEmail("");
       setSenha("");
+      setMinhaSenha("");
       onCriada();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível cadastrar.");
@@ -242,6 +244,12 @@ function NovaConta({
             ))}
           </select>
         </label>
+        {perfil === "GESTOR" && (
+          <label>
+            Confirme a sua senha
+            <input type="password" autoComplete="current-password" value={minhaSenha} onChange={(e) => setMinhaSenha(e.target.value)} />
+          </label>
+        )}
         {perfil !== "GESTOR" && (
           <label>
             Turma
@@ -451,13 +459,14 @@ function EditarEscola({
     plano_fixo: String(escola.plano_fixo),
     valor_por_aluno: String(escola.valor_por_aluno),
   });
+  const [minhaSenha, setMinhaSenha] = useState(""); // reautenticacao ao desativar/reativar
   const salvar = (extra: { ativa?: boolean } = {}) =>
     editarEscola(escola.id, {
       nome: f.nome.trim(),
       plano_fixo: Number(f.plano_fixo),
       valor_por_aluno: Number(f.valor_por_aluno),
       ...extra,
-    })
+    }, extra.ativa === undefined ? undefined : minhaSenha)
       .then(() => {
         notify(extra.ativa === undefined ? "Instituição atualizada." : extra.ativa ? "Instituição reativada." : "Instituição desativada.");
         onSalvo();
@@ -479,6 +488,10 @@ function EditarEscola({
           Valor por aluno ativo (R$)
           <input type="number" min="0" value={f.valor_por_aluno}
             onChange={(e) => setF({ ...f, valor_por_aluno: e.target.value })} />
+        </label>
+        <label>
+          Sua senha (para desativar ou reativar)
+          <input type="password" autoComplete="current-password" value={minhaSenha} onChange={(e) => setMinhaSenha(e.target.value)} />
         </label>
       </div>
       <div className="form-actions left">

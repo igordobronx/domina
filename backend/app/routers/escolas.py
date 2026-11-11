@@ -1,10 +1,10 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auditoria import registrar
-from app.auth.dependencies import exigir_perfil
+from app.auth.dependencies import confirmar_senha, exigir_perfil
 from app.database import get_db
 from app.models.enum import PerfilEnum
 from app.models.usuario import Escola, Usuario
@@ -35,7 +35,9 @@ def criar_escola(payload: CriarEscolaRequest, usuario: Usuario = admin, db: Sess
 
 @router.put("/{escola_id}", response_model=EscolaResponse)
 def editar_escola(escola_id: uuid.UUID, payload: EditarEscolaRequest, usuario: Usuario = admin,
-                  db: Session = Depends(get_db)):
+                  db: Session = Depends(get_db), x_confirmar_senha: str | None = Header(default=None)):
+    if "ativa" in payload.model_fields_set:  # desativar/reativar uma instituicao inteira: pede a senha de novo
+        confirmar_senha(usuario, x_confirmar_senha)
     escola = db.get(Escola, escola_id)
     if not escola:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Instituição não encontrada.")

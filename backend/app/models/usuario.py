@@ -256,6 +256,34 @@ class AuditLog(Base):
     entidade = Column(String(50), nullable=False)
     entidade_id = Column(UUID(as_uuid=True), nullable=False)
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+    # ampliacao do log (migration 0007). Nulos nas linhas antigas.
+    escola_id = Column(UUID(as_uuid=True), nullable=True, index=True)  # escola de quem agiu; nulo = admin
+    ip = Column(String(45), nullable=True)
+    request_id = Column(String(32), nullable=True)
+    resultado = Column(String(10), nullable=True)  # OK | NEGADO
+    # cadeia de hash (app/cadeia.py): so as linhas novas entram nela
+    seq = Column(BigInteger, nullable=True, unique=True)
+    hash_anterior = Column(String(64), nullable=True)
+    hash = Column(String(64), nullable=True)
+
+class EventoSeguranca(Base):
+    """Log de autenticacao/acesso. Append-only: a aplicacao so faz INSERT (nunca UPDATE/DELETE)."""
+    __tablename__ = "evento_seguranca"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False, index=True)
+    tipo = Column(String(20), nullable=False, index=True)  # LOGIN_OK | LOGIN_FALHA | NAO_AUTENTICADO | ACESSO_NEGADO
+    usuario_id = Column(UUID(as_uuid=True), nullable=True)  # sem FK de proposito: o log sobrevive a conta apagada
+    email_tentado = Column(String(254), nullable=True)
+    ip = Column(String(45), nullable=False)
+    request_id = Column(String(32), nullable=False)
+    detalhe = Column(String(200), nullable=True)  # ex.: "GET /painel/plataforma"
+    # cadeia de hash (ver app/seguranca.py): hash = sha256(hash_anterior + campos desta linha).
+    # Nulos so nas linhas anteriores a cadeia (migration 0006); a verificacao as ignora.
+    seq = Column(BigInteger, nullable=True, unique=True)
+    hash_anterior = Column(String(64), nullable=True)
+    hash = Column(String(64), nullable=True)
+
 
 class AgenteExecucao(Base):
     # passo a passo do agente de correcao (app/agente.py): o que ele decidiu e por que.

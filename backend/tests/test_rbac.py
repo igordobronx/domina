@@ -38,6 +38,7 @@ A, B = "COLEGIO PREPARA ENEM", "COLEGIO VESTIBULAR NORTE"
 
 
 def novo(h, perfil, email, **extra):
+    h = {**h, "X-Confirmar-Senha": seed.SENHA}  # reautenticacao: so criar GESTOR exige, o resto ignora
     return client.post("/usuarios", headers=h, json={"nome": "Fulano", "email": email, "senha": "123456",
                                                       "perfil": perfil, **extra})
 
@@ -116,7 +117,7 @@ def test_escola_desativada_nao_entra_mais():
     nova = r.json()["id"]
     novo(adm, "PROFESSOR", "p.temp@x.com", escola_id=nova)
     h = token("p.temp@x.com", "123456")
-    assert client.put(f"/escolas/{nova}", headers=adm, json={"ativa": False}).json()["ativa"] is False
+    assert client.put(f"/escolas/{nova}", headers={**adm, "X-Confirmar-Senha": seed.SENHA}, json={"ativa": False}).json()["ativa"] is False
     assert client.get("/usuarios/me", headers=h).status_code == 403  # token antigo tambem cai
     assert client.post("/auth/login", json={"email": "p.temp@x.com", "senha": "123456"}).status_code == 403
 

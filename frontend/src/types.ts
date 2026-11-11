@@ -8,6 +8,7 @@ export type Page =
   | "turmas"
   | "materiais"
   | "calendario"
+  | "logs"
   | "painel"
   | "equipe"
   | "escolas"

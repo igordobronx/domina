@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     # URL do frontend (ex.: https://domina.vercel.app) sem remover as de localhost
     ALLOWED_ORIGINS: str = "http://localhost:8000,http://localhost:5173"
 
+    # nivel dos logs (stdout, em JSON) e se ha proxy reverso na frente (Railway, Nginx):
+    # so com CONFIAR_PROXY=true o IP do cliente vem do X-Forwarded-For (ver app/logs.py)
+    LOG_LEVEL: str = "INFO"
+    CONFIAR_PROXY: bool = False
+    RETENCAO_DIAS: int = 365  # logs no banco (seguranca e auditoria): 12 meses; ver retencao.py
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

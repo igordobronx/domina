@@ -25,10 +25,11 @@ export const allowedPages: Record<Role, Page[]> = {
     "turmas",
     "equipe",
     "painel",
+    "logs",
     "ajuda",
     "configuracoes",
   ],
-  admin: ["inicio", "calendario", "escolas", "ajuda", "configuracoes"],
+  admin: ["inicio", "calendario", "escolas", "logs", "ajuda", "configuracoes"],
 };
 export function readRoute(hash: string) {
   const [rawRole, rawPage, rawId] = hash.replace(/^#\/?/, "").split("/");

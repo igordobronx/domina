@@ -1,11 +1,11 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.auditoria import registrar
 from app.auth.security import hash_password
-from app.auth.dependencies import escola_do_escopo, get_current_user
+from app.auth.dependencies import confirmar_senha, escola_do_escopo, get_current_user
 from app.database import get_db
 from app.models.usuario import Escola, Turma, Usuario, UsuarioTurma
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
@@ -52,10 +52,12 @@ def listar_usuarios(escola_id: uuid.UUID | None = None, usuario_atual: Usuario =
 
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def criar_usuario(payload: CriarUsuarioRequest, usuario_atual: Usuario = Depends(get_current_user),
-                   db: Session = Depends(get_db)):
+                   db: Session = Depends(get_db), x_confirmar_senha: str | None = Header(default=None)):
     perfil = PerfilEnum(payload.perfil)
     if perfil not in PODE_CRIAR.get(usuario_atual.perfil, set()):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Seu perfil não pode criar este tipo de conta.")
+    if perfil == PerfilEnum.GESTOR:  # conta de gestor da acesso a escola inteira: pede a senha de novo
+        confirmar_senha(usuario_atual, x_confirmar_senha)
 
     if usuario_atual.perfil == PerfilEnum.ADMIN:
         escola = db.get(Escola, payload.escola_id) if payload.escola_id else None

@@ -3,6 +3,7 @@ import { useWindowDimensions } from "react-native";
 import {
   BookOpen,
   CalendarDays,
+  ScrollText,
   ChartNoAxesCombined,
   CircleHelp,
   ClipboardCheck,
@@ -42,6 +43,7 @@ import { allowedPages, readRoute } from "./services/navigation";
 import { Activities } from "./screens/Activities";
 import { Evolution, Studies } from "./screens/Learning";
 import { Classes, Materials } from "./screens/Management";
+import { Logs } from "./screens/Logs";
 import { Calendar } from "./screens/Calendar";
 import { Equipe, Escolas, PainelEscola, PainelPlataforma } from "./screens/Admin";
 import { Help, Settings } from "./screens/Settings";
@@ -100,6 +102,12 @@ const navItems: {
     label: "Financeiro e consumo",
     icon: Wallet,
     roles: ["gestor"],
+  },
+  {
+    id: "logs",
+    label: "Logs e auditoria",
+    icon: ScrollText,
+    roles: ["admin", "gestor"],
   },
   {
     id: "escolas",
@@ -550,6 +558,7 @@ export function App() {
             )}
             {page === "escolas" && role === "admin" && <Escolas notify={notify} />}
             {page === "calendario" && <Calendar role={role} notify={notify} currentUser={currentUser} />}
+            {page === "logs" && (role === "admin" || role === "gestor") && <Logs role={role} notify={notify} />}
             {page === "equipe" && role === "gestor" && <Equipe notify={notify} />}
             {page === "painel" && role === "gestor" && <PainelEscola notify={notify} />}
             {page === "evolucao" && <Evolution currentUser={currentUser} />}
