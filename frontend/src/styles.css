@@ -2604,3 +2604,9 @@ mark.ponto {
 .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .log-table th { text-align: left; font-size: 11px; color: #787d84; padding: 6px 8px; white-space: nowrap; }
 .log-table td { padding: 8px; border-top: 1px solid #ece9e0; vertical-align: top; }
+
+/* varias turmas na nova atividade */
+.turmas-check { border: 1px solid #e2dfd6; border-radius: 10px; padding: 8px 12px; display: grid; gap: 6px; }
+.turmas-check legend { font-size: 13px; padding: 0 6px; }
+.check { display: flex; align-items: center; gap: 8px; flex-direction: row; }
+.check input { width: auto; }

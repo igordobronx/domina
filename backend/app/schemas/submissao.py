@@ -109,6 +109,7 @@ class QuestaoAtividadeResponse(BaseModel):
     codigo: str
     enunciado: str
     tem_imagem: bool = False  # figura anexada pelo professor (GET /atividades/{id}/questoes/{codigo}/imagem)
+    resposta_correta: str | None = None  # so professor/gestor (para editar); o aluno nunca recebe o gabarito
 
 
 class AtividadeResponse(BaseModel):
@@ -124,11 +125,11 @@ class AtividadeResponse(BaseModel):
     # redacao e sempre 1000 (5 competencias x 0..200), fixo, nao vem do professor.
     valor_total: float = 1000
     prazo: date | None = None
+    tem_envios: bool = False  # com envios, so titulo e prazo podem mudar e excluir vira arquivar
 
 
-class CriarAtividadeRequest(BaseModel):
+class _AtividadeBase(BaseModel):
     materia_id: uuid.UUID
-    turma_id: uuid.UUID
     titulo: str = Field(min_length=1, max_length=200)
     tipo: Literal["REDACAO", "PROVA_DISCURSIVA", "PROVA_OBJETIVA", "EXERCICIO"]
     # gabarito: obrigatorio quando a materia e MATERIA_OBJETIVA/MATERIA_DISCURSIVA (exatas),
@@ -138,6 +139,28 @@ class CriarAtividadeRequest(BaseModel):
     # (ex.: 4 questoes, 1000 pontos -> 250 cada). Sem isso, assume 1000.
     valor_total: float | None = Field(default=None, gt=0, le=10_000)
     prazo: date | None = None  # data de entrega, aparece no calendario
+
+
+class CriarAtividadeRequest(_AtividadeBase):
+    turma_id: uuid.UUID
+
+
+class CriarAtividadeLoteRequest(_AtividadeBase):
+    # uma atividade INDEPENDENTE por turma (cada uma com as proprias submissoes e correcoes)
+    turma_ids: list[uuid.UUID] = Field(min_length=1, max_length=30)
+
+
+class EditarAtividadeRequest(BaseModel):
+    titulo: str | None = Field(default=None, min_length=1, max_length=200)
+    prazo: date | None = None  # mandar null limpa o prazo (ver model_fields_set na rota)
+    # estes dois so mudam enquanto ninguem enviou nada (senao as correcoes ja feitas ficam incoerentes)
+    valor_total: float | None = Field(default=None, gt=0, le=10_000)
+    questoes: list[QuestaoInput] | None = None
+
+
+class ExclusaoResponse(BaseModel):
+    acao: Literal["excluida", "arquivada"]
+
 
 class EnviarTextoRequest(BaseModel):
     atividade_id: uuid.UUID

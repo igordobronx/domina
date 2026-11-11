@@ -51,8 +51,8 @@ def criar_atividade_com_gabarito(prof, turma_id, materia_id):
     atividade = r.json()
     # o aluno precisa ver o enunciado real de cada questao (nao um texto fixo de outra materia)
     assert atividade["questoes"] == [
-        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False},
-        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False},
+        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False, "resposta_correta": "x = 2"},
+        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False, "resposta_correta": "x = 3"},
     ]
     # sem valor_total explicito, assume 1000 (como a redacao) e divide pelas questoes
     assert atividade["valor_total"] == 1000.0

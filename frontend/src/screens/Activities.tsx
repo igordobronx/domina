@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Check,
   FileText,
+  Pencil,
   Plus,
   Search,
   Send,
@@ -24,7 +25,10 @@ import {
   aprovarCorrecao,
   confirmarTexto,
   anexarFiguraQuestao,
-  criarAtividade,
+  criarAtividadesLote,
+  editarAtividade,
+  excluirAtividade,
+  listarAtividades,
   criarMateria,
   enviarImagem,
   enviarTexto,
@@ -164,6 +168,7 @@ export function Activities({
   const [filter, setFilter] = useState("todas");
   const [search, setSearch] = useState("");
   const [criando, setCriando] = useState(false);
+  const [editandoId, setEditandoId] = useState<string | null>(null); // atividade em edicao (professor/gestor)
   // modo real: aluno autenticado de verdade manda/ve suas proprias atividades;
   // professor/gestor autenticado de verdade ve a fila real de submissoes (so o professor corrige/aprova, RN-01)
   const real = !!currentUser && role === "aluno";
@@ -201,8 +206,26 @@ export function Activities({
         notify={notify}
       />
     );
+  if (editandoId)
+    return (
+      <EditarAtividade
+        atividadeId={editandoId}
+        onBack={() => setEditandoId(null)}
+        onSalvo={() => { setEditandoId(null); select(null); recarregar(); }}
+        notify={notify}
+      />
+    );
   if (activity && realReviewer)
-    return activity.status === "disponivel" ? (
+    return (<>
+      {activity.atividadeId && (
+        <BarraAtividade
+          atividadeId={activity.atividadeId}
+          onEditar={() => setEditandoId(activity.atividadeId!)}
+          onExcluida={() => { select(null); recarregar(); }}
+          notify={notify}
+        />
+      )}
+      {activity.status === "disponivel" ? (
       <AtividadeSemEnvio key={activity.id} activity={activity} onBack={() => select(null)} />
     ) : (
       <RevisaoReal
@@ -212,7 +235,8 @@ export function Activities({
         onApproved={() => { select(null); recarregar(); }}
         readOnly={role === "gestor"}
       />
-    );
+    )}
+    </>);
   if (activity)
     return (
       <ActivityDetail
@@ -1182,6 +1206,119 @@ function AtividadeSemEnvio({ activity: a, onBack }: { activity: Activity; onBack
   );
 }
 
+// Editar / Excluir a atividade (professor da turma e gestor; o backend confere). Com envios, excluir ARQUIVA.
+function BarraAtividade({ atividadeId, onEditar, onExcluida, notify }: {
+  atividadeId: string; onEditar: () => void; onExcluida: () => void; notify: (s: string) => void;
+}) {
+  const [ocupado, setOcupado] = useState(false);
+  const excluir = async () => {
+    setOcupado(true);
+    try {
+      const a = (await listarAtividades()).find((x) => x.id === atividadeId);
+      const aviso = a?.tem_envios
+        ? "Esta atividade já tem envios: ela será ARQUIVADA (some para os alunos, as notas e o histórico continuam). Continuar?"
+        : "Excluir esta atividade? Isso não pode ser desfeito.";
+      if (!window.confirm(aviso)) return;
+      const { acao } = await excluirAtividade(atividadeId);
+      notify(acao === "arquivada" ? "Atividade arquivada. As notas foram mantidas." : "Atividade excluída.");
+      onExcluida();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "Não foi possível excluir.");
+    } finally {
+      setOcupado(false);
+    }
+  };
+  return (
+    <div className="form-actions left">
+      <Button variant="secondary" icon={Pencil} onPress={onEditar}>Editar atividade</Button>
+      <Button variant="ghost" icon={Trash2} onPress={excluir} disabled={ocupado}>Excluir atividade</Button>
+    </div>
+  );
+}
+
+function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
+  atividadeId: string; onBack: () => void; onSalvo: () => void; notify: (s: string) => void;
+}) {
+  const [a, setA] = useState<AtividadeAPI | null>(null);
+  const [titulo, setTitulo] = useState("");
+  const [prazo, setPrazo] = useState("");
+  const [valorTotal, setValorTotal] = useState(1000);
+  const [questoes, setQuestoes] = useState<{ enunciado: string; resposta_correta: string }[]>([]);
+  const [salvando, setSalvando] = useState(false);
+  useEffect(() => {
+    listarAtividades().then((lista) => {
+      const x = lista.find((y) => y.id === atividadeId);
+      if (!x) return notify("Atividade não encontrada.");
+      setA(x);
+      setTitulo(x.titulo);
+      setPrazo(x.prazo ?? "");
+      setValorTotal(x.valor_total);
+      setQuestoes((x.questoes ?? []).map((q) => ({ enunciado: q.enunciado, resposta_correta: q.resposta_correta ?? "" })));
+    }).catch(() => notify("Não foi possível carregar a atividade."));
+  }, [atividadeId]);
+  if (!a) return <Empty title="Carregando..." text="Buscando a atividade." />;
+  const exatas = !!a.questoes?.length;
+  const gabaritoLivre = exatas && !a.tem_envios; // com envios o gabarito fica congelado
+  const salvar = async () => {
+    if (!titulo.trim()) return notify("Dê um título para a atividade.");
+    if (gabaritoLivre && questoes.some((q) => !q.enunciado.trim() || !q.resposta_correta.trim()))
+      return notify("Preencha o enunciado e a resposta correta de todas as questões.");
+    setSalvando(true);
+    try {
+      await editarAtividade(a.id, {
+        titulo: titulo.trim(),
+        prazo: prazo || null,
+        ...(gabaritoLivre ? { valor_total: valorTotal, questoes } : {}),
+      });
+      notify("Atividade atualizada.");
+      onSalvo();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "Não foi possível salvar.");
+    } finally {
+      setSalvando(false);
+    }
+  };
+  return (
+    <>
+      <button className="back-link" onClick={onBack}><ArrowLeft size={16} />Cancelar edição</button>
+      <div className="page-heading"><div><h1>Editar atividade</h1><p>{a.turma} · {a.materia}</p></div></div>
+      <Card>
+        <div className="form-grid">
+          <label>Título<input value={titulo} onChange={(e) => setTitulo(e.target.value)} /></label>
+          <label>Prazo de entrega<input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} /></label>
+          {gabaritoLivre && (
+            <label>Valor total (pontos)
+              <input type="number" min={1} value={valorTotal} onChange={(e) => setValorTotal(Number(e.target.value))} />
+            </label>
+          )}
+        </div>
+        {exatas && a.tem_envios && (
+          <p className="tiny muted">Já há envios: só o título e o prazo podem mudar. Para mudar o gabarito, crie uma nova atividade.</p>
+        )}
+        {gabaritoLivre && questoes.map((q, i) => (
+          <div key={i} className="form-grid">
+            <label>Questão {i + 1} — enunciado
+              <textarea value={q.enunciado} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, enunciado: e.target.value } : x))} />
+            </label>
+            <label>Resposta correta
+              <textarea value={q.resposta_correta} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, resposta_correta: e.target.value } : x))} />
+            </label>
+            {questoes.length > 1 && i === questoes.length - 1 && (
+              <Button variant="ghost" icon={Trash2} onPress={() => setQuestoes(questoes.slice(0, -1))}>Remover a última questão</Button>
+            )}
+          </div>
+        ))}
+        {gabaritoLivre && (
+          <Button variant="ghost" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "" }])}>Adicionar questão</Button>
+        )}
+        <div className="form-actions left">
+          <Button onPress={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar alterações"}</Button>
+        </div>
+      </Card>
+    </>
+  );
+}
+
 const TIPOS_ATIVIDADE: { value: string; label: string }[] = [
   { value: "REDACAO", label: "Redação" },
   { value: "PROVA_DISCURSIVA", label: "Prova discursiva" },
@@ -1242,7 +1379,7 @@ function NovaAtividade({
 }) {
   const [turmas, setTurmas] = useState<TurmaAPI[] | null>(null);
   const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
-  const [turmaId, setTurmaId] = useState("");
+  const [turmaIds, setTurmaIds] = useState<string[]>([]); // uma atividade independente por turma marcada
   const [materiaId, setMateriaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
@@ -1267,7 +1404,7 @@ function NovaAtividade({
     Promise.all([listarTurmasMinhas(), listarMaterias()]).then(([t, m]) => {
       setTurmas(t);
       setMaterias(m);
-      setTurmaId(t[0]?.id ?? "");
+      setTurmaIds(t.length === 1 ? [t[0].id] : []); // so uma turma: ja vem marcada
       setMateriaId(m[0]?.id ?? "");
     });
   }, []);
@@ -1303,8 +1440,8 @@ function NovaAtividade({
       setError("Dê um título para a atividade.");
       return;
     }
-    if (!turmaId || !materiaId) {
-      setError("Escolha uma turma e uma matéria.");
+    if (!turmaIds.length || !materiaId) {
+      setError("Marque ao menos uma turma e escolha a matéria.");
       return;
     }
     const preenchidas = questoes
@@ -1321,26 +1458,29 @@ function NovaAtividade({
     }
     setSalvando(true);
     setError("");
-    criarAtividade({
+    criarAtividadesLote({
       materia_id: materiaId,
-      turma_id: turmaId,
+      turma_ids: turmaIds,
       titulo: titulo.trim(),
       tipo: tipo as AtividadeAPI["tipo"],
       questoes: exigeGabarito ? questoesValidas : undefined,
       valor_total: exigeGabarito ? valorTotal : undefined,
       prazo: prazo || undefined,
     })
-      .then(async (criada) => {
-        // as questoes saem como Q1, Q2... na ordem em que foram enviadas
+      .then(async (criadas) => {
+        // as questoes saem como Q1, Q2... na ordem em que foram enviadas; a figura sobe em cada atividade criada
         const falhas: string[] = [];
-        for (const [i, q] of preenchidas.entries()) {
-          if (!q.figura) continue;
-          await anexarFiguraQuestao(criada.id, `Q${i + 1}`, q.figura).catch(() => falhas.push(`Q${i + 1}`));
+        for (const criada of criadas) {
+          for (const [i, q] of preenchidas.entries()) {
+            if (!q.figura) continue;
+            await anexarFiguraQuestao(criada.id, `Q${i + 1}`, q.figura).catch(() => falhas.push(`Q${i + 1} (${criada.turma})`));
+          }
         }
+        const quantas = criadas.length === 1 ? "Atividade criada" : `${criadas.length} atividades criadas (uma por turma)`;
         notify(
           falhas.length
-            ? `Atividade criada, mas a figura de ${falhas.join(", ")} não subiu. Tente anexar de novo.`
-            : "Atividade criada. Os alunos da turma já podem enviar.",
+            ? `${quantas}, mas a figura de ${falhas.join(", ")} não subiu. Anexe de novo pela edição.`
+            : `${quantas}. Os alunos já podem enviar.`,
         );
         onCriada();
       })
@@ -1386,16 +1526,29 @@ function NovaAtividade({
                 Prazo de entrega (opcional, aparece no calendário)
                 <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
               </label>
-              <label>
-                Turma
-                <select value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
-                  {turmas!.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nome}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <fieldset className="turmas-check">
+                <legend>Turmas (uma atividade para cada marcada)</legend>
+                {turmas!.length > 1 && (
+                  <label className="check">
+                    <input
+                      type="checkbox"
+                      checked={turmaIds.length === turmas!.length}
+                      onChange={(e) => setTurmaIds(e.target.checked ? turmas!.map((t) => t.id) : [])}
+                    />
+                    Todas as minhas turmas
+                  </label>
+                )}
+                {turmas!.map((t) => (
+                  <label className="check" key={t.id}>
+                    <input
+                      type="checkbox"
+                      checked={turmaIds.includes(t.id)}
+                      onChange={(e) => setTurmaIds(e.target.checked ? [...turmaIds, t.id] : turmaIds.filter((x) => x !== t.id))}
+                    />
+                    {t.nome}
+                  </label>
+                ))}
+              </fieldset>
               <label>
                 Matéria
                 <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>

@@ -20,7 +20,7 @@ from app.models.usuario import (
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AtividadeResponse, ConfirmarTextoRequest,
-    CriarAtividadeRequest, CriarMateriaRequest, CriterioResponse, EnviarTextoRequest,
+    CriarAtividadeLoteRequest, CriarAtividadeRequest, CriarMateriaRequest, CriterioResponse, EnviarTextoRequest,
     MateriaResponse, MinhaSubmissaoResponse, QuestaoAtividadeResponse, SubmissaoResponse,
     SubmissaoRevisaoResponse,
 )
@@ -81,7 +81,10 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
             db.query(Tema).filter_by(atividade_id=atividade.id)
             .order_by(Tema.habilidade_codigo)
         )
-        questoes = [QuestaoAtividadeResponse(codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem)) for t in temas]
+        questoes = [QuestaoAtividadeResponse(
+            codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem),
+            resposta_correta=t.resposta_correta if usuario.perfil != PerfilEnum.ALUNO else None,
+        ) for t in temas]
 
     return AtividadeResponse(
         id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome,
@@ -90,6 +93,7 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
         questoes=questoes,
         valor_total=float(atividade.valor_total) if atividade.valor_total is not None else 1000.0,
         prazo=atividade.prazo,
+        tem_envios=db.query(Submissao.id).filter_by(atividade_id=atividade.id).first() is not None,
     )
 
 
@@ -116,19 +120,17 @@ def criar_materia(payload: CriarMateriaRequest, usuario: Usuario = Depends(get_c
 def listar_atividades(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     # atividades das turmas do usuario, com os alunos de cada turma (o professor escolhe em nome de quem envia)
     turma_ids = [ut.turma_id for ut in db.query(UsuarioTurma).filter_by(usuario_id=usuario.id)]
-    atividades = db.query(Atividade).filter(Atividade.turma_id.in_(turma_ids))
+    atividades = db.query(Atividade).filter(Atividade.turma_id.in_(turma_ids), Atividade.arquivada.is_(False))
     return [_atividade_response(db, atividade, usuario) for atividade in atividades]
 
 
-# RF-09/RF-10: professor (ou gestor) cria a atividade numa turma dele, vinculada a uma materia da escola
-@router.post("/atividades", response_model=AtividadeResponse, status_code=status.HTTP_201_CREATED)
-def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(get_current_user),
-                     db: Session = Depends(get_db)):
-    turma = db.get(Turma, payload.turma_id)
+def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID) -> Atividade:
+    """Cria (sem commit) a atividade numa turma, conferindo o escopo de quem cria."""
+    turma = db.get(Turma, turma_id)
     if not turma or turma.escola_id != usuario.escola_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
     if usuario.perfil == PerfilEnum.PROFESSOR and not _na_turma(db, usuario.id, turma.id):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não leciona nesta turma.")
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona na turma {turma.nome}.")
     elif usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores criam atividades.")
 
@@ -153,10 +155,28 @@ def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(g
                 materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
                 nome=questao.enunciado.strip(), resposta_correta=questao.resposta_correta.strip(),
             ))
+    return atividade
 
+
+# RF-09/RF-10: professor (ou gestor) cria a atividade numa turma dele, vinculada a uma materia da escola
+@router.post("/atividades", response_model=AtividadeResponse, status_code=status.HTTP_201_CREATED)
+def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    atividade = _criar_em_turma(db, usuario, payload, payload.turma_id)
     db.commit()
     db.refresh(atividade)
     return _atividade_response(db, atividade, usuario)
+
+
+# varias turmas de uma vez: uma atividade independente por turma. Tudo ou nada: se qualquer turma
+# for invalida (nao e dele, nao existe), nada e criado (a sessao da rollback ao sair com erro)
+@router.post("/atividades/lote", response_model=list[AtividadeResponse], status_code=status.HTTP_201_CREATED)
+def criar_atividades_em_lote(payload: CriarAtividadeLoteRequest, usuario: Usuario = Depends(get_current_user),
+                             db: Session = Depends(get_db)):
+    turmas = list(dict.fromkeys(payload.turma_ids))  # tira repetidas, mantem a ordem
+    criadas = [_criar_em_turma(db, usuario, payload, t) for t in turmas]
+    db.commit()
+    return [_atividade_response(db, a, usuario) for a in criadas]
 
 
 # fluxo RF-11: foto -> OCR -> confere/corrige o texto -> confirma -> correcao por IA.
@@ -178,7 +198,7 @@ def enviar_imagem(
         raise HTTPException(422, "Informe o aluno (aluno_id).")
 
     # mesma resposta para "nao existe" e "nao e da sua turma": nao revela atividades alheias
-    if not atividade or not _na_turma(db, usuario.id, atividade.turma_id):
+    if not atividade or atividade.arquivada or not _na_turma(db, usuario.id, atividade.turma_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Atividade não encontrada.")
     aluno = db.get(Usuario, aluno_id)
     if not aluno or aluno.perfil != PerfilEnum.ALUNO or not _na_turma(db, aluno.id, atividade.turma_id):
@@ -339,7 +359,7 @@ def _validar_envio(db: Session, usuario: Usuario, atividade_id, aluno_id) -> tup
         raise HTTPException(422, "Informe o aluno (aluno_id).")
 
     # mesma resposta para "nao existe" e "nao e da sua turma": nao revela atividades alheias
-    if not atividade or not _na_turma(db, usuario.id, atividade.turma_id):
+    if not atividade or atividade.arquivada or not _na_turma(db, usuario.id, atividade.turma_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Atividade não encontrada.")
     aluno = db.get(Usuario, aluno_id)
     if not aluno or aluno.perfil != PerfilEnum.ALUNO or not _na_turma(db, aluno.id, atividade.turma_id):

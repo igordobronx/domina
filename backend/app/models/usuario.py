@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     func,
     true,
 )
@@ -123,6 +124,8 @@ class Atividade(Base):
     # entre as questoes. Nulo = redacao, que usa sempre as 5 competencias de 0..200 (soma 1000).
     valor_total = Column(Numeric(6, 2), nullable=True)
     prazo = Column(Date, nullable=True)  # data de entrega; aparece sozinha no calendario
+    # "excluir" uma atividade que ja tem submissoes so a esconde (notas e dominio dos alunos ficam)
+    arquivada = Column(Boolean, nullable=False, default=False, server_default=false())
 
 
 class Evento(Base):

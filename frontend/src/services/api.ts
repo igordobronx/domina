@@ -108,6 +108,7 @@ export interface QuestaoAtividadeAPI {
   codigo: string;
   enunciado: string;
   tem_imagem?: boolean; // figura do enunciado anexada pelo professor
+  resposta_correta?: string | null; // so professor/gestor recebem o gabarito
 }
 
 export interface AtividadeAPI {
@@ -122,6 +123,8 @@ export interface AtividadeAPI {
   // pontuacao total da atividade; em exatas e dividida igualmente entre as questoes. Sempre
   // 1000 na redacao (5 competencias x 0..200).
   valor_total: number;
+  prazo: string | null; // AAAA-MM-DD
+  tem_envios: boolean; // com envios: so titulo e prazo mudam, e excluir vira arquivar
 }
 
 export interface CaixaAPI {
@@ -235,6 +238,33 @@ export function criarMateria(payload: {
   tipo: MateriaAPI["tipo"];
 }): Promise<MateriaAPI> {
   return request<MateriaAPI>("/materias", { method: "POST", body: JSON.stringify(payload) });
+}
+
+// varias turmas de uma vez: o backend cria uma atividade independente por turma (tudo ou nada)
+export function criarAtividadesLote(payload: {
+  materia_id: string;
+  turma_ids: string[];
+  titulo: string;
+  tipo: AtividadeAPI["tipo"];
+  questoes?: { enunciado: string; resposta_correta: string }[];
+  valor_total?: number;
+  prazo?: string;
+}): Promise<AtividadeAPI[]> {
+  return request<AtividadeAPI[]>("/atividades/lote", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function editarAtividade(id: string, payload: {
+  titulo?: string;
+  prazo?: string | null; // null limpa o prazo
+  valor_total?: number;
+  questoes?: { enunciado: string; resposta_correta: string }[];
+}): Promise<AtividadeAPI> {
+  return request<AtividadeAPI>(`/atividades/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+// "excluida" (sem envios) ou "arquivada" (com envios: some da lista, notas continuam)
+export function excluirAtividade(id: string): Promise<{ acao: "excluida" | "arquivada" }> {
+  return request(`/atividades/${id}`, { method: "DELETE" });
 }
 
 export function criarAtividade(payload: {

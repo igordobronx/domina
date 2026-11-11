@@ -20,6 +20,8 @@ export interface Activity {
   // so quando ja existe submissao real (lado do aluno): id da submissao, distinto do id da
   // atividade (a.id) -- /submissoes/{id}/corrigir precisa do id da submissao, nao da atividade
   submissaoId?: string;
+  // id da ATIVIDADE (na fila de revisao, o id acima e o da submissao): editar/excluir usam este
+  atividadeId?: string;
   title: string;
   subject: string;
   date: string;

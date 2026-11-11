@@ -14,6 +14,7 @@ export async function carregarRevisoes(): Promise<Activity[]> {
   const [submissoes, atividades] = await Promise.all([listarSubmissoesRevisao(), listarAtividades()]);
   const linhas = submissoes.map((s): Activity => ({
     id: s.id,
+    atividadeId: s.atividade_id,
     title: s.atividade_titulo,
     subject: s.materia,
     date: paraData(s.criado_em),
@@ -29,6 +30,7 @@ export async function carregarRevisoes(): Promise<Activity[]> {
     .filter((a) => !atividadesComEnvio.has(a.id))
     .map((a): Activity => ({
       id: a.id,
+      atividadeId: a.id,
       title: a.titulo,
       subject: a.materia,
       date: "",

@@ -66,7 +66,7 @@ def ver_calendario(
     ) for e in eventos]
 
     prazos = db.query(Atividade).join(Turma, Turma.id == Atividade.turma_id).filter(
-        Turma.escola_id == escola, Atividade.prazo >= de, Atividade.prazo <= ate)
+        Turma.escola_id == escola, Atividade.arquivada.is_(False), Atividade.prazo >= de, Atividade.prazo <= ate)
     if turmas is not None:
         prazos = prazos.filter(Atividade.turma_id.in_(turmas))
     itens += [ItemCalendario(
