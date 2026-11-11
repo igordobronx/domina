@@ -1,9 +1,11 @@
 from datetime import date
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import escola_do_escopo, get_current_user
 from app.database import get_db
 from app.models.enum import PerfilEnum
 from app.models.usuario import AuditLog, ConsentimentoLGPD, CustoUso, Usuario
@@ -46,10 +48,12 @@ def meu_consentimento(usuario: Usuario = Depends(get_current_user), db: Session 
 
 
 @router.get("/custo-uso", response_model=CustoUsoResponse)
-def custo_uso_do_mes(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    _so_gestor(usuario)
+def custo_uso_do_mes(escola_id: uuid.UUID | None = None, usuario: Usuario = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    # gestor: so a propria escola. admin: precisa informar ?escola_id=
+    escola = escola_do_escopo(db, usuario, escola_id)
     mes = date.today().strftime("%Y-%m")
-    uso = db.query(CustoUso).filter_by(escola_id=usuario.escola_id, mes_referencia=mes).first()
+    uso = db.query(CustoUso).filter_by(escola_id=escola, mes_referencia=mes).first()
     if not uso:
         return CustoUsoResponse(mes_referencia=mes, tokens_llm=0, chamadas_ocr=0, custo_estimado=0.0)
     return uso

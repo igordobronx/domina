@@ -19,7 +19,8 @@ import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
 import type { UsuarioAtual } from "../services/api";
 import { carregarDominioReal, type Recomendacao } from "../services/dominio";
-import type { DominioAPI } from "../services/api";
+import { minhasSubmissoes, type DominioAPI } from "../services/api";
+import { iso } from "../hooks/useCalendario";
 
 export function Dashboard({
   role,
@@ -43,6 +44,17 @@ export function Dashboard({
   const real = student && !!currentUser;
   const [dominioReal, setDominioReal] = useState<DominioAPI[] | null>(null);
   const [recomendacao, setRecomendacao] = useState<Recomendacao | null>(null);
+  // dias (AAAA-MM-DD) em que o aluno enviou algo: alimenta "Um passo por dia" com dado real
+  const [diasEnviados, setDiasEnviados] = useState<string[]>([]);
+  useEffect(() => {
+    if (student && currentUser) minhasSubmissoes().then((r) => setDiasEnviados(r.map((x) => iso(new Date(x.criado_em))))).catch(() => {});
+  }, [student, currentUser]);
+  const semana = (() => {  // segunda a domingo da semana de hoje
+    const hoje = new Date();
+    const seg = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - ((hoje.getDay() + 6) % 7));
+    return Array.from({ length: 7 }, (_, i) => new Date(seg.getFullYear(), seg.getMonth(), seg.getDate() + i));
+  })();
+  const praticas = semana.filter((d) => diasEnviados.includes(iso(d))).length;
   useEffect(() => {
     if (!real) return;
     carregarDominioReal().then(({ dominio, recomendacao }) => {
@@ -163,21 +175,23 @@ export function Dashboard({
           </div>
           <p className="muted">Pequenos hábitos, grandes conquistas.</p>
           <div className="week-days">
-            {["S", "T", "Q", "Q", "S", "S", "D"].map((d, i) => (
-              <div key={i}>
-                <span>{d}</span>
-                <div
-                  className={i < 2 ? "day done" : i === 2 ? "day today" : "day"}
-                >
-                  {i < 2 ? <Check size={15} /> : i + 5}
+            {semana.map((d, i) => {
+              const feito = diasEnviados.includes(iso(d));
+              const hoje = iso(d) === iso(new Date());
+              return (
+                <div key={i}>
+                  <span>{["S", "T", "Q", "Q", "S", "S", "D"][i]}</span>
+                  <div className={feito ? "day done" : hoje ? "day today" : "day"}>
+                    {feito ? <Check size={15} /> : d.getDate()}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="week-bottom">
             <div>
               <strong>
-                {Math.min(2 + state.completed.length, state.goal)}
+                {Math.min(praticas, state.goal)}
                 <span>/{state.goal}</span>
               </strong>
               <span>práticas da semana</span>
@@ -186,13 +200,13 @@ export function Dashboard({
           </div>
           <Progress
             value={Math.min(
-              ((2 + state.completed.length) / state.goal) * 100,
+              (praticas / state.goal) * 100,
               100,
             )}
             label="Meta semanal de práticas"
           />
           <p className="tiny muted">
-            {state.completed.length + 2 >= state.goal
+            {praticas >= state.goal
               ? "Meta alcançada. Continue no seu ritmo!"
               : "Seu ritmo importa mais que a velocidade."}
           </p>

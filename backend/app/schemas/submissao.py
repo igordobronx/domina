@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -95,8 +95,9 @@ class CriarMateriaRequest(BaseModel):
 
 
 class QuestaoInput(BaseModel):
-    enunciado: str = Field(min_length=1, max_length=2000)
-    resposta_correta: str = Field(min_length=1, max_length=500)
+    # discursiva de quimica/fisica tem enunciado e gabarito longos (mecanismo, nomes); colunas sao Text
+    enunciado: str = Field(min_length=1, max_length=10_000)
+    resposta_correta: str = Field(min_length=1, max_length=5_000)
 
 
 class AlunoResumo(BaseModel):
@@ -107,6 +108,7 @@ class AlunoResumo(BaseModel):
 class QuestaoAtividadeResponse(BaseModel):
     codigo: str
     enunciado: str
+    tem_imagem: bool = False  # figura anexada pelo professor (GET /atividades/{id}/questoes/{codigo}/imagem)
 
 
 class AtividadeResponse(BaseModel):
@@ -121,6 +123,7 @@ class AtividadeResponse(BaseModel):
     # pontuacao total da atividade; em exatas e dividida igualmente entre as questoes. Na
     # redacao e sempre 1000 (5 competencias x 0..200), fixo, nao vem do professor.
     valor_total: float = 1000
+    prazo: date | None = None
 
 
 class CriarAtividadeRequest(BaseModel):
@@ -134,6 +137,7 @@ class CriarAtividadeRequest(BaseModel):
     # so para exatas: valor total da atividade, dividido igualmente entre as questoes
     # (ex.: 4 questoes, 1000 pontos -> 250 cada). Sem isso, assume 1000.
     valor_total: float | None = Field(default=None, gt=0, le=10_000)
+    prazo: date | None = None  # data de entrega, aparece no calendario
 
 class EnviarTextoRequest(BaseModel):
     atividade_id: uuid.UUID

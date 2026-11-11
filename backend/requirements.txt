@@ -16,3 +16,4 @@ google-genai>=2.29,<3
 anthropic>=0.69,<1
 pillow>=11,<13
 python-multipart>=0.0.12,<1
+alembic>=1.13,<2

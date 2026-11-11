@@ -37,7 +37,7 @@ def ler_imagem(file: UploadFile) -> bytes:
     return image_bytes
 
 
-def ocr(image_bytes: bytes, mime_type: str) -> str:
+def ocr(image_bytes: bytes, mime_type: str, exatas: bool = False) -> str:
     # chama o Gemini e traduz falhas em respostas HTTP sem vazar detalhe interno
     if not settings.GEMINI_API_KEY:
         logger.error("GEMINI_API_KEY nao configurada")
@@ -46,7 +46,7 @@ def ocr(image_bytes: bytes, mime_type: str) -> str:
             detail="OCR indisponível: servidor sem chave do Gemini configurada.",
         )
     try:
-        texto = extract_text(image_bytes, mime_type)
+        texto = extract_text(image_bytes, mime_type, exatas)
     except TextoPublicado:
         raise HTTPException(
             422, "Este texto parece ser de uma redação já publicada; a leitura automática foi bloqueada. "

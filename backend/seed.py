@@ -75,7 +75,7 @@ def get_or_create(db, model, defaults=None, **filtro):
 
 def usuario(db, escola, nome, email, perfil):
     u = get_or_create(db, Usuario, email=email,
-                      defaults=dict(escola_id=escola.id, nome=nome, perfil=perfil, senha_hash=""))
+                      defaults=dict(escola_id=escola.id if escola else None, nome=nome, perfil=perfil, senha_hash=""))
     u.nome = nome
     u.senha_hash = hash_password(SENHA)
     return u
@@ -124,6 +124,10 @@ def run_seed():
 
         professor = usuario(db, escola, "Beto Andrade", "professor@domina.com", PerfilEnum.PROFESSOR)
         usuario(db, escola, "Marina Alves", "gestor@domina.com", PerfilEnum.GESTOR)
+        usuario(db, None, "Equipe Domina", "admin@domina.com", PerfilEnum.ADMIN)  # sem escola: plataforma
+        # segunda escola, so para provar que um gestor nao enxerga a outra instituicao
+        outra = get_or_create(db, Escola, nome="COLEGIO VESTIBULAR NORTE", defaults=dict(cnpj="98765432000110"))
+        usuario(db, outra, "Carlos Lima", "gestor2@domina.com", PerfilEnum.GESTOR)
 
         turma = get_or_create(db, Turma, escola_id=escola.id, nome="3º Ano A", defaults=dict(ano=2026))
         get_or_create(db, UsuarioTurma, usuario_id=professor.id, turma_id=turma.id,
@@ -147,6 +151,7 @@ def run_seed():
         print(f"escola:    {escola.nome}")
         print(f"professor: professor@domina.com / {SENHA}")
         print(f"gestor:    gestor@domina.com / {SENHA}")
+        print(f"admin:     admin@domina.com / {SENHA}   (gestor da outra escola: gestor2@domina.com)")
 
         for info in ALUNOS:
             aluno = usuario(db, escola, info["nome"], info["email"], PerfilEnum.ALUNO)

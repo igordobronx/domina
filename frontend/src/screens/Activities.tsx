@@ -23,6 +23,7 @@ import {
 import {
   aprovarCorrecao,
   confirmarTexto,
+  anexarFiguraQuestao,
   criarAtividade,
   criarMateria,
   enviarImagem,
@@ -30,6 +31,7 @@ import {
   listarMaterias,
   listarTurmasMinhas,
   rodarAgente,
+  urlFiguraQuestao,
   urlImagemSubmissao,
   verAgente,
   verCorrecao,
@@ -508,7 +510,10 @@ function ActivityDetail({
               // gabarito real desta atividade (materias de exatas) -- nunca um texto fixo de outra atividade
               <ol className="question-list">
                 {a.questoes.map((q) => (
-                  <li key={q.codigo} style={{ whiteSpace: "pre-wrap" }}>{q.enunciado}</li>
+                  <li key={q.codigo} style={{ whiteSpace: "pre-wrap" }}>
+                    {q.enunciado}
+                    {q.tem_imagem && <FiguraQuestao atividadeId={a.id} codigo={q.codigo} />}
+                  </li>
                 ))}
               </ol>
             ) : a.kind === "redacao" ? (
@@ -907,11 +912,21 @@ function RevisaoReal({
   };
 
   const aprovar = () => {
+    // exatas: nota livre de 0 ate o valor da questao; confere antes de mandar ao servidor
+    const maxQuestao = (a.valorTotal ?? 1000) / Math.max(correcao?.criterios.length ?? 1, 1);
+    const invalida = Object.entries(notas).find(
+      ([codigo, n]) => codigo.startsWith("Q") && !(Number.isFinite(n) && n >= 0 && n <= maxQuestao + 0.01),
+    );
+    if (invalida) {
+      setError(`A nota de ${invalida[0]} deve estar entre 0 e ${Math.round(maxQuestao * 100) / 100}.`);
+      setConfirmApproval(false);
+      return;
+    }
     setAprovando(true);
     setError("");
     aprovarCorrecao(
       a.id,
-      Object.entries(notas).map(([codigo, nota]) => ({ codigo, nota })),
+      Object.entries(notas).map(([codigo, nota]) => ({ codigo, nota: Math.round(nota * 100) / 100 })),
       feedback,
     )
       .then(() => onApproved())
@@ -923,7 +938,7 @@ function RevisaoReal({
   };
 
   const aprovada = a.status === "aprovada";
-  const nota = Object.values(notas).reduce((s, n) => s + n, 0);
+  const nota = Math.round(Object.values(notas).reduce((s, n) => s + (Number.isFinite(n) ? n : 0), 0) * 100) / 100;
 
   return (
     <>
@@ -978,13 +993,30 @@ function RevisaoReal({
                     // (C1..C5): sempre a escala fixa de 0 a 200 do ENEM.
                     const exatas = c.codigo.startsWith("Q");
                     const valorPorQuestao = (a.valorTotal ?? 1000) / correcao.criterios.length;
-                    const niveis = exatas
-                      ? [0, 0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.round(f * valorPorQuestao * 100) / 100)
-                      : NOTAS_ENEM;
+                    const niveis = NOTAS_ENEM;
                     return (
                       <label key={c.codigo}>
                         <span>{c.codigo}</span>
-                        {!aprovada && !readOnly ? (
+                        {!aprovada && !readOnly && exatas ? (
+                          // exatas: o professor digita QUALQUER nota de 0 ate o valor da questao
+                          // (a escala de 40 em 40 e so da redacao do ENEM)
+                          <input
+                            key={`${c.codigo}-${c.nota}`}
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            max={Math.round(valorPorQuestao * 100) / 100}
+                            step="0.01"
+                            aria-label={`Nota de ${c.codigo} (de 0 a ${Math.round(valorPorQuestao * 100) / 100})`}
+                            defaultValue={notas[c.codigo] ?? c.nota}
+                            onChange={(e) =>
+                              setNotas({
+                                ...notas,
+                                [c.codigo]: e.target.value === "" ? NaN : Number(e.target.value),
+                              })
+                            }
+                          />
+                        ) : !aprovada && !readOnly ? (
                           <select
                             aria-label={`Nota de ${c.codigo}`}
                             value={notas[c.codigo] ?? c.nota}
@@ -1168,9 +1200,31 @@ const TIPOS_MATERIA: { value: MateriaAPI["tipo"]; label: string }[] = [
 // resposta correta de cada uma
 const MATERIAS_COM_GABARITO: MateriaAPI["tipo"][] = ["MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"];
 
+// figura do enunciado (anexada pelo professor); a imagem exige o token, entao vem como blob
+function FiguraQuestao({ atividadeId, codigo }: { atividadeId: string; codigo: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let ativo = true;
+    urlFiguraQuestao(atividadeId, codigo)
+      .then((u) => ativo && setUrl(u))
+      .catch(() => undefined);
+    return () => {
+      ativo = false;
+    };
+  }, [atividadeId, codigo]);
+  return url ? <img src={url} alt={`Figura da questão ${codigo}`} style={{ maxWidth: "100%", display: "block", marginTop: 8 }} /> : null;
+}
+
 // uma questao pode ter itens (a, b, c...); o backend so guarda um enunciado de texto por
 // questao, entao os itens viram linhas "a) ...", "b) ..." dentro dele (ver compoeEnunciado)
 const LETRAS = "abcdefghijklmnopqrstuvwxyz";
+interface QuestaoForm {
+  enunciado: string;
+  itens: string[];
+  resposta_correta: string;
+  figura?: File; // anexada depois que a atividade e criada
+}
+
 function compoeEnunciado(q: { enunciado: string; itens: string[] }): string {
   const itens = q.itens.map((it) => it.trim()).filter(Boolean);
   const partes = itens.map((it, i) => `${LETRAS[i] ?? i + 1}) ${it}`);
@@ -1192,8 +1246,9 @@ function NovaAtividade({
   const [materiaId, setMateriaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
-  const [questoes, setQuestoes] = useState([{ enunciado: "", itens: [""], resposta_correta: "" }]);
+  const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [""], resposta_correta: "" }]);
   const [valorTotal, setValorTotal] = useState(1000);
+  const [prazo, setPrazo] = useState("");
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -1252,9 +1307,10 @@ function NovaAtividade({
       setError("Escolha uma turma e uma matéria.");
       return;
     }
-    const questoesValidas = questoes
-      .map((q) => ({ enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim() }))
+    const preenchidas = questoes
+      .map((q) => ({ enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim(), figura: q.figura }))
       .filter((q) => q.enunciado && q.resposta_correta);
+    const questoesValidas = preenchidas.map(({ enunciado, resposta_correta }) => ({ enunciado, resposta_correta }));
     if (exigeGabarito && !questoesValidas.length) {
       setError("Adicione ao menos uma questão com enunciado e resposta correta.");
       return;
@@ -1272,9 +1328,20 @@ function NovaAtividade({
       tipo: tipo as AtividadeAPI["tipo"],
       questoes: exigeGabarito ? questoesValidas : undefined,
       valor_total: exigeGabarito ? valorTotal : undefined,
+      prazo: prazo || undefined,
     })
-      .then(() => {
-        notify("Atividade criada. Os alunos da turma já podem enviar.");
+      .then(async (criada) => {
+        // as questoes saem como Q1, Q2... na ordem em que foram enviadas
+        const falhas: string[] = [];
+        for (const [i, q] of preenchidas.entries()) {
+          if (!q.figura) continue;
+          await anexarFiguraQuestao(criada.id, `Q${i + 1}`, q.figura).catch(() => falhas.push(`Q${i + 1}`));
+        }
+        notify(
+          falhas.length
+            ? `Atividade criada, mas a figura de ${falhas.join(", ")} não subiu. Tente anexar de novo.`
+            : "Atividade criada. Os alunos da turma já podem enviar.",
+        );
         onCriada();
       })
       .catch((erro) =>
@@ -1314,6 +1381,10 @@ function NovaAtividade({
                   onChange={(e) => setTitulo(e.target.value)}
                   placeholder="Ex.: Redação 2 - meio ambiente"
                 />
+              </label>
+              <label>
+                Prazo de entrega (opcional, aparece no calendário)
+                <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
               </label>
               <label>
                 Turma
@@ -1465,6 +1536,25 @@ function NovaAtividade({
                       <Plus size={14} />
                       Adicionar item ({LETRAS[q.itens.length] ?? q.itens.length + 1})
                     </button>
+                    <label>
+                      Figura da questão (opcional)
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const copia = [...questoes];
+                          copia[i] = { ...copia[i], figura: e.target.files?.[0] };
+                          setQuestoes(copia);
+                        }}
+                      />
+                      {q.figura && (
+                        <img
+                          src={URL.createObjectURL(q.figura)}
+                          alt="Pré-visualização da figura"
+                          style={{ maxWidth: "100%", maxHeight: 220, display: "block", marginTop: 8 }}
+                        />
+                      )}
+                    </label>
                     <label>
                       Resposta correta (de cada item, se houver)
                       <textarea

@@ -23,7 +23,7 @@ from app.main import app  # noqa: E402
 from app.models.usuario import Atividade  # noqa: E402
 
 seed.run_seed()
-ocr_router.extract_text = lambda _bytes, _mime: "texto lido pelo ocr"
+ocr_router.extract_text = lambda _bytes, _mime, _exatas=False: "texto lido pelo ocr"
 client = TestClient(app)
 FOTO = {"file": ("redacao.jpg", b"\xff\xd8 bytes de foto", "image/jpeg")}
 
@@ -91,7 +91,7 @@ def test_ocr_sem_chave_responde_503():
 
 
 def test_imagem_sem_texto_responde_422():
-    original, ocr_router.extract_text = ocr_router.extract_text, lambda _b, _m: ""
+    original, ocr_router.extract_text = ocr_router.extract_text, lambda _b, _m, _e=False: ""
     try:
         assert client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO).status_code == 422
     finally:
@@ -101,7 +101,7 @@ def test_imagem_sem_texto_responde_422():
 def test_texto_publicado_responde_422():
     from app.ocr.gemini import TextoPublicado
 
-    def recitacao(_b, _m):
+    def recitacao(_b, _m, _e=False):
         raise TextoPublicado()
 
     original, ocr_router.extract_text = ocr_router.extract_text, recitacao
@@ -128,7 +128,7 @@ def test_outro_aluno_nao_ve_submissao():
 
 
 def test_falha_do_gemini_nao_vaza_detalhe():
-    def quebra(_bytes, _mime):
+    def quebra(_bytes, _mime, _exatas=False):
         raise RuntimeError("API_KEY_INVALID segredo-interno")
 
     original, ocr_router.extract_text = ocr_router.extract_text, quebra

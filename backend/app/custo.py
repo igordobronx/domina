@@ -11,6 +11,8 @@ CUSTO_POR_CHAMADA_OCR = 0.001
 
 
 def registrar_uso(db: Session, escola_id, tokens_llm: int = 0, chamadas_ocr: int = 0) -> None:
+    if escola_id is None:  # administrador da plataforma nao tem escola para cobrar
+        return
     mes = date.today().strftime("%Y-%m")
     custo_adicional = tokens_llm / 1000 * CUSTO_POR_1K_TOKENS + chamadas_ocr * CUSTO_POR_CHAMADA_OCR
     uso = db.query(CustoUso).filter_by(escola_id=escola_id, mes_referencia=mes).first()

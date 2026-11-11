@@ -10,9 +10,9 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.config import settings
 from app.correcao import NOTAS_VALIDAS, PontoIA
-from app.ocr.gemini import gerar, reduzir
+from app.ocr.gemini import LADO_EXATAS, gerar, reduzir
 
-VERSAO_PROMPT = "exatas-v1"
+VERSAO_PROMPT = "exatas-v3"  # v3: leitura do desenho antes da nota; substrato diferente do enunciado = parcial
 MODELO_PRINCIPAL = settings.GEMINI_MODEL
 
 PROMPT = """Você é um corretor de exercícios de {materia}. Confira se as respostas do aluno batem
@@ -27,11 +27,18 @@ o método usado pareça certo.
 Questões e gabarito (código da questão, enunciado, resposta correta):
 {questoes}
 
-Respostas do aluno, transcritas do que ele entregou (podem estar fora de ordem ou sem
+{instrucao_figuras}{instrucao_foto}Respostas do aluno, transcritas do que ele entregou (podem estar fora de ordem ou sem
 numeração clara — associe cada trecho à questão correspondente pelo conteúdo):
 \"\"\"
 {respostas}
 \"\"\"
+
+Antes da nota, escreva em "leitura" o que o aluno entregou naquela questão, sem julgar: se
+for desenho, o composto/estrutura (nome, nº de carbonos, grupos funcionais, posição da
+ligação múltipla) ou os passos do mecanismo; se for texto/número, a resposta final. Só depois
+dê a nota com base na leitura. Se a leitura mostra que o aluno partiu de um composto ou dado
+DIFERENTE do enunciado mas raciocinou de forma coerente a partir dele, NÃO dê 0: dê nota
+parcial (40 a 80), diga isso na justificativa e baixe a "confianca", para o professor decidir.
 
 Para cada questão, dê uma nota de 0 a 200: 200 se a resposta final do aluno bate com o
 gabarito, 0 se não bate. Só use valores intermediários (40, 80, 120, 160) se a questão tiver
@@ -52,12 +59,29 @@ alguma questão não foi respondida).
 Responda em JSON com esta estrutura, uma entrada por questão, na mesma ordem recebida:
 {{
   "questoes": [
-    {{"codigo": "Q1", "nota": 200, "justificativa": "...", "pontos": [
+    {{"codigo": "Q1", "leitura": "...", "nota": 200, "justificativa": "...", "pontos": [
       {{"trecho": "...", "tipo": "acerto", "comentario": "..."{exemplo_caixa}}}
     ]}}
   ],
   "confianca": 0.0
 }}"""
+
+INSTRUCAO_FIGURAS = """As figuras das questões (estruturas, gráficos, esquemas) vêm ANTES deste texto, cada uma
+identificada pelo código da questão. Elas fazem parte do enunciado: use-as para entender o que
+a questão pede e conferir a resposta do aluno.
+
+"""
+
+INSTRUCAO_FOTO = """A foto da prova do aluno acompanha este pedido e é a FONTE PRINCIPAL. A transcrição abaixo
+pode ter ficado sem os desenhos (estruturas químicas, mecanismos com setas, gráficos, esquemas,
+tabelas) e até sem colunas inteiras da folha. Leia a foto inteira, todas as colunas, e avalie
+também o que o aluno DESENHOU: uma estrutura ou um mecanismo desenhado É resposta.
+Nunca diga que uma resposta está em branco só porque a transcrição não a traz: olhe a foto antes.
+Só dê 0 por falta de resposta se a foto realmente não mostrar nada para aquela questão (e diga
+isso na justificativa). Se o desenho estiver pouco legível para avaliar, diga isso e baixe
+a "confianca" em vez de dar 0 por omissão.
+
+"""
 
 INSTRUCAO_CAIXA = """
 Além disso, a imagem enviada é a prova original do aluno: em CADA ponto, diga também ONDE na
@@ -71,6 +95,7 @@ EXEMPLO_CAIXA = ', "caixa": {"x": 0.1, "y": 0.2, "largura": 0.3, "altura": 0.1}'
 
 class QuestaoCorrigida(BaseModel):
     codigo: str
+    leitura: str = ""  # antes da nota: o schema respeita a ordem, entao o modelo le primeiro
     nota: float
     justificativa: str
     pontos: list[PontoIA] = Field(default_factory=list)
@@ -93,10 +118,12 @@ def corrigir(
     materia_nome: str,
     questoes: list[tuple[str, str, str]],
     imagem: tuple[bytes, str] | None = None,
+    figuras: dict[str, tuple[bytes, str]] | None = None,
 ) -> tuple[ResultadoExatasIA, str]:
     # questoes: lista de (codigo, enunciado, resposta_correta), na ordem em que serao exibidas
     # imagem: (bytes, mime_type) da foto original, so quando a resposta foi enviada por foto --
     # nesse caso a IA tambem devolve "caixa" (onde na foto esta cada resposta)
+    # figuras: {codigo da questao: (bytes, mime_type)} anexadas pelo professor ao enunciado
     texto_questoes = "\n".join(
         f"{codigo}) {enunciado}\n   Gabarito: {resposta}" for codigo, enunciado, resposta in questoes
     )
@@ -104,14 +131,19 @@ def corrigir(
         materia=materia_nome,
         questoes=texto_questoes,
         respostas=respostas_aluno,
+        instrucao_figuras=INSTRUCAO_FIGURAS if figuras else "",
+        instrucao_foto=INSTRUCAO_FOTO if imagem else "",
         instrucao_caixa=INSTRUCAO_CAIXA if imagem else "",
         exemplo_caixa=EXEMPLO_CAIXA if imagem else "",
     )
+    partes = []
+    for codigo, figura in (figuras or {}).items():
+        figura_bytes, figura_mime = reduzir(*figura)
+        partes += [f"Figura da questão {codigo}:", types.Part.from_bytes(data=figura_bytes, mime_type=figura_mime)]
     if imagem:
-        imagem_bytes, mime_type = reduzir(*imagem)
-        contents = [types.Part.from_bytes(data=imagem_bytes, mime_type=mime_type), prompt]
-    else:
-        contents = prompt
+        imagem_bytes, mime_type = reduzir(*imagem, LADO_EXATAS)
+        partes += ["Prova do aluno (foto):", types.Part.from_bytes(data=imagem_bytes, mime_type=mime_type)]
+    contents = [*partes, prompt] if partes else prompt
     response, modelo = gerar(
         contents,
         types.GenerateContentConfig(
@@ -122,4 +154,7 @@ def corrigir(
     esperado = sorted(codigo for codigo, _, _ in questoes)
     if sorted(q.codigo for q in resultado.questoes) != esperado:
         raise ValueError("a IA nao respondeu exatamente as questoes esperadas")
+    for q in resultado.questoes:
+        if q.leitura:
+            q.justificativa = f"Leitura da IA: {q.leitura}\n{q.justificativa}"
     return resultado, modelo

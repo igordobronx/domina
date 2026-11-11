@@ -1,11 +1,13 @@
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import escola_do_escopo, get_current_user
 from app.database import get_db
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
 from app.models.usuario import Turma, Usuario, UsuarioTurma
-from app.routers.submissoes import _na_turma
+from app.routers.submissoes import _na_turma, _professor_da_turma
 from app.schemas.turma import CriarTurmaRequest, MatricularRequest, MembroTurmaResponse, TurmaResponse
 
 router = APIRouter(prefix="/turmas", tags=["turmas"])
@@ -31,9 +33,11 @@ def criar_turma(payload: CriarTurmaRequest, usuario_atual: Usuario = Depends(get
 # literal: GET /turmas/minhas antes de um eventual GET /turmas/{turma_id} evitaria o mesmo
 # problema de roteamento ja visto em /submissoes/minhas; nao ha essa rota ainda, mas o padrao se mantem
 @router.get("/minhas", response_model=list[TurmaResponse])
-def minhas_turmas(usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
-    if usuario_atual.perfil == PerfilEnum.GESTOR:
-        turmas = db.query(Turma).filter_by(escola_id=usuario_atual.escola_id)
+def minhas_turmas(escola_id: uuid.UUID | None = None, usuario_atual: Usuario = Depends(get_current_user),
+                  db: Session = Depends(get_db)):
+    # gestor: todas as da propria escola. admin: as da escola pedida (?escola_id=)
+    if usuario_atual.perfil in (PerfilEnum.GESTOR, PerfilEnum.ADMIN):
+        turmas = db.query(Turma).filter_by(escola_id=escola_do_escopo(db, usuario_atual, escola_id))
     elif usuario_atual.perfil == PerfilEnum.PROFESSOR:
         turma_ids = [
             ut.turma_id for ut in
@@ -47,7 +51,7 @@ def minhas_turmas(usuario_atual: Usuario = Depends(get_current_user), db: Sessio
 
 # literal: GET /turmas/minhas fica antes e nao conflita com estas, que tem 2 segmentos
 @router.get("/{turma_id}/membros", response_model=list[MembroTurmaResponse])
-def membros_turma(turma_id, usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def membros_turma(turma_id: uuid.UUID, usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     turma = db.get(Turma, turma_id)
     if not turma or turma.escola_id != usuario_atual.escola_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
@@ -66,13 +70,17 @@ def membros_turma(turma_id, usuario_atual: Usuario = Depends(get_current_user), 
 
 
 @router.post("/{turma_id}/matricular", response_model=TurmaResponse, status_code=status.HTTP_201_CREATED)
-def matricular(turma_id, payload: MatricularRequest, usuario_atual: Usuario = Depends(get_current_user),
+def matricular(turma_id: uuid.UUID, payload: MatricularRequest, usuario_atual: Usuario = Depends(get_current_user),
                 db: Session = Depends(get_db)):
-    _so_gestor(usuario_atual)
-
     turma = db.get(Turma, turma_id)
     if not turma or turma.escola_id != usuario_atual.escola_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
+    if usuario_atual.perfil == PerfilEnum.PROFESSOR:
+        # professor matricula so ALUNOS e so nas turmas em que ele da aula
+        if payload.papel != "ALUNO" or not _professor_da_turma(db, usuario_atual, turma.id):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "O professor só matricula alunos nas próprias turmas.")
+    else:
+        _so_gestor(usuario_atual)
 
     aluno_ou_professor = db.get(Usuario, payload.usuario_id)
     if not aluno_ou_professor or aluno_ou_professor.escola_id != usuario_atual.escola_id:

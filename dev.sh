@@ -12,6 +12,7 @@ fi
 [ -d frontend/node_modules ] || (cd frontend && npm install)
 [ -f frontend/.env.local ] || cp frontend/.env.example frontend/.env.local
 
+(cd backend && ../venv/bin/python migrar.py)
 (cd backend && [ "${1:-}" != "--seed" ] || ../venv/bin/python seed.py)
 
 trap 'kill 0' EXIT INT TERM  # mata o grupo inteiro (uvicorn + vite)

@@ -6,7 +6,9 @@ class CriarUsuarioRequest(BaseModel):
     nome: str
     email: EmailStr
     senha: str = Field(min_length=6)
-    perfil: Literal["ALUNO", "PROFESSOR"]  # ADMIN/GESTOR não se autocadastra
+    perfil: Literal["ALUNO", "PROFESSOR", "GESTOR"]  # ADMIN nunca se cria pela API
+    escola_id: uuid.UUID | None = None  # so o administrador informa; os outros usam a propria escola
+    turma_id: uuid.UUID | None = None  # opcional: ja matricula o professor/aluno nesta turma
 
 class UsuarioResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

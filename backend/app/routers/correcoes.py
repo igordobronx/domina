@@ -119,12 +119,18 @@ def corrigir_submissao(
                 if caminho_foto.exists():
                     mime, _ = mimetypes.guess_type(str(caminho_foto))
                     imagem = (caminho_foto.read_bytes(), mime or "image/jpeg")
-            resultado, modelo = ia_exatas.corrigir(submissao.texto_confirmado, materia.nome, questoes, imagem=imagem)
+            figuras = {}  # figura de cada questao (se o professor anexou): o Gemini ve junto do enunciado
+            for t in temas.values():
+                if t.imagem and Path(t.imagem).exists():
+                    mime_fig, _ = mimetypes.guess_type(t.imagem)
+                    figuras[t.habilidade_codigo] = (Path(t.imagem).read_bytes(), mime_fig or "image/jpeg")
+            resultado, modelo = ia_exatas.corrigir(
+                submissao.texto_confirmado, materia.nome, questoes, imagem=imagem, figuras=figuras,
+            )
             itens = resultado.questoes
             versao_prompt = ia_exatas.VERSAO_PROMPT
             modelo_principal = ia_exatas.MODELO_PRINCIPAL
-            acertos = sum(1 for q in itens if q.nota == 200)
-            feedback = f"{acertos}/{len(itens)} questões corretas."
+            feedback = None  # montado abaixo, depois de reescalar as notas (precisa dos pontos reais)
         else:
             resultado, modelo = ia.corrigir(submissao.texto_confirmado, (payload.tema or "").strip() or atividade.titulo)
             itens = resultado.competencias
@@ -140,12 +146,20 @@ def corrigir_submissao(
         # aqui reescalamos para o valor real da atividade, dividido igualmente entre as questoes
         # (RF do professor definir o valor total, em vez de cada questao valer 200 fixo)
         valor_por_questao = float(atividade.valor_total or 1000) / len(temas)
+        cheias = sum(1 for i in itens if i.nota == 200)  # nota relativa 200 = questao toda certa
+        parciais = sum(1 for i in itens if 0 < i.nota < 200)
         for i in itens:
             i.nota = round(i.nota / 200 * valor_por_questao, 2)
+        feedback = (
+            f"{round(sum(i.nota for i in itens), 2):g} de {float(atividade.valor_total or 1000):g} pontos: "
+            f"{cheias} questão(ões) certa(s), {parciais} com acerto parcial, "
+            f"{len(itens) - cheias - parciais} sem pontos."
+        )
 
     # modelo diferente do principal (ex.: reserva do Gemini) e mais raso: no teste deu 120 em
     # tudo com "95% de confianca". Vai para o topo da fila do professor junto com as de baixa confianca
-    atencao = resultado.confianca < CONFIANCA_MINIMA or modelo != modelo_principal
+    # exatas por foto tambem: a confianca nao distingue leitura estavel de instavel (Q3 deu 0 e 80)
+    atencao = resultado.confianca < CONFIANCA_MINIMA or modelo != modelo_principal or (exatas and imagem is not None)
     correcao = Correcao(
         submissao_id=submissao.id,
         nota_ia=sum(i.nota for i in itens),

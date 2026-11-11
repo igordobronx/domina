@@ -213,14 +213,15 @@ function TurmaCard({
               ),
             )
           )}
-          {gestor && !adicionando && (
+          {!adicionando && (
             <Button variant="secondary" icon={Plus} onPress={() => setAdicionando(true)}>
               Adicionar à turma
             </Button>
           )}
-          {gestor && adicionando && (
+          {adicionando && (
             <AdicionarMembro
               turmaId={turma.id}
+              soAluno={!gestor}
               jaMatriculados={new Set((membros ?? []).map((m) => m.id))}
               onDone={() => {
                 setAdicionando(false);
@@ -289,12 +290,14 @@ function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string
 
 function AdicionarMembro({
   turmaId,
+  soAluno,
   jaMatriculados,
   onDone,
   onCancel,
   notify,
 }: {
   turmaId: string;
+  soAluno: boolean; // professor so cadastra e matricula alunos
   jaMatriculados: Set<string>;
   onDone: () => void;
   onCancel: () => void;
@@ -315,7 +318,8 @@ function AdicionarMembro({
       .then((todos) =>
         setCandidatos(
           todos.filter(
-            (u) => (u.perfil === "ALUNO" || u.perfil === "PROFESSOR") && !jaMatriculados.has(u.id),
+            (u) =>
+              (u.perfil === "ALUNO" || (!soAluno && u.perfil === "PROFESSOR")) && !jaMatriculados.has(u.id),
           ),
         ),
       )
@@ -406,6 +410,7 @@ function AdicionarMembro({
             Senha provisória
             <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} />
           </label>
+          {!soAluno && (
           <label>
             Perfil
             <select value={perfil} onChange={(e) => setPerfil(e.target.value as "ALUNO" | "PROFESSOR")}>
@@ -413,6 +418,7 @@ function AdicionarMembro({
               <option value="PROFESSOR">Professor(a)</option>
             </select>
           </label>
+          )}
         </div>
       )}
       {erro && (

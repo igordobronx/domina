@@ -1,4 +1,4 @@
-export type Role = "aluno" | "professor" | "gestor";
+export type Role = "aluno" | "professor" | "gestor" | "admin";
 export type Page =
   | "inicio"
   | "atividades"
@@ -7,6 +7,10 @@ export type Page =
   | "revisoes"
   | "turmas"
   | "materiais"
+  | "calendario"
+  | "painel"
+  | "equipe"
+  | "escolas"
   | "configuracoes"
   | "ajuda";
 export type ActivityStatus = "disponivel" | "pendente" | "aprovada";
@@ -21,7 +25,7 @@ export interface Activity {
   status: ActivityStatus;
   kind: "redacao" | "matematica";
   student: string;
-  questoes?: { codigo: string; enunciado: string }[];
+  questoes?: { codigo: string; enunciado: string; tem_imagem?: boolean }[];
   valorTotal?: number;
   text?: string;
   fileName?: string;

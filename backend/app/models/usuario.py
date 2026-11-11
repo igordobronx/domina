@@ -4,6 +4,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Column,
+    Date,
     DateTime,
     Enum as SQLEnum,
     ForeignKey,
@@ -14,6 +15,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    true,
 )
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -34,13 +36,18 @@ class Escola(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nome = Column(String(250), nullable=False)
     cnpj = Column(String(18), nullable=False)
+    ativa = Column(Boolean, server_default=true(), default=True, nullable=False)
+    # cobranca (rascunho RN-26): valor fixo por mes + valor por aluno ativo no mes
+    plano_fixo = Column(Numeric(10, 2), server_default="1000", default=1000, nullable=False)
+    valor_por_aluno = Column(Numeric(10, 2), server_default="8", default=8, nullable=False)
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
 
 class Usuario(Base):
     __tablename__ = "usuario"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    escola_id = Column(UUID(as_uuid=True), ForeignKey("escola.id"), nullable=False)
+    # nulo = administrador da plataforma (nao pertence a nenhuma escola)
+    escola_id = Column(UUID(as_uuid=True), ForeignKey("escola.id"), nullable=True)
     nome = Column(String(200), nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
@@ -86,6 +93,8 @@ class Tema(Base):
     habilidade_codigo = Column(String(20), nullable=False)
     # gabarito da questao; so preenchido quando atividade_id tambem esta preenchido
     resposta_correta = Column(Text, nullable=True)
+    # figura do enunciado (ex.: estruturas quimicas), anexada pelo professor; caminho em UPLOAD_DIR
+    imagem = Column(String(255), nullable=True)
 
 class DocumentoBase(Base):
     __tablename__ = "documento_base"
@@ -95,6 +104,7 @@ class DocumentoBase(Base):
     enviado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
     nome_arquivo = Column(String(255), nullable=False)
     tipo = Column(SQLEnum(TipoDocumentoEnum), nullable=False)
+    tamanho_bytes = Column(BigInteger, nullable=True)  # para medir o armazenamento da escola
     status_processamento = Column(
         SQLEnum(StatusProcessamentoEnum), default=StatusProcessamentoEnum.PENDENTE, nullable=False
     )
@@ -112,6 +122,22 @@ class Atividade(Base):
     # so usado em materias de exatas (gabarito): valor total da atividade, dividido igualmente
     # entre as questoes. Nulo = redacao, que usa sempre as 5 competencias de 0..200 (soma 1000).
     valor_total = Column(Numeric(6, 2), nullable=True)
+    prazo = Column(Date, nullable=True)  # data de entrega; aparece sozinha no calendario
+
+
+class Evento(Base):
+    """Calendario da escola: uma tabela so, todo mundo le dela (por isso fica "sincronizado")."""
+    __tablename__ = "evento"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    escola_id = Column(UUID(as_uuid=True), ForeignKey("escola.id"), nullable=False)
+    turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), nullable=True)  # nulo = escola toda
+    criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
+    titulo = Column(String(200), nullable=False)
+    descricao = Column(Text, nullable=True)
+    tipo = Column(String(20), nullable=False, default="AVISO")  # PROVA | ENTREGA | REUNIAO | AVISO
+    inicio = Column(Date, nullable=False)
+    fim = Column(Date, nullable=True)  # nulo = so um dia
 
 
 class Submissao(Base):

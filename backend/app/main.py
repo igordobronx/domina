@@ -7,11 +7,13 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import agente, compliance, correcoes, documento, dominio, estudos, evolucao, health, auth, ocr, submissoes, usuario, turma
+from app.routers import agente, calendario, compliance, correcoes, documento, dominio, estudos, evolucao, escolas, health, auth, painel, questoes, ocr, submissoes, usuario, turma
 from app.database import Base, engine
 from app.models import usuario as _  # garante que os modelos estão registrados antes do create_all
 
-Base.metadata.create_all(bind=engine)  # cria as tabelas se nao existirem (prototipo: sem Alembic por enquanto)
+# Postgres: o esquema vem do Alembic (python migrar.py). O create_all fica so no sqlite de dev/testes.
+if engine.dialect.name == "sqlite":
+    Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -30,8 +32,12 @@ app.include_router(auth.router)
 app.include_router(ocr.router)
 app.include_router(submissoes.router)
 app.include_router(correcoes.router)
+app.include_router(escolas.router)
+app.include_router(painel.router)
+app.include_router(questoes.router)
 app.include_router(usuario.router)
 app.include_router(turma.router)
+app.include_router(calendario.router)
 app.include_router(documento.router)
 app.include_router(dominio.router)
 app.include_router(estudos.router)

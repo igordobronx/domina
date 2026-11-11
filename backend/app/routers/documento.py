@@ -58,6 +58,7 @@ def enviar_documento(
         enviado_por=usuario.id,
         nome_arquivo=file.filename or caminho.name,
         tipo=tipo,
+        tamanho_bytes=len(conteudo),
     )
     db.add(documento)
     db.commit()

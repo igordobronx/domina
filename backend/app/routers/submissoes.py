@@ -81,7 +81,7 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
             db.query(Tema).filter_by(atividade_id=atividade.id)
             .order_by(Tema.habilidade_codigo)
         )
-        questoes = [QuestaoAtividadeResponse(codigo=t.habilidade_codigo, enunciado=t.nome) for t in temas]
+        questoes = [QuestaoAtividadeResponse(codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem)) for t in temas]
 
     return AtividadeResponse(
         id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome,
@@ -89,6 +89,7 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
         alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
         questoes=questoes,
         valor_total=float(atividade.valor_total) if atividade.valor_total is not None else 1000.0,
+        prazo=atividade.prazo,
     )
 
 
@@ -139,7 +140,7 @@ def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(g
 
     atividade = Atividade(
         materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
-        tipo=TipoAtividadeEnum(payload.tipo),
+        tipo=TipoAtividadeEnum(payload.tipo), prazo=payload.prazo,
         valor_total=(payload.valor_total or 1000) if materia.tipo in MATERIAS_EXATAS else None,
     )
     db.add(atividade)
@@ -184,7 +185,8 @@ def enviar_imagem(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado nesta turma.")
 
     image_bytes = ler_imagem(file)
-    texto = ocr(image_bytes, file.content_type)  # se o OCR falhar, nada e gravado
+    exatas = db.get(Materia, atividade.materia_id).tipo in MATERIAS_EXATAS  # folha de exatas tem desenhos
+    texto = ocr(image_bytes, file.content_type, exatas)  # se o OCR falhar, nada e gravado
     registrar_uso(db, usuario.escola_id, chamadas_ocr=1)
 
     # guarda a foto original (o professor pode querer ver ao revisar)

@@ -16,12 +16,23 @@ export const allowedPages: Record<Role, Page[]> = {
     "ajuda",
     "configuracoes",
   ],
-  gestor: ["inicio", "revisoes", "turmas", "ajuda", "configuracoes"],
+  gestor: [
+    "inicio",
+    "revisoes",
+    "turmas",
+    "equipe",
+    "painel",
+    "ajuda",
+    "configuracoes",
+  ],
+  admin: ["inicio", "escolas", "ajuda", "configuracoes"],
 };
 export function readRoute(hash: string) {
   const [rawRole, rawPage, rawId] = hash.replace(/^#\/?/, "").split("/");
   const role: Role =
-    rawRole === "professor" || rawRole === "gestor" ? rawRole : "aluno";
+    rawRole === "professor" || rawRole === "gestor" || rawRole === "admin"
+      ? rawRole
+      : "aluno";
   const page = allowedPages[role].includes(rawPage as Page)
     ? (rawPage as Page)
     : "inicio";

@@ -2,11 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import {
   BookOpen,
+  CalendarDays,
   ChartNoAxesCombined,
   CircleHelp,
   ClipboardCheck,
+  Building2,
   Home,
   Layers,
+  UserPlus,
+  Wallet,
   Menu,
   Search,
   Settings2,
@@ -38,6 +42,8 @@ import { allowedPages, readRoute } from "./services/navigation";
 import { Activities } from "./screens/Activities";
 import { Evolution, Studies } from "./screens/Learning";
 import { Classes, Materials } from "./screens/Management";
+import { Calendar } from "./screens/Calendar";
+import { Equipe, Escolas, PainelEscola, PainelPlataforma } from "./screens/Admin";
 import { Help, Settings } from "./screens/Settings";
 
 const navItems: {
@@ -50,7 +56,7 @@ const navItems: {
     id: "inicio",
     label: "Visão geral",
     icon: Home,
-    roles: ["aluno", "professor", "gestor"],
+    roles: ["aluno", "professor", "gestor", "admin"],
   },
   {
     id: "atividades",
@@ -76,6 +82,30 @@ const navItems: {
     label: "Turmas",
     icon: Users,
     roles: ["professor", "gestor"],
+  },
+  {
+    id: "calendario",
+    label: "Calendário",
+    icon: CalendarDays,
+    roles: ["aluno", "professor", "gestor", "admin"],
+  },
+  {
+    id: "equipe",
+    label: "Equipe e alunos",
+    icon: UserPlus,
+    roles: ["gestor"],
+  },
+  {
+    id: "painel",
+    label: "Financeiro e consumo",
+    icon: Wallet,
+    roles: ["gestor"],
+  },
+  {
+    id: "escolas",
+    label: "Instituições",
+    icon: Building2,
+    roles: ["admin"],
   },
   {
     id: "materiais",
@@ -196,7 +226,7 @@ export function App() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
   const openActivity = (a: Activity) => {
-    if (role === "gestor") return;
+    if (role === "gestor" || role === "admin") return;
     setPage(role === "aluno" ? "atividades" : "revisoes");
     setActivity(a.id);
     window.scrollTo(0, 0);
@@ -421,7 +451,7 @@ export function App() {
             <div>
               <strong>{currentUser.nome}</strong>
               <span>
-                {role === "aluno" ? "Estudante" : role === "professor" ? "Professor(a)" : "Gestor(a)"}
+                {role === "aluno" ? "Estudante" : role === "professor" ? "Professor(a)" : role === "admin" ? "Administrador(a)" : "Gestor(a)"}
               </span>
             </div>
             <button aria-label="Conta" className="profile-button" onClick={() => setModal("login")}>
@@ -494,7 +524,10 @@ export function App() {
                 currentUser={currentUser}
               />
             )}
-            {page === "inicio" && role !== "aluno" && (
+            {page === "inicio" && role === "admin" && (
+              <PainelPlataforma notify={notify} abrirEscola={() => navigate("escolas")} />
+            )}
+            {page === "inicio" && role !== "aluno" && role !== "admin" && (
               <EducatorDashboard
                 role={role}
                 state={state}
@@ -515,6 +548,10 @@ export function App() {
                 currentUser={currentUser}
               />
             )}
+            {page === "escolas" && role === "admin" && <Escolas notify={notify} />}
+            {page === "calendario" && <Calendar role={role} notify={notify} currentUser={currentUser} />}
+            {page === "equipe" && role === "gestor" && <Equipe notify={notify} />}
+            {page === "painel" && role === "gestor" && <PainelEscola notify={notify} />}
             {page === "evolucao" && <Evolution currentUser={currentUser} />}
             {page === "estudos" && (
               <Studies
@@ -698,6 +735,7 @@ export function App() {
                   .filter(
                     (a) =>
                       role !== "gestor" &&
+                      role !== "admin" &&
                       a.title.toLowerCase().includes(query.toLowerCase()),
                   )
                   .map((a) => (

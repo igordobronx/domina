@@ -42,11 +42,29 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    const detail = typeof body?.detail === "string" ? body.detail : "Não foi possível completar a ação.";
-    throw new ApiError(detail);
+    throw new ApiError(mensagemDeErro(body?.detail));
   }
   if (response.status === 204) return undefined as T;
   return response.json();
+}
+
+// 422 do FastAPI vem como lista de {loc, type, ctx}; vira uma frase dizendo QUAL campo falhou
+const CAMPOS: Record<string, string> = {
+  enunciado: "enunciado", resposta_correta: "resposta correta", titulo: "título", nome: "nome",
+  email: "email", senha: "senha", texto: "texto", cnpj: "CNPJ",
+};
+function mensagemDeErro(detail: unknown): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail[0]) {
+    const { loc = [], type = "", ctx = {} } = detail[0] as { loc?: (string | number)[]; type?: string; ctx?: { max_length?: number; min_length?: number } };
+    const nums = loc.filter((p): p is number => typeof p === "number");
+    const campo = CAMPOS[String(loc[loc.length - 1])] ?? String(loc[loc.length - 1] ?? "campo");
+    const onde = nums.length ? `Questão ${nums[0] + 1}: ` : "";
+    if (type === "string_too_long") return `${onde}${campo} longo demais (máximo ${ctx.max_length} caracteres).`;
+    if (type === "string_too_short") return `${onde}${campo} é obrigatório.`;
+    return `${onde}${campo} está inválido.`;
+  }
+  return "Não foi possível completar a ação.";
 }
 
 export interface UsuarioAtual {
@@ -59,7 +77,8 @@ export interface UsuarioAtual {
 
 export function perfilParaRole(perfil: UsuarioAtual["perfil"]): Role {
   if (perfil === "PROFESSOR") return "professor";
-  if (perfil === "GESTOR" || perfil === "ADMIN") return "gestor";
+  if (perfil === "GESTOR") return "gestor";
+  if (perfil === "ADMIN") return "admin";
   return "aluno";
 }
 
@@ -88,6 +107,7 @@ export function me(): Promise<UsuarioAtual> {
 export interface QuestaoAtividadeAPI {
   codigo: string;
   enunciado: string;
+  tem_imagem?: boolean; // figura do enunciado anexada pelo professor
 }
 
 export interface AtividadeAPI {
@@ -150,8 +170,9 @@ export interface TurmaAPI {
   ano: number;
 }
 
-export function listarTurmasMinhas(): Promise<TurmaAPI[]> {
-  return request<TurmaAPI[]>("/turmas/minhas");
+// escolaId: so o administrador informa (gestor e professor veem as proprias turmas)
+export function listarTurmasMinhas(escolaId?: string): Promise<TurmaAPI[]> {
+  return request<TurmaAPI[]>(`/turmas/minhas${escolaId ? `?escola_id=${escolaId}` : ""}`);
 }
 
 export function criarTurma(payload: { nome: string; ano: number }): Promise<TurmaAPI> {
@@ -179,15 +200,18 @@ export function matricular(
   });
 }
 
-export function listarUsuarios(): Promise<UsuarioAtual[]> {
-  return request<UsuarioAtual[]>("/usuarios");
+// escolaId: so o administrador informa (gestor e professor sempre veem a propria escola)
+export function listarUsuarios(escolaId?: string): Promise<UsuarioAtual[]> {
+  return request<UsuarioAtual[]>(`/usuarios${escolaId ? `?escola_id=${escolaId}` : ""}`);
 }
 
 export function criarUsuario(payload: {
   nome: string;
   email: string;
   senha: string;
-  perfil: "ALUNO" | "PROFESSOR";
+  perfil: "ALUNO" | "PROFESSOR" | "GESTOR";
+  escola_id?: string;
+  turma_id?: string; // ja matricula na turma ao criar
 }): Promise<UsuarioAtual> {
   return request<UsuarioAtual>("/usuarios", { method: "POST", body: JSON.stringify(payload) });
 }
@@ -216,6 +240,7 @@ export function criarAtividade(payload: {
   tipo: AtividadeAPI["tipo"];
   questoes?: { enunciado: string; resposta_correta: string }[];
   valor_total?: number;
+  prazo?: string;
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>("/atividades", {
     method: "POST",
@@ -273,6 +298,22 @@ export async function urlImagemSubmissao(id: string): Promise<string> {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!response.ok) throw new ApiError("Não foi possível carregar a foto.");
+  return URL.createObjectURL(await response.blob());
+}
+
+// figura de uma questao (ex.: estruturas quimicas): o professor anexa; aluno e professor veem
+export function anexarFiguraQuestao(atividadeId: string, codigo: string, file: File): Promise<void> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return request<void>(`/atividades/${atividadeId}/questoes/${codigo}/imagem`, { method: "POST", body: formData });
+}
+
+export async function urlFiguraQuestao(atividadeId: string, codigo: string): Promise<string> {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/atividades/${atividadeId}/questoes/${codigo}/imagem`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new ApiError("Não foi possível carregar a figura.");
   return URL.createObjectURL(await response.blob());
 }
 
@@ -463,4 +504,107 @@ export interface AuditLogAPI {
 
 export function auditLog(): Promise<AuditLogAPI[]> {
   return request<AuditLogAPI[]>("/audit-log");
+}
+
+export interface EscolaAPI {
+  id: string;
+  nome: string;
+  cnpj: string;
+  ativa: boolean;
+  plano_fixo: number;
+  valor_por_aluno: number;
+  criado_em: string;
+}
+
+export function listarEscolas(): Promise<EscolaAPI[]> {
+  return request<EscolaAPI[]>("/escolas");
+}
+
+export function criarEscola(payload: {
+  nome: string;
+  cnpj: string;
+  plano_fixo: number;
+  valor_por_aluno: number;
+}): Promise<EscolaAPI> {
+  return request<EscolaAPI>("/escolas", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export function editarEscola(
+  id: string,
+  payload: Partial<Pick<EscolaAPI, "nome" | "cnpj" | "plano_fixo" | "valor_por_aluno" | "ativa">>,
+): Promise<EscolaAPI> {
+  return request<EscolaAPI>(`/escolas/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
+export interface ResumoEscolaAPI {
+  escola_id: string;
+  escola_nome: string;
+  ativa: boolean;
+  mes: string;
+  alunos_cadastrados: number;
+  professores: number;
+  turmas: number;
+  alunos_ativos: number;
+  submissoes: number;
+  execucoes_agente: number;
+  tokens_llm: number;
+  chamadas_ocr: number;
+  armazenamento_bytes: number;
+  receita: number;
+  custo_ia: number;
+  margem: number;
+}
+
+export interface ResumoPlataformaAPI {
+  mes: string;
+  escolas_ativas: number;
+  totais: Record<string, number>;
+  escolas: ResumoEscolaAPI[];
+}
+
+// gestor: sem escolaId (o backend usa a escola dele). admin: escolaId obrigatorio.
+export function painelEscola(mes: string, escolaId?: string): Promise<ResumoEscolaAPI> {
+  const q = new URLSearchParams({ mes });
+  if (escolaId) q.set("escola_id", escolaId);
+  return request<ResumoEscolaAPI>(`/painel/escola?${q}`);
+}
+
+export function painelPlataforma(mes: string): Promise<ResumoPlataformaAPI> {
+  return request<ResumoPlataformaAPI>(`/painel/plataforma?mes=${mes}`);
+}
+
+// ---- calendario (um so por escola; o backend filtra pelo perfil) ----
+export interface ItemCalendarioAPI {
+  id: string; // "evento:<uuid>" | "prazo:<uuid>" | "feriado:<data>"
+  origem: "evento" | "prazo" | "feriado";
+  titulo: string;
+  descricao: string | null;
+  tipo: string;
+  inicio: string; // AAAA-MM-DD
+  fim: string | null;
+  turma_id: string | null;
+  turma: string | null;
+  editavel: boolean;
+}
+export interface EventoPayload {
+  titulo: string;
+  descricao?: string;
+  tipo: "PROVA" | "ENTREGA" | "REUNIAO" | "AVISO";
+  inicio: string;
+  fim?: string | null;
+  turma_id?: string | null;
+}
+
+export function listarCalendario(de: string, ate: string, escolaId?: string): Promise<ItemCalendarioAPI[]> {
+  const q = new URLSearchParams({ de, ate, ...(escolaId ? { escola_id: escolaId } : {}) });
+  return request<ItemCalendarioAPI[]>(`/calendario?${q}`);
+}
+export function criarEvento(p: EventoPayload, escolaId?: string): Promise<ItemCalendarioAPI> {
+  return request<ItemCalendarioAPI>(`/eventos${escolaId ? `?escola_id=${escolaId}` : ""}`, { method: "POST", body: JSON.stringify(p) });
+}
+export function editarEvento(id: string, p: EventoPayload): Promise<ItemCalendarioAPI> {
+  return request<ItemCalendarioAPI>(`/eventos/${id.replace("evento:", "")}`, { method: "PUT", body: JSON.stringify(p) });
+}
+export function apagarEvento(id: string): Promise<void> {
+  return request<void>(`/eventos/${id.replace("evento:", "")}`, { method: "DELETE" });
 }

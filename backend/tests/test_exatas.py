@@ -51,8 +51,8 @@ def criar_atividade_com_gabarito(prof, turma_id, materia_id):
     atividade = r.json()
     # o aluno precisa ver o enunciado real de cada questao (nao um texto fixo de outra materia)
     assert atividade["questoes"] == [
-        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7"},
-        {"codigo": "Q2", "enunciado": "Resolva 3x = 9"},
+        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False},
+        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False},
     ]
     # sem valor_total explicito, assume 1000 (como a redacao) e divide pelas questoes
     assert atividade["valor_total"] == 1000.0
@@ -99,7 +99,7 @@ def test_fluxo_completo_exatas():
         assert len(c["criterios"]) == 2
         codigos = sorted(k["codigo"] for k in c["criterios"])
         assert codigos == ["Q1", "Q2"]
-        assert c["feedback"] == "1/2 questões corretas."
+        assert c["feedback"] == "500 de 1000 pontos: 1 questão(ões) certa(s), 0 com acerto parcial, 1 sem pontos."
 
         # aprovar com so 2 criterios (nao precisa ser exatamente 5 como na redacao)
         aprovacao = client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
@@ -237,3 +237,148 @@ def test_enunciado_longo_nao_quebra_a_criacao():
     })
     assert r.status_code == 201, r.text
     assert r.json()["questoes"][0]["enunciado"] == enunciado_longo.strip()
+
+
+def test_figura_da_questao_vai_para_o_aluno_e_para_o_corretor():
+    from io import BytesIO
+
+    from PIL import Image
+
+    def png(cor):
+        b = BytesIO()
+        Image.new("RGB", (40, 20), cor).save(b, "PNG")
+        return b.getvalue()
+
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    gestor2 = token("gestor2@domina.com")
+    turma_id, materia_id = criar_turma_e_materia(prof)
+    atividade = criar_atividade_com_gabarito(prof, turma_id, materia_id)
+    url = f"/atividades/{atividade['id']}/questoes/Q1/imagem"
+
+    assert client.get(url, headers=aluno).status_code == 404  # ainda sem figura
+    r = client.post(url, headers=prof, files={"file": ("pka.png", png("red"), "image/png")})
+    assert r.status_code == 204, r.text
+    # texto nao e figura; aluno nao anexa; gestor de outra escola nao enxerga
+    assert client.post(url, headers=prof, files={"file": ("x.txt", b"oi", "text/plain")}).status_code == 400
+    assert client.post(url, headers=aluno, files={"file": ("a.png", png("red"), "image/png")}).status_code in (403, 404)
+    assert client.get(url, headers=gestor2).status_code == 404
+    assert client.post(f"/atividades/{atividade['id']}/questoes/Q9/imagem", headers=prof,
+                       files={"file": ("a.png", png("red"), "image/png")}).status_code == 404
+
+    # aluno da turma ve a figura; a atividade avisa quais questoes tem figura
+    assert client.get(url, headers=aluno).headers["content-type"] == "image/png"
+    qs = client.get("/atividades", headers=aluno).json()
+    questoes = next(a for a in qs if a["id"] == atividade["id"])["questoes"]
+    assert [q["tem_imagem"] for q in questoes] == [True, False]
+
+    # trocar apaga a antiga do disco
+    import uuid
+
+    from app.database import SessionLocal
+    from app.models.usuario import Tema
+    with SessionLocal() as db:
+        antiga = db.query(Tema).filter_by(atividade_id=uuid.UUID(atividade["id"]), habilidade_codigo="Q1").first().imagem
+    client.post(url, headers=prof, files={"file": ("pka2.png", png("blue"), "image/png")})
+    import os
+    assert not os.path.exists(antiga)
+
+    # o corretor recebe a figura junto do enunciado
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade["id"], "texto": "Q1: x = 2\nQ2: x = 3"}).json()
+    recebido = {}
+    gemini = _gemini_falso([200, 200])
+
+    def espia(contents, config):
+        recebido["contents"] = contents
+        return gemini(contents, config)
+
+    original, exatas_mod.gerar = exatas_mod.gerar, espia
+    try:
+        assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).status_code == 201
+    finally:
+        exatas_mod.gerar = original
+    partes = recebido["contents"]
+    assert isinstance(partes, list) and partes[0] == "Figura da questão Q1:" and len(partes) == 3  # rotulo, imagem, prompt
+    assert "figuras das questões" in partes[-1]
+
+    # remover volta ao normal
+    assert client.delete(url, headers=prof).status_code == 204
+    assert client.get(url, headers=aluno).status_code == 404
+
+
+def test_gabarito_discursivo_longo_e_aceito():
+    # quimica discursiva: gabarito com mecanismo e nomes passa facilmente de 500 caracteres
+    prof = token("professor@domina.com")
+    turma_id, materia_id = criar_turma_e_materia(prof)
+    payload = {"materia_id": materia_id, "turma_id": turma_id, "titulo": "Química p1", "tipo": "PROVA_DISCURSIVA",
+               "questoes": [{"enunciado": "e" * 3000, "resposta_correta": "g" * 3000}], "valor_total": 100}
+    assert client.post("/atividades", headers=prof, json=payload).status_code == 201
+    payload["questoes"][0]["resposta_correta"] = "g" * 5001  # ainda ha um teto
+    assert client.post("/atividades", headers=prof, json=payload).status_code == 422
+
+
+def test_folha_de_exatas_usa_ocr_de_desenhos_e_a_foto_manda_na_correcao():
+    import io
+
+    import app.routers.ocr as ocr_router
+    from PIL import Image
+
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    turma_id, materia_id = criar_turma_e_materia(prof)
+    atividade = criar_atividade_com_gabarito(prof, turma_id, materia_id)
+    foto = io.BytesIO()
+    Image.new("RGB", (60, 40), "white").save(foto, "PNG")
+
+    chamadas = []
+
+    def ocr_falso(_b, _m, exatas=False):
+        chamadas.append(exatas)
+        return "Q1: x = 2\n[desenho: estrutura com dois Br]"
+
+    original_ocr, ocr_router.extract_text = ocr_router.extract_text, ocr_falso
+    try:
+        r = client.post("/submissoes/imagem", headers=aluno, data={"atividade_id": atividade["id"]},
+                        files={"file": ("folha.png", foto.getvalue(), "image/png")})
+    finally:
+        ocr_router.extract_text = original_ocr
+    assert r.status_code == 201, r.text
+    assert chamadas == [True]  # materia de exatas -> OCR que le colunas e desenhos
+    sub = r.json()
+    client.put(f"/submissoes/{sub['id']}/confirmar", headers=aluno, json={"texto": "Q1: x = 2\n[desenho: estrutura com dois Br]"})
+
+    recebido = {}
+    gemini = _gemini_falso([80, 200])
+
+    def espia(contents, config):
+        recebido["contents"] = contents
+        return gemini(contents, config)
+
+    original, exatas_mod.gerar = exatas_mod.gerar, espia
+    try:
+        c = client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).json()
+    finally:
+        exatas_mod.gerar = original
+    prompt = recebido["contents"][-1]
+    assert "FONTE PRINCIPAL" in prompt and "É resposta" in prompt  # foto manda; desenho conta
+    # acerto parcial aparece no feedback (antes dizia "0/2 corretas" mesmo com pontos)
+    assert "1 questão(ões) certa(s), 1 com acerto parcial, 0 sem pontos" in c["feedback"]
+
+
+def test_professor_da_qualquer_nota_em_exatas_ate_o_valor_da_questao():
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    turma_id, materia_id = criar_turma_e_materia(prof)
+    atividade = criar_atividade_com_gabarito(prof, turma_id, materia_id)  # 1000 pontos / 2 questoes = 500 cada
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade["id"], "texto": "Q1: x = 2\nQ2: x = 3"}).json()
+    original, exatas_mod.gerar = exatas_mod.gerar, _gemini_falso([80, 200])
+    try:
+        assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).status_code == 201
+    finally:
+        exatas_mod.gerar = original
+    url = f"/submissoes/{sub['id']}/aprovar"
+    acima = {"notas": [{"codigo": "Q1", "nota": 500.5}, {"codigo": "Q2", "nota": 10}], "feedback": "x"}
+    assert client.put(url, headers=prof, json=acima).status_code == 422  # passa do valor da questao
+    livre = {"notas": [{"codigo": "Q1", "nota": 123.45}, {"codigo": "Q2", "nota": 7.5}], "feedback": "x"}
+    r = client.put(url, headers=prof, json=livre)
+    assert r.status_code == 200, r.text
+    assert r.json()["nota_professor"] == 130.95  # sem escala de 40 em 40 em exatas

@@ -2582,3 +2582,19 @@ mark.ponto {
   font-size: 14px;
   line-height: 1.5;
 }
+
+/* calendario */
+.cal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.cal-head strong { text-transform: capitalize; flex: 1; text-align: center; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-dow { font-size: 11px; color: #787d84; text-align: center; padding: 4px 0; }
+.cal-day { min-height: 46px; border: 1px solid transparent; border-radius: 8px; background: #f0eee7; font: inherit; font-size: 13px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 4px 0; }
+.cal-day.today { border-color: #2e9e73; color: #197451; font-weight: 600; }
+.cal-day.sel { background: #dff1e8; }
+.cal-dots { display: flex; gap: 2px; height: 6px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: #2e9e73; }
+.dot-PROVA { background: #b97a21; } .dot-FERIADO { background: #9aa0a6; } .dot-REUNIAO { background: #4a6fa5; }
+.cal-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cal-list li { display: flex; align-items: center; gap: 10px; }
+.cal-list li > div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+@media (max-width: 760px) { .cal-day { min-height: 40px; } }
