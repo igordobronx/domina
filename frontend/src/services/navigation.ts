@@ -2,6 +2,7 @@ import type { Page, Role } from "../types";
 export const allowedPages: Record<Role, Page[]> = {
   aluno: [
     "inicio",
+    "calendario",
     "atividades",
     "evolucao",
     "estudos",
@@ -10,6 +11,7 @@ export const allowedPages: Record<Role, Page[]> = {
   ],
   professor: [
     "inicio",
+    "calendario",
     "revisoes",
     "turmas",
     "materiais",
@@ -18,6 +20,7 @@ export const allowedPages: Record<Role, Page[]> = {
   ],
   gestor: [
     "inicio",
+    "calendario",
     "revisoes",
     "turmas",
     "equipe",
@@ -25,7 +28,7 @@ export const allowedPages: Record<Role, Page[]> = {
     "ajuda",
     "configuracoes",
   ],
-  admin: ["inicio", "escolas", "ajuda", "configuracoes"],
+  admin: ["inicio", "calendario", "escolas", "ajuda", "configuracoes"],
 };
 export function readRoute(hash: string) {
   const [rawRole, rawPage, rawId] = hash.replace(/^#\/?/, "").split("/");
