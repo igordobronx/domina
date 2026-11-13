@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, status, UploadFile
 from fastapi.responses import FileResponse
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -15,12 +16,14 @@ from app.models.enum import (
     PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, TipoMateriaEnum, UsuarioTurmaPapelEnum,
 )
 from app.models.usuario import (
-    Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, Tema, Turma, Usuario, UsuarioTurma,
+    Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, SubmissaoPagina, Tema, Turma, Usuario, UsuarioTurma,
 )
+from app.competencias import garantir_competencias
+from app.metas import avaliar_seguro
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AtividadeResponse, ConfirmarTextoRequest,
-    CriarAtividadeLoteRequest, CriarAtividadeRequest, CriarMateriaRequest, CriterioResponse, EnviarTextoRequest,
+    CriarAtividadeLoteRequest, CriarAtividadeRequest, CriarMateriaRequest, CriterioResponse, EnviarObjetivaRequest, EnviarTextoRequest, LETRAS,
     MateriaResponse, MinhaSubmissaoResponse, QuestaoAtividadeResponse, SubmissaoResponse,
     SubmissaoRevisaoResponse,
 )
@@ -65,6 +68,17 @@ def _submissao_visivel(db: Session, submissao_id, usuario: Usuario) -> Submissao
     raise HTTPException(status.HTTP_404_NOT_FOUND, "Submissão não encontrada.")
 
 
+MAX_FOLHAS = 6  # fotos por envio: cada uma pesa no tamanho da chamada ao Gemini
+
+
+def caminhos_da_submissao(db: Session, submissao: Submissao) -> list[str]:
+    """Fotos do envio, na ordem. Envio antigo (uma foto) nao tem linhas em submissao_pagina."""
+    if submissao.tipo_envio != TipoEnvioEnum.IMAGEM or not submissao.conteudo_bruto:
+        return []
+    paginas = db.query(SubmissaoPagina).filter_by(submissao_id=submissao.id).order_by(SubmissaoPagina.ordem)
+    return [p.caminho for p in paginas] or [submissao.conteudo_bruto]
+
+
 def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> AtividadeResponse:
     alunos = (
         db.query(Usuario).join(UsuarioTurma, UsuarioTurma.usuario_id == Usuario.id)
@@ -82,17 +96,18 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
             .order_by(Tema.habilidade_codigo)
         )
         questoes = [QuestaoAtividadeResponse(
-            codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem),
+            codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem), alternativas=t.alternativas,
             resposta_correta=t.resposta_correta if usuario.perfil != PerfilEnum.ALUNO else None,
         ) for t in temas]
 
     return AtividadeResponse(
-        id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome,
+        id=atividade.id, titulo=atividade.titulo, turma=db.get(Turma, atividade.turma_id).nome, turma_id=atividade.turma_id,
         materia=materia.nome, tipo=atividade.tipo.value,
         alunos=[AlunoResumo(id=a.id, nome=a.nome) for a in alunos],
         questoes=questoes,
         valor_total=float(atividade.valor_total) if atividade.valor_total is not None else 1000.0,
         prazo=atividade.prazo,
+        na_minha_revisao=usuario.perfil != PerfilEnum.PROFESSOR or atividade.criado_por == usuario.id,
         tem_envios=db.query(Submissao.id).filter_by(atividade_id=atividade.id).first() is not None,
     )
 
@@ -111,6 +126,9 @@ def criar_materia(payload: CriarMateriaRequest, usuario: Usuario = Depends(get_c
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores criam matérias.")
     materia = Materia(escola_id=usuario.escola_id, nome=payload.nome.strip(), tipo=TipoMateriaEnum(payload.tipo))
     db.add(materia)
+    db.flush()
+    if materia.tipo not in MATERIAS_EXATAS:
+        garantir_competencias(db, materia)  # sem C1..C5 a redacao dessa materia nunca seria corrigida
     db.commit()
     db.refresh(materia)
     return MateriaResponse(id=materia.id, nome=materia.nome, tipo=materia.tipo.value)
@@ -142,7 +160,7 @@ def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID)
 
     atividade = Atividade(
         materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
-        tipo=TipoAtividadeEnum(payload.tipo), prazo=payload.prazo,
+        tipo=TipoAtividadeEnum(payload.tipo), prazo=payload.prazo, criado_por=usuario.id,
         valor_total=(payload.valor_total or 1000) if materia.tipo in MATERIAS_EXATAS else None,
     )
     db.add(atividade)
@@ -154,6 +172,7 @@ def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID)
             db.add(Tema(
                 materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
                 nome=questao.enunciado.strip(), resposta_correta=questao.resposta_correta.strip(),
+                alternativas=questao.alternativas,
             ))
     return atividade
 
@@ -183,7 +202,7 @@ def criar_atividades_em_lote(payload: CriarAtividadeLoteRequest, usuario: Usuari
 # o aluno envia a propria redacao; o professor pode enviar em nome de um aluno da turma (RF-12).
 @router.post("/submissoes/imagem", response_model=SubmissaoResponse, status_code=status.HTTP_201_CREATED)
 def enviar_imagem(
-    file: UploadFile,
+    files: list[UploadFile],
     atividade_id: uuid.UUID = Form(...),
     aluno_id: uuid.UUID | None = Form(None),
     usuario: Usuario = Depends(get_current_user),
@@ -204,26 +223,36 @@ def enviar_imagem(
     if not aluno or aluno.perfil != PerfilEnum.ALUNO or not _na_turma(db, aluno.id, atividade.turma_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado nesta turma.")
 
-    image_bytes = ler_imagem(file)
+    if not files:
+        raise HTTPException(422, "Envie ao menos uma foto.")
+    if len(files) > MAX_FOLHAS:
+        raise HTTPException(422, f"No máximo {MAX_FOLHAS} fotos por envio.")
+    fotos = [(ler_imagem(f), f.content_type, f.filename) for f in files]
     exatas = db.get(Materia, atividade.materia_id).tipo in MATERIAS_EXATAS  # folha de exatas tem desenhos
-    texto = ocr(image_bytes, file.content_type, exatas)  # se o OCR falhar, nada e gravado
+    # UMA chamada de OCR para todas as folhas (o texto sai unido, na ordem); se falhar, nada e gravado
+    texto = ocr(fotos[0][0], fotos[0][1], exatas, extras=[(b, m) for b, m, _ in fotos[1:]])
     registrar_uso(db, usuario.escola_id, chamadas_ocr=1)
 
-    # guarda a foto original (o professor pode querer ver ao revisar)
+    # guarda as fotos originais (o professor pode querer ver ao revisar)
     # ponytail: disco local; trocar por bucket (GCS/S3) quando houver mais de um servidor
-    sufixo = Path(file.filename or "").suffix.lower()[:10] or ".img"
-    caminho = Path(settings.UPLOAD_DIR) / f"{uuid.uuid4()}{sufixo}"
-    caminho.parent.mkdir(parents=True, exist_ok=True)
-    caminho.write_bytes(image_bytes)
+    caminhos = []
+    for image_bytes, _, nome in fotos:
+        caminho = Path(settings.UPLOAD_DIR) / f"{uuid.uuid4()}{Path(nome or '').suffix.lower()[:10] or '.img'}"
+        caminho.parent.mkdir(parents=True, exist_ok=True)
+        caminho.write_bytes(image_bytes)
+        caminhos.append(str(caminho))
 
     submissao = Submissao(
         atividade_id=atividade.id,
         aluno_id=aluno.id,
         tipo_envio=TipoEnvioEnum.IMAGEM,
-        conteudo_bruto=str(caminho),
+        conteudo_bruto=caminhos[0],
         texto_ocr=texto,
     )
     db.add(submissao)
+    db.flush()
+    for ordem, caminho in enumerate(caminhos):
+        db.add(SubmissaoPagina(submissao_id=submissao.id, ordem=ordem, caminho=caminho))
     db.commit()
     db.refresh(submissao)
     return submissao
@@ -231,7 +260,11 @@ def enviar_imagem(
 
 # RF-17/RF-23: fila de revisao do professor (ou visao do gestor) -- submissoes das turmas dele, com status
 @router.get("/submissoes", response_model=list[SubmissaoRevisaoResponse])
-def listar_submissoes(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def listar_submissoes(
+    turma_id: uuid.UUID | None = None,
+    usuario: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     if usuario.perfil == PerfilEnum.PROFESSOR:
         turma_ids = [
             ut.turma_id for ut in
@@ -242,21 +275,33 @@ def listar_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
     else:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores usam esta rota.")
 
+    if turma_id is not None:
+        # filtro so vale para turma do proprio escopo; fora dele e 404 (nao revela que existe)
+        if turma_id not in turma_ids:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
+        turma_ids = [turma_id]
+
     linhas = (
-        db.query(Submissao, Atividade, Materia, Usuario)
+        db.query(Submissao, Atividade, Materia, Usuario, Turma)
         .join(Atividade, Atividade.id == Submissao.atividade_id)
+        .join(Turma, Turma.id == Atividade.turma_id)
         .join(Materia, Materia.id == Atividade.materia_id)
         .join(Usuario, Usuario.id == Submissao.aluno_id)
         .filter(Atividade.turma_id.in_(turma_ids))
         .order_by(Submissao.criado_em.desc())
     )
+    if usuario.perfil == PerfilEnum.PROFESSOR:
+        # regra da revisao: so o que ele propos para a turma ou que ele mesmo corrigiu (aprovou).
+        # atividade antiga, sem autor, so aparece para quem a corrigiu (nao ha fallback "todos da turma")
+        linhas = linhas.outerjoin(Correcao, Correcao.submissao_id == Submissao.id).filter(
+            or_(Atividade.criado_por == usuario.id, Correcao.revisado_por == usuario.id))
     resposta = []
-    for s, atividade, materia, aluno in linhas:
+    for s, atividade, materia, aluno, turma in linhas:
         correcao = db.query(Correcao).filter_by(submissao_id=s.id).first()
         aprovada = correcao and correcao.status == StatusCorrecaoEnum.APROVADA
         resposta.append(SubmissaoRevisaoResponse(
             id=s.id, atividade_id=atividade.id, atividade_titulo=atividade.titulo, materia=materia.nome,
-            aluno_id=aluno.id, aluno_nome=aluno.nome,
+            aluno_id=aluno.id, aluno_nome=aluno.nome, turma_id=turma.id, turma_nome=turma.nome,
             status=correcao.status.value if correcao else "AGUARDANDO_CORRECAO",
             criado_em=s.criado_em,
             nota=float(correcao.nota_professor) if aprovada else None,
@@ -315,11 +360,13 @@ def ver_submissao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_curren
 # serve a foto original (RF-11): usada para desenhar a caixa da IA em cima da imagem.
 # mesma regra de visibilidade das outras rotas de submissao (aluno dono, professor, gestor).
 @router.get("/submissoes/{submissao_id}/imagem")
-def ver_imagem_submissao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def ver_imagem_submissao(submissao_id: uuid.UUID, pagina: int = 0, usuario: Usuario = Depends(get_current_user),
+                         db: Session = Depends(get_db)):
     submissao = _submissao_visivel(db, submissao_id, usuario)
-    if submissao.tipo_envio != TipoEnvioEnum.IMAGEM or not submissao.conteudo_bruto:
+    caminhos = caminhos_da_submissao(db, submissao)
+    if not (0 <= pagina < len(caminhos)):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Esta submissão não tem foto.")
-    caminho = Path(submissao.conteudo_bruto)
+    caminho = Path(caminhos[pagina])
     if not caminho.exists():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Foto não encontrada.")
     mime, _ = mimetypes.guess_type(str(caminho))
@@ -345,6 +392,7 @@ def confirmar_texto(
     submissao.texto_confirmado = texto
     db.commit()
     db.refresh(submissao)
+    avaliar_seguro(submissao.aluno_id)  # metas (entregas/notas)
     return submissao
 
 
@@ -384,6 +432,58 @@ def enviar_texto(payload: EnviarTextoRequest, usuario: Usuario = Depends(get_cur
     db.add(submissao)
     db.commit()
     db.refresh(submissao)
+    avaliar_seguro(submissao.aluno_id)  # metas (entregas/notas)
     return submissao
 
 
+
+
+# prova/exercicio objetivo (estilo ENEM): o aluno marca a letra na tela e a correcao e so conferir com o
+# gabarito -- sem IA, na hora. Ja nasce APROVADA (nao ha nada subjetivo para o professor revisar; ele ainda
+# ve e pode editar as notas na fila). Uma entrega por aluno: prova nao se refaz ate acertar.
+@router.post("/submissoes/objetiva", response_model=SubmissaoResponse, status_code=status.HTTP_201_CREATED)
+def enviar_objetiva(payload: EnviarObjetivaRequest, usuario: Usuario = Depends(get_current_user),
+                    db: Session = Depends(get_db)):
+    atividade, aluno = _validar_envio(db, usuario, payload.atividade_id, payload.aluno_id)
+    temas = list(db.query(Tema).filter_by(atividade_id=atividade.id).order_by(Tema.habilidade_codigo))
+    if not temas or any(not t.alternativas for t in temas):
+        raise HTTPException(422, "Esta atividade não é objetiva.")
+    if db.query(Submissao.id).filter_by(atividade_id=atividade.id, aluno_id=aluno.id).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este aluno já enviou esta atividade.")
+    marcadas = {k: v.strip().upper() for k, v in payload.respostas.items()}
+    for t in temas:
+        m = marcadas.get(t.habilidade_codigo, "")
+        if m and m not in LETRAS[:len(t.alternativas)]:
+            raise HTTPException(422, f"Alternativa inválida em {t.habilidade_codigo}.")
+
+    valor = float(atividade.valor_total or 1000) / len(temas)
+    texto = "\n".join(f"{t.habilidade_codigo}: {marcadas.get(t.habilidade_codigo) or '-'}" for t in temas)
+    submissao = Submissao(atividade_id=atividade.id, aluno_id=aluno.id, tipo_envio=TipoEnvioEnum.TEXTO,
+                          conteudo_bruto=texto, texto_confirmado=texto)
+    db.add(submissao)
+    db.flush()
+    notas = {t.habilidade_codigo: (round(valor, 2) if marcadas.get(t.habilidade_codigo) == t.resposta_correta else 0.0)
+             for t in temas}
+    total = round(sum(notas.values()), 2)
+    acertos = sum(1 for n in notas.values() if n)
+    correcao = Correcao(
+        submissao_id=submissao.id, nota_ia=total, nota_professor=total, confianca=1, revisado_por=None,
+        status=StatusCorrecaoEnum.APROVADA, modelo_usado="gabarito", versao_prompt="objetiva-v1",
+        feedback=f"{total:g} de {float(atividade.valor_total or 1000):g} pontos: {acertos} de {len(temas)} questões certas.",
+    )
+    db.add(correcao)
+    db.flush()
+    for t in temas:
+        m = marcadas.get(t.habilidade_codigo)
+        certa = notas[t.habilidade_codigo] > 0
+        db.add(CorrecaoCriterio(
+            correcao_id=correcao.id, tema_id=t.id, nota=notas[t.habilidade_codigo],
+            nota_professor=notas[t.habilidade_codigo],
+            justificativa=f"Gabarito: {t.resposta_correta}. " + (f"Você marcou {m}." if m else "Você deixou em branco."),
+            pontos=[{"trecho": "", "tipo": "acerto" if certa else "erro",
+                     "comentario": f"Gabarito {t.resposta_correta}; marcado: {m or 'em branco'}."}],
+        ))
+    db.commit()
+    db.refresh(submissao)
+    avaliar_seguro(submissao.aluno_id)  # metas (entregas/notas)
+    return submissao

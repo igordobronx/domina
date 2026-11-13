@@ -59,9 +59,11 @@ def editar_atividade(atividade_id: uuid.UUID, payload: EditarAtividadeRequest,
                 tema = existentes.pop(f"Q{i}", None)
                 if tema is None:
                     db.add(Tema(materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
-                                nome=q.enunciado.strip(), resposta_correta=q.resposta_correta.strip()))
+                                nome=q.enunciado.strip(), resposta_correta=q.resposta_correta.strip(),
+                                alternativas=q.alternativas))
                 else:  # mesma posicao: edita no lugar e a figura da questao continua
                     tema.nome, tema.resposta_correta = q.enunciado.strip(), q.resposta_correta.strip()
+                    tema.alternativas = q.alternativas
             for sobra in existentes.values():  # a lista ficou menor: tira as ultimas (e as figuras delas)
                 _apagar_arquivo(sobra.imagem)
                 db.delete(sobra)

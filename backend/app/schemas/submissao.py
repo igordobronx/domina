@@ -2,9 +2,11 @@ import uuid
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.enum import TipoEnvioEnum
+
+LETRAS = "ABCDE"
 
 
 class SubmissaoResponse(BaseModel):
@@ -98,6 +100,20 @@ class QuestaoInput(BaseModel):
     # discursiva de quimica/fisica tem enunciado e gabarito longos (mecanismo, nomes); colunas sao Text
     enunciado: str = Field(min_length=1, max_length=10_000)
     resposta_correta: str = Field(min_length=1, max_length=5_000)
+    # objetiva (estilo ENEM): textos das alternativas (A, B, C...); o gabarito vira so a letra
+    alternativas: list[str] | None = Field(default=None, min_length=2, max_length=5)
+
+    @model_validator(mode="after")
+    def _objetiva(self):
+        if self.alternativas is None:
+            return self
+        self.alternativas = [a.strip() for a in self.alternativas]
+        if not all(self.alternativas):
+            raise ValueError("Preencha o texto de todas as alternativas.")
+        self.resposta_correta = self.resposta_correta.strip().upper()
+        if self.resposta_correta not in LETRAS[:len(self.alternativas)]:
+            raise ValueError(f"O gabarito deve ser uma letra de A a {LETRAS[len(self.alternativas) - 1]}.")
+        return self
 
 
 class AlunoResumo(BaseModel):
@@ -108,6 +124,7 @@ class AlunoResumo(BaseModel):
 class QuestaoAtividadeResponse(BaseModel):
     codigo: str
     enunciado: str
+    alternativas: list[str] | None = None  # objetiva: o aluno recebe as alternativas, nunca o gabarito
     tem_imagem: bool = False  # figura anexada pelo professor (GET /atividades/{id}/questoes/{codigo}/imagem)
     resposta_correta: str | None = None  # so professor/gestor (para editar); o aluno nunca recebe o gabarito
 
@@ -116,6 +133,7 @@ class AtividadeResponse(BaseModel):
     id: uuid.UUID
     titulo: str
     turma: str
+    turma_id: uuid.UUID
     materia: str
     tipo: str
     alunos: list[AlunoResumo]
@@ -125,6 +143,8 @@ class AtividadeResponse(BaseModel):
     # redacao e sempre 1000 (5 competencias x 0..200), fixo, nao vem do professor.
     valor_total: float = 1000
     prazo: date | None = None
+    # revisao do professor: so mostra a atividade que ele propos; gestor ve todas
+    na_minha_revisao: bool = True
     tem_envios: bool = False  # com envios, so titulo e prazo podem mudar e excluir vira arquivar
 
 
@@ -162,6 +182,12 @@ class ExclusaoResponse(BaseModel):
     acao: Literal["excluida", "arquivada"]
 
 
+class EnviarObjetivaRequest(BaseModel):
+    atividade_id: uuid.UUID
+    aluno_id: uuid.UUID | None = None
+    respostas: dict[str, str]  # {"Q1": "C", "Q2": "A"}; questao sem chave = em branco
+
+
 class EnviarTextoRequest(BaseModel):
     atividade_id: uuid.UUID
     aluno_id: uuid.UUID | None = None
@@ -174,6 +200,8 @@ class SubmissaoRevisaoResponse(BaseModel):
     materia: str
     aluno_id: uuid.UUID
     aluno_nome: str
+    turma_id: uuid.UUID
+    turma_nome: str
     status: str  # AGUARDANDO_CORRECAO | status.value da correcao
     criado_em: datetime
     nota: float | None  # nota_professor, so se aprovada

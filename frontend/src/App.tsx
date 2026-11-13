@@ -3,6 +3,7 @@ import { useWindowDimensions } from "react-native";
 import {
   BookOpen,
   CalendarDays,
+  Trophy,
   ScrollText,
   ChartNoAxesCombined,
   CircleHelp,
@@ -45,6 +46,7 @@ import { Evolution, Studies } from "./screens/Learning";
 import { Classes, Materials } from "./screens/Management";
 import { Logs } from "./screens/Logs";
 import { Calendar } from "./screens/Calendar";
+import { Metas } from "./screens/Metas";
 import { Equipe, Escolas, PainelEscola, PainelPlataforma } from "./screens/Admin";
 import { Help, Settings } from "./screens/Settings";
 
@@ -90,6 +92,12 @@ const navItems: {
     label: "Calendário",
     icon: CalendarDays,
     roles: ["aluno", "professor", "gestor", "admin"],
+  },
+  {
+    id: "metas",
+    label: "Metas e níveis",
+    icon: Trophy,
+    roles: ["aluno", "professor", "gestor"],
   },
   {
     id: "equipe",
@@ -557,6 +565,7 @@ export function App() {
               />
             )}
             {page === "escolas" && role === "admin" && <Escolas notify={notify} />}
+            {page === "metas" && <Metas role={role} notify={notify} currentUser={currentUser} />}
             {page === "calendario" && <Calendar role={role} notify={notify} currentUser={currentUser} />}
             {page === "logs" && (role === "admin" || role === "gestor") && <Logs role={role} notify={notify} />}
             {page === "equipe" && role === "gestor" && <Equipe notify={notify} />}

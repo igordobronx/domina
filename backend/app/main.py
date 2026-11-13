@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
 from app.config import settings
-from app.routers import agente, atividades, calendario, compliance, correcoes, documento, dominio, estudos, evolucao, escolas, health, auth, logs, painel, questoes, ocr, submissoes, usuario, turma
+from app.routers import agente, atividades, calendario, compliance, correcoes, documento, dominio, estudos, evolucao, escolas, health, auth, logs, metas, painel, questoes, ocr, submissoes, usuario, turma
 from app.auth.security import decode_access_token
 from app.database import Base, engine
 from app.logs import configurar_logging, ip_ctx, ip_do_cliente, novo_request_id, request_id_ctx
@@ -38,6 +38,7 @@ app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(ocr.router)
 app.include_router(submissoes.router)
+app.include_router(metas.router)
 app.include_router(correcoes.router)
 app.include_router(escolas.router)
 app.include_router(painel.router)

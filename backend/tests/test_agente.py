@@ -153,7 +153,8 @@ def test_agente_nao_roda_de_novo_sem_refazer():
                        "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(1, 6)],
         feedback_geral="ok", confianca=0.9,
     )
-    roteiro = [[_chamada("finalizar", mensagem_aluno="ok", resumo_professor="ok")]] * 2
+    fim = _chamada("finalizar", mensagem_aluno="ok", resumo_professor="ok")
+    roteiro = [[_chamada("corrigir_redacao_enem")], [fim], [fim]]  # a 1a rodada corrige e finaliza (2 chamadas)
     falso, pedidos = _cliente_roteirizado(roteiro)
     originais = (agente_mod._client, ia.corrigir)
     agente_mod._client = lambda: falso
@@ -162,9 +163,9 @@ def test_agente_nao_roda_de_novo_sem_refazer():
         url = f"/submissoes/{sub['id']}/agente"
         assert client.post(url, headers=aluno, json={}).status_code == 200
         assert client.post(url, headers=aluno, json={}).status_code == 200
-        assert len(pedidos) == 1  # a segunda devolveu o salvo
+        assert len(pedidos) == 2  # a segunda devolveu o salvo (ja ha correcao)
         assert client.post(url, headers=aluno, json={"refazer": True}).status_code == 200
-        assert len(pedidos) == 2
+        assert len(pedidos) == 3
     finally:
         agente_mod._client, ia.corrigir = originais
 
@@ -190,3 +191,27 @@ def test_sinalizar_nao_grava_sozinho_se_o_agente_cai():
         agente_mod._client, ia.corrigir = originais
     assert r.status_code == 200, r.text
     assert r.json()["correcao"]["status"] != "REQUER_ATENCAO"
+
+
+def test_agente_que_parou_sem_correcao_tenta_de_novo_ao_clicar():
+    """O bug do botao 'nada acontece': o agente parou sem corrigir e o clique seguinte devolvia o cache."""
+    aluno = token("aluno@domina.com")
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade_id(), "texto": "quarta redacao"}).json()
+    nota = ia.ResultadoIA(
+        competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 120, "justificativa": "ok",
+                       "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(1, 6)],
+        feedback_geral="ok", confianca=0.9,
+    )
+    fim = _chamada("finalizar", mensagem_aluno="sem nota ainda", resumo_professor="x")
+    roteiro = [[fim], [_chamada("corrigir_redacao_enem")], [fim]]  # 1a rodada: finaliza sem corrigir; 2a corrige
+    falso, pedidos = _cliente_roteirizado(roteiro)
+    originais = (agente_mod._client, ia.corrigir)
+    agente_mod._client = lambda: falso
+    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    try:
+        url = f"/submissoes/{sub['id']}/agente"
+        assert client.post(url, headers=aluno, json={}).json()["correcao"] is None
+        assert client.post(url, headers=aluno, json={}).json()["correcao"] is not None  # rodou de novo
+    finally:
+        agente_mod._client, ia.corrigir = originais

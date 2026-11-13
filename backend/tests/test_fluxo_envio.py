@@ -25,7 +25,8 @@ from app.models.usuario import Atividade  # noqa: E402
 seed.run_seed()
 ocr_router.extract_text = lambda _bytes, _mime, _exatas=False: "texto lido pelo ocr"
 client = TestClient(app)
-FOTO = {"file": ("redacao.jpg", b"\xff\xd8 bytes de foto", "image/jpeg")}
+FOTO_OCR = {"file": ("redacao.jpg", b"\xff\xd8 bytes de foto", "image/jpeg")}
+FOTO = {"files": ("redacao.jpg", b"\xff\xd8 bytes de foto", "image/jpeg")}
 
 
 def token(email):
@@ -71,10 +72,10 @@ def test_regras_de_acesso():
     sem_turma = {"atividade_id": "00000000-0000-0000-0000-000000000000"}
     assert client.post("/submissoes/imagem", headers=aluno, files=FOTO, data=sem_turma).status_code == 404
 
-    pdf = {"file": ("x.pdf", b"%PDF", "application/pdf")}
+    pdf = {"files": ("x.pdf", b"%PDF", "application/pdf")}
     assert client.post("/submissoes/imagem", headers=aluno, files=pdf, data=dados).status_code == 400
 
-    grande = {"file": ("g.jpg", b"0" * (ocr_router.MAX_IMAGEM_BYTES + 1), "image/jpeg")}
+    grande = {"files": ("g.jpg", b"0" * (ocr_router.MAX_IMAGEM_BYTES + 1), "image/jpeg")}
     assert client.post("/submissoes/imagem", headers=aluno, files=grande, data=dados).status_code == 413
 
     sub = client.post("/submissoes/imagem", headers=aluno, files=FOTO, data=dados).json()
@@ -84,7 +85,7 @@ def test_regras_de_acesso():
 def test_ocr_sem_chave_responde_503():
     settings.GEMINI_API_KEY = None
     try:
-        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO)
+        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO_OCR)
         assert r.status_code == 503
     finally:
         settings.GEMINI_API_KEY = "falsa"
@@ -93,7 +94,7 @@ def test_ocr_sem_chave_responde_503():
 def test_imagem_sem_texto_responde_422():
     original, ocr_router.extract_text = ocr_router.extract_text, lambda _b, _m, _e=False: ""
     try:
-        assert client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO).status_code == 422
+        assert client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO_OCR).status_code == 422
     finally:
         ocr_router.extract_text = original
 
@@ -106,7 +107,7 @@ def test_texto_publicado_responde_422():
 
     original, ocr_router.extract_text = ocr_router.extract_text, recitacao
     try:
-        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO)
+        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO_OCR)
         assert r.status_code == 422 and "publicada" in r.text
     finally:
         ocr_router.extract_text = original
@@ -133,7 +134,7 @@ def test_falha_do_gemini_nao_vaza_detalhe():
 
     original, ocr_router.extract_text = ocr_router.extract_text, quebra
     try:
-        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO)
+        r = client.post("/ocr/extract", headers=token("aluno@domina.com"), files=FOTO_OCR)
         assert r.status_code == 502
         assert "segredo-interno" not in r.text
     finally:
@@ -303,3 +304,30 @@ def test_corrigir_faz_uma_correcao_so():
         assert chamadas == [0] and modelo == ia.MODELO_PRINCIPAL and r.confianca == 0.7
     finally:
         ia.gerar_json = original
+
+
+def test_varias_fotos_uma_chamada_de_ocr_e_ordem_preservada():
+    chamadas = []
+    original = ocr_router.extract_text
+    def varias(b, m, exatas=False, extras=()):
+        chamadas.append(1 + len(extras))
+        return "folha um\nfolha dois"
+    ocr_router.extract_text = varias
+    try:
+        aluno = token("aluno@domina.com")
+        fotos = [("files", (f"f{i}.jpg", f"\xff\xd8 foto {i}".encode("latin1"), "image/jpeg")) for i in range(3)]
+        r = client.post("/submissoes/imagem", headers=aluno, files=fotos, data={"atividade_id": atividade_id()})
+        assert r.status_code == 201, r.text
+        assert chamadas == [3]  # uma chamada para as 3 folhas
+        sid = r.json()["id"]
+        for i in range(3):  # cada folha sai na ordem enviada
+            img = client.get(f"/submissoes/{sid}/imagem?pagina={i}", headers=aluno)
+            assert img.status_code == 200 and img.content.endswith(f"foto {i}".encode())
+        assert client.get(f"/submissoes/{sid}/imagem?pagina=3", headers=aluno).status_code == 404
+        # mais que o limite: recusa antes de gastar OCR
+        muitas = [("files", ("x.jpg", b"\xff\xd8 x", "image/jpeg"))] * 7
+        assert client.post("/submissoes/imagem", headers=aluno, files=muitas,
+                           data={"atividade_id": atividade_id()}).status_code == 422
+        assert chamadas == [3]
+    finally:
+        ocr_router.extract_text = original

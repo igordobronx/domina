@@ -2610,3 +2610,33 @@ mark.ponto {
 .turmas-check legend { font-size: 13px; padding: 0 6px; }
 .check { display: flex; align-items: center; gap: 8px; flex-direction: row; }
 .check input { width: auto; }
+
+/* questao objetiva (estilo ENEM) */
+.alternativas { display: grid; gap: 8px; margin: 10px 0 4px; }
+.alternativa { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; line-height: 1.45; }
+.alternativas-form { border: 0; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.alternativas-form legend { font-size: 13px; color: var(--muted, #666); margin-bottom: 4px; }
+.alternativas-form .alternativa input[type="text"], .alternativas-form .alternativa input:not([type]) { flex: 1; }
+
+/* varias fotos por envio */
+.lista-fotos { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; width: 100%; }
+.lista-fotos li { display: flex; align-items: center; gap: 10px; }
+.lista-fotos img { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; }
+.lista-fotos span { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* niveis e metas */
+.nivel-card { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; }
+.nivel-numero { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; font-weight: 700; background: var(--green, #197451); color: #fff; }
+.meta-linha { padding: 12px 0; border-top: 1px solid rgba(0,0,0,.08); display: grid; gap: 6px; }
+.meta-linha:first-of-type { border-top: 0; }
+.meta-topo { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+.tabela-ranking { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.tabela-ranking th, .tabela-ranking td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(0,0,0,.08); }
+
+/* campo de texto com barra de simbolos (quimica/matematica) */
+.campo-simbolos { display: grid; gap: 6px; width: 100%; }
+.simbolos-toggle { justify-self: start; font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid rgba(0,0,0,.18); background: transparent; cursor: pointer; }
+.simbolos-painel { border: 1px solid rgba(0,0,0,.12); border-radius: 10px; padding: 8px; display: grid; gap: 8px; }
+.simbolos-lista { display: flex; flex-wrap: wrap; gap: 4px; }
+.simbolos-lista button { min-width: 34px; height: 34px; font-size: 17px; border: 1px solid rgba(0,0,0,.14); border-radius: 8px; background: #fff; cursor: pointer; }
+.simbolos-lista button:hover { background: rgba(25,116,81,.1); }

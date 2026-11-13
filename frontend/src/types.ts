@@ -8,6 +8,7 @@ export type Page =
   | "turmas"
   | "materiais"
   | "calendario"
+  | "metas"
   | "logs"
   | "painel"
   | "equipe"
@@ -28,7 +29,9 @@ export interface Activity {
   status: ActivityStatus;
   kind: "redacao" | "matematica";
   student: string;
-  questoes?: { codigo: string; enunciado: string; tem_imagem?: boolean }[];
+  turmaId?: string; // fila de revisao: filtro por turma
+  turmaNome?: string;
+  questoes?: { codigo: string; enunciado: string; tem_imagem?: boolean; alternativas?: string[] | null }[];
   valorTotal?: number;
   text?: string;
   fileName?: string;
@@ -45,7 +48,7 @@ export interface Activity {
       trecho: string;
       tipo: "acerto" | "erro";
       comentario: string;
-      caixa: { x: number; y: number; largura: number; altura: number } | null;
+      caixa: { pagina?: number; x: number; y: number; largura: number; altura: number } | null;
     }[];
   }[];
   // "TEXTO" | "IMAGEM": se "IMAGEM", a foto original pode ser buscada por submissaoId

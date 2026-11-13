@@ -83,6 +83,12 @@ a "confianca" em vez de dar 0 por omissão.
 
 """
 
+INSTRUCAO_FOLHAS = """A prova do aluno tem {n} fotos (folhas do mesmo trabalho), na ordem em que ele as enviou:
+"folha 1", "folha 2"... Trate-as como uma prova só: a resposta de uma questão pode estar em
+qualquer folha. Em cada "caixa" inclua também "pagina": a folha em que o trecho está, contando
+de 0 (folha 1 = 0, folha 2 = 1...); x, y, largura e altura valem para essa folha.
+"""
+
 INSTRUCAO_CAIXA = """
 Além disso, a imagem enviada é a prova original do aluno: em CADA ponto, diga também ONDE na
 imagem está aquele trecho, com "caixa": {"x": 0.0, "y": 0.0, "largura": 0.0, "altura": 0.0},
@@ -117,13 +123,14 @@ def corrigir(
     respostas_aluno: str,
     materia_nome: str,
     questoes: list[tuple[str, str, str]],
-    imagem: tuple[bytes, str] | None = None,
+    imagem: tuple[bytes, str] | list[tuple[bytes, str]] | None = None,
     figuras: dict[str, tuple[bytes, str]] | None = None,
 ) -> tuple[ResultadoExatasIA, str]:
     # questoes: lista de (codigo, enunciado, resposta_correta), na ordem em que serao exibidas
     # imagem: (bytes, mime_type) da foto original, so quando a resposta foi enviada por foto --
     # nesse caso a IA tambem devolve "caixa" (onde na foto esta cada resposta)
     # figuras: {codigo da questao: (bytes, mime_type)} anexadas pelo professor ao enunciado
+    imagens = [imagem] if isinstance(imagem, tuple) else list(imagem or [])
     texto_questoes = "\n".join(
         f"{codigo}) {enunciado}\n   Gabarito: {resposta}" for codigo, enunciado, resposta in questoes
     )
@@ -132,17 +139,18 @@ def corrigir(
         questoes=texto_questoes,
         respostas=respostas_aluno,
         instrucao_figuras=INSTRUCAO_FIGURAS if figuras else "",
-        instrucao_foto=INSTRUCAO_FOTO if imagem else "",
-        instrucao_caixa=INSTRUCAO_CAIXA if imagem else "",
-        exemplo_caixa=EXEMPLO_CAIXA if imagem else "",
+        instrucao_foto=(INSTRUCAO_FOLHAS.format(n=len(imagens)) if len(imagens) > 1 else "") + (INSTRUCAO_FOTO if imagens else ""),
+        instrucao_caixa=INSTRUCAO_CAIXA if imagens else "",
+        exemplo_caixa=EXEMPLO_CAIXA if imagens else "",
     )
     partes = []
     for codigo, figura in (figuras or {}).items():
         figura_bytes, figura_mime = reduzir(*figura)
         partes += [f"Figura da questão {codigo}:", types.Part.from_bytes(data=figura_bytes, mime_type=figura_mime)]
-    if imagem:
-        imagem_bytes, mime_type = reduzir(*imagem, LADO_EXATAS)
-        partes += ["Prova do aluno (foto):", types.Part.from_bytes(data=imagem_bytes, mime_type=mime_type)]
+    for n, foto in enumerate(imagens, start=1):
+        imagem_bytes, mime_type = reduzir(*foto, LADO_EXATAS)
+        partes += [f"Prova do aluno (folha {n}):" if len(imagens) > 1 else "Prova do aluno (foto):",
+                   types.Part.from_bytes(data=imagem_bytes, mime_type=mime_type)]
     contents = [*partes, prompt] if partes else prompt
     response, modelo = gerar(
         contents,

@@ -51,8 +51,8 @@ def criar_atividade_com_gabarito(prof, turma_id, materia_id):
     atividade = r.json()
     # o aluno precisa ver o enunciado real de cada questao (nao um texto fixo de outra materia)
     assert atividade["questoes"] == [
-        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False, "resposta_correta": "x = 2"},
-        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False, "resposta_correta": "x = 3"},
+        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False, "alternativas": None, "resposta_correta": "x = 2"},
+        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False, "alternativas": None, "resposta_correta": "x = 3"},
     ]
     # sem valor_total explicito, assume 1000 (como a redacao) e divide pelas questoes
     assert atividade["valor_total"] == 1000.0
@@ -338,7 +338,7 @@ def test_folha_de_exatas_usa_ocr_de_desenhos_e_a_foto_manda_na_correcao():
     original_ocr, ocr_router.extract_text = ocr_router.extract_text, ocr_falso
     try:
         r = client.post("/submissoes/imagem", headers=aluno, data={"atividade_id": atividade["id"]},
-                        files={"file": ("folha.png", foto.getvalue(), "image/png")})
+                        files={"files": ("folha.png", foto.getvalue(), "image/png")})
     finally:
         ocr_router.extract_text = original_ocr
     assert r.status_code == 201, r.text
@@ -382,3 +382,32 @@ def test_professor_da_qualquer_nota_em_exatas_ate_o_valor_da_questao():
     r = client.put(url, headers=prof, json=livre)
     assert r.status_code == 200, r.text
     assert r.json()["nota_professor"] == 130.95  # sem escala de 40 em 40 em exatas
+
+
+def test_exatas_varias_folhas_vao_todas_ao_gemini_e_caixa_aceita_pagina():
+    from app import correcao_exatas as ce
+    visto = {}
+
+    class Resp:
+        text = ('{"questoes": [{"codigo": "Q1", "nota": 200, "justificativa": "ok", "pontos": [{"trecho": "", '
+                '"tipo": "acerto", "comentario": "c", "caixa": {"x": 0.1, "y": 0.1, "largura": 0.2, "altura": 0.1, "pagina": 1}}]}], '
+                '"confianca": 0.9}')
+
+    def falso(contents, config):
+        visto["contents"] = contents
+        return Resp(), "m"
+
+    original, ce.gerar = ce.gerar, falso
+    try:
+        import io
+        from PIL import Image
+        buf = io.BytesIO()
+        Image.new("RGB", (8, 8), "red").save(buf, "PNG")
+        png_ = buf.getvalue()
+        res, _ = ce.corrigir("Q1: 3", "Química", [("Q1", "x?", "3")], imagem=[(png_, "image/png"), (png_, "image/png")])
+    finally:
+        ce.gerar = original
+    partes = [c for c in visto["contents"] if isinstance(c, str)]
+    assert "Prova do aluno (folha 1):" in partes and "Prova do aluno (folha 2):" in partes
+    assert "2 fotos" in partes[-1]
+    assert res.questoes[0].pontos[0].caixa.pagina == 1

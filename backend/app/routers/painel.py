@@ -13,6 +13,7 @@ from app.models.enum import PerfilEnum, TipoEnvioEnum
 from app.models.usuario import (
     AgenteExecucao, CustoUso, DocumentoBase, Escola, Materia, Submissao, Tema, Turma, Usuario,
 )
+from app.routers.submissoes import caminhos_da_submissao
 from app.schemas.painel import ResumoEscola, ResumoPlataforma
 
 router = APIRouter(prefix="/painel", tags=["painel"])
@@ -56,8 +57,9 @@ def _resumo(db: Session, escola: Escola, mes: str, inicio: datetime, fim: dateti
         if os.path.isfile(caminho):
             armazenamento += os.path.getsize(caminho)
     for s in envios.filter(Submissao.tipo_envio != TipoEnvioEnum.TEXTO):
-        if os.path.isfile(s.conteudo_bruto):
-            armazenamento += os.path.getsize(s.conteudo_bruto)
+        for caminho in caminhos_da_submissao(db, s):
+            if os.path.isfile(caminho):
+                armazenamento += os.path.getsize(caminho)
 
     receita = float(escola.plano_fixo) + float(escola.valor_por_aluno) * alunos_ativos
     custo = float(uso.custo_estimado) if uso else 0.0

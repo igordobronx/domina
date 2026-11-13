@@ -21,13 +21,15 @@ export async function carregarRevisoes(): Promise<Activity[]> {
     status: paraStatus(s.status),
     kind: "redacao",
     student: s.aluno_nome,
+    turmaId: s.turma_id,
+    turmaNome: s.turma_nome,
     scores: s.nota != null ? [s.nota] : undefined,
     valorTotal: s.valor_total,
   }));
 
   const atividadesComEnvio = new Set(submissoes.map((s) => s.atividade_id));
   const semEnvio = atividades
-    .filter((a) => !atividadesComEnvio.has(a.id))
+    .filter((a) => a.na_minha_revisao && !atividadesComEnvio.has(a.id))
     .map((a): Activity => ({
       id: a.id,
       atividadeId: a.id,
@@ -37,6 +39,8 @@ export async function carregarRevisoes(): Promise<Activity[]> {
       status: "disponivel",
       kind: a.questoes?.length ? "matematica" : "redacao",
       student: a.alunos.length === 1 ? a.alunos[0].nome : `${a.alunos.length} alunos`,
+      turmaId: a.turma_id,
+      turmaNome: a.turma,
       questoes: a.questoes ?? undefined,
       valorTotal: a.valor_total,
     }));

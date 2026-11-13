@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   Check,
@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { TextInput } from "react-native";
+import { CampoComSimbolos } from "../components/CampoComSimbolos";
 import { ActivityRow } from "./Dashboard";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
 import type { Activity, DemoState, Role } from "../types";
@@ -32,6 +33,7 @@ import {
   criarMateria,
   enviarImagem,
   enviarTexto,
+  enviarObjetiva,
   listarMaterias,
   listarTurmasMinhas,
   rodarAgente,
@@ -55,7 +57,7 @@ type Ponto = {
   trecho: string;
   tipo: "acerto" | "erro";
   comentario: string;
-  caixa: { x: number; y: number; largura: number; altura: number } | null;
+  caixa: { pagina?: number; x: number; y: number; largura: number; altura: number } | null;
 };
 
 // achata os pontos (acertos/erros) de todos os criterios num unico array, com o codigo do
@@ -109,39 +111,56 @@ function ImagemComCaixas({
   submissaoId: string;
   criterios: { codigo: string; pontos: Ponto[] }[];
 }) {
-  const [url, setUrl] = useState<string | null>(null);
+  const [urls, setUrls] = useState<string[] | null>(null);
   const [erro, setErro] = useState(false);
   useEffect(() => {
     let ativo = true;
-    urlImagemSubmissao(submissaoId)
-      .then((u) => ativo && setUrl(u))
-      .catch(() => ativo && setErro(true));
+    // as folhas vem pelo indice (?pagina=N) ate a primeira que nao existe
+    (async () => {
+      const achadas: string[] = [];
+      for (let n = 0; n < 6; n++) {
+        try {
+          achadas.push(await urlImagemSubmissao(submissaoId, n));
+        } catch {
+          break;
+        }
+      }
+      if (!ativo) return;
+      if (achadas.length) setUrls(achadas);
+      else setErro(true);
+    })();
     return () => {
       ativo = false;
     };
   }, [submissaoId]);
 
   if (erro) return <p className="tiny">Não foi possível carregar a foto original.</p>;
-  if (!url) return <p className="tiny">Carregando foto...</p>;
+  if (!urls) return <p className="tiny">Carregando foto...</p>;
+  const pontos = todosOsPontos(criterios);
   return (
-    <div className="imagem-com-caixas">
-      <img src={url} alt="Prova enviada" />
-      {todosOsPontos(criterios).map((p, i) =>
-        p.caixa ? (
-          <div
-            key={i}
-            className={`caixa ponto-${p.tipo}`}
-            title={`${p.criterio} · ${p.tipo === "acerto" ? "acerto" : "erro"}: ${p.comentario}`}
-            style={{
-              left: `${p.caixa.x * 100}%`,
-              top: `${p.caixa.y * 100}%`,
-              width: `${p.caixa.largura * 100}%`,
-              height: `${p.caixa.altura * 100}%`,
-            }}
-          />
-        ) : null,
-      )}
-    </div>
+    <>
+      {urls.map((url, n) => (
+        <div className="imagem-com-caixas" key={n}>
+          {urls.length > 1 && <p className="tiny muted">Folha {n + 1} de {urls.length}</p>}
+          <img src={url} alt={urls.length > 1 ? `Prova enviada, folha ${n + 1}` : "Prova enviada"} />
+          {pontos.map((p, k) =>
+            p.caixa && (p.caixa.pagina ?? 0) === n ? (
+              <div
+                key={k}
+                className={`caixa ponto-${p.tipo}`}
+                title={`${p.criterio} · ${p.tipo === "acerto" ? "acerto" : "erro"}: ${p.comentario}`}
+                style={{
+                  left: `${p.caixa.x * 100}%`,
+                  top: `${p.caixa.y * 100}%`,
+                  width: `${p.caixa.largura * 100}%`,
+                  height: `${p.caixa.altura * 100}%`,
+                }}
+              />
+            ) : null,
+          )}
+        </div>
+      ))}
+    </>
   );
 }
 
@@ -167,6 +186,13 @@ export function Activities({
 }: Props) {
   const [filter, setFilter] = useState("todas");
   const [search, setSearch] = useState("");
+  const [turmaFiltro, setTurmaFiltro] = useState(() => {
+    try { return localStorage.getItem("domina.turmaRevisao") ?? ""; } catch { return ""; }
+  });
+  const escolherTurma = (id: string) => {
+    setTurmaFiltro(id);
+    try { localStorage.setItem("domina.turmaRevisao", id); } catch { /* sem storage */ }
+  };
   const [criando, setCriando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null); // atividade em edicao (professor/gestor)
   // modo real: aluno autenticado de verdade manda/ve suas proprias atividades;
@@ -251,11 +277,21 @@ export function Activities({
         onCorrigidaReal={real ? recarregar : undefined}
       />
     );
-  const list = activities.filter(
+  // turmas que aparecem na fila (professor com varias turmas ou gestor); vem das proprias linhas
+  const turmasFila = reviewOnly
+    ? [...new Map(activities.filter((a) => a.turmaId).map((a) => [a.turmaId!, a.turmaNome!])).entries()]
+        .sort((x, y) => x[1].localeCompare(y[1]))
+    : [];
+  // filtro salvo de uma turma que nao esta mais na fila nao pode esconder tudo
+  const turmaAtiva = turmasFila.some(([id]) => id === turmaFiltro) ? turmaFiltro : "";
+  const list = activities
+    .filter(
     (a) =>
+      (!turmaAtiva || a.turmaId === turmaAtiva) &&
       (filter === "todas" || a.status === filter) &&
-      `${a.title} ${a.subject}`.toLowerCase().includes(search.toLowerCase()),
-  );
+      `${a.title} ${a.subject} ${a.student}`.toLowerCase().includes(search.toLowerCase()),
+    )
+    .sort((x, y) => (reviewOnly ? (x.turmaNome ?? "").localeCompare(y.turmaNome ?? "") || x.student.localeCompare(y.student) : 0));
   return (
     <>
       <div className="page-heading">
@@ -295,6 +331,18 @@ export function Activities({
               </button>
             ))}
           </div>
+          {turmasFila.length > 1 && (
+            <select
+              aria-label="Filtrar por turma"
+              value={turmaAtiva}
+              onChange={(e) => escolherTurma(e.target.value)}
+            >
+              <option value="">Todas as turmas</option>
+              {turmasFila.map(([id, nome]) => (
+                <option key={id} value={id}>{nome}</option>
+              ))}
+            </select>
+          )}
           <label className="search-field">
             <Search size={17} />
             <input
@@ -329,6 +377,33 @@ export function Activities({
     </>
   );
 }
+const MAX_FOTOS = 6; // mesmo limite do backend (MAX_FOLHAS)
+
+// miniaturas das fotos escolhidas, com subir/descer/remover: a ordem da lista e a ordem das folhas
+function ListaFotos({ files, onChange }: { files: File[]; onChange: (f: File[]) => void }) {
+  const urls = useMemo(() => files.map((f) => URL.createObjectURL(f)), [files]);
+  useEffect(() => () => urls.forEach(URL.revokeObjectURL), [urls]);
+  if (!files.length) return null;
+  const mover = (i: number, d: number) => {
+    const c = [...files];
+    [c[i], c[i + d]] = [c[i + d], c[i]];
+    onChange(c);
+  };
+  return (
+    <ol className="lista-fotos">
+      {files.map((f, i) => (
+        <li key={`${f.name}-${i}`}>
+          <img src={urls[i]} alt={`Folha ${i + 1}`} />
+          <span>Folha {i + 1} · {f.name}</span>
+          <button className="back-link" disabled={i === 0} aria-label={`Subir folha ${i + 1}`} onClick={() => mover(i, -1)}>↑</button>
+          <button className="back-link" disabled={i === files.length - 1} aria-label={`Descer folha ${i + 1}`} onClick={() => mover(i, 1)}>↓</button>
+          <button className="back-link" aria-label={`Remover folha ${i + 1}`} onClick={() => onChange(files.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 function ActivityDetail({
   activity: a,
   state,
@@ -345,11 +420,28 @@ function ActivityDetail({
   onCorrigidaReal?: () => void;
 }) {
   const [text, setText] = useState(state.drafts[a.id] || "");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]); // varias fotos do mesmo trabalho, na ordem
   const [mode, setMode] = useState<"texto" | "arquivo">("texto");
   const [error, setError] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const objetiva = !!a.questoes?.length && a.questoes.every((q) => q.alternativas?.length);
+  const [marcadas, setMarcadas] = useState<Record<string, string>>({});
+  const enviarMarcadas = async () => {
+    const faltam = a.questoes!.filter((q) => !marcadas[q.codigo]).length;
+    if (faltam && !window.confirm(`${faltam} questão(ões) sem resposta. Enviar assim mesmo? Depois de enviar não dá para refazer.`)) return;
+    setEnviando(true);
+    setError("");
+    try {
+      await enviarObjetiva(a.id, marcadas);
+      notify("Respostas enviadas. A correção já está disponível.");
+      onSubmittedReal?.();
+    } catch (erro) {
+      setError(erro instanceof Error ? erro.message : "Não foi possível enviar. Tente de novo.");
+    } finally {
+      setEnviando(false);
+    }
+  };
   const [scores, setScores] = useState(
     a.scores ||
       a.aiScores ||
@@ -384,20 +476,25 @@ function ActivityDetail({
     setGerandoCorrecao(true);
     setErroCorrecao("");
     try {
-      await rodarAgente(a.submissaoId ?? a.id);
-      onCorrigidaReal?.();
+      const r = await rodarAgente(a.submissaoId ?? a.id);
+      if (r.correcao) onCorrigidaReal?.();
+      else setErroCorrecao(r.mensagem_aluno ?? "Não foi possível gerar a correção agora. Tente de novo em instantes.");
     } catch (erro) {
       setErroCorrecao(erro instanceof Error ? erro.message : "Não foi possível gerar a correção.");
     } finally {
       setGerandoCorrecao(false);
     }
   };
+  const mudarTexto = (v: string) => {
+    setText(v);
+    update((s) => ({ ...s, drafts: { ...s.drafts, [a.id]: v } }));
+  };
   const submit = async () => {
     if (mode === "texto" && text.trim().length < 40) {
       setError("Escreva pelo menos 40 caracteres para enviar sua resposta.");
       return;
     }
-    if (mode === "arquivo" && !file) {
+    if (mode === "arquivo" && !files.length) {
       setError("Escolha um PDF ou uma imagem para continuar.");
       return;
     }
@@ -410,7 +507,7 @@ function ActivityDetail({
       setError("");
       try {
         if (mode === "arquivo") {
-          const submissao = await enviarImagem(a.id, file!);
+          const submissao = await enviarImagem(a.id, files);
           setOcrSubmissao(submissao);
           setOcrTexto(submissao.texto_ocr ?? "");
         } else {
@@ -435,7 +532,7 @@ function ActivityDetail({
               ...item,
               status: "pendente",
               text: mode === "texto" ? text : undefined,
-              fileName: mode === "arquivo" ? file?.name : undefined,
+              fileName: mode === "arquivo" ? files[0]?.name : undefined,
               date: "Enviada agora",
               aiScores: a.kind === "redacao" ? [160, 160, 120, 140, 160] : [8],
             }
@@ -474,7 +571,7 @@ function ActivityDetail({
         <div>
           <Badge tone="neutral">{a.subject}</Badge>
           <h1 className="detail-heading">{a.title}</h1>
-          <p>{teacher ? `${a.student} · Turma Pré-ENEM A` : a.date}</p>
+          <p>{teacher ? `${a.student}${a.turmaNome ? ` · ${a.turmaNome}` : ""}` : a.date}</p>
         </div>
       </div>
       {a.status === "disponivel" ? (
@@ -516,11 +613,11 @@ function ActivityDetail({
                     onPress={() => {
                       setOcrSubmissao(null);
                       setOcrTexto("");
-                      setFile(null);
+                      setFiles([]);
                       setError("");
                     }}
                   >
-                    Cancelar e tentar outra foto
+                    Cancelar e tentar outras fotos
                   </Button>
                   <Button icon={Check} disabled={confirmandoOcr} onPress={confirmarOcr}>
                     {confirmandoOcr ? "Confirmando..." : "Confirmar e enviar para revisão"}
@@ -537,6 +634,24 @@ function ActivityDetail({
                   <li key={q.codigo} style={{ whiteSpace: "pre-wrap" }}>
                     {q.enunciado}
                     {q.tem_imagem && <FiguraQuestao atividadeId={a.id} codigo={q.codigo} />}
+                    {objetiva && onSubmittedReal && (
+                      <div role="radiogroup" aria-label={`Alternativas da ${q.codigo}`} className="alternativas">
+                        {q.alternativas!.map((texto, k) => {
+                          const letra = "ABCDE"[k];
+                          return (
+                            <label key={letra} className="alternativa">
+                              <input
+                                type="radio"
+                                name={q.codigo}
+                                checked={marcadas[q.codigo] === letra}
+                                onChange={() => setMarcadas({ ...marcadas, [q.codigo]: letra })}
+                              />
+                              <b>{letra})</b> {texto}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ol>
@@ -550,6 +665,18 @@ function ActivityDetail({
                 Responda a atividade conforme as instruções do seu professor.
               </p>
             )}
+            {objetiva && onSubmittedReal ? (
+              <>
+                {error && <p className="error" role="alert">{error}</p>}
+                <div className="form-actions">
+                  <Button variant="secondary" onPress={onBack}>Continuar depois</Button>
+                  <Button icon={Send} disabled={enviando} onPress={enviarMarcadas}>
+                    {enviando ? "Enviando..." : "Enviar respostas"}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
             <div className="tabs input-tabs">
               <button
                 className={mode === "texto" ? "active" : ""}
@@ -572,18 +699,23 @@ function ActivityDetail({
             </div>
             {mode === "texto" ? (
               <>
+                {a.questoes?.length ? (
+                  // exatas: campo com barra de simbolos (quimica/matematica); redacao segue o campo de sempre
+                  <CampoComSimbolos
+                    aria-label="Texto da atividade"
+                    className="text-area"
+                    placeholder="Escreva suas respostas aqui (use Ω Símbolos para H₂O, √, →, π...)"
+                    rows={12}
+                    value={text}
+                    onChange={(e) => mudarTexto(e.target.value)}
+                  />
+                ) : (
                 <TextInput
                   accessibilityLabel="Texto da atividade"
                   placeholder="Suas ideias começam aqui..."
                   multiline
                   value={text}
-                  onChangeText={(v) => {
-                    setText(v);
-                    update((s) => ({
-                      ...s,
-                      drafts: { ...s.drafts, [a.id]: v },
-                    }));
-                  }}
+                  onChangeText={mudarTexto}
                   style={{
                     minHeight: 300,
                     fontFamily: "IBM Plex Sans",
@@ -597,6 +729,7 @@ function ActivityDetail({
                     color: "#141A2E",
                   }}
                 />
+                )}
                 <div className="field-meta">
                   <span>Rascunho salvo neste navegador</span>
                   <span>{text.length} caracteres</span>
@@ -605,33 +738,40 @@ function ActivityDetail({
             ) : (
               <div className="upload-zone">
                 <Upload size={30} />
-                <strong>{file?.name || "Escolha sua atividade"}</strong>
-                <span>{onSubmittedReal ? "JPG ou PNG · até 10 MB" : "PDF, JPG ou PNG · até 10 MB"}</span>
+                <strong>{files.length ? `${files.length} foto(s) escolhida(s)` : "Escolha sua atividade"}</strong>
+                <span>
+                  {onSubmittedReal
+                    ? `JPG ou PNG · até 10 MB cada · até ${MAX_FOTOS} fotos do mesmo trabalho`
+                    : "PDF, JPG ou PNG · até 10 MB"}
+                </span>
                 <input
                   aria-label="Selecionar arquivo da atividade"
                   type="file"
+                  multiple={!!onSubmittedReal}
                   accept={onSubmittedReal ? ".png,.jpg,.jpeg" : ".pdf,.png,.jpg,.jpeg"}
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    // a leitura automatica (OCR) so existe pra imagem; PDF so faz sentido na demo
-                    const valido = onSubmittedReal ? /\.(png|jpe?g)$/i.test(f?.name ?? "") : /\.(pdf|png|jpe?g)$/i.test(f?.name ?? "");
-                    if (f && (f.size > 10 * 1024 * 1024 || !valido)) {
-                      setError(
-                        onSubmittedReal
-                          ? "Use JPG ou PNG com no máximo 10 MB."
-                          : "Use PDF, JPG ou PNG com no máximo 10 MB.",
-                      );
-                      setFile(null);
-                      e.target.value = "";
-                    } else {
-                      setFile(f || null);
-                      setError("");
+                    const novas = Array.from(e.target.files ?? []);
+                    e.target.value = ""; // permite escolher a mesma foto de novo
+                    const valido = (f: File) =>
+                      f.size <= 10 * 1024 * 1024 &&
+                      (onSubmittedReal ? /\.(png|jpe?g)$/i.test(f.name) : /\.(pdf|png|jpe?g)$/i.test(f.name));
+                    if (novas.some((f) => !valido(f))) {
+                      setError(onSubmittedReal ? "Use JPG ou PNG com no máximo 10 MB." : "Use PDF, JPG ou PNG com no máximo 10 MB.");
+                      return;
                     }
+                    const total = onSubmittedReal ? [...files, ...novas] : novas.slice(0, 1);
+                    if (total.length > MAX_FOTOS) {
+                      setError(`No máximo ${MAX_FOTOS} fotos por envio.`);
+                      return;
+                    }
+                    setFiles(total);
+                    setError("");
                   }}
                 />
+                {onSubmittedReal && <ListaFotos files={files} onChange={setFiles} />}
                 <p className="tiny">
                   {onSubmittedReal
-                    ? "Lemos o texto da sua foto automaticamente: você confere e confirma antes de enviar."
+                    ? "Se o trabalho tem mais de uma folha, adicione todas e deixe na ordem certa. Lemos o texto de tudo junto: você confere e confirma antes de enviar."
                     : "Nesta demonstração, somente o nome do arquivo é salvo. A leitura do manuscrito será conectada ao backend."}
                 </p>
               </div>
@@ -657,6 +797,8 @@ function ActivityDetail({
                 {enviando ? "Enviando..." : "Enviar para revisão"}
               </Button>
             </div>
+              </>
+            )}
               </>
             )}
           </Card>
@@ -974,7 +1116,7 @@ function RevisaoReal({
         <div>
           <Badge tone="neutral">{a.subject}</Badge>
           <h1 className="detail-heading">{a.title}</h1>
-          <p>{a.student}</p>
+          <p>{a.student}{a.turmaNome ? ` · ${a.turmaNome}` : ""}</p>
         </div>
       </div>
       {carregando ? (
@@ -1243,7 +1385,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
   const [titulo, setTitulo] = useState("");
   const [prazo, setPrazo] = useState("");
   const [valorTotal, setValorTotal] = useState(1000);
-  const [questoes, setQuestoes] = useState<{ enunciado: string; resposta_correta: string }[]>([]);
+  const [questoes, setQuestoes] = useState<{ enunciado: string; resposta_correta: string; alternativas: string[] | null }[]>([]);
   const [salvando, setSalvando] = useState(false);
   useEffect(() => {
     listarAtividades().then((lista) => {
@@ -1253,7 +1395,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
       setTitulo(x.titulo);
       setPrazo(x.prazo ?? "");
       setValorTotal(x.valor_total);
-      setQuestoes((x.questoes ?? []).map((q) => ({ enunciado: q.enunciado, resposta_correta: q.resposta_correta ?? "" })));
+      setQuestoes((x.questoes ?? []).map((q) => ({ enunciado: q.enunciado, resposta_correta: q.resposta_correta ?? "", alternativas: q.alternativas ?? null })));
     }).catch(() => notify("Não foi possível carregar a atividade."));
   }, [atividadeId]);
   if (!a) return <Empty title="Carregando..." text="Buscando a atividade." />;
@@ -1263,12 +1405,18 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
     if (!titulo.trim()) return notify("Dê um título para a atividade.");
     if (gabaritoLivre && questoes.some((q) => !q.enunciado.trim() || !q.resposta_correta.trim()))
       return notify("Preencha o enunciado e a resposta correta de todas as questões.");
+    const payloadQuestoes = questoes.map((q) => ({
+      enunciado: q.enunciado, resposta_correta: q.resposta_correta,
+      alternativas: q.alternativas ? alternativasDe(q.alternativas) ?? undefined : undefined,
+    }));
+    if (gabaritoLivre && questoes.some((q, i) => q.alternativas && !payloadQuestoes[i].alternativas))
+      return notify("Questão objetiva: preencha ao menos 2 alternativas seguidas (A, B...).");
     setSalvando(true);
     try {
       await editarAtividade(a.id, {
         titulo: titulo.trim(),
         prazo: prazo || null,
-        ...(gabaritoLivre ? { valor_total: valorTotal, questoes } : {}),
+        ...(gabaritoLivre ? { valor_total: valorTotal, questoes: payloadQuestoes } : {}),
       });
       notify("Atividade atualizada.");
       onSalvo();
@@ -1298,18 +1446,26 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
         {gabaritoLivre && questoes.map((q, i) => (
           <div key={i} className="form-grid">
             <label>Questão {i + 1} — enunciado
-              <textarea value={q.enunciado} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, enunciado: e.target.value } : x))} />
+              <CampoComSimbolos value={q.enunciado} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, enunciado: e.target.value } : x))} />
             </label>
-            <label>Resposta correta
-              <textarea value={q.resposta_correta} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, resposta_correta: e.target.value } : x))} />
-            </label>
+            {q.alternativas ? (
+              <CamposObjetiva
+                alternativas={q.alternativas}
+                gabarito={q.resposta_correta}
+                onChange={(alternativas, resposta_correta) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, alternativas, resposta_correta } : x))}
+              />
+            ) : (
+              <label>Resposta correta
+                <CampoComSimbolos value={q.resposta_correta} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, resposta_correta: e.target.value } : x))} />
+              </label>
+            )}
             {questoes.length > 1 && i === questoes.length - 1 && (
               <Button variant="ghost" icon={Trash2} onPress={() => setQuestoes(questoes.slice(0, -1))}>Remover a última questão</Button>
             )}
           </div>
         ))}
         {gabaritoLivre && (
-          <Button variant="ghost" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "" }])}>Adicionar questão</Button>
+          <Button variant="ghost" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "", alternativas: questoes[0]?.alternativas ? ["", ""] : null }])}>Adicionar questão</Button>
         )}
         <div className="form-actions left">
           <Button onPress={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar alterações"}</Button>
@@ -1358,8 +1514,54 @@ const LETRAS = "abcdefghijklmnopqrstuvwxyz";
 interface QuestaoForm {
   enunciado: string;
   itens: string[];
-  resposta_correta: string;
+  resposta_correta: string; // objetiva: a letra do gabarito
+  alternativas: string[]; // so usado no formato objetiva
   figura?: File; // anexada depois que a atividade e criada
+}
+
+// alternativas preenchidas em ordem (A, B, C...); null se ha buraco no meio ou menos de 2
+function alternativasDe(alts: string[]): string[] | null {
+  const a = alts.map((x) => x.trim());
+  const n = a.findIndex((x) => !x);
+  const cheias = n < 0 ? a : a.slice(0, n);
+  return cheias.length >= 2 && !a.slice(cheias.length).some(Boolean) ? cheias : null;
+}
+
+// campos de uma questao objetiva (estilo ENEM): comeca com A e B, o professor adiciona ate E; gabarito = letra
+function CamposObjetiva({ alternativas, gabarito, onChange }: {
+  alternativas: string[]; gabarito: string; onChange: (alternativas: string[], gabarito: string) => void;
+}) {
+  const alts = alternativas.length >= 2 ? alternativas : [...alternativas, "", ""].slice(0, 2);
+  return (
+    <fieldset className="alternativas-form">
+      <legend>Alternativas (marque a correta)</legend>
+      {alts.map((texto, k) => {
+        const letra = "ABCDE"[k];
+        return (
+          <label key={letra} className="alternativa">
+            <input type="radio" aria-label={`Gabarito ${letra}`} checked={gabarito === letra} disabled={!texto.trim()}
+              onChange={() => onChange(alts, letra)} />
+            <b>{letra})</b>
+            <CampoComSimbolos linha value={texto} placeholder={`Alternativa ${letra}`}
+              onChange={(e) => onChange(alts.map((x, j) => (j === k ? e.target.value : x)), gabarito === letra && !e.target.value.trim() ? "" : gabarito)} />
+          </label>
+        );
+      })}
+      <div className="form-actions left">
+        {alts.length < 5 && (
+          <Button variant="ghost" icon={Plus} onPress={() => onChange([...alts, ""], gabarito)}>
+            Adicionar alternativa ({"ABCDE"[alts.length]})
+          </Button>
+        )}
+        {alts.length > 2 && (
+          <Button variant="ghost" icon={Trash2}
+            onPress={() => onChange(alts.slice(0, -1), gabarito === "ABCDE"[alts.length - 1] ? "" : gabarito)}>
+            Remover a última
+          </Button>
+        )}
+      </div>
+    </fieldset>
+  );
 }
 
 function compoeEnunciado(q: { enunciado: string; itens: string[] }): string {
@@ -1383,8 +1585,9 @@ function NovaAtividade({
   const [materiaId, setMateriaId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
-  const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [""], resposta_correta: "" }]);
+  const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }]);
   const [valorTotal, setValorTotal] = useState(1000);
+  const [formato, setFormato] = useState<"discursiva" | "objetiva">("discursiva");
   const [prazo, setPrazo] = useState("");
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -1444,10 +1647,27 @@ function NovaAtividade({
       setError("Marque ao menos uma turma e escolha a matéria.");
       return;
     }
+    const objetivaForm = exigeGabarito && formato === "objetiva";
+    if (objetivaForm) {
+      for (const [i, q] of questoes.entries()) {
+        if (!q.enunciado.trim() && !q.alternativas.some((x) => x.trim())) continue; // questao em branco e ignorada
+        const alts = alternativasDe(q.alternativas);
+        if (!q.enunciado.trim() || !alts) {
+          setError(`Questão ${i + 1}: preencha o enunciado e ao menos 2 alternativas seguidas (A, B...).`);
+          return;
+        }
+        if (!"ABCDE".slice(0, alts.length).includes(q.resposta_correta)) {
+          setError(`Questão ${i + 1}: marque qual alternativa é a correta.`);
+          return;
+        }
+      }
+    }
     const preenchidas = questoes
-      .map((q) => ({ enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim(), figura: q.figura }))
+      .map((q) => objetivaForm
+        ? { enunciado: q.enunciado.trim(), resposta_correta: q.resposta_correta, alternativas: alternativasDe(q.alternativas) ?? undefined, figura: q.figura }
+        : { enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim(), alternativas: undefined, figura: q.figura })
       .filter((q) => q.enunciado && q.resposta_correta);
-    const questoesValidas = preenchidas.map(({ enunciado, resposta_correta }) => ({ enunciado, resposta_correta }));
+    const questoesValidas = preenchidas.map(({ enunciado, resposta_correta, alternativas }) => ({ enunciado, resposta_correta, alternativas }));
     if (exigeGabarito && !questoesValidas.length) {
       setError("Adicione ao menos uma questão com enunciado e resposta correta.");
       return;
@@ -1561,7 +1781,7 @@ function NovaAtividade({
               </label>
               <label>
                 Tipo
-                <select value={tipo} onChange={(e) => setTipo(e.target.value)}>
+                <select value={tipo} onChange={(e) => { setTipo(e.target.value); if (e.target.value === "PROVA_OBJETIVA") setFormato("objetiva"); }}>
                   {TIPOS_ATIVIDADE.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}
@@ -1615,9 +1835,16 @@ function NovaAtividade({
             {exigeGabarito && (
               <Card>
                 <SectionTitle title="Questões e gabarito" />
+                <div className="tabs" role="group" aria-label="Formato das questões">
+                  <button aria-pressed={formato === "objetiva"} className={formato === "objetiva" ? "active" : ""}
+                    onClick={() => setFormato("objetiva")}>Objetiva (A–E, como o ENEM)</button>
+                  <button aria-pressed={formato === "discursiva"} className={formato === "discursiva" ? "active" : ""}
+                    onClick={() => setFormato("discursiva")}>Discursiva</button>
+                </div>
                 <p className="tiny muted">
-                  A IA corrige comparando a resposta do aluno com a resposta correta de cada
-                  questão — não é uma avaliação subjetiva, é uma conferência lógica.
+                  {formato === "objetiva"
+                    ? "O aluno marca a alternativa na tela e a correção sai na hora, comparando com o gabarito (sem IA)."
+                    : "A IA corrige comparando a resposta do aluno com a resposta correta de cada questão — não é uma avaliação subjetiva, é uma conferência lógica."}
                 </p>
                 <label>
                   Valor total da atividade (pontos)
@@ -1636,7 +1863,7 @@ function NovaAtividade({
                   <div className="form-grid" key={i}>
                     <label>
                       {`Questão ${i + 1}${q.itens.length > 1 ? " (enunciado comum, se houver)" : ""}`}
-                      <textarea
+                      <CampoComSimbolos
                         value={q.enunciado}
                         onChange={(e) => {
                           const copia = [...questoes];
@@ -1647,11 +1874,21 @@ function NovaAtividade({
                         rows={3}
                       />
                     </label>
-                    {q.itens.map((item, j) => (
+                    {formato === "objetiva" ? (
+                      <CamposObjetiva
+                        alternativas={q.alternativas}
+                        gabarito={q.resposta_correta}
+                        onChange={(alternativas, resposta_correta) => {
+                          const copia = [...questoes];
+                          copia[i] = { ...copia[i], alternativas, resposta_correta };
+                          setQuestoes(copia);
+                        }}
+                      />
+                    ) : q.itens.map((item, j) => (
                       <label key={j}>
                         {`Item ${LETRAS[j] ?? j + 1})`}
                         <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                          <textarea
+                          <CampoComSimbolos
                             value={item}
                             onChange={(e) => {
                               const copia = [...questoes];
@@ -1678,7 +1915,7 @@ function NovaAtividade({
                         </div>
                       </label>
                     ))}
-                    <button
+                    {formato === "discursiva" && <button
                       className="back-link"
                       onClick={() => {
                         const copia = [...questoes];
@@ -1688,7 +1925,7 @@ function NovaAtividade({
                     >
                       <Plus size={14} />
                       Adicionar item ({LETRAS[q.itens.length] ?? q.itens.length + 1})
-                    </button>
+                    </button>}
                     <label>
                       Figura da questão (opcional)
                       <input
@@ -1708,9 +1945,9 @@ function NovaAtividade({
                         />
                       )}
                     </label>
-                    <label>
+                    {formato === "discursiva" && <label>
                       Resposta correta (de cada item, se houver)
-                      <textarea
+                      <CampoComSimbolos
                         value={q.resposta_correta}
                         onChange={(e) => {
                           const copia = [...questoes];
@@ -1720,7 +1957,7 @@ function NovaAtividade({
                         placeholder="Ex.: a) x = 2  b) y = 5"
                         rows={2}
                       />
-                    </label>
+                    </label>}
                     {questoes.length > 1 && (
                       <button
                         className="back-link"
@@ -1735,7 +1972,7 @@ function NovaAtividade({
                 <Button
                   variant="secondary"
                   icon={Plus}
-                  onPress={() => setQuestoes([...questoes, { enunciado: "", itens: [""], resposta_correta: "" }])}
+                  onPress={() => setQuestoes([...questoes, { enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }])}
                 >
                   Adicionar questão
                 </Button>

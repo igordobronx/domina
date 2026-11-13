@@ -220,8 +220,10 @@ def rodar_agente(
     if submissao.texto_confirmado is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Confirme o texto antes de corrigir.")
     anterior = db.query(AgenteExecucao).filter_by(submissao_id=submissao.id).first()
-    if anterior and not payload.refazer:
-        return _resposta(db, anterior)  # ja rodou: nao gasta tokens de novo (use refazer=true)
+    # ja rodou E gerou correcao: nao gasta tokens de novo (use refazer=true). Se o agente parou sem
+    # correcao (falha, pediu foto nova), clicar de novo tem que tentar outra vez, nao devolver o cache.
+    if anterior and not payload.refazer and db.query(Correcao.id).filter_by(submissao_id=submissao.id).first():
+        return _resposta(db, anterior)
     if not settings.ANTHROPIC_API_KEY:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Agente indisponível: servidor sem chave do Claude.")
 

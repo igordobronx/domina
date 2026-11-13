@@ -100,11 +100,22 @@ def gerar(contents, config: types.GenerateContentConfig):
         return _client().models.generate_content(model=modelo, contents=contents, config=config), modelo
 
 
-def extract_text(image_bytes: bytes, mime_type: str, exatas: bool = False) -> str:
-    # recebe os bytes de uma imagem e pede ao Gemini a transcricao (da redacao, ou da folha de exatas)
-    image_bytes, mime_type = reduzir(image_bytes, mime_type, LADO_EXATAS if exatas else LADO_MAXIMO)
+MAIS_FOLHAS = """
+
+Atenção: são {n} imagens, as folhas do MESMO trabalho, na ordem em que foram enviadas. Transcreva
+as folhas em sequência, como um único texto contínuo, sem marcar a troca de folha."""
+
+
+def extract_text(image_bytes: bytes, mime_type: str, exatas: bool = False, extras=()) -> str:
+    # recebe os bytes de uma imagem e pede ao Gemini a transcricao (da redacao, ou da folha de exatas).
+    # extras: (bytes, mime) das folhas seguintes -- UMA chamada para todas, cada folha na resolucao propria
+    lado = LADO_EXATAS if exatas else LADO_MAXIMO
+    folhas = [reduzir(b, m, lado) for b, m in [(image_bytes, mime_type), *extras]]
+    prompt = PROMPT_EXATAS if exatas else PROMPT
+    if len(folhas) > 1:
+        prompt += MAIS_FOLHAS.format(n=len(folhas))
     response, _ = gerar(
-        [types.Part.from_bytes(data=image_bytes, mime_type=mime_type), PROMPT_EXATAS if exatas else PROMPT],
+        [*(types.Part.from_bytes(data=b, mime_type=m) for b, m in folhas), prompt],
         # raciocinio "minimal": transcrever nao precisa pensar; na redacao real
         # caiu de 68s ("low") para 6s com a mesma fidelidade
         types.GenerateContentConfig(temperature=0, thinking_config=types.ThinkingConfig(thinking_level="minimal")),

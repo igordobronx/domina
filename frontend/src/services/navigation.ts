@@ -3,6 +3,7 @@ export const allowedPages: Record<Role, Page[]> = {
   aluno: [
     "inicio",
     "calendario",
+    "metas",
     "atividades",
     "evolucao",
     "estudos",
@@ -12,6 +13,7 @@ export const allowedPages: Record<Role, Page[]> = {
   professor: [
     "inicio",
     "calendario",
+    "metas",
     "revisoes",
     "turmas",
     "materiais",
@@ -21,6 +23,7 @@ export const allowedPages: Record<Role, Page[]> = {
   gestor: [
     "inicio",
     "calendario",
+    "metas",
     "revisoes",
     "turmas",
     "equipe",

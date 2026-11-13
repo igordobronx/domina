@@ -217,6 +217,7 @@ class CaixaIA(BaseModel):
     y: float = Field(ge=0, le=1)
     largura: float = Field(ge=0, le=1)
     altura: float = Field(ge=0, le=1)
+    pagina: int = Field(default=0, ge=0)  # qual foto (0 = primeira), quando o aluno enviou varias
 
 
 class PontoIA(BaseModel):

@@ -15,6 +15,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     false,
+    true,
     func,
     true,
 )
@@ -94,6 +95,9 @@ class Tema(Base):
     habilidade_codigo = Column(String(20), nullable=False)
     # gabarito da questao; so preenchido quando atividade_id tambem esta preenchido
     resposta_correta = Column(Text, nullable=True)
+    # questao objetiva (estilo ENEM): textos das alternativas A, B, C... ; nulo = discursiva.
+    # Nas objetivas resposta_correta guarda so a letra do gabarito.
+    alternativas = Column(JSON, nullable=True)
     # figura do enunciado (ex.: estruturas quimicas), anexada pelo professor; caminho em UPLOAD_DIR
     imagem = Column(String(255), nullable=True)
 
@@ -126,6 +130,8 @@ class Atividade(Base):
     prazo = Column(Date, nullable=True)  # data de entrega; aparece sozinha no calendario
     # "excluir" uma atividade que ja tem submissoes so a esconde (notas e dominio dos alunos ficam)
     arquivada = Column(Boolean, nullable=False, default=False, server_default=false())
+    # quem propos a atividade; nulo = anterior a este campo (visivel a todos os professores da turma)
+    criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
 
 
 class Evento(Base):
@@ -143,6 +149,38 @@ class Evento(Base):
     fim = Column(Date, nullable=True)  # nulo = so um dia
 
 
+class Meta(Base):
+    """Meta de estudo criada por professor/gestor. Escopo: aluno_id preenchido = individual; senao
+    turma_id preenchido = turma; senao a escola toda. O progresso NAO e gravado (e calculado dos
+    dados reais); so a conclusao (MetaConcluida). Nivel do aluno = soma dos pontos das concluidas."""
+    __tablename__ = "meta"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    escola_id = Column(UUID(as_uuid=True), ForeignKey("escola.id"), nullable=False)
+    criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
+    titulo = Column(String(150), nullable=False)
+    descricao = Column(Text, nullable=True)
+    # ENTREGAS | ENTREGAS_NO_PRAZO | NOTA_ATIVIDADE | MEDIA_MATERIA | DOMINIO_COMPETENCIA
+    tipo = Column(String(30), nullable=False)
+    alvo = Column(Numeric(7, 2), nullable=False)  # quantidade (entregas) ou percentual (0-100)
+    materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=True)
+    competencia = Column(String(2), nullable=True)  # C1..C5, so DOMINIO_COMPETENCIA
+    pontos = Column(Integer, nullable=False)
+    inicio = Column(Date, nullable=False)  # so conta o que acontece a partir daqui
+    fim = Column(Date, nullable=True)
+    turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), nullable=True)
+    aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    ativa = Column(Boolean, nullable=False, server_default=true())  # excluir = desativar (pontos ganhos ficam)
+
+
+class MetaConcluida(Base):
+    __tablename__ = "meta_concluida"
+
+    meta_id = Column(UUID(as_uuid=True), ForeignKey("meta.id"), primary_key=True)
+    aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), primary_key=True)
+    concluida_em = Column(DateTime, server_default=func.now(), nullable=False)
+
+
 class Submissao(Base):
     __tablename__ = "submissao"
 
@@ -156,6 +194,16 @@ class Submissao(Base):
     # nulo = envio aguardando confirmacao (RF-11). Envio TEXTO ja nasce preenchido.
     texto_confirmado = Column(Text, nullable=True)
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class SubmissaoPagina(Base):
+    """Folhas de um envio por foto, em ordem (ordem 0 = primeira). Envio antigo, de uma foto so,
+    nao tem linhas aqui: vale Submissao.conteudo_bruto (ver caminhos_da_submissao)."""
+    __tablename__ = "submissao_pagina"
+
+    submissao_id = Column(UUID(as_uuid=True), ForeignKey("submissao.id"), primary_key=True)
+    ordem = Column(Integer, primary_key=True)
+    caminho = Column(String(500), nullable=False)
 
 
 class Correcao(Base):

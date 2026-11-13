@@ -18,7 +18,9 @@ from app.models.enum import StatusCorrecaoEnum, TipoEnvioEnum
 from app.models.usuario import (
     Atividade, Correcao, CorrecaoCriterio, DominioAluno, Materia, Submissao, Tema, Usuario,
 )
-from app.routers.submissoes import MATERIAS_EXATAS, _gestor_da_escola, _professor_da_turma, _submissao_visivel
+from app.competencias import garantir_competencias
+from app.metas import avaliar_seguro
+from app.routers.submissoes import MATERIAS_EXATAS, _gestor_da_escola, caminhos_da_submissao, _professor_da_turma, _submissao_visivel
 from app.schemas.submissao import AprovarRequest, CorrecaoResponse, CorrigirRequest, CriterioResponse
 
 logger = logging.getLogger(__name__)
@@ -101,6 +103,7 @@ def corrigir_submissao(
         if not temas:
             raise HTTPException(status.HTTP_409_CONFLICT, "Esta atividade não tem gabarito cadastrado.")
     else:
+        garantir_competencias(db, materia)  # materia criada sem as 5 competencias: completa em vez de falhar
         temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(materia_id=materia.id, atividade_id=None)}
         if sorted(temas) != ["C1", "C2", "C3", "C4", "C5"]:
             raise HTTPException(status.HTTP_409_CONFLICT, "A matéria desta atividade não tem as 5 competências do ENEM.")
@@ -113,12 +116,13 @@ def corrigir_submissao(
     try:
         if exatas:
             questoes = [(t.habilidade_codigo, t.nome, t.resposta_correta) for t in temas.values()]
-            imagem = None
-            if submissao.tipo_envio == TipoEnvioEnum.IMAGEM and submissao.conteudo_bruto:
-                caminho_foto = Path(submissao.conteudo_bruto)
+            imagem = []  # todas as folhas do envio, em ordem
+            for caminho in caminhos_da_submissao(db, submissao):
+                caminho_foto = Path(caminho)
                 if caminho_foto.exists():
                     mime, _ = mimetypes.guess_type(str(caminho_foto))
-                    imagem = (caminho_foto.read_bytes(), mime or "image/jpeg")
+                    imagem.append((caminho_foto.read_bytes(), mime or "image/jpeg"))
+            imagem = imagem or None
             figuras = {}  # figura de cada questao (se o professor anexou): o Gemini ve junto do enunciado
             for t in temas.values():
                 if t.imagem and Path(t.imagem).exists():
@@ -264,5 +268,6 @@ def aprovar_correcao(
         _atualizar_dominio(db, submissao.aluno_id, {codigo: c for codigo, (c, _) in criterios.items()})
     registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
     db.commit()
+    avaliar_seguro(submissao.aluno_id)  # metas de nota/dominio
     return _correcao_response(db, correcao)
 

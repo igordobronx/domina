@@ -19,7 +19,7 @@ import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
 import type { UsuarioAtual } from "../services/api";
 import { carregarDominioReal, type Recomendacao } from "../services/dominio";
-import { minhasSubmissoes, type DominioAPI } from "../services/api";
+import { minhasMetas, minhasSubmissoes, type DominioAPI, type NivelAPI } from "../services/api";
 import { iso } from "../hooks/useCalendario";
 
 export function Dashboard({
@@ -46,6 +46,10 @@ export function Dashboard({
   const [recomendacao, setRecomendacao] = useState<Recomendacao | null>(null);
   // dias (AAAA-MM-DD) em que o aluno enviou algo: alimenta "Um passo por dia" com dado real
   const [diasEnviados, setDiasEnviados] = useState<string[]>([]);
+  const [nivel, setNivel] = useState<NivelAPI | null>(null);
+  useEffect(() => {
+    if (student && currentUser) minhasMetas().then((r) => setNivel(r.nivel)).catch(() => {});
+  }, [student, currentUser?.id]);
   useEffect(() => {
     if (student && currentUser) minhasSubmissoes().then((r) => setDiasEnviados(r.map((x) => iso(new Date(x.criado_em))))).catch(() => {});
   }, [student, currentUser]);
@@ -212,6 +216,20 @@ export function Dashboard({
           </p>
         </Card>
       </div>
+      {real && nivel && (
+        <Card>
+          <div className="nivel-card">
+            <div className="nivel-numero">{nivel.nivel}</div>
+            <div style={{ flex: 1 }}>
+              <strong>Nível {nivel.nivel} · {nivel.nome}</strong>
+              <p className="tiny muted">
+                {nivel.pontos} pontos{nivel.pontos_proximo != null ? ` · faltam ${nivel.pontos_proximo - nivel.pontos} para o próximo nível` : ""}
+              </p>
+            </div>
+            <Button variant="secondary" onPress={() => navigate("metas")}>Ver metas</Button>
+          </div>
+        </Card>
+      )}
       <div className="stats-grid">
         <Stat
           icon={Target}
@@ -449,6 +467,7 @@ export function ActivityRow({
       <span className="activity-info">
         <strong>{a.title}</strong>
         <span>
+          {a.turmaNome && <b>{a.student} · {a.turmaNome} · </b>}
           {a.subject}
           {a.date && ` · ${a.date}`}
         </span>

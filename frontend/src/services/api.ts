@@ -108,6 +108,7 @@ export interface QuestaoAtividadeAPI {
   codigo: string;
   enunciado: string;
   tem_imagem?: boolean; // figura do enunciado anexada pelo professor
+  alternativas?: string[] | null; // objetiva (estilo ENEM): textos de A, B, C...; o gabarito e so a letra
   resposta_correta?: string | null; // so professor/gestor recebem o gabarito
 }
 
@@ -115,6 +116,7 @@ export interface AtividadeAPI {
   id: string;
   titulo: string;
   turma: string;
+  turma_id: string;
   materia: string;
   tipo: "REDACAO" | "PROVA_DISCURSIVA" | "PROVA_OBJETIVA" | "EXERCICIO";
   alunos: { id: string; nome: string }[];
@@ -124,10 +126,12 @@ export interface AtividadeAPI {
   // 1000 na redacao (5 competencias x 0..200).
   valor_total: number;
   prazo: string | null; // AAAA-MM-DD
+  na_minha_revisao: boolean; // professor: so as que ele propos (ou antigas, sem autor)
   tem_envios: boolean; // com envios: so titulo e prazo mudam, e excluir vira arquivar
 }
 
 export interface CaixaAPI {
+  pagina?: number; // qual foto (0 = primeira), quando o aluno enviou varias
   x: number;
   y: number;
   largura: number;
@@ -246,7 +250,7 @@ export function criarAtividadesLote(payload: {
   turma_ids: string[];
   titulo: string;
   tipo: AtividadeAPI["tipo"];
-  questoes?: { enunciado: string; resposta_correta: string }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[] }[];
   valor_total?: number;
   prazo?: string;
 }): Promise<AtividadeAPI[]> {
@@ -257,7 +261,7 @@ export function editarAtividade(id: string, payload: {
   titulo?: string;
   prazo?: string | null; // null limpa o prazo
   valor_total?: number;
-  questoes?: { enunciado: string; resposta_correta: string }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[] }[];
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>(`/atividades/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 }
@@ -293,6 +297,14 @@ export function enviarTexto(atividadeId: string, texto: string): Promise<unknown
   });
 }
 
+// prova/exercicio objetivo: o aluno marca a letra e a correcao sai na hora (sem IA)
+export function enviarObjetiva(atividadeId: string, respostas: Record<string, string>): Promise<unknown> {
+  return request("/submissoes/objetiva", {
+    method: "POST",
+    body: JSON.stringify({ atividade_id: atividadeId, respostas }),
+  });
+}
+
 export interface SubmissaoRevisaoAPI {
   id: string;
   atividade_id: string;
@@ -300,6 +312,8 @@ export interface SubmissaoRevisaoAPI {
   materia: string;
   aluno_id: string;
   aluno_nome: string;
+  turma_id: string;
+  turma_nome: string;
   status: string;
   criado_em: string;
   nota: number | null;
@@ -326,9 +340,9 @@ export function verSubmissao(id: string): Promise<SubmissaoAPI> {
 
 // a rota exige o Bearer token, entao nao da pra usar a URL direto num <img src>: busca como
 // blob e devolve uma URL local (revogada pelo chamador quando nao precisar mais)
-export async function urlImagemSubmissao(id: string): Promise<string> {
+export async function urlImagemSubmissao(id: string, pagina = 0): Promise<string> {
   const token = getToken();
-  const response = await fetch(`${API_URL}/submissoes/${id}/imagem`, {
+  const response = await fetch(`${API_URL}/submissoes/${id}/imagem?pagina=${pagina}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!response.ok) throw new ApiError("Não foi possível carregar a foto.");
@@ -351,10 +365,11 @@ export async function urlFiguraQuestao(atividadeId: string, codigo: string): Pro
   return URL.createObjectURL(await response.blob());
 }
 
-export function enviarImagem(atividadeId: string, file: File): Promise<SubmissaoAPI> {
+// varias fotos do mesmo trabalho, na ordem: o backend le todas numa chamada so e junta o texto
+export function enviarImagem(atividadeId: string, files: File[]): Promise<SubmissaoAPI> {
   const formData = new FormData();
   formData.append("atividade_id", atividadeId);
-  formData.append("file", file);
+  files.forEach((f) => formData.append("files", f));
   return request<SubmissaoAPI>("/submissoes/imagem", { method: "POST", body: formData });
 }
 
@@ -664,3 +679,70 @@ const consulta = (f: FiltroLog) =>
 export const logsSeguranca = (f: FiltroLog) => request<EventoSegurancaAPI[]>(`/logs/seguranca?${consulta(f)}`);
 export const logsAuditoria = (f: FiltroLog) => request<AuditoriaAPI[]>(`/logs/auditoria?${consulta(f)}`);
 export const logsIntegridade = () => request<IntegridadeAPI>("/logs/integridade");
+
+
+// ---- niveis e metas ----
+export type TipoMetaAPI = "ENTREGAS" | "ENTREGAS_NO_PRAZO" | "NOTA_ATIVIDADE" | "MEDIA_MATERIA" | "DOMINIO_COMPETENCIA";
+
+export interface MetaPayload {
+  titulo: string;
+  descricao?: string;
+  tipo: TipoMetaAPI;
+  alvo: number;
+  materia_id?: string;
+  competencia?: string;
+  pontos: number;
+  inicio?: string;
+  fim?: string;
+  turma_id?: string; // aluno_id = individual; turma_id = turma; nenhum = escola toda (so gestor)
+  aluno_id?: string;
+}
+
+export interface MetaAPI extends Omit<MetaPayload, "turma_id" | "aluno_id" | "inicio" | "fim"> {
+  id: string;
+  inicio: string;
+  fim: string | null;
+  escopo: "ESCOLA" | "TURMA" | "ALUNO";
+  escopo_nome: string;
+  alunos_alvo: number;
+  concluidos: number;
+  pode_editar: boolean;
+}
+
+export interface NivelAPI {
+  nivel: number;
+  nome: string;
+  pontos: number;
+  pontos_nivel_atual: number;
+  pontos_proximo: number | null;
+}
+
+export interface MetaAlunoAPI {
+  id: string;
+  titulo: string;
+  descricao: string | null;
+  tipo: TipoMetaAPI;
+  alvo: number;
+  progresso: number;
+  pontos: number;
+  inicio: string;
+  fim: string | null;
+  status: "FUTURA" | "EM_ANDAMENTO" | "CONCLUIDA" | "ENCERRADA";
+  concluida_em: string | null;
+}
+
+export interface RankingItemAPI {
+  aluno_id: string;
+  nome: string;
+  pontos: number;
+  nivel: number;
+  nome_nivel: string;
+  metas_concluidas: number;
+}
+
+export const criarMeta = (p: MetaPayload) => request<MetaAPI>("/metas", { method: "POST", body: JSON.stringify(p) });
+export const listarMetas = () => request<MetaAPI[]>("/metas");
+export const arquivarMeta = (id: string) => request<void>(`/metas/${id}`, { method: "DELETE" });
+export const minhasMetas = () => request<{ nivel: NivelAPI; metas: MetaAlunoAPI[] }>("/metas/minhas");
+export const rankingMetas = (turmaId?: string) =>
+  request<RankingItemAPI[]>(`/metas/ranking${turmaId ? `?turma_id=${turmaId}` : ""}`);

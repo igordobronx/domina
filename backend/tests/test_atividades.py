@@ -107,3 +107,132 @@ def test_gabarito_so_vai_para_o_professor_e_tem_envios_aparece():
     do_aluno = next(x for x in client.get("/atividades", headers=aluno).json() if x["id"] == a["id"])
     assert do_aluno["questoes"][0]["resposta_correta"] is None
     assert next(x for x in client.get("/atividades", headers=p).json() if x["id"] == a["id"])["tem_envios"] is True
+
+
+def test_fila_traz_turma_e_filtra_por_turma():
+    g, p, t1, t2, materia = _setup()
+    _lote(p, materia, [t1, t2])
+    todas = client.get("/submissoes", headers=p)
+    assert todas.status_code == 200
+    for s in todas.json():
+        assert s["turma_nome"] and s["turma_id"]
+    um = client.get(f"/submissoes?turma_id={t2}", headers=p)
+    assert um.status_code == 200
+    assert all(s["turma_id"] == t2 for s in um.json())
+    assert client.get("/submissoes?turma_id=00000000-0000-0000-0000-000000000000", headers=p).status_code == 404
+
+
+def _objetiva(p, materia, turmas):
+    qs = [{"enunciado": "2+2?", "alternativas": ["3", "4", "5", "6", "7"], "resposta_correta": "b"},
+          {"enunciado": "Capital do Brasil?", "alternativas": ["Rio", "SP", "Brasília", "BH"], "resposta_correta": "C"}]
+    return client.post("/atividades/lote", headers=p, json={
+        "materia_id": materia, "turma_ids": turmas, "titulo": "Prova objetiva", "tipo": "PROVA_OBJETIVA",
+        "valor_total": 10, "questoes": qs})
+
+
+def test_objetiva_corrige_na_hora_e_nao_vaza_gabarito():
+    g, p, t1, t2, materia = _setup()
+    r = _objetiva(p, materia, [t1])
+    assert r.status_code == 201, r.text
+    ativ = r.json()[0]
+    assert [q["alternativas"][1] for q in ativ["questoes"]][0] == "4"
+    assert ativ["questoes"][0]["resposta_correta"] == "B"  # normalizado para maiuscula
+
+    aluno = ativ["alunos"][0]["id"]
+    env = client.post("/submissoes/objetiva", headers=p, json={
+        "atividade_id": ativ["id"], "aluno_id": aluno, "respostas": {"Q1": "b", "Q2": "A"}})
+    assert env.status_code == 201, env.text
+    cor = client.get(f"/submissoes/{env.json()['id']}/correcao", headers=p).json()
+    assert cor["status"] == "APROVADA" and float(cor["nota_professor"]) == 5.0  # 1 de 2 questoes x 5
+    # segunda entrega do mesmo aluno: bloqueada
+    assert client.post("/submissoes/objetiva", headers=p, json={
+        "atividade_id": ativ["id"], "aluno_id": aluno, "respostas": {}}).status_code == 409
+
+    # o aluno ve as alternativas, mas nao o gabarito
+    # o aluno ve as alternativas, mas nunca o gabarito
+    ta = token("aluno@domina.com")
+    vistas = [a for a in client.get("/atividades", headers=ta).json() if a["id"] == ativ["id"]]
+    if vistas:  # so se o aluno do seed estiver na 3º Ano A
+        assert vistas[0]["questoes"][0]["alternativas"] and vistas[0]["questoes"][0]["resposta_correta"] is None
+
+
+def test_objetiva_valida_gabarito_e_alternativa_marcada():
+    g, p, t1, t2, materia = _setup()
+    ruim = {"enunciado": "x", "alternativas": ["a", "b"], "resposta_correta": "D"}
+    r = client.post("/atividades/lote", headers=p, json={"materia_id": materia, "turma_ids": [t1],
+                    "titulo": "t", "tipo": "EXERCICIO", "questoes": [ruim]})
+    assert r.status_code == 422
+    ativ = _objetiva(p, materia, [t1]).json()[0]
+    aluno = ativ["alunos"][-1]["id"]
+    assert client.post("/submissoes/objetiva", headers=p, json={
+        "atividade_id": ativ["id"], "aluno_id": aluno, "respostas": {"Q1": "Z"}}).status_code == 422
+    # atividade discursiva nao aceita envio objetivo
+    disc = _lote(p, materia, [t1]).json()[0]
+    assert client.post("/submissoes/objetiva", headers=p, json={
+        "atividade_id": disc["id"], "aluno_id": disc["alunos"][0]["id"], "respostas": {}}).status_code == 422
+
+
+def test_revisao_do_professor_mostra_so_o_que_propos_ou_corrigiu():
+    from app.database import SessionLocal
+    from app.models.usuario import Correcao
+    g, p, t1, t2, materia = _setup()
+    if "prof2" not in _cache:
+        r = client.post("/usuarios", headers=g, json={"nome": "Prof Dois", "email": "prof.dois@x.com", "senha": "123456",
+                        "perfil": "PROFESSOR", "turma_id": t1})
+        _cache["prof2"], _cache["prof2_id"] = True, r.json()["id"]
+    p2 = token("prof.dois@x.com", "123456")
+    ativ = _lote(p, materia, [t1]).json()[0]   # proposta pelo professor 1
+    aluno = ativ["alunos"][0]["id"]
+    sub = client.post("/submissoes/texto", headers=p, json={"atividade_id": ativ["id"], "aluno_id": aluno, "texto": "x = 5"}).json()
+
+    ids = lambda h: {s["id"] for s in client.get("/submissoes", headers=h).json()}  # noqa: E731
+    assert sub["id"] in ids(p)                  # quem propos ve
+    assert sub["id"] not in ids(p2)             # o outro professor da mesma turma nao
+    assert sub["id"] in ids(g)                  # gestor ve tudo
+    assert [a for a in client.get("/atividades", headers=p2).json() if a["id"] == ativ["id"]][0]["na_minha_revisao"] is False
+    assert [a for a in client.get("/atividades", headers=p).json() if a["id"] == ativ["id"]][0]["na_minha_revisao"] is True
+
+    import uuid
+    from app.models.enum import StatusCorrecaoEnum
+    with SessionLocal() as db:                  # o professor 2 corrige (aprova) -> passa a ver
+        db.add(Correcao(submissao_id=uuid.UUID(sub["id"]), nota_ia=100, nota_professor=100, confianca=1,
+                        status=StatusCorrecaoEnum.APROVADA, modelo_usado="m", versao_prompt="v",
+                        revisado_por=uuid.UUID(_cache["prof2_id"])))
+        db.commit()
+    assert sub["id"] in ids(p2)
+
+
+def test_atividade_sem_autor_nao_aparece_para_professor_so_para_gestor():
+    import uuid
+    from app.database import SessionLocal
+    from app.models.usuario import Atividade
+    g, p, t1, t2, materia = _setup()
+    ativ = _lote(p, materia, [t1]).json()[0]
+    sub = client.post("/submissoes/texto", headers=p, json={"atividade_id": ativ["id"], "aluno_id": ativ["alunos"][0]["id"], "texto": "x"}).json()
+    with SessionLocal() as db:  # simula atividade antiga: sem autor
+        db.get(Atividade, uuid.UUID(ativ["id"])).criado_por = None
+        db.commit()
+    ids = lambda h: {s["id"] for s in client.get("/submissoes", headers=h).json()}  # noqa: E731
+    assert sub["id"] not in ids(p)          # nem o professor da turma: nao ha "todos da turma"
+    assert sub["id"] in ids(g)
+
+
+def test_materia_de_redacao_nasce_com_as_5_competencias():
+    from app.database import SessionLocal
+    from app.models.usuario import Tema
+    import uuid
+    g, *_ = _setup()
+    m = client.post("/materias", headers=g, json={"nome": "Redação nova", "tipo": "REDACAO_ENEM"}).json()
+    with SessionLocal() as db:
+        codigos = sorted(c for (c,) in db.query(Tema.habilidade_codigo).filter_by(materia_id=uuid.UUID(m["id"]), atividade_id=None))
+    assert codigos == ["C1", "C2", "C3", "C4", "C5"]
+
+
+def test_simbolos_unicode_de_quimica_e_matematica_voltam_intactos():
+    g, p, t1, t2, materia = _setup()
+    enun, gab = "Balanceie: H₂SO₄ + NaOH ⇌ Na₂SO₄ + H₂O; calcule √(x²) ≤ π", "2H⁺ + SO₄²⁻ → Δ ½ ∫ α"
+    r = client.post("/atividades/lote", headers=p, json={"materia_id": materia, "turma_ids": [t1], "titulo": "Química ⚗",
+                    "tipo": "EXERCICIO", "questoes": [{"enunciado": enun, "resposta_correta": gab}]})
+    assert r.status_code == 201, r.text
+    q = r.json()[0]["questoes"][0]
+    assert (q["enunciado"], q["resposta_correta"]) == (enun, gab)

@@ -17,14 +17,7 @@ from app.routers.correcoes import _atualizar_dominio
 
 SENHA = "senha123"
 
-# as 5 competencias da redacao do ENEM (INEP); cada uma vira um Tema da materia
-COMPETENCIAS_ENEM = [
-    ("C1", "Domínio da modalidade escrita formal da língua portuguesa"),
-    ("C2", "Compreensão da proposta e aplicação de conceitos no texto dissertativo-argumentativo"),
-    ("C3", "Seleção, organização e interpretação de informações e argumentos"),
-    ("C4", "Conhecimento dos mecanismos linguísticos da argumentação"),
-    ("C5", "Proposta de intervenção respeitando os direitos humanos"),
-]
+from app.competencias import COMPETENCIAS_ENEM  # noqa: E402
 
 TITULOS_ATIVIDADES = [
     "Redação 1 - desigualdade social no Brasil",
