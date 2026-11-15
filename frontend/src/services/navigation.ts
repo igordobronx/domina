@@ -15,6 +15,7 @@ export const allowedPages: Record<Role, Page[]> = {
     "calendario",
     "metas",
     "revisoes",
+    "estudos",
     "turmas",
     "materiais",
     "ajuda",

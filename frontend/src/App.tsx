@@ -47,6 +47,7 @@ import { Classes, Materials } from "./screens/Management";
 import { Logs } from "./screens/Logs";
 import { Calendar } from "./screens/Calendar";
 import { Metas } from "./screens/Metas";
+import { ExerciciosProfessor } from "./screens/Exercicios";
 import { Equipe, Escolas, PainelEscola, PainelPlataforma } from "./screens/Admin";
 import { Help, Settings } from "./screens/Settings";
 
@@ -74,7 +75,7 @@ const navItems: {
     icon: ChartNoAxesCombined,
     roles: ["aluno"],
   },
-  { id: "estudos", label: "Plano de estudo", icon: Sparkles, roles: ["aluno"] },
+  { id: "estudos", label: "Exercícios", icon: Sparkles, roles: ["aluno", "professor"] },
   {
     id: "revisoes",
     label: "Revisões",
@@ -571,7 +572,8 @@ export function App() {
             {page === "equipe" && role === "gestor" && <Equipe notify={notify} />}
             {page === "painel" && role === "gestor" && <PainelEscola notify={notify} />}
             {page === "evolucao" && <Evolution currentUser={currentUser} />}
-            {page === "estudos" && (
+            {page === "estudos" && role === "professor" && <ExerciciosProfessor notify={notify} />}
+            {page === "estudos" && role === "aluno" && (
               <Studies
                 state={state}
                 update={update}
@@ -618,7 +620,6 @@ export function App() {
                   {label
                     .replace("Minhas ", "")
                     .replace("Minha ", "")
-                    .replace("Plano de estudo", "Estudar")
                     .replace("Visão geral", "Início")
                     .replace("Materiais e critérios", "Materiais")}
                 </span>

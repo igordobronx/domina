@@ -2640,3 +2640,22 @@ mark.ponto {
 .simbolos-lista { display: flex; flex-wrap: wrap; gap: 4px; }
 .simbolos-lista button { min-width: 34px; height: 34px; font-size: 17px; border: 1px solid rgba(0,0,0,.14); border-radius: 8px; background: #fff; cursor: pointer; }
 .simbolos-lista button:hover { background: rgba(25,116,81,.1); }
+
+/* exercicios do professor */
+.exercicio-preview { white-space: pre-wrap; margin: 0; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.lista-alternativas { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 14px; }
+.lista-alternativas li.certa { color: #196d4e; font-weight: 500; }
+.enunciado-ex { white-space: pre-wrap; }
+.comparar-respostas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin: 12px 0; }
+.comparar-respostas > div { border: 1px solid #dcd8cc; border-radius: 8px; padding: 12px; background: #fcfbf8; }
+.comparar-respostas h3 { font-size: 13px; margin: 0 0 6px; }
+.comparar-respostas p { white-space: pre-wrap; margin: 0; }
+.tabs button svg { vertical-align: -2px; }
+.form-grid .span-2 { grid-column: 1 / -1; }
+.ex-form { margin-top: 12px; }
+.ex-form .alternativas-form .alternativa { flex-direction: row; align-items: flex-start; gap: 10px; }
+.ex-form .alternativas-form .alternativa > b { padding-top: 13px; }
+.ex-form .alternativas-form .alternativa input[type="radio"] { width: auto; margin-top: 15px; }
+.ex-form .alternativas-form .alternativa > :last-child { flex: 1; min-width: 0; }
+.card > .tabs + .tabs { margin-top: 8px; }
+@media (max-width: 640px) { .form-grid .span-2 { grid-column: auto; } }
