@@ -271,11 +271,15 @@ class Exercicio(Base):
     assunto = Column(String(200), nullable=True)  # tema digitado pelo professor (ex.: "Coesão", "Função afim")
     materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=True)
     turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), nullable=True)
+    # so alguns alunos da turma: lista de ids (texto). Nulo = a turma toda
+    alunos = Column(JSON, nullable=True)
     criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
     tipo = Column(String(12), nullable=False, default="OBJETIVO", server_default="OBJETIVO")  # OBJETIVO | DISCURSIVO
     alternativas = Column(JSON, nullable=True)  # so no objetivo
     resposta_correta = Column(Integer, nullable=True)  # indice da alternativa certa (objetivo)
-    resposta_exemplo = Column(Text, nullable=True)  # discursivo: o aluno compara depois de responder
+    resposta_exemplo = Column(Text, nullable=True)  # discursivo: o aluno compara depois de responder (= a 1a)
+    # discursivo com mais de uma resposta de exemplo (todas, inclusive a 1a); nulo = so a resposta_exemplo
+    respostas_exemplo = Column(JSON, nullable=True)
     explicacao = Column(Text, nullable=True)
     # excluir = desativar (as respostas dos alunos ficam)
     ativo = Column(Boolean, nullable=False, default=True, server_default=true())
@@ -289,7 +293,11 @@ class ExercicioResposta(Base):
     exercicio_id = Column(UUID(as_uuid=True), ForeignKey("exercicio.id"), nullable=False)
     aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
     resposta = Column(Text, nullable=False)
-    correta = Column(Boolean, nullable=True)  # nulo no discursivo (o aluno so compara com o exemplo)
+    # objetivo: calculada na hora. Discursivo: nulo ate o professor marcar certo/errado
+    correta = Column(Boolean, nullable=True)
+    # CERTA | PARCIAL | ERRADA (nulo = discursivo ainda sem correcao). correta acompanha: PARCIAL -> nulo
+    resultado = Column(String(8), nullable=True)
+    comentario = Column(Text, nullable=True)  # comentario do professor para o aluno
     criado_em = Column(DateTime, server_default=func.now(), nullable=True)
 
 

@@ -16,7 +16,7 @@ import {
   Menu,
   Search,
   Settings2,
-  Sparkles,
+  NotebookPen,
   Users,
   X,
   WifiOff,
@@ -75,7 +75,6 @@ const navItems: {
     icon: ChartNoAxesCombined,
     roles: ["aluno"],
   },
-  { id: "estudos", label: "Exercícios", icon: Sparkles, roles: ["aluno", "professor"] },
   {
     id: "revisoes",
     label: "Revisões",
@@ -88,6 +87,7 @@ const navItems: {
     icon: Users,
     roles: ["professor", "gestor"],
   },
+  { id: "estudos", label: "Exercícios", icon: NotebookPen, roles: ["aluno", "professor"] },
   {
     id: "calendario",
     label: "Calendário",

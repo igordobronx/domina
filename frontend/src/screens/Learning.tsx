@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
+  X,
   RotateCcw,
   Sparkles,
   TrendingUp,
@@ -210,6 +211,32 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
 }
 // Aba Exercicios do aluno: "Para voce (IA)" = gerados na hora pelos pontos fracos dele;
 // "Do professor" = publicados pelo professor da turma (mesmo que a IA tenha ajudado a criar).
+// resultado discreto: bolinha colorida com icone + frase (no lugar do selo colorido)
+function ResultadoMini({ resultado }: { resultado: "CERTA" | "ERRADA" | "PARCIAL" | null }) {
+  const [classe, icone, texto] =
+    resultado === "CERTA" ? ["certo", <Check size={12} key="i" />, "Você acertou"]
+    : resultado === "ERRADA" ? ["errado", <X size={12} key="i" />, "Você errou"]
+    : resultado === "PARCIAL" ? ["parcial", <Check size={12} key="i" />, "Parcialmente certo"]
+    : ["espera", <Check size={12} key="i" />, "Esperando o professor"];
+  return <p className="resultado-mini"><span className={`ponto ${classe}`}>{icone}</span>{texto}</p>;
+}
+
+// resposta do aluno nos exercicios da IA (so um envio): guardada no navegador, por aluno
+type RespostaIA = { escolha: number; certo: boolean };
+function useRespostasIA(userId?: string) {
+  const chave = `domina-ia-respostas:${userId ?? "demo"}`;
+  const ler = (): Record<string, RespostaIA> => {
+    try { return JSON.parse(localStorage.getItem(chave) ?? "{}"); } catch { return {}; }
+  };
+  const [mapa, setMapa] = useState<Record<string, RespostaIA>>(ler);
+  const salvar = (pergunta: string, r: RespostaIA) => {
+    const novo = { ...ler(), [pergunta]: r };
+    try { localStorage.setItem(chave, JSON.stringify(novo)); } catch { /* sem armazenamento: vale so ate sair da tela */ }
+    setMapa(novo);
+  };
+  return [mapa, salvar] as const;
+}
+
 export function Studies(props: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
@@ -231,7 +258,7 @@ export function Studies(props: {
               <p>Práticas curtas para treinar. Não valem nota.</p>
             </div>
           </div>
-          <div className="tabs" role="group" aria-label="Origem dos exercícios">
+          <div className="botoes-escolha" role="group" aria-label="Origem dos exercícios">
             <button aria-pressed={aba === "ia"} className={aba === "ia" ? "active" : ""} onClick={() => setAba("ia")}>
               <Sparkles size={14} /> Para você (IA)
             </button>
@@ -261,6 +288,7 @@ function PlanoIA({
   currentUser?: UsuarioAtual | null;
 }) {
   const real = !!currentUser;
+  const [respostasIA, salvarRespostaIA] = useRespostasIA(currentUser?.id);
   const [exerciciosReais, setExerciciosReais] = useState<ExercicioAPI[] | null>(null);
   const [carregando, setCarregando] = useState(real);
   const [recarregando, setRecarregando] = useState(false);
@@ -290,13 +318,15 @@ function PlanoIA({
       <Exercise
         key={task.id}
         task={task}
+        anterior={respostasIA[task.question] ?? null}
         onBack={() => select(null)}
-        onComplete={() =>
+        onComplete={(escolha, certo) => {
+          salvarRespostaIA(task.question, { escolha, certo });
           update((s) => ({
             ...s,
             completed: [...new Set([...s.completed, task.id])],
-          }))
-        }
+          }));
+        }}
       />
     );
   if (real && carregando)
@@ -329,40 +359,41 @@ function PlanoIA({
             disabled={recarregando}
             onPress={() => carregar(true)}
           >
-            {recarregando ? "Recarregando..." : "Recarregar plano de estudo (usa pouco)"}
+            {recarregando ? "Carregando..." : "Carregar exercícios (usar pouco)"}
           </Button>
         </div>
       )}
       <div className="study-grid">
-        {tarefas.map((t, i) => (
+        {tarefas.map((t, i) => {
+          const feito = respostasIA[t.question] ?? null;
+          // o botao verde (principal) e sempre o primeiro que ainda nao foi feito
+          const proximo = tarefas.findIndex((x) => !respostasIA[x.question]) === i;
+          return (
           <Card key={t.id} className="study-task">
             <div className="section-title">
               <span className="task-number">0{i + 1}</span>
-              {state.completed.includes(t.id) ? (
-                <Badge>
-                  <Check size={13} />
-                  Concluído
-                </Badge>
-              ) : i === 0 ? (
+              {feito ? (
+                <Badge tone="neutral">Feito</Badge>
+              ) : proximo ? (
                 <Badge>Recomendado para você</Badge>
               ) : (
                 <Badge tone="neutral">{t.type}</Badge>
               )}
             </div>
+            {feito && <ResultadoMini resultado={feito.certo ? "CERTA" : "ERRADA"} />}
             <span className="eyebrow">{t.topic}</span>
             <h2>{t.title}</h2>
             <p>{t.description}</p>
             <Button
-              variant={i === 0 ? "primary" : "secondary"}
+              variant={proximo ? "primary" : "secondary"}
               icon={ArrowRight}
               onPress={() => select(t.id)}
             >
-              {state.completed.includes(t.id)
-                ? "Praticar novamente"
-                : "Começar prática"}
+              {feito ? "Ver resposta" : "Começar prática"}
             </Button>
           </Card>
-        ))}
+          );
+        })}
       </div>
       <p className="tiny muted">
         {real
@@ -374,15 +405,18 @@ function PlanoIA({
 }
 function Exercise({
   task,
+  anterior,
   onBack,
   onComplete,
 }: {
   task: ExercicioComum;
+  anterior: RespostaIA | null;
   onBack: () => void;
-  onComplete: () => void;
+  onComplete: (escolha: number, certo: boolean) => void;
 }) {
-  const [answer, setAnswer] = useState<number | null>(null);
-  const [checked, setChecked] = useState(false);
+  // so uma resposta: se ja foi feito, abre mostrando o resultado
+  const [answer, setAnswer] = useState<number | null>(anterior?.escolha ?? null);
+  const [checked, setChecked] = useState(anterior !== null);
   return (
     <>
       <button className="back-link" onClick={onBack}>
@@ -398,7 +432,7 @@ function Exercise({
           {task.options.map((o, i) => (
             <label
               key={o}
-              className={`option ${answer === i ? "chosen" : ""} ${checked && i === task.answer ? "correct" : ""}`}
+              className={`option ${answer === i ? "chosen" : ""} ${checked && i === task.answer ? "correct" : ""} ${checked && answer === i && i !== task.answer ? "wrong" : ""}`}
             >
               <input
                 type="radio"
@@ -420,9 +454,7 @@ function Exercise({
               className={`exercise-feedback ${answer === task.answer ? "" : "retry"}`}
             >
               <h3>
-                {answer === task.answer
-                  ? "Isso mesmo. Mais um passo!"
-                  : "É errando que a gente constrói domínio."}
+                {answer === task.answer ? "Você acertou." : "Você errou."}
               </h3>
               <p>{task.explanation}</p>
             </div>
@@ -433,7 +465,7 @@ function Exercise({
             disabled={answer === null}
             onPress={() => {
               setChecked(true);
-              onComplete();
+              onComplete(answer as number, answer === task.answer);
             }}
           >
             Conferir resposta
@@ -476,16 +508,15 @@ function DoProfessor({ real, aberto, setAberto }: { real: boolean; aberto: boole
       <p className="tiny muted">{feitos} de {lista.length} feito(s)</p>
       <div className="study-grid">
         {lista.map((ex) => (
-          <Card key={ex.id} className="study-task">
+          <Card key={ex.id} className="study-task ex-prof">
             <div className="section-title">
               <Badge tone="neutral">{ex.tipo === "OBJETIVO" ? "Objetivo" : "Discursivo"}</Badge>
               {ex.minha_resposta !== null ? (
-                <Badge tone={ex.correta === false ? "amber" : "green"}>
-                  <Check size={13} />
-                  {ex.correta === false ? "Feito (rever)" : "Feito"}
-                </Badge>
+                <Badge tone="neutral">Feito</Badge>
               ) : ex.gerado_por_ia ? <Badge tone="neutral"><Sparkles size={13} /> Com ajuda da IA</Badge> : null}
             </div>
+            {ex.minha_resposta !== null && <ResultadoMini resultado={ex.tipo === "OBJETIVO" && !ex.resultado ? (ex.correta ? "CERTA" : "ERRADA") : (ex.resultado as "CERTA" | "ERRADA" | "PARCIAL" | null)} />}
+            {ex.comentario && <Badge tone="amber">O professor comentou</Badge>}
             <span className="eyebrow">{ex.materia_nome} · {ex.assunto}</span>
             <h2>{ex.titulo}</h2>
             <p className="tiny muted">Prof. {ex.professor_nome}</p>
@@ -517,7 +548,6 @@ function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
     } catch (e) { setErro(e instanceof Error ? e.message : "Não foi possível enviar."); }
     finally { setEnviando(false); }
   };
-  const tentarDeNovo = () => { setVisto(false); setEscolha(null); setTexto(""); };
   return (
     <>
       <button className="back-link" onClick={onBack}>
@@ -533,7 +563,7 @@ function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
             <legend className="sr-only">Escolha uma resposta</legend>
             {(ex.alternativas ?? []).map((o, i) => (
               <label key={i}
-                className={`option ${marcada === i ? "chosen" : ""} ${visto && i === ex.resposta_correta ? "correct" : ""}`}>
+                className={`option ${marcada === i ? "chosen" : ""} ${visto && i === ex.resposta_correta ? "correct" : ""} ${visto && marcada === i && i !== ex.resposta_correta ? "wrong" : ""}`}>
                 <input type="radio" name="resposta-prof" checked={marcada === i} disabled={visto} onChange={() => setEscolha(i)} />
                 <span className="option-letter">{LETRAS_EX[i]}</span>
                 {o}
@@ -543,32 +573,41 @@ function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
         ) : visto ? (
           <div className="comparar-respostas">
             <div><h3>Sua resposta</h3><p>{ex.minha_resposta}</p></div>
-            <div><h3>Resposta de exemplo do professor</h3><p>{ex.resposta_exemplo}</p></div>
+            <div>
+              <h3>{ex.respostas_exemplo.length > 1 ? "Respostas de exemplo do professor" : "Resposta de exemplo do professor"}</h3>
+              {(ex.respostas_exemplo.length ? ex.respostas_exemplo : [ex.resposta_exemplo ?? ""]).map((e, i, todas) => (
+                <p key={i} className={i ? "exemplo-extra" : ""}>{todas.length > 1 && <b>{i + 1}. </b>}{e}</p>
+              ))}
+            </div>
           </div>
         ) : (
-          <label>Sua resposta
-            <textarea rows={6} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva aqui" />
-          </label>
+          <div className="campo-resposta">
+            <label htmlFor="resposta-discursiva">Responder</label>
+            <textarea id="resposta-discursiva" rows={7} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva aqui" />
+          </div>
         )}
         {erro && <p className="error" role="alert">{erro}</p>}
         {visto ? (
           <>
-            <div className={`exercise-feedback ${ex.correta === false ? "retry" : ""}`}>
+            <div className={`exercise-feedback ${ex.resultado && ex.resultado !== "CERTA" ? "retry" : ""}`}>
               <h3>
-                {ex.correta === true ? "Isso mesmo. Mais um passo!"
-                  : ex.correta === false ? "É errando que a gente constrói domínio."
-                  : "Compare sua resposta com a do professor."}
+                {objetivo
+                  ? ex.correta ? "Você acertou." : "Você errou."
+                  : ex.resultado === "CERTA" ? "O professor marcou sua resposta como certa."
+                  : ex.resultado === "PARCIAL" ? "O professor marcou sua resposta como parcialmente certa. Compare com a do exemplo."
+                  : ex.resultado === "ERRADA" ? "O professor marcou sua resposta como errada. Compare com a do exemplo."
+                  : "Compare sua resposta com a do professor. Ele ainda vai corrigir."}
               </h3>
               {ex.explicacao && <p>{ex.explicacao}</p>}
+              {ex.comentario && <p className="comentario-prof"><b>Comentário do professor:</b> {ex.comentario}</p>}
             </div>
             <div className="form-actions left">
-              <Button variant="secondary" icon={RotateCcw} onPress={tentarDeNovo}>Tentar de novo</Button>
               <Button onPress={onBack}>Concluir</Button>
             </div>
           </>
         ) : (
           <Button disabled={enviando || (objetivo ? escolha === null : !texto.trim())} onPress={enviar}>
-            {enviando ? "Enviando..." : objetivo ? "Conferir resposta" : "Enviar e ver a resposta de exemplo"}
+            {enviando ? "Enviando..." : objetivo ? "Conferir resposta" : "Enviar"}
           </Button>
         )}
       </Card>

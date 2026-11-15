@@ -22,8 +22,9 @@ from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
 from app.models.usuario import Exercicio, ExercicioResposta, Materia, Turma, Usuario, UsuarioTurma
 from app.routers.submissoes import _professor_da_turma
 from app.schemas.exercicio import (
-    ExercicioAlunoResponse, ExercicioProfessorResponse, ExercicioRequest, ResponderRequest,
-    SugerirRequest, SugerirRespostaRequest, SugestaoRespostaResponse,
+    AvaliarRespostaRequest, ExercicioAlunoResponse, ExercicioLoteRequest, ExercicioProfessorResponse,
+    ExercicioRequest, RespostaAlunoResponse, ResponderRequest, ResumoAlunoResponse, SugerirRequest,
+    SugerirRespostaRequest, SugestaoRespostaResponse,
 )
 
 router = APIRouter(prefix="/exercicios", tags=["exercicios"])
@@ -41,6 +42,30 @@ def _materia_da_escola(db: Session, usuario: Usuario, materia_id) -> Materia:
     return materia
 
 
+def _alunos_da_turma(db: Session, turma_id) -> list[Usuario]:
+    return (db.query(Usuario).join(UsuarioTurma, UsuarioTurma.usuario_id == Usuario.id)
+            .filter(UsuarioTurma.turma_id == turma_id, UsuarioTurma.papel == UsuarioTurmaPapelEnum.ALUNO)
+            .order_by(Usuario.nome).all())
+
+
+def _exemplos(ex: Exercicio) -> list[str]:
+    return ex.respostas_exemplo or ([ex.resposta_exemplo] if ex.resposta_exemplo else [])
+
+
+def _resultado(r: ExercicioResposta | None) -> str | None:
+    if r is None:
+        return None
+    if r.resultado:
+        return r.resultado
+    return "CERTA" if r.correta else "ERRADA" if r.correta is False else None
+
+
+def _alvo(db: Session, ex: Exercicio) -> list[Usuario]:
+    """Quem deve fazer: os escolhidos (se ainda estao na turma) ou a turma toda."""
+    alunos = _alunos_da_turma(db, ex.turma_id)
+    return [a for a in alunos if str(a.id) in ex.alunos] if ex.alunos else alunos
+
+
 def _conferir(db: Session, usuario: Usuario, payload: ExercicioRequest) -> None:
     _materia_da_escola(db, usuario, payload.materia_id)
     turma = db.get(Turma, payload.turma_id)
@@ -48,6 +73,11 @@ def _conferir(db: Session, usuario: Usuario, payload: ExercicioRequest) -> None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
     if not _professor_da_turma(db, usuario, turma.id):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não leciona nesta turma.")
+    if payload.aluno_ids:
+        da_turma = {ut.usuario_id for ut in db.query(UsuarioTurma).filter_by(
+            turma_id=turma.id, papel=UsuarioTurmaPapelEnum.ALUNO)}
+        if not set(payload.aluno_ids) <= da_turma:
+            raise HTTPException(422, "Algum aluno escolhido não é desta turma.")
 
 
 def _meu(db: Session, usuario: Usuario, exercicio_id: uuid.UUID) -> Exercicio:
@@ -61,9 +91,11 @@ def _meu(db: Session, usuario: Usuario, exercicio_id: uuid.UUID) -> Exercicio:
 def _aplicar(ex: Exercicio, p: ExercicioRequest) -> None:
     ex.titulo, ex.assunto = p.titulo.strip(), p.assunto.strip()
     ex.materia_id, ex.turma_id, ex.tipo = p.materia_id, p.turma_id, p.tipo
+    ex.alunos = sorted({str(a) for a in p.aluno_ids}) if p.aluno_ids else None
     ex.enunciado = p.enunciado.strip()
     ex.alternativas, ex.resposta_correta = p.alternativas, p.resposta_correta
     ex.resposta_exemplo = p.resposta_exemplo.strip() if p.resposta_exemplo else None
+    ex.respostas_exemplo = p.respostas_exemplo if p.respostas_exemplo and len(p.respostas_exemplo) > 1 else None
     ex.explicacao = (p.explicacao or "").strip() or None
     ex.gerado_por_ia = p.gerado_por_ia
 
@@ -75,10 +107,14 @@ def _resposta_professor(db: Session, ex: Exercicio) -> ExercicioProfessorRespons
     return ExercicioProfessorResponse(
         id=ex.id, titulo=ex.titulo or "", assunto=ex.assunto or "", materia_id=ex.materia_id,
         materia_nome=db.get(Materia, ex.materia_id).nome, turma_id=ex.turma_id,
-        turma_nome=db.get(Turma, ex.turma_id).nome, tipo=ex.tipo, enunciado=ex.enunciado,
+        turma_nome=db.get(Turma, ex.turma_id).nome, tipo=ex.tipo,
+        aluno_ids=[uuid.UUID(a) for a in ex.alunos] if ex.alunos else None,
+        alunos_nomes=sorted(u.nome for u in db.query(Usuario).filter(
+            Usuario.id.in_([uuid.UUID(a) for a in ex.alunos]))) if ex.alunos else [], enunciado=ex.enunciado,
         alternativas=ex.alternativas, resposta_correta=ex.resposta_correta, resposta_exemplo=ex.resposta_exemplo,
+        respostas_exemplo=_exemplos(ex),
         explicacao=ex.explicacao, gerado_por_ia=ex.gerado_por_ia, criado_em=ex.criado_em,
-        respostas=total, acertos=acertos,
+        respostas=total, acertos=acertos, alunos_alvo=len(_alvo(db, ex)),
     )
 
 
@@ -90,8 +126,10 @@ def _resposta_aluno(db: Session, ex: Exercicio, minha: ExercicioResposta | None)
         alternativas=ex.alternativas, gerado_por_ia=ex.gerado_por_ia, criado_em=ex.criado_em,
     )
     if minha:  # gabarito so depois de responder
-        r.minha_resposta, r.correta = minha.resposta, minha.correta
+        r.minha_resposta, r.correta, r.comentario = minha.resposta, minha.correta, minha.comentario
+        r.resultado = _resultado(minha)
         r.resposta_correta, r.resposta_exemplo, r.explicacao = ex.resposta_correta, ex.resposta_exemplo, ex.explicacao
+        r.respostas_exemplo = _exemplos(ex)
     return r
 
 
@@ -122,6 +160,101 @@ def criar(payload: ExercicioRequest, usuario: Usuario = Depends(get_current_user
     db.commit()
     db.refresh(ex)
     return _resposta_professor(db, ex)
+
+
+@router.post("/lote", response_model=list[ExercicioProfessorResponse], status_code=status.HTTP_201_CREATED)
+def criar_em_turmas(payload: ExercicioLoteRequest, usuario: Usuario = Depends(get_current_user),
+                    db: Session = Depends(get_db)):
+    """O mesmo exercicio em varias turmas: um exercicio separado por turma (respostas nao se misturam)."""
+    _so_professor(usuario)
+    escolhidos = set(payload.aluno_ids or [])
+    criados, usados = [], set()
+    for turma_id in dict.fromkeys(payload.turma_ids):  # sem repetir, na ordem
+        dados = payload.model_dump(exclude={"turma_ids", "turma_id", "aluno_ids"})
+        if escolhidos:  # so os escolhidos que sao desta turma; nenhum = esta turma nao recebe
+            da_turma = {a.id for a in _alunos_da_turma(db, turma_id)}
+            daqui = escolhidos & da_turma
+            if not daqui:
+                continue
+            usados |= daqui
+            dados["aluno_ids"] = list(daqui)
+        um = ExercicioRequest(**dados, turma_id=turma_id)
+        _conferir(db, usuario, um)
+        ex = Exercicio(criado_por=usuario.id, aprovado_por=usuario.id)
+        _aplicar(ex, um)
+        db.add(ex)
+        db.flush()
+        registrar(db, usuario.id, "CRIAR", "Exercicio", ex.id)
+        criados.append(ex)
+    if escolhidos - usados:
+        db.rollback()
+        raise HTTPException(422, "Algum aluno escolhido não é das turmas marcadas.")
+    if not criados:
+        raise HTTPException(422, "Escolha pelo menos um aluno.")
+    db.commit()
+    return [_resposta_professor(db, ex) for ex in criados]
+
+
+@router.get("/resumo", response_model=list[ResumoAlunoResponse])
+def resumo_da_turma(turma_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Por aluno da turma: quantos exercicios (deste professor) fez e quantos acertou."""
+    _so_professor(usuario)
+    if not _professor_da_turma(db, usuario, turma_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não leciona nesta turma.")
+    exercicios = db.query(Exercicio).filter_by(criado_por=usuario.id, turma_id=turma_id, ativo=True).all()
+    respostas = {(r.exercicio_id, r.aluno_id): r for r in db.query(ExercicioResposta).filter(
+        ExercicioResposta.exercicio_id.in_([e.id for e in exercicios]))} if exercicios else {}
+    linhas = []
+    for aluno in _alunos_da_turma(db, turma_id):
+        meus = [e for e in exercicios if not e.alunos or str(aluno.id) in e.alunos]
+        feitas = [respostas[(e.id, aluno.id)] for e in meus if (e.id, aluno.id) in respostas]
+        resultados = [_resultado(r) for r in feitas]
+        linhas.append(ResumoAlunoResponse(
+            aluno_id=aluno.id, nome=aluno.nome, total=len(meus), feitos=len(feitas),
+            acertos=resultados.count("CERTA"), parciais=resultados.count("PARCIAL"),
+            corrigidos=sum(1 for x in resultados if x is not None)))
+    return linhas
+
+
+@router.get("/{exercicio_id}/respostas", response_model=list[RespostaAlunoResponse])
+def ver_respostas(exercicio_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    ex = _meu(db, usuario, exercicio_id)
+    respostas = {r.aluno_id: r for r in db.query(ExercicioResposta).filter_by(exercicio_id=ex.id)}
+    linhas = []
+    for aluno in _alvo(db, ex):
+        r = respostas.get(aluno.id)
+        linhas.append(RespostaAlunoResponse(
+            aluno_id=aluno.id, nome=aluno.nome, fez=r is not None,
+            resposta=r.resposta if r else None, correta=r.correta if r else None, resultado=_resultado(r),
+            comentario=r.comentario if r else None, respondido_em=r.criado_em if r else None))
+    return linhas
+
+
+@router.put("/{exercicio_id}/respostas/{aluno_id}", response_model=RespostaAlunoResponse)
+def avaliar_resposta(exercicio_id: uuid.UUID, aluno_id: uuid.UUID, payload: AvaliarRespostaRequest,
+                     usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Professor marca certa/parcial/errada (so no discursivo; o objetivo e automatico) e/ou comenta."""
+    ex = _meu(db, usuario, exercicio_id)
+    r = db.query(ExercicioResposta).filter_by(exercicio_id=ex.id, aluno_id=aluno_id).first()
+    if not r:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Este aluno ainda não respondeu.")
+    if "resultado" in payload.model_fields_set:
+        if ex.tipo == "OBJETIVO":
+            raise HTTPException(422, "No exercício objetivo o acerto é automático.")
+        r.resultado = payload.resultado
+        r.correta = {"CERTA": True, "ERRADA": False}.get(payload.resultado or "")
+    if "comentario" in payload.model_fields_set:
+        r.comentario = (payload.comentario or "").strip() or None
+    # parcial ou errada: o aluno precisa saber o que faltou
+    if r.resultado in ("PARCIAL", "ERRADA") and ex.tipo == "DISCURSIVO" and not r.comentario:
+        db.rollback()
+        raise HTTPException(422, "Para marcar como parcial ou errada, escreva um comentário para o aluno.")
+    registrar(db, usuario.id, "AVALIAR", "ExercicioResposta", r.id)
+    db.commit()
+    aluno = db.get(Usuario, aluno_id)
+    return RespostaAlunoResponse(aluno_id=aluno_id, nome=aluno.nome, fez=True, resposta=r.resposta,
+                                 correta=r.correta, resultado=_resultado(r), comentario=r.comentario,
+                                 respondido_em=r.criado_em)
 
 
 @router.put("/{exercicio_id}", response_model=ExercicioProfessorResponse)
@@ -172,6 +305,10 @@ def _turmas_do_aluno(db: Session, usuario: Usuario) -> list:
         usuario_id=usuario.id, papel=UsuarioTurmaPapelEnum.ALUNO)]
 
 
+def _e_para_mim(ex: Exercicio, usuario: Usuario) -> bool:
+    return not ex.alunos or str(usuario.id) in ex.alunos
+
+
 @router.get("/turma", response_model=list[ExercicioAlunoResponse])
 def da_minha_turma(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     if usuario.perfil != PerfilEnum.ALUNO:
@@ -184,7 +321,7 @@ def da_minha_turma(usuario: Usuario = Depends(get_current_user), db: Session = D
     minhas = {r.exercicio_id: r for r in db.query(ExercicioResposta).filter(
         ExercicioResposta.aluno_id == usuario.id,
         ExercicioResposta.exercicio_id.in_([e.id for e in exercicios]))} if exercicios else {}
-    return [_resposta_aluno(db, ex, minhas.get(ex.id)) for ex in exercicios]
+    return [_resposta_aluno(db, ex, minhas.get(ex.id)) for ex in exercicios if _e_para_mim(ex, usuario)]
 
 
 @router.post("/{exercicio_id}/responder", response_model=ExercicioAlunoResponse)
@@ -193,7 +330,7 @@ def responder(exercicio_id: uuid.UUID, payload: ResponderRequest,
     if usuario.perfil != PerfilEnum.ALUNO:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos respondem exercícios.")
     ex = db.get(Exercicio, exercicio_id)
-    if not ex or not ex.ativo or ex.turma_id not in _turmas_do_aluno(db, usuario):
+    if not ex or not ex.ativo or ex.turma_id not in _turmas_do_aluno(db, usuario) or not _e_para_mim(ex, usuario):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Exercício não encontrado.")
     correta = None
     if ex.tipo == "OBJETIVO":
@@ -204,11 +341,13 @@ def responder(exercicio_id: uuid.UUID, payload: ResponderRequest,
         if not 0 <= indice < len(ex.alternativas or []):
             raise HTTPException(422, "Escolha uma das alternativas.")
         correta = indice == ex.resposta_correta
-    # praticar de novo sobrescreve: guarda a ultima tentativa (o professor ve quem fez e quem acertou)
-    minha = db.query(ExercicioResposta).filter_by(exercicio_id=ex.id, aluno_id=usuario.id).first()
-    if minha is None:
-        minha = ExercicioResposta(exercicio_id=ex.id, aluno_id=usuario.id, resposta="")
-        db.add(minha)
-    minha.resposta, minha.correta = payload.resposta.strip(), correta
+    # so uma resposta por aluno: depois de responder, nao da para refazer
+    if db.query(ExercicioResposta).filter_by(exercicio_id=ex.id, aluno_id=usuario.id).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Você já respondeu este exercício.")
+    minha = ExercicioResposta(exercicio_id=ex.id, aluno_id=usuario.id, resposta=payload.resposta.strip(),
+                              correta=correta, comentario=None,
+                              resultado=None if correta is None else "CERTA" if correta else "ERRADA")
+    db.add(minha)
+    minha.criado_em = func.now()
     db.commit()
     return _resposta_aluno(db, ex, minha)

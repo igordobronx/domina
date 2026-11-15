@@ -1,140 +1,94 @@
-# CLAUDE.md: domina, correção de redação do ENEM por IA
+# CLAUDE.md: Domina
 
-Atualizado em 20/10/2026 à noite (v14 fica; v18 a v20 testados). Versão anterior: `docs/handoff_CLAUDE_2026-10-20b.md`. Responda sempre em português, de forma curta e simples, sem números difíceis.
+Atualizado em 15/11/2026 (fim da tarde). Responda sempre em português, de forma curta e simples, sem números difíceis.
+Versão anterior (só calibração do prompt da redação, 20/10): `docs/handoff_CLAUDE_2026-10-20c.md`.
 
-## 0. Estado em 20/10/2026 à noite (leia primeiro)
+Este arquivo diz **o que o projeto é e o que já foi feito**, para uma thread nova continuar de onde a
+anterior parou. O que fazer a seguir o usuário diz por escrito em cada thread.
 
-> **REGRA PRINCIPAL DO USUÁRIO (20/10): NÃO mude o prompt "de jeito louco".** Não fique trocando
-> a regra de uma competência só porque outra deu errado, nem encadeie versões uma atrás da outra.
-> Antes de qualquer teste: (1) olhe os resultados e ache a CAUSA do erro (quais redações, em qual
-> competência, para que lado, se se repete nas 2 rodadas); (2) explique ao usuário, em poucas
-> frases, por que aquela mudança deve melhorar o prompt; (3) espere o ok dele; (4) teste UMA
-> mudança. Se não houver uma causa clara, não mude nada: diga isso ao usuário.
+## 1. O que é o Domina
 
-**Onde estamos**
-- O app corrige **1 vez** com o prompt **v14** (`VERSAO_PROMPT = "v14"` em `backend/app/correcao.py`; 12 testes passam). Texto: `docs/calibracao/2026-10-20/prompt_v14.txt`.
-- v14 nas 53 do INEP (flash-lite), 2 rodadas: **erro total 48 e 48**, 46 e 45 de 53 a menos de 100 pontos. É o melhor até agora.
-- O usuário decidiu ficar com o v14 na entrega de 20/10.
+Plataforma de correção com IA para escolas: a IA corrige e **só o professor dá a nota final** (a da IA é
+provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção da IA.
 
-**Tudo o que foi testado em 20/10 (flash-lite, 53 redações; v14 = 48)**
-| Versão | Mudança (em cima do v14) | Erro | |
-|---|---|---|---|
-| v13 | C4 mais branda (falha isolada = 160) | 53 | ❌ |
-| v15 | C1: 200 = até 3 desvios | 57 | ❌ |
-| v16 | C1: 2 desvios do mesmo tipo podem ser 200 | 62 | ❌ |
-| v17 | C1: tabela do usuário (desvio grave tira 200; parágrafo de um período = 120) | 59 | ❌ |
-| v18 | C4: para 200, frases ligadas DENTRO de cada parágrafo | 49 | empate |
-| v19 | C3: regra explícita de quando é 120 | 60 | ❌ |
-| v20 | C1: 120 só com 7+ desvios | parado em 27/53, sem ganho | ❌ |
-| v21 | Nota do meio (20, 60, 100, 140, 180) permitida em todas as competências | 51 | ❌ (a IA usou nota do meio só 1 vez em 265; não muda nada) |
-Arquivos: `docs/calibracao/2026-10-20/` (`prompt_vNN.txt`, `inep_lite_vNN.jsonl`).
-
-**O que aprendemos (importante para não repetir)**
-1. Comparando as 2 rodadas do v14, o erro NÃO tem direção: em C1, C2 e C3 a IA erra quase o mesmo tanto para cima e para baixo. Por isso endurecer ou afrouxar uma regra só troca um erro pelo outro (foi o que aconteceu do v15 ao v20).
-2. Metade do erro grande vem de 5 redações que a IA erra igual nas duas rodadas: IDs 5 (real 740, IA 860), 9 (real 780, IA 920; INEP deu 20 na C3), 27 (real 900, IA 1000), 29 (real 880, IA 760) e 31 (real 720, IA 960). Mudar regra geral não conserta isso.
-3. Ruído entre rodadas: 5 a 10 pontos no erro total. Só aceite ganho de 6 ou mais, e de preferência confirme com 2 rodadas.
-4. Pedir para a IA ACHAR/COPIAR prova de autoria na C3 piora (v10, v11).
-
-**Próximos passos sugeridos (combine com o usuário ANTES de testar; ele pediu isso)**
-1. **Confirmar no modelo do app (`gemini-3.5-flash`)**: só 3 de 15 rodaram em 20/10 (503 e depois cota). Nas 3, ficou parecido com o flash-lite. Rodar as 15: `IDS=46,3,51,48,53,34,21,45,52,25,14,8,42,35,41 DATABASE_URL=sqlite:// JWT_SECRET=x PYTHONPATH=. python ../docs/calibracao/2026-10-20/roda_inep_ids.py ../docs/calibracao/2026-10-20/prompt_v14.txt <saida.jsonl> gemini-3.5-flash` (de `backend/`; a saída retoma de onde parou, então pode usar `flash_v14_parcial3.jsonl`). Cota do flash: ~20 por dia.
-2. **Olhar as 5 redações que erram sempre** (IDs acima): ler a justificativa da IA e o texto, e ver se o problema é de transcrição, de tema ou de um critério que a IA não enxerga (ex.: ID 31, que a IA dá 200 em quase tudo). Só depois propor UMA regra.
-3. Mais redações fracas com nota oficial (só 5 abaixo de 700).
-
-**Como rodar (sozinho, sem o usuário)**
-- A thread NÃO pode estar conectada ao Mac: com a conexão a rede bloqueia o Gemini (403). A chave `GEMINI_API_KEY` está no cloud environment.
-- Copie a pasta para um scratch (`cp -r /mnt/project-files/domina/{backend,essays,docs} <scratch>/`), `pip install -r backend/requirements.txt`, e de `backend/`: `DATABASE_URL=sqlite:// JWT_SECRET=x PYTHONPATH=. python ../docs/calibracao/2026-10-19/roda_inep53.py <prompt.txt> <saida.jsonl> gemini-3.5-flash-lite`; depois `python ../docs/calibracao/2026-10-18/analisa_inep.py <saida.jsonl>`. Cada rodada leva uns 6 min. Rode em background e espere com until-loop. Não use `pkill -f roda_inep53` (mata o próprio shell).
-- Cota: se o flash-lite acabar, use `gemini-3.1-flash-lite` ou `gemini-2.5-flash-lite`, mas rode o v14 de novo no mesmo modelo como base.
-
-**Regras de trabalho:** português, curto e simples; sempre usar o graphify (`graphify update .` depois de editar código); nada de nomes/CPF; uma mudança por versão e **perguntar ao usuário antes de testar cada mudança**; mudanças na cópia compartilhada `/mnt/project-files/domina`; ao fim de cada versão testada, atualize este arquivo.
-
-## 1. Objetivo do prompt
-
-Fazer a IA corrigir redações do ENEM (C1 a C5, de 0 a 200 cada, total até 1000) **o mais perto possível de um corretor humano do INEP**.
-A meta realista é a IA ficar a cerca de 100 pontos da média dos humanos, porque dois corretores humanos já divergem uns 104 pontos entre si.
+- **Visão:** um **modelo de IA próprio, treinado por matéria** (aba "Treinar IA": o professor sobe ~5 materiais e a IA aprende a corrigir aquela matéria). Domina vai abranger todas as matérias. Hoje as APIs de terceiros são o motor provisório; o README deixa isso claro.
+- **MVP:** redação estilo ENEM (C1 a C5) e matemática (e outras exatas, por gabarito). O upload de materiais (`POST /materias/{id}/documentos`) só guarda os arquivos; o treino ainda não está ligado.
+- **Perfis:** ALUNO, PROFESSOR, GESTOR (da escola), ADMIN (da plataforma, sem escola).
+- **Objetivo original do projeto:** deixar o prompt da correção da redação o mais próximo possível de um corretor humano do ENEM (ver seção 5).
 
 ## 2. Onde as coisas estão
 
-- **Pasta no Mac:** `/Users/joaopedro/Documentos/Coding/projeto hackathon/domina` (foi movida em 16/10; antes ficava em `Documentos/Coding/domina`).
-- **Branch de trabalho:** `correcao-prompt-analise`. A `main` está intocada e não há PR.
-  - `05dd1b3`: campo `analise` antes da `nota` no schema da IA.
-  - `8a90c5e`: `calibra_groq.py` passou a ler as competências no formato em lista.
-  - `57c5dd1`: prompt v6 em `backend/app/correcao.py` (`VERSAO_PROMPT = "v6"`).
-  - `db35f46`: planilha externa, prompts testados, resultados e scripts em `docs/calibracao/2026-10-16/`.
-  - `4b35e86` (18/10): prompt **v9** em `correcao.py` (`VERSAO_PROMPT = "v9"`) + testes em `docs/calibracao/2026-10-18/`.
-  - commit de 19/10: teste do v9 nas 53 do INEP, prompt v10 (não adotado) e scripts em `docs/calibracao/2026-10-19/`.
-- **O prompt fica em** `backend/app/correcao.py` (constante `PROMPT`, chamada em `corrigir()`).
-- **Rodar os testes (19/10):** o usuário quer que o Claude rode TUDO sozinho. Ele colocou `GEMINI_API_KEY` como variável do cloud environment do projeto, então no container: `pip install -r backend/requirements.txt` e rodar o `roda_inep.py` (de `backend/`, com `PYTHONPATH=.`). Atenção: a planilha em `/mnt/project-files/domina/essays/` tem só 50 redações; a do Mac tem 53 (IDs 51–53 novas). Se não conseguir copiar a do Mac (`device_stage_files` dá 401), monte as 3 novas lendo via `device_bash` e confira com hash. O VM do Mac não tem internet.
-- **Scripts de teste:** `backend/calibracao/` (`calibra.py` para o Gemini, `calibra_groq.py` para a Groq, `analisa.py` para o score, `variantes.py` para as versões) `docs/calibracao/2026-10-16/analisa_externa.py` (base externa) e, para a base INEP, `docs/calibracao/2026-10-18/roda_inep.py` + `analisa_inep.py` (uso: de `backend/`, `PYTHONPATH=. python ../docs/calibracao/2026-10-18/roda_inep.py <prompt.txt> <saida.jsonl> gemini-3.5-flash-lite`).
-- **Chaves:** `backend/.env` (`GEMINI_API_KEY`, `GROQ_API_KEY`). O arquivo fica fora do git. Nunca imprima nem commite as chaves.
-- **Modelos:** o app usa `gemini-3.5-flash` (20 chamadas por dia no plano grátis). Para iterar, use `gemini-3.5-flash-lite` (cota separada, roda 50 redações em minutos) ou a Groq `openai/gpt-oss-120b` (grátis, cerca de 25 min para 50).
-- **graphify:** use sempre. Depois de editar código, rode `graphify update .`, mas não commite o cache de `graphify-out/`.
+- **Repo:** `igordobronx/domina` (GitHub). **Pasta no Mac:** `/Users/joaopedro/Documentos/Faculdade/Projetos GitHub/projeto hackathon/domina` (mudou em 15/11; antes ficava em `Documentos/Coding/projeto hackathon/domina`). Pastas de dados: `essays/` (planilhas), fotos das redações em `.../projeto hackathon/fotos redacoes do enem`.
+- **Branch de trabalho: `domina-ciclo-2`.** Só fazer merge na `main` quando o usuário mandar. A `main` tem a correção da redação pelo Claude Sonnet.
+- **Backend:** `backend/` (FastAPI + SQLAlchemy + Alembic, Python). **Frontend:** `frontend/` (React + Vite + TypeScript, PWA, deploy no Vercel com Root Directory `frontend`). Docs do frontend: `frontend/docs/FRONTEND.md`.
+- **Banco:** Postgres no docker (porta **5433**) por padrão; SQLite é o fallback (testes usam SQLite temporário). Migrations em `backend/migrations/versions/` (0001 a 0018).
+- **Subir tudo:** `./dev.sh` na raiz (banco + API na 8000 + site na 5173; já roda `migrar.py`; `./dev.sh --seed` roda o seed antes). A API e o site recarregam sozinhos quando o código muda; **só mudança de banco exige parar (Ctrl+C) e rodar `./dev.sh` de novo** (ou `cd backend && ../venv/bin/python migrar.py` em outro terminal).
+- **Logins do seed** (senha `senha123`): `professor@domina.com` (Beto Andrade, turma "3º Ano A"), `gestor@domina.com`, `admin@domina.com`, `gestor2@domina.com` (outra escola), alunos `aluno@domina.com` (Ana Beatriz), `aluno2@domina.com` (Bruno), `aluno3@domina.com` (Carla).
+- **Chaves** em `backend/.env` (fora do git; nunca imprimir nem commitar): `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`. No cloud environment do projeto a `GEMINI_API_KEY` já existe.
+- **Modelos:** redação e agente = Claude Sonnet (`claude-sonnet-5-5`); exercícios gerados pela IA = Claude Haiku (`claude-haiku-5-5`); OCR e correção de exatas = Gemini (`gemini-3.5-flash`, reserva `gemini-3.5-flash-lite`). Camada única em `backend/app/llm/` e `backend/app/ocr/`.
+- **Testes:** `cd backend && python -m pytest -q tests/test_X.py` (todos passam; rodar por arquivo). Frontend: `npx tsc --noEmit -p .`, `npm test` (1 teste já falhava antes: "não abre a revisão por um link do gestor") e `npm run test:e2e` (Playwright).
+- **graphify:** usar sempre (regra do projeto). Antes de explorar: `graphify query "<pergunta>"`. Depois de editar código: `graphify update .`. Não commitar o cache de `graphify-out/cache`.
 
-## 3. Bases de teste (planilhas em `essays/`)
+## 3. Regras de trabalho (preferências do usuário)
 
-| Arquivo | O que tem | Nota |
-|---|---|---|
-| `base_redacoes_primeira.xlsm` (antes `base_redacoes_enem_domina_ai.xlsm`) | 2.328 redações: cerca de 239 nota 1000 (cartilhas e sites) + cerca de 2.100 do Banco UOL (2007–2016) | A nota UOL não é do INEP e tem ruído. A amostra antiga é de 50 redações (semente 42). |
-| `base_redacoes_segunda.xlsm` (antes `base_redacoes_3_corretores.xlsm` / `base_teste_externa.xlsm`) | 80 redações: 50 AES-ENEM (USP, com 3 notas humanas) + 30 Essay-BR | Aba "Comparação corretores". É a melhor régua até agora. |
-| `base_redacoes_final_inep.xlsm` (antes `base_redacoes_inep.xlsm`; **a ÚNICA base usada desde 19/10**) | **53 redações** (IDs 51–53 de 2024/2025, uma delas fraca, 560) com **nota oficial do INEP**: 34 de 14 conhecidos (2020–2025, fotos com nome e CPF tarjados) + 10 nota 1000 de sites (IDs 35–44) + 6 de conhecidos (IDs 45–50, 4 abaixo de 700) | As Observações dizem só "Participante X - ano", sem nomes. Agora são 5 abaixo de 700. O usuário NÃO quer mais testar nas bases UOL nem de 3 corretores. Os prints da "Vista Pedagógica" do INEP trazem nome e CPF: nunca copiar. |
+- Português, respostas curtas e simples.
+- **Mudar o código direto no Mac** (pasta acima), via `device_bash` / `device_commit_files`. **Não fazer commit nem push a cada mudança: só quando o usuário pedir.** Nada de merge na `main` sem ele mandar. O push do container e do VM do Mac costuma falhar; se pedir push, ele roda `git push` no terminal dele.
+- **Não gerar prints/imagens da tela a cada mudança.**
+- Ao gravar planilha no Mac, pedir que esteja fechada no Excel. `device_commit_files` pode gravar versão antiga logo após `cp` em `/mnt/project-files` (cache): copiar com nome novo e conferir o `md5sum` dos dois lados.
+- Nunca copiar nome/CPF de redação (planilhas só têm "Participante X - ano").
+- Não chamar API paga sem confirmar. Uma mudança por vez no prompt da redação, **combinando antes** com o usuário (seção 5).
+- Ao avisar que algo mudou, dizer em uma frase se precisa parar e rodar o `./dev.sh` de novo (só quando o banco mudou).
 
-Cuidado: antes de gravar uma planilha no Mac, peça para ela estar **fechada no Excel**. O Excel aberto já salvou a versão antiga por cima da nova.
+## 4. O que já foi feito (em ordem)
 
-## 4. Histórico: o que funcionou e o que falhou
+**Set a início de out/2026 (base):** esqueleto FastAPI; OCR de foto com Gemini (pula rasuras, não corrige o aluno, o aluno confere e confirma o texto); laboratório de testes (`/laboratorio/`); correção por IA; graphify; frontend inicial; docker-compose + seed.
 
-| Versão | O que mudou | Resultado |
-|---|---|---|
-| v1 | Prompt simples | Todas as competências em 120 (redação do Igor, real 880, recebeu 600). ❌ |
-| v2 | Descritores oficiais do INEP por nível | 680 no Igor; rígida demais na C1. Score UOL 48,4. ⚠️ |
-| v3a | v2 + analisar antes da nota + contar desvios na C1 | Score 54,6; resolveu o rigor nas nota 1000 (média 924 → 986). ✅ |
-| v3b | v3a + 3 redações de exemplo (few-shot) | 54,0, não superou a v3a. ❌ |
-| "prompt novo" | Duas etapas (evidências → nota) | 54,9. **Bug:** o schema não tinha o campo `analise`, então a Etapa 1 não era gerada. Corrigido em `05dd1b3`. |
-| v4 / v4b | C1 com contagem (200 = até 2 desvios, 160 = até 5...), só o que tem certeza, ignorar falha de OCR; C4 sem exigir "conectivo sofisticado"; C5 com 1 detalhamento basta; no 200 não sugerir melhoria | Score UOL 59,8; nota 1000 com média 980. Na base externa: 105 pontos da média humana, ordenação 0,71. ✅ |
-| v5 | v4b + regras do usuário (C1 sem reincidência, C2 com os 3 requisitos do repertório, C4 com 2 conectivos, C5 com 5 elementos) + critérios de C3 | Não foi testada sozinha; virou a v6. |
-| v6 | v5 + C2 pela tabela do INEP (sem repertório externo legítimo e pertinente, no máximo 120) + C4 com conectivo no início de cada parágrafo (do 2º ao último) | Base UOL: 52,4, pior (mas a UOL tem ruído). **Base externa (3 humanos): 97 pontos da média humana, ordenação 0,78; Essay-BR 133 pontos (v4b: 161).** ✅ |
-| v7 | v6 + regra da C1: 160 é o nível comum, 120 só com 6+ desvios, "falha de estrutura sintática" = só período quebrado | Base INEP (flash-lite): C1 erro 21→16; total 67→63. ✅ |
-| v8 | v7 + C3 com marcação "desenvolvido/apenas afirmado" por parágrafo e teto 160 | C3 piorou (23→28), total 71. ❌ (previsível NÃO é 120: no INEP o 160 aceita "ainda previsíveis") |
-| v9 nas 53 (19/10) | mesma v9, base INEP com as 3 novas | **erro total 53, 45/53 a menos de 100**, C1 18, C2 15, C3 20 (viés +8), C4 11, C5 12. Fracas: IA 544 x real 564. ✅ |
-| v10 | v9 + C3 com as 4 falhas do usuário (argumento não explicado, repete a coletânea, informação solta, conclusão contradiz) checadas sim/não + pergunta "há AUTORIA?"; qualquer falha impede 200 | **Piorou:** total 63, viés +11; a IA deu 200 na C3 em 28 de 53 (v9: 20). Perguntar "há autoria?" faz a IA dizer sim. ❌ |
-| v9 | v7 + C3 com os **descritores oficiais do INEP** (160 aceita previsível se organizado; 200 = autoria) | **Base INEP: erro médio 60 pts no total, 41/50 a menos de 100 (v6: 67 e 37/50).** C1 14, C2 15, C3 23 (viés +12), C4 16, C5 10. ✅ |
+**Calibração do prompt da redação (13 a 21/10):** v1 a v21, bases de teste e histórico em `docs/calibracao/` (resumo na seção 5).
 
-Lições:
-- Não ajuste o prompt para acertar uma redação só: isso decora o caso e piora os outros. Use regras gerais e teste na base inteira.
-- A base UOL serve só para ver ordenação. Para medir o acerto, use as bases com mais de um corretor ou com nota do INEP.
-- A "confiança" que a IA informa não serve (fica entre 0,93 e 0,96 mesmo quando ela erra 500 pontos).
-- Mesmo com temperatura 0, a mesma redação varia até 40 pontos entre rodadas; entre rodadas inteiras o erro médio varia uns 5 pontos, então diferença menor que isso não prova nada.
-- **Como o INEP nota:** cada corretor dá notas de 40 em 40; a nota oficial é a média de 2 corretores (por isso 140, 180 etc., sempre múltiplo de 20). 3º corretor só se a diferença passar de 80 numa competência ou de 100 no total. A IA age como UM corretor: diferença de 20 por competência conta como acerto.
-- A contagem da C1 (2 desvios para 200, 5 para 160) é o critério usado por corretores e cursinhos, não um número oficial do INEP.
+**Backend (19 a 24/10):** cadastro de usuário, turmas e matrícula; atividade + upload de material (`DocumentoBase`); diagnóstico de **domínio por competência** (`dominio_aluno`); consentimento LGPD, custo de uso por escola e audit log; `GET /usuarios/me`; Postgres como padrão; evolução do aluno por matéria; recomendação de estudo; fila de revisão do professor; **correção de exatas** (matemática/física/química) por gabarito, com valor total da atividade dividido entre as questões, aceita foto; IA cita o trecho exato e vários acertos/erros por competência/questão; aluno gera e vê a própria correção da IA antes da aprovação do professor; correção da redação migrou para **Claude Sonnet**.
 
-## 5. Próximos passos antigos (19/10; vale o que está na seção 0)
+**Agente de correção (24/10, PR #2):** o Claude decide os passos (`ler_envio`, `pedir_nova_foto`, corretor certo, `consultar_historico_aluno`, `gerar_exercicios_reforco`, `sinalizar_professor`, `finalizar`), máx. 10 passos, grava log de auditoria e custo, e se cair no meio a correção direta ainda sai. Detalhes no README (`backend/app/agente.py`, `routers/agente.py`, tabela `agente_execucao`). README final em 24/10 ("protótipo final hackathon").
 
-1. **C3:** ainda é a pior (erro 20, viés +8; o gabarito mais comum é 180 e a IA dá 200). O v10 mostrou que perguntar direto "há autoria?" piora. Próxima ideia: inverter o padrão, dizendo que 160 é o nível comum da C3 (como deu certo na C1 no v7) e 200 só quando a IA consegue citar um trecho de interpretação própria que NÃO está nos textos motivadores. O texto do usuário sobre a C3 (níveis + onde se perde ponto) está em `docs/calibracao/2026-10-19/prompt_v10.txt`; ele disse que não é verdade absoluta.
-2. **Redações fracas e médias:** na base INEP só 4 abaixo de 700 (IA 540 contra 565). Conseguir mais redações com nota oficial baixa (espelho do INEP de conhecidos, com consentimento; para menor de idade, o do responsável). Os prints do usuário só ajudam se vierem com o texto da redação.
-4. Opcional: detectar anulação (fuga ao tema, cópia, texto curto) antes de corrigir; trocar a "confiança" por duas correções independentes.
-5. Confirmar a versão final no `gemini-3.5-flash` (20 chamadas por dia) e levar para a `main` só quando o usuário pedir. Push e PR só quando ele pedir.
+**Frontend (19 a 20/10):** login real (sem modo demonstração), telas com dados reais: Minhas atividades, Revisões (fila do professor, cria atividade), Evolução, Turmas (gestor cria turma, vê/matricula alunos), Plano de estudo real, backend ligado a toda UI.
 
-Regras de trabalho: sempre usar o graphify; não dar push sem o usuário pedir; não chamar API paga sem confirmação; nada de nomes ou CPF nas planilhas ou arquivos; o usuário gosta de respostas curtas e simples. Mudanças de código vão na cópia compartilhada (`/mnt/project-files/domina`) e/ou na branch a pedido dele.
+**RBAC, calendário, logs (9 a 11/11):** admin x gestor com isolamento por escola no backend; **Alembic**; calendário por escola (prazos das atividades aparecem sozinhos); correção de exatas por foto; **logs do sistema** (access log, eventos de segurança, auditoria com cadeia de hash, tela, retenção; ver `docs/decisoes/logs-do-sistema.md`); reautenticação para ações sensíveis; agente com cache de prompt e `correcoes.py` separado de `submissoes.py`.
 
-## 6. Prompt antigo (v9; o atual é o v14, ver seção 0)
+**Atividades (11/11 a 13/11):** lançar a mesma atividade em várias turmas, editar e excluir/arquivar (com envios, só arquiva); revisão do professor por turma; questões **objetivas** (alternativas A–E, correção na hora, sem IA); **várias fotos** por envio; barra de **símbolos** (química/matemática) nos campos; **metas e níveis** (gamificação: nível = soma de pontos das metas concluídas, sem nota; `docs/decisoes/gamificacao-niveis-e-metas.md`).
 
-O texto exato está em `backend/app/correcao.py` (constante `PROMPT`) e em `docs/calibracao/2026-10-18/prompt_v9.txt`. Mudanças em relação à v6 (que está em `docs/calibracao/2026-10-16/prompt_v6.txt`): regra de contagem da C1 (160 comum, 120 só com 6+ desvios, falha de estrutura = período quebrado) e C3 com os descritores oficiais.
+**Exercícios do professor (15/11):**
+- Menu **Exercícios** para professor e aluno (ícone de caderno com lápis; a IA usa estrelinhas). Exercício é **prática, não vale nota** (prova continua em Atividades).
+- **Aluno:** abas **"Para você (IA)"** (gerados na hora pelos pontos fracos, `/estudos/meu`) e **"Do professor"** (`/exercicios/turma`). Regra de separação: **quem publicou**; se o professor usou a IA, continua "do professor" e ganha o selo "Com ajuda da IA". O gabarito só aparece depois de responder.
+- **Professor** (`frontend/src/screens/Exercicios.tsx`, `backend/app/routers/exercicios.py`, `exercicios_ia.py`, `schemas/exercicio.py`, tabelas `exercicio` e `exercicio_resposta`):
+  - Criar: nome, matéria, tema, **turmas** (pode marcar várias: cada turma recebe a sua cópia; o formulário não mostra esse aviso) e "Para quem" (todos ou **alunos escolhidos**, inclusive de turmas diferentes; turma sem aluno marcado não recebe). Abas "Escrever eu mesmo" e "Pedir para a IA" (rascunhos que o professor revisa e salva; nada chega ao aluno sem salvar). Os seletores são botões com borda. **Nada vem pré-marcado**: turma e "Para quem" começam sem seleção (ao editar, vêm os valores salvos). **Objetivo só salva com a alternativa correta marcada** (botão desabilitado + aviso; o backend também recusa).
+  - Objetivo: 2 a 6 alternativas, botão "Marcar esta como correta" e "Remover alternativa" em cada uma. Discursivo: **uma ou mais respostas de exemplo** (até 5; pelo menos uma), botão "IA sugere uma resposta".
+  - Lista **separada por turma**; resumo por aluno (fez / acertou / parcial); "Ver respostas" por exercício com filtros Todos, Fizeram, Não fizeram. Objetivo: acerto automático. Discursivo: o professor marca **Certo / Parcial / Errado**; **parcial e errado exigem comentário** (backend recusa sem). O aluno vê o resultado, o comentário e as respostas de exemplo. Refazer apaga a correção antiga.
+  - Migrations 0014 (campos do exercício), 0015 (`alunos`), 0016 (comentário), 0017 (`resultado`), 0018 (`respostas_exemplo`). Testes: `backend/tests/test_exercicios.py` (7).
+- **Ajustes do aluno (15/11, noite):** só **uma resposta** por exercício (backend recusa a segunda com 409; sem "Tentar de novo"); texto de resultado só "Você acertou." / "Você errou."; alternativa marcada errada fica **vermelha** e a certa continua verde (professor e IA); selo **"Feito"** verde se acertou, vermelho se errou (amarelo se o professor marcou parcial); na aba IA o botão verde é sempre o primeiro exercício ainda não feito (a resposta fica guardada no navegador, por aluno, em `domina-ia-respostas:<id>`); botão "Carregar exercícios (usar pouco)"; menu lateral com "Exercícios" logo depois de "Visão geral" (igual ao do professor); discursiva do aluno com caixa "Responder" alinhada e botão "Enviar"; professor: só um botão Certo/Parcial/Errado fica marcado, e o cursor não fica "carregando" nos botões desabilitados. Sem mudança de banco.
+- **Ajustes 2 (15/11, noite):** menu lateral voltou à ordem do aluno (Visão geral, Minhas atividades, Minha evolução, Exercícios, Calendário, Metas) e o professor segue a mesma ordem (Visão geral, Revisões, Turmas, Exercícios, Calendário, Metas, Materiais); selo "Feito" agora é neutro e o resultado aparece numa linha discreta com bolinha colorida (`ResultadoMini` em `Learning.tsx`); professor: Certo/Parcial/Errado e comentário **não salvam sozinhos**, há botão "Salvar" (e "Cancelar") que só aparece quando algo mudou; botão "Errado" sem vermelho no hover; "Como criar" ganhou mini título no formulário.
+- **Ajustes 3 (15/11, noite):** professor, criar exercício: "Como criar" e "Tipo do exercício" (um só, vale para escrever e para IA) começam sem nada marcado e o resto do formulário só aparece depois de escolher os dois; botão "Salvar" da correção ficou verde-claro com borda verde e separado por uma linha (não confunde com "Certo"); aluno, aba "Do professor": o botão do cartão fica sempre no fim do cartão (classe `ex-prof`). Sem mudança de banco.
+- **Estado no git:** o commit `0677bb6` (na `domina-ciclo-2`, enviado ao GitHub) tem só a primeira versão dos exercícios. **Tudo depois (migrations 0015 a 0018, "para quem", parcial, comentário, várias respostas de exemplo, lista por turma, ícone novo) está só na pasta do Mac, sem commit.**
 
-## graphify
+## 5. Correção da redação: estado do prompt
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+> **Regra do usuário: não mude o prompt "de jeito louco".** Antes de testar: ache a CAUSA do erro (quais redações, qual competência, para que lado, se repete nas 2 rodadas), explique ao usuário em poucas frases por que a mudança deve ajudar, espere o ok e teste **uma** mudança. Sem causa clara, não mude nada.
 
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- O app corrige **1 vez** com o prompt **v14** (`VERSAO_PROMPT = "v14"` em `backend/app/correcao.py`; texto em `docs/calibracao/2026-10-20/prompt_v14.txt`). Nas 53 redações do INEP (flash-lite), 2 rodadas: **erro total 48 e 48**, 45 a 46 de 53 a menos de 100 pontos. É o melhor; v13 e v15 a v21 não ganharam.
+- Histórico completo (v1 a v21, o que funcionou e o que falhou): `docs/calibracao/historico_versoes_prompt.md` e a tabela em `docs/handoff_CLAUDE_2026-10-20c.md`.
+- **O que aprendemos:** o erro não tem direção (endurecer ou afrouxar só troca um erro pelo outro); metade do erro grande vem de 5 redações que a IA erra igual nas duas rodadas (IDs 5, 9, 27, 29, 31); o ruído entre rodadas é de 5 a 10 pontos (só aceitar ganho de 6 ou mais, de preferência em 2 rodadas); pedir para a IA achar/copiar prova de autoria na C3 piora; a "confiança" que a IA informa não serve.
+- **Como o INEP nota:** cada corretor dá notas de 40 em 40; a nota oficial é a média de 2 corretores (por isso 140, 180...); 3º corretor se a diferença passar de 80 numa competência ou de 100 no total. A IA age como um corretor: diferença de 20 por competência conta como acerto. Dois humanos divergem uns 104 pontos entre si.
+- **Bases de teste** (`essays/`): `base_redacoes_final_inep.xlsm` (**a única usada desde 19/10**: 53 redações com nota oficial do INEP, fotos com nome/CPF tarjados, observações "Participante X - ano"), `base_redacoes_segunda.xlsm` (80, 50 com 3 notas humanas), `base_redacoes_primeira.xlsm` (UOL, só ordenação). O usuário não quer mais testar nas duas últimas.
+- **Como rodar teste** (sozinho, sem o usuário): a thread **não pode estar conectada ao Mac** (a rede bloqueia o Gemini); copiar `backend`, `essays` e `docs` para um scratch e, de `backend/`: `DATABASE_URL=sqlite:// JWT_SECRET=x PYTHONPATH=. python ../docs/calibracao/2026-10-19/roda_inep53.py <prompt.txt> <saida.jsonl> gemini-3.5-flash-lite`; depois `python ../docs/calibracao/2026-10-18/analisa_inep.py <saida.jsonl>`. Cada rodada leva uns 6 min (rodar em background). Cota do `gemini-3.5-flash`: ~20 por dia. Em 20/10 só 3 de 15 redações rodaram no `gemini-3.5-flash` (parecido com o flash-lite).
 
+## 6. Mapa rápido do código
 
-## 7. Commit e push (usuário cola no terminal do Mac, na pasta do projeto)
-
-Antes, copie da pasta compartilhada `backend/app/correcao.py`, `backend/tests/test_fluxo_envio.py` e `docs/` para a pasta do Mac (planilha fechada no Excel). Depois:
-
-```
-git add backend/app/correcao.py backend/tests/test_fluxo_envio.py docs
-git commit -m "Prompt v14 fica; testes v15 a v20 e flash na base INEP; novo CLAUDE.md"
-git push
-```
+| O quê | Onde |
+|---|---|
+| Rotas | `backend/app/routers/` (submissoes, correcoes, agente, atividades, questoes, turma, usuario, escolas, painel, calendario, metas, logs, documento, dominio, estudos, exercicios, evolucao, compliance, ocr, auth) |
+| Modelos / enums | `backend/app/models/usuario.py`, `models/enum.py` |
+| Schemas | `backend/app/schemas/` |
+| Correção redação / exatas | `backend/app/correcao.py`, `backend/app/correcao_exatas.py` |
+| IA de exercícios | `backend/app/estudos.py` (pelos pontos fracos), `backend/app/exercicios_ia.py` (professor) |
+| Telas | `frontend/src/screens/` (Dashboard, EducatorDashboard, Activities, Learning, Exercicios, Management, Metas, Calendar, Logs, Admin, Settings) |
+| Cliente da API | `frontend/src/services/api.ts` |
+| Navegação por perfil | `frontend/src/App.tsx` (`navItems`) e `frontend/src/services/navigation.ts` (`allowedPages`) |
+| Docs de decisão | `docs/decisoes/`, README (fluxo do agente), `frontend/docs/` |
