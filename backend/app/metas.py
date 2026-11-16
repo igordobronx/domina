@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.enum import PerfilEnum, StatusCorrecaoEnum
 from app.models.usuario import (
-    Atividade, Correcao, DominioAluno, Meta, MetaConcluida, Submissao, Tema, Usuario, UsuarioTurma,
+    Atividade, Correcao, DominioAluno, ExercicioResposta, Meta, MetaConcluida, Submissao, Tema, Usuario, UsuarioTurma,
 )
 
 logger = logging.getLogger("domina.metas")
@@ -51,6 +51,15 @@ def progresso(db: Session, meta: Meta, aluno_id) -> float:
              .filter(DominioAluno.aluno_id == aluno_id, Tema.materia_id == meta.materia_id,
                      Tema.atividade_id.is_(None), Tema.habilidade_codigo == meta.competencia).scalar())
         return float(d or 0)
+
+    if meta.tipo in ("PRATICA_RESPONDIDOS", "PRATICA_ACERTOS"):  # exercicios do plano de estudo (nao filtra materia)
+        r = db.query(ExercicioResposta).filter(
+            ExercicioResposta.aluno_id == aluno_id, ExercicioResposta.respondida_em >= datetime.combine(meta.inicio, time.min))
+        if meta.fim:
+            r = r.filter(ExercicioResposta.respondida_em <= datetime.combine(meta.fim, time.max))
+        if meta.tipo == "PRATICA_ACERTOS":
+            r = r.filter(ExercicioResposta.correta.is_(True))
+        return float(r.count())
 
     q = db.query(Submissao, Atividade).join(Atividade, Atividade.id == Submissao.atividade_id).filter(
         Submissao.aluno_id == aluno_id, Submissao.texto_confirmado.isnot(None),

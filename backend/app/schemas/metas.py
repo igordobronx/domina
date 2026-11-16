@@ -4,7 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-TipoMeta = Literal["ENTREGAS", "ENTREGAS_NO_PRAZO", "NOTA_ATIVIDADE", "MEDIA_MATERIA", "DOMINIO_COMPETENCIA"]
+TipoMeta = Literal["ENTREGAS", "ENTREGAS_NO_PRAZO", "NOTA_ATIVIDADE", "MEDIA_MATERIA", "DOMINIO_COMPETENCIA",
+                  "PRATICA_RESPONDIDOS", "PRATICA_ACERTOS"]
 
 
 class MetaRequest(BaseModel):
@@ -29,8 +30,8 @@ class MetaRequest(BaseModel):
             raise ValueError("O fim não pode ser antes do início.")
         if self.tipo in ("NOTA_ATIVIDADE", "MEDIA_MATERIA", "DOMINIO_COMPETENCIA") and self.alvo > 100:
             raise ValueError("Nesta meta o alvo é um percentual (1 a 100).")
-        if self.tipo in ("ENTREGAS", "ENTREGAS_NO_PRAZO") and (self.alvo != int(self.alvo) or self.alvo > 1000):
-            raise ValueError("O alvo é um número inteiro de entregas.")
+        if self.tipo in ("ENTREGAS", "ENTREGAS_NO_PRAZO", "PRATICA_RESPONDIDOS", "PRATICA_ACERTOS") and (self.alvo != int(self.alvo) or self.alvo > 1000):
+            raise ValueError("O alvo é um número inteiro (entregas ou exercícios).")
         if self.tipo in ("MEDIA_MATERIA", "DOMINIO_COMPETENCIA") and not self.materia_id:
             raise ValueError("Escolha a matéria desta meta.")
         if self.tipo == "DOMINIO_COMPETENCIA" and not self.competencia:

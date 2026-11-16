@@ -262,16 +262,25 @@ class Exercicio(Base):
     enunciado = Column(Text, nullable=False)
     gerado_por_ia = Column(Boolean, default=True, nullable=False)
     aprovado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    # exercicio de pratica (multipla escolha) gerado PARA um aluno; tema_id e a competencia treinada
+    aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    titulo = Column(String(200), nullable=True)
+    opcoes = Column(JSON, nullable=True)
+    resposta_correta = Column(Integer, nullable=True)  # indice em opcoes; NUNCA vai ao aluno antes de responder
+    explicacao = Column(Text, nullable=True)
+    criado_em = Column(DateTime, server_default=func.now(), nullable=True)
 
 
 class ExercicioResposta(Base):
     __tablename__ = "exercicio_resposta"
+    __table_args__ = (UniqueConstraint("exercicio_id", "aluno_id", name="uq_exercicio_resposta_aluno"),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     exercicio_id = Column(UUID(as_uuid=True), ForeignKey("exercicio.id"), nullable=False)
     aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
-    resposta = Column(Text, nullable=False)
-    correta = Column(Boolean, nullable=True)
+    resposta = Column(Text, nullable=False)  # a letra marcada (A, B, C ou D)
+    correta = Column(Boolean, nullable=True)  # calculado no servidor
+    respondida_em = Column(DateTime, server_default=func.now(), nullable=True)
 
 
 class ConsentimentoLGPD(Base):

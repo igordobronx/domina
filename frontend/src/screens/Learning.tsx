@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  RotateCcw,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -15,6 +14,9 @@ import {
   dominioMeu,
   evolucaoMinha,
   meusExercicios,
+  minhaPratica,
+  responderExercicio,
+  type PraticaAPI,
   type DominioAPI,
   type EvolucaoMateriaAPI,
   type ExercicioAPI,
@@ -39,21 +41,22 @@ interface ExercicioComum {
   description: string;
   question: string;
   options: string[];
-  answer: number;
-  explanation: string;
+  // demonstracao: gabarito local. Exercicio real: nao tem (o servidor confere ao responder)
+  answer?: number;
+  explanation?: string;
+  real?: boolean;
 }
 
-function doBackend(e: ExercicioAPI, i: number): ExercicioComum {
+function doBackend(e: ExercicioAPI): ExercicioComum {
   return {
-    id: `real-${i}`,
+    id: e.id,
+    real: true,
     topic: HABILIDADE_NOME[e.habilidade_codigo] ?? e.habilidade_codigo,
     type: "Gerado para você",
     title: e.titulo,
     description: `Baseado no seu desempenho real em ${e.habilidade_codigo}.`,
     question: e.enunciado,
     options: e.opcoes,
-    answer: e.resposta_correta,
-    explanation: e.explicacao,
   };
 }
 function doDemo(t: (typeof studyTasks)[number]): ExercicioComum {
@@ -221,18 +224,20 @@ export function Studies({
   const real = !!currentUser;
   const [exerciciosReais, setExerciciosReais] = useState<ExercicioAPI[] | null>(null);
   const [carregando, setCarregando] = useState(real);
-  const [recarregando, setRecarregando] = useState(false);
+  const [pratica, setPratica] = useState<PraticaAPI[]>([]);
   const [erro, setErro] = useState("");
-  const carregar = (recarregar = false) => {
+  // devolve os exercicios ainda nao respondidos; quando acabam, o servidor gera um novo plano (ate o limite do dia)
+  const carregar = () => {
     if (!real) return;
-    (recarregar ? setRecarregando : setCarregando)(true);
+    setCarregando(true);
     setErro("");
-    meusExercicios(recarregar)
+    meusExercicios()
       .then(setExerciciosReais)
       .catch((e) =>
         setErro(e instanceof Error ? e.message : "Não foi possível montar seu plano de estudo."),
       )
-      .finally(() => (recarregar ? setRecarregando : setCarregando)(false));
+      .finally(() => setCarregando(false));
+    minhaPratica().then(setPratica).catch(() => {});
   };
   useEffect(() => {
     carregar();
@@ -248,7 +253,10 @@ export function Studies({
       <Exercise
         key={task.id}
         task={task}
-        onBack={() => select(null)}
+        onBack={() => {
+          select(null);
+          if (task.real) carregar(); // o respondido sai da lista; se acabou, vem um plano novo
+        }}
         onComplete={() =>
           update((s) => ({
             ...s,
@@ -286,17 +294,11 @@ export function Studies({
           </p>
         </div>
       </div>
-      {real && (
-        <div className="form-actions left">
-          <Button
-            variant="secondary"
-            icon={RotateCcw}
-            disabled={recarregando}
-            onPress={() => carregar(true)}
-          >
-            {recarregando ? "Recarregando..." : "Recarregar plano de estudo (usa pouco)"}
-          </Button>
-        </div>
+      {real && pratica.length > 0 && (
+        <p className="tiny muted">
+          Você já respondeu {pratica.reduce((n, p) => n + p.respondidos, 0)} exercício(s) e acertou{" "}
+          {pratica.reduce((n, p) => n + p.acertos, 0)}. Suas respostas ficam salvas.
+        </p>
       )}
       <div className="study-grid">
         {tarefas.map((t, i) => (
@@ -331,7 +333,7 @@ export function Studies({
       </div>
       <p className="tiny muted">
         {real
-          ? "Exercícios gerados por IA a partir do seu desempenho real. A prática não altera a estimativa de domínio nesta versão."
+          ? "Exercícios gerados por IA a partir do seu desempenho real. Suas respostas ficam salvas e contam para as metas; elas não alteram a estimativa de domínio."
           : "Exercícios demonstrativos com respostas predefinidas. A prática não altera a estimativa de domínio nesta versão."}
       </p>
     </>
@@ -348,6 +350,30 @@ function Exercise({
 }) {
   const [answer, setAnswer] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+  // exercicio real: quem confere e o servidor (resposta salva); demonstracao: gabarito local
+  const [res, setRes] = useState<{ correta: boolean; resposta_correta: number; explicacao: string } | null>(null);
+  const conferir = async () => {
+    if (answer === null) return;
+    if (!task.real) {
+      setRes({ correta: answer === task.answer, resposta_correta: task.answer ?? 0, explicacao: task.explanation ?? "" });
+      setChecked(true);
+      onComplete();
+      return;
+    }
+    setEnviando(true);
+    setErro("");
+    try {
+      setRes(await responderExercicio(task.id, answer));
+      setChecked(true);
+      onComplete();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível enviar sua resposta.");
+    } finally {
+      setEnviando(false);
+    }
+  };
   return (
     <>
       <button className="back-link" onClick={onBack}>
@@ -363,7 +389,7 @@ function Exercise({
           {task.options.map((o, i) => (
             <label
               key={o}
-              className={`option ${answer === i ? "chosen" : ""} ${checked && i === task.answer ? "correct" : ""}`}
+              className={`option ${answer === i ? "chosen" : ""} ${checked && res && i === res.resposta_correta ? "correct" : ""}`}
             >
               <input
                 type="radio"
@@ -379,30 +405,21 @@ function Exercise({
             </label>
           ))}
         </fieldset>
-        {checked ? (
+        {checked && res ? (
           <>
-            <div
-              className={`exercise-feedback ${answer === task.answer ? "" : "retry"}`}
-            >
-              <h3>
-                {answer === task.answer
-                  ? "Isso mesmo. Mais um passo!"
-                  : "É errando que a gente constrói domínio."}
-              </h3>
-              <p>{task.explanation}</p>
+            <div className={`exercise-feedback ${res.correta ? "" : "retry"}`}>
+              <h3>{res.correta ? "Isso mesmo. Mais um passo!" : "É errando que a gente constrói domínio."}</h3>
+              <p>{res.explicacao}</p>
             </div>
             <Button onPress={onBack}>Concluir prática</Button>
           </>
         ) : (
-          <Button
-            disabled={answer === null}
-            onPress={() => {
-              setChecked(true);
-              onComplete();
-            }}
-          >
-            Conferir resposta
-          </Button>
+          <>
+            {erro && <p className="error" role="alert">{erro}</p>}
+            <Button disabled={answer === null || enviando} onPress={conferir}>
+              {enviando ? "Enviando..." : "Conferir resposta"}
+            </Button>
+          </>
         )}
       </Card>
     </>

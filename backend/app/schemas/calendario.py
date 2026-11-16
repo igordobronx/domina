@@ -23,8 +23,8 @@ class EventoRequest(BaseModel):
 
 
 class ItemCalendario(BaseModel):
-    id: str  # "evento:<uuid>", "prazo:<uuid>" ou "feriado:<data>"
-    origem: Literal["evento", "prazo", "feriado"]
+    id: str  # "evento:<uuid>", "prazo:<uuid>", "meta:<uuid>" ou "feriado:<data>"
+    origem: Literal["evento", "prazo", "meta", "feriado"]
     titulo: str
     descricao: str | None = None
     tipo: str

@@ -15,7 +15,9 @@ from app.auth.dependencies import escola_do_escopo, exigir_perfil, get_current_u
 from app.database import get_db
 from app.feriados import feriados
 from app.models.enum import PerfilEnum
-from app.models.usuario import Atividade, Evento, Turma, Usuario, UsuarioTurma
+from app.metas import metas_do_aluno
+from app.models.usuario import Atividade, Evento, MetaConcluida, Turma, Usuario, UsuarioTurma
+from app.routers.metas import metas_da_equipe
 from app.schemas.calendario import EventoRequest, ItemCalendario
 
 router = APIRouter(tags=["calendario"])
@@ -73,6 +75,19 @@ def ver_calendario(
         id=f"prazo:{a.id}", origem="prazo", titulo=f"Entrega: {a.titulo}", tipo="ENTREGA",
         inicio=a.prazo, turma_id=a.turma_id, turma=nomes.get(a.turma_id),
     ) for a in prazos]
+
+    # fim das metas (aluno: so as dele que ainda nao concluiu; professor/gestor: as que enxergam)
+    if usuario.perfil == PerfilEnum.ALUNO:
+        feitas = {m for (m,) in db.query(MetaConcluida.meta_id).filter_by(aluno_id=usuario.id)}
+        metas = [m for m in metas_do_aluno(db, usuario) if m.id not in feitas]
+    elif usuario.perfil in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
+        metas = metas_da_equipe(db, usuario).all()
+    else:
+        metas = []  # admin nao tem metas (sao da escola)
+    itens += [ItemCalendario(
+        id=f"meta:{m.id}", origem="meta", titulo=f"Fim da meta: {m.titulo}", descricao=f"Vale {m.pontos} pontos",
+        tipo="META", inicio=m.fim, turma_id=m.turma_id, turma=nomes.get(m.turma_id),
+    ) for m in metas if m.fim and de <= m.fim <= ate]
 
     for ano in range(de.year, ate.year + 1):
         itens += [ItemCalendario(id=f"feriado:{d}", origem="feriado", titulo=n, tipo="FERIADO", inicio=d)

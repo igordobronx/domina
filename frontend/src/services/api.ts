@@ -473,17 +473,38 @@ export function evolucaoMinha(): Promise<EvolucaoMateriaAPI[]> {
   return request<EvolucaoMateriaAPI[]>("/evolucao/minha");
 }
 
+// exercicio de pratica SEM gabarito: o servidor confere quando o aluno responde
 export interface ExercicioAPI {
+  id: string;
   habilidade_codigo: string;
   titulo: string;
   enunciado: string;
   opcoes: string[];
+}
+
+export interface ResultadoRespostaAPI {
+  correta: boolean;
   resposta_correta: number;
   explicacao: string;
 }
 
-export function meusExercicios(recarregar = false): Promise<ExercicioAPI[]> {
-  return request<ExercicioAPI[]>(`/estudos/meu${recarregar ? "?recarregar=true" : ""}`);
+// devolve os exercicios ainda nao respondidos; o servidor so gera novos quando acabam
+export function meusExercicios(): Promise<ExercicioAPI[]> {
+  return request<ExercicioAPI[]>("/estudos/meu");
+}
+
+export function responderExercicio(id: string, opcao: number): Promise<ResultadoRespostaAPI> {
+  return request<ResultadoRespostaAPI>(`/exercicios/${id}/responder`, { method: "POST", body: JSON.stringify({ opcao }) });
+}
+
+export interface PraticaAPI {
+  habilidade_codigo: string;
+  respondidos: number;
+  acertos: number;
+}
+
+export function minhaPratica(): Promise<PraticaAPI[]> {
+  return request<PraticaAPI[]>("/estudos/minha-pratica");
 }
 
 export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {
@@ -628,8 +649,8 @@ export function painelPlataforma(mes: string): Promise<ResumoPlataformaAPI> {
 
 // ---- calendario (um so por escola; o backend filtra pelo perfil) ----
 export interface ItemCalendarioAPI {
-  id: string; // "evento:<uuid>" | "prazo:<uuid>" | "feriado:<data>"
-  origem: "evento" | "prazo" | "feriado";
+  id: string; // "evento:<uuid>" | "prazo:<uuid>" | "meta:<uuid>" | "feriado:<data>"
+  origem: "evento" | "prazo" | "meta" | "feriado";
   titulo: string;
   descricao: string | null;
   tipo: string;
@@ -682,7 +703,8 @@ export const logsIntegridade = () => request<IntegridadeAPI>("/logs/integridade"
 
 
 // ---- niveis e metas ----
-export type TipoMetaAPI = "ENTREGAS" | "ENTREGAS_NO_PRAZO" | "NOTA_ATIVIDADE" | "MEDIA_MATERIA" | "DOMINIO_COMPETENCIA";
+export type TipoMetaAPI = "ENTREGAS" | "ENTREGAS_NO_PRAZO" | "NOTA_ATIVIDADE" | "MEDIA_MATERIA" | "DOMINIO_COMPETENCIA"
+  | "PRATICA_RESPONDIDOS" | "PRATICA_ACERTOS";
 
 export interface MetaPayload {
   titulo: string;
@@ -698,8 +720,9 @@ export interface MetaPayload {
   aluno_id?: string;
 }
 
-export interface MetaAPI extends Omit<MetaPayload, "turma_id" | "aluno_id" | "inicio" | "fim"> {
+export interface MetaAPI extends Omit<MetaPayload, "turma_id" | "aluno_id" | "inicio" | "fim" | "descricao"> {
   id: string;
+  descricao: string | null;
   inicio: string;
   fim: string | null;
   escopo: "ESCOLA" | "TURMA" | "ALUNO";
@@ -742,6 +765,9 @@ export interface RankingItemAPI {
 
 export const criarMeta = (p: MetaPayload) => request<MetaAPI>("/metas", { method: "POST", body: JSON.stringify(p) });
 export const listarMetas = () => request<MetaAPI[]>("/metas");
+// alvo/pontos so mudam enquanto ninguem concluiu a meta (o servidor responde 409 depois); fim null tira o fim
+export const editarMeta = (id: string, p: { titulo?: string; descricao?: string | null; fim?: string | null; alvo?: number; pontos?: number }) =>
+  request<MetaAPI>(`/metas/${id}`, { method: "PUT", body: JSON.stringify(p) });
 export const arquivarMeta = (id: string) => request<void>(`/metas/${id}`, { method: "DELETE" });
 export const minhasMetas = () => request<{ nivel: NivelAPI; metas: MetaAlunoAPI[] }>("/metas/minhas");
 export const rankingMetas = (turmaId?: string) =>

@@ -11,8 +11,8 @@ import type { Role } from "../types";
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 const SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
 const TIPOS: EventoPayload["tipo"][] = ["AVISO", "PROVA", "ENTREGA", "REUNIAO"];
-const ROTULO: Record<string, string> = { AVISO: "Aviso", PROVA: "Prova", ENTREGA: "Entrega", REUNIAO: "Reunião", FERIADO: "Feriado" };
-const TOM = (t: string) => (t === "FERIADO" ? "neutral" : t === "PROVA" ? "amber" : "green") as "green" | "amber" | "neutral";
+const ROTULO: Record<string, string> = { AVISO: "Aviso", PROVA: "Prova", ENTREGA: "Entrega", REUNIAO: "Reunião", FERIADO: "Feriado", META: "Meta" };
+const TOM = (t: string) => (t === "FERIADO" ? "neutral" : t === "PROVA" || t === "META" ? "amber" : "green") as "green" | "amber" | "neutral";
 const br = (d: string) => d.split("-").reverse().join("/");
 
 // um item "cobre" o dia se inicio <= dia <= fim (fim nulo = so o proprio dia)

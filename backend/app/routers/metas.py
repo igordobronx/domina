@@ -109,15 +109,20 @@ def criar_meta(payload: MetaRequest, usuario: Usuario = Depends(EQUIPE), db: Ses
     return _resposta(db, usuario, meta)
 
 
-@router.get("/metas", response_model=list[MetaResponse])
-def listar_metas(usuario: Usuario = Depends(EQUIPE), db: Session = Depends(get_db)):
+def metas_da_equipe(db: Session, usuario: Usuario):
+    """Query das metas ativas que o professor/gestor enxerga (usada na lista e no calendario)."""
     q = db.query(Meta).filter(Meta.escola_id == usuario.escola_id, Meta.ativa.is_(True))
     if usuario.perfil == PerfilEnum.PROFESSOR:
         turmas = _turmas_do_professor(db, usuario)
         meus_alunos = [a.id for a in _alunos_das_turmas(db, turmas)] if turmas else []
         q = q.filter(or_(Meta.criado_por == usuario.id, Meta.turma_id.in_(list(turmas)), Meta.aluno_id.in_(meus_alunos),
                          (Meta.turma_id.is_(None)) & (Meta.aluno_id.is_(None))))
-    return [_resposta(db, usuario, m) for m in q.order_by(Meta.inicio.desc())]
+    return q
+
+
+@router.get("/metas", response_model=list[MetaResponse])
+def listar_metas(usuario: Usuario = Depends(EQUIPE), db: Session = Depends(get_db)):
+    return [_resposta(db, usuario, m) for m in metas_da_equipe(db, usuario).order_by(Meta.inicio.desc())]
 
 
 @router.put("/metas/{meta_id}", response_model=MetaResponse)
