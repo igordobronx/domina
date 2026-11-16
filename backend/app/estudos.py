@@ -85,7 +85,7 @@ def salvar_exercicios(db, aluno_id, exercicios: list[ExercicioGerado], tema_por_
         if tema_id is None:
             continue
         ex = Exercicio(
-            tema_id=tema_id, aluno_id=aluno_id, titulo=e.titulo, enunciado=e.enunciado, opcoes=e.opcoes,
+            tema_id=tema_id, aluno_id=aluno_id, titulo=e.titulo, enunciado=e.enunciado, alternativas=e.opcoes,
             resposta_correta=e.resposta_correta, explicacao=e.explicacao, gerado_por_ia=True,
         )
         db.add(ex)

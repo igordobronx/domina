@@ -89,19 +89,19 @@ def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = 
         pendentes = _pendentes(db, usuario.id)
     pct = {d.habilidade_codigo: d.percentual_dominio for d in evidenciado}
     pendentes = sorted(pendentes, key=lambda p: pct.get(p[1], 100))  # competencia mais fraca primeiro
-    return [ExercicioAluno(id=e.id, habilidade_codigo=cod, titulo=e.titulo, enunciado=e.enunciado, opcoes=e.opcoes)
+    return [ExercicioAluno(id=e.id, habilidade_codigo=cod, titulo=e.titulo, enunciado=e.enunciado, opcoes=e.alternativas)
             for e, cod in pendentes]
 
 
 # o servidor confere (o navegador nunca recebe o gabarito antes de responder)
-@router.post("/exercicios/{exercicio_id}/responder", response_model=ResultadoResposta)
+@router.post("/estudos/exercicios/{exercicio_id}/responder", response_model=ResultadoResposta)
 def responder(exercicio_id: uuid.UUID, payload: RespostaRequest, usuario: Usuario = Depends(get_current_user),
               db: Session = Depends(get_db)):
     _so_aluno(usuario)
     ex = db.get(Exercicio, exercicio_id)
     if not ex or ex.aluno_id != usuario.id:  # de outro aluno = nao existe
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Exercício não encontrado.")
-    if payload.opcao >= len(ex.opcoes or []):
+    if payload.opcao >= len(ex.alternativas or []):
         raise HTTPException(422, "Alternativa inválida.")
     if db.query(ExercicioResposta.id).filter_by(exercicio_id=ex.id, aluno_id=usuario.id).first():
         raise HTTPException(status.HTTP_409_CONFLICT, "Você já respondeu este exercício.")

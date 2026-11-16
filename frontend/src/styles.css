@@ -906,6 +906,10 @@ a {
   background: #faedcf;
   color: #80500e;
 }
+.badge-red {
+  background: #f6dcdc;
+  color: #9b2c2c;
+}
 .badge-neutral {
   background: #ecebe3;
   color: #666b65;
@@ -1483,6 +1487,21 @@ mark.ponto {
   border-color: #197451;
   background: #ddeedd;
 }
+.option.wrong {
+  border-color: #b23a3a;
+  background: #f6dcdc;
+}
+.resultado-mini { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4d5a50; margin: 0 0 10px; }
+.resultado-mini .ponto { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; }
+.resultado-mini .ponto.certo { background: #197451; }
+.resultado-mini .ponto.errado { background: #b23a3a; }
+.resultado-mini .ponto.parcial { background: #b7791f; }
+.resultado-mini .ponto.espera { background: #9aa39b; }
+.rotulo-escolha-topo { font-size: 13px; font-weight: 600; margin: 14px 0 0; }
+.campo-resposta { margin: 0 0 24px; }
+.campo-resposta label { display: block; font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+.campo-resposta textarea { display: block; width: 100%; box-sizing: border-box; min-height: 170px; padding: 14px 16px;
+  border: 1px solid #dcd8cc; border-radius: 10px; font-size: 14px; line-height: 1.5; resize: vertical; }
 .option-letter {
   font-family: "IBM Plex Mono";
   font-size: 13px;
@@ -2640,3 +2659,80 @@ mark.ponto {
 .simbolos-lista { display: flex; flex-wrap: wrap; gap: 4px; }
 .simbolos-lista button { min-width: 34px; height: 34px; font-size: 17px; border: 1px solid rgba(0,0,0,.14); border-radius: 8px; background: #fff; cursor: pointer; }
 .simbolos-lista button:hover { background: rgba(25,116,81,.1); }
+
+/* exercicios do professor */
+.exercicio-preview { white-space: pre-wrap; margin: 0; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.lista-alternativas { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 14px; }
+.lista-alternativas li.certa { color: #196d4e; font-weight: 500; }
+.enunciado-ex { white-space: pre-wrap; }
+.comparar-respostas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin: 12px 0; }
+.comparar-respostas > div { border: 1px solid #dcd8cc; border-radius: 8px; padding: 12px; background: #fcfbf8; }
+.comparar-respostas h3 { font-size: 13px; margin: 0 0 6px; }
+.comparar-respostas p { white-space: pre-wrap; margin: 0; }
+.tabs button svg { vertical-align: -2px; }
+.form-grid .span-2 { grid-column: 1 / -1; }
+.ex-form { margin-top: 12px; }
+.ex-form .alternativas-form .alternativa { flex-direction: row; align-items: flex-start; gap: 10px; }
+.ex-form .alternativas-form .alternativa > b { padding-top: 13px; }
+.ex-form .alternativas-form .alternativa input[type="radio"] { width: auto; margin-top: 15px; }
+.ex-form .alternativas-form .alternativa > :last-child { flex: 1; min-width: 0; }
+.card > .tabs + .tabs { margin-top: 8px; }
+@media (max-width: 640px) { .form-grid .span-2 { grid-column: auto; } }
+
+/* botoes de escolha (parecem botoes: borda, fundo, cursor) */
+.botoes-escolha { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 4px; }
+.botoes-escolha button { border: 1.5px solid #b9c9bd; background: #fff; color: #196d4e; font-size: 13px; font-weight: 500;
+  padding: 10px 16px; border-radius: 999px; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.05); }
+.botoes-escolha button:hover { background: #eef5ec; }
+.botoes-escolha button.active { background: #197451; border-color: #197451; color: #fff; }
+.rotulo-escolha { font-size: 13px; margin: 14px 0 0; }
+.para-quem { border: 0; padding: 0; margin: 0; }
+.para-quem legend { font-size: 13px; padding: 0; }
+.lista-alunos { display: grid; gap: 6px; margin-top: 8px; max-height: 220px; overflow: auto; padding: 8px 10px; border: 1px solid #dcd8cc; border-radius: 8px; background: #fcfbf8; }
+.aluno-check { display: flex !important; flex-direction: row !important; align-items: center; gap: 8px !important; font-size: 14px !important; }
+.aluno-check input { width: auto !important; }
+/* alternativas */
+.alternativa-linha { border: 1px solid #dcd8cc; border-radius: 10px; padding: 10px; display: grid; gap: 8px; background: #fcfbf8; }
+.alternativa-linha.certa { border-color: #197451; background: #eef5ec; }
+.ex-form .alternativa-linha .alternativa { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; }
+.alternativa-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.botao-pequeno { border: 1px solid #b9c9bd; background: #fff; color: #196d4e; font-size: 12px; padding: 7px 12px; border-radius: 8px;
+  min-height: 36px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.botao-pequeno:hover { background: #eef5ec; }
+.marcada-correta { color: #197451; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+
+/* respostas dos alunos (professor) */
+.painel-respostas { display: grid; gap: 10px; margin-top: 6px; padding: 12px; border: 1px solid #dcd8cc; border-radius: 10px; background: #f7f5ef; }
+.resposta-aluno { background: #fff; border: 1px solid #e4e0d6; border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }
+.resposta-aluno.nao-fez { background: transparent; border-style: dashed; }
+.texto-resposta { white-space: pre-wrap; margin: 0; font-size: 14px; padding: 8px 10px; background: #fcfbf8; border-left: 3px solid #b9c9bd; border-radius: 4px; }
+.comentario-prof { margin: 0; font-size: 13px; padding: 8px 10px; background: #fff8e6; border-radius: 6px; white-space: pre-wrap; }
+.comentar { display: grid; gap: 6px; }
+.comentar textarea { border: 1px solid #dcd8cc; border-radius: 8px; padding: 10px; font-family: inherit; width: 100%; }
+.botao-pequeno.marcado-certo { background: #197451; border-color: #197451; color: #fff; }
+.botao-pequeno.perigo { color: #a33; border-color: #e3c3c3; }
+.botao-pequeno.marcado-errado { background: #a33; border-color: #a33; color: #fff; }
+.botao-pequeno:disabled { opacity: .6; cursor: not-allowed; }
+.botao-pequeno[aria-busy="true"] { cursor: wait; }
+.tabela-rolagem { overflow-x: auto; margin-bottom: 12px; }
+.botao-pequeno.marcado-parcial { background: #b7791f; border-color: #b7791f; color: #fff; }
+.grupo-turma { display: grid; gap: 6px; }
+.grupo-turma + .grupo-turma { border-top: 1px solid #e4e0d6; padding-top: 8px; }
+.grupo-turma-nome { margin: 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #6d756e; }
+.aviso-comentario { margin: 0; color: #8a5a00; font-weight: 500; }
+.exemplo-prof { background: #fff; border: 1px solid #e4e0d6; border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.exemplo-prof summary { cursor: pointer; color: #196d4e; font-weight: 500; }
+.exemplo-prof p { white-space: pre-wrap; margin: 8px 0 0; }
+.exemplos-form { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; }
+.exemplos-form legend { font-size: 13px; padding: 0; margin-bottom: 4px; }
+.exemplos-form .alternativa-linha label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.comparar-respostas p.exemplo-extra { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #dcd8cc; }
+.exemplo-prof p + p { border-top: 1px dashed #e4e0d6; padding-top: 6px; }
+
+/* botão Salvar do professor: separado de Certo/Parcial/Errado e em cor própria */
+.acoes-salvar { border-top: 1px solid #e4e0d6; padding-top: 10px; margin-top: 4px; }
+.botao-pequeno.botao-salvar { background: #eef5ec; border: 1.5px solid #197451; color: #196d4e; font-weight: 600; }
+.botao-pequeno.botao-salvar:hover:not(:disabled) { background: #dcebd9; }
+/* cartões de exercício do professor: botão sempre no fim do cartão, na mesma altura */
+.ex-prof > :last-child { margin-top: auto; }

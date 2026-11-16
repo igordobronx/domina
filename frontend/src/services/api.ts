@@ -62,6 +62,8 @@ function mensagemDeErro(detail: unknown): string {
     const onde = nums.length ? `Questão ${nums[0] + 1}: ` : "";
     if (type === "string_too_long") return `${onde}${campo} longo demais (máximo ${ctx.max_length} caracteres).`;
     if (type === "string_too_short") return `${onde}${campo} é obrigatório.`;
+    const msg = (detail[0] as { msg?: string }).msg;
+    if (type === "value_error" && msg) return msg.replace(/^Value error, /, "");
     return `${onde}${campo} está inválido.`;
   }
   return "Não foi possível completar a ação.";
@@ -493,8 +495,8 @@ export function meusExercicios(): Promise<ExercicioAPI[]> {
   return request<ExercicioAPI[]>("/estudos/meu");
 }
 
-export function responderExercicio(id: string, opcao: number): Promise<ResultadoRespostaAPI> {
-  return request<ResultadoRespostaAPI>(`/exercicios/${id}/responder`, { method: "POST", body: JSON.stringify({ opcao }) });
+export function responderPratica(id: string, opcao: number): Promise<ResultadoRespostaAPI> {
+  return request<ResultadoRespostaAPI>(`/estudos/exercicios/${id}/responder`, { method: "POST", body: JSON.stringify({ opcao }) });
 }
 
 export interface PraticaAPI {
@@ -505,6 +507,133 @@ export interface PraticaAPI {
 
 export function minhaPratica(): Promise<PraticaAPI[]> {
   return request<PraticaAPI[]>("/estudos/minha-pratica");
+}
+
+// ---- exercicios de pratica do professor (a mao ou com ajuda da IA); nao valem nota ----
+export type TipoExercicioAPI = "OBJETIVO" | "DISCURSIVO";
+
+export interface ExercicioPayload {
+  titulo: string;
+  assunto: string;
+  materia_id: string;
+  turma_id: string;
+  aluno_ids?: string[] | null; // so estes alunos da turma; nulo = turma toda
+  tipo: TipoExercicioAPI;
+  enunciado: string;
+  alternativas?: string[] | null;
+  resposta_correta?: number | null;
+  resposta_exemplo?: string | null;
+  respostas_exemplo?: string[] | null;
+  explicacao?: string | null;
+  gerado_por_ia: boolean;
+}
+
+export interface ExercicioProfessorAPI extends Required<Omit<ExercicioPayload, "alternativas" | "resposta_correta" | "resposta_exemplo" | "respostas_exemplo" | "explicacao" | "aluno_ids">> {
+  respostas_exemplo: string[];
+  aluno_ids: string[] | null;
+  alunos_nomes: string[];
+  id: string;
+  materia_nome: string;
+  turma_nome: string;
+  alternativas: string[] | null;
+  resposta_correta: number | null;
+  resposta_exemplo: string | null;
+  explicacao: string | null;
+  criado_em: string | null;
+  respostas: number;
+  acertos: number;
+  alunos_alvo: number;
+}
+
+export interface ExercicioAlunoAPI {
+  id: string;
+  titulo: string;
+  assunto: string;
+  materia_nome: string;
+  professor_nome: string;
+  tipo: TipoExercicioAPI;
+  enunciado: string;
+  alternativas: string[] | null;
+  gerado_por_ia: boolean;
+  criado_em: string | null;
+  minha_resposta: string | null;
+  correta: boolean | null;
+  resultado: ResultadoAPI | null;
+  comentario: string | null;
+  resposta_correta: number | null;
+  resposta_exemplo: string | null;
+  respostas_exemplo: string[];
+  explicacao: string | null;
+}
+
+export interface SugestaoExercicioAPI {
+  titulo: string;
+  enunciado: string;
+  alternativas: string[];
+  resposta_correta: number | null;
+  resposta_exemplo: string | null;
+  explicacao: string;
+}
+
+export function listarExerciciosProfessor(): Promise<ExercicioProfessorAPI[]> {
+  return request<ExercicioProfessorAPI[]>("/exercicios");
+}
+export function criarExercicio(p: ExercicioPayload): Promise<ExercicioProfessorAPI> {
+  return request<ExercicioProfessorAPI>("/exercicios", { method: "POST", body: JSON.stringify(p) });
+}
+export function criarExerciciosLote(p: ExercicioPayload & { turma_ids: string[] }): Promise<ExercicioProfessorAPI[]> {
+  return request<ExercicioProfessorAPI[]>("/exercicios/lote", { method: "POST", body: JSON.stringify(p) });
+}
+export type ResultadoAPI = "CERTA" | "PARCIAL" | "ERRADA";
+export interface RespostaAlunoAPI {
+  aluno_id: string;
+  nome: string;
+  fez: boolean;
+  resposta: string | null;
+  correta: boolean | null;
+  resultado: ResultadoAPI | null;
+  comentario: string | null;
+  respondido_em: string | null;
+}
+export interface ResumoAlunoAPI {
+  aluno_id: string;
+  nome: string;
+  total: number;
+  feitos: number;
+  acertos: number;
+  parciais: number;
+  corrigidos: number;
+}
+export function respostasDoExercicio(id: string): Promise<RespostaAlunoAPI[]> {
+  return request<RespostaAlunoAPI[]>(`/exercicios/${id}/respostas`);
+}
+export function avaliarRespostaExercicio(id: string, alunoId: string, p: { resultado?: ResultadoAPI | null; comentario?: string | null }): Promise<RespostaAlunoAPI> {
+  return request<RespostaAlunoAPI>(`/exercicios/${id}/respostas/${alunoId}`, { method: "PUT", body: JSON.stringify(p) });
+}
+export function resumoExerciciosTurma(turmaId: string): Promise<ResumoAlunoAPI[]> {
+  return request<ResumoAlunoAPI[]>(`/exercicios/resumo?turma_id=${turmaId}`);
+}
+export function editarExercicio(id: string, p: ExercicioPayload): Promise<ExercicioProfessorAPI> {
+  return request<ExercicioProfessorAPI>(`/exercicios/${id}`, { method: "PUT", body: JSON.stringify(p) });
+}
+export function excluirExercicio(id: string): Promise<void> {
+  return request<void>(`/exercicios/${id}`, { method: "DELETE" });
+}
+export function sugerirExercicios(p: {
+  materia_id: string; assunto: string; tipo: TipoExercicioAPI; quantidade: number; instrucoes?: string;
+}): Promise<SugestaoExercicioAPI[]> {
+  return request<SugestaoExercicioAPI[]>("/exercicios/sugerir", { method: "POST", body: JSON.stringify(p) });
+}
+export function sugerirRespostaExemplo(p: {
+  materia_id: string; assunto?: string; enunciado: string;
+}): Promise<{ resposta_exemplo: string }> {
+  return request<{ resposta_exemplo: string }>("/exercicios/sugerir-resposta", { method: "POST", body: JSON.stringify(p) });
+}
+export function exerciciosDaTurma(): Promise<ExercicioAlunoAPI[]> {
+  return request<ExercicioAlunoAPI[]>("/exercicios/turma");
+}
+export function responderExercicio(id: string, resposta: string): Promise<ExercicioAlunoAPI> {
+  return request<ExercicioAlunoAPI>(`/exercicios/${id}/responder`, { method: "POST", body: JSON.stringify({ resposta }) });
 }
 
 export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {

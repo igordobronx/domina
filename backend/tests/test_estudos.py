@@ -115,13 +115,13 @@ def test_responder_o_servidor_confere_salva_e_nao_mexe_no_dominio():
         exercicios = client.get("/estudos/meu", headers=aluno).json()
         dominio_antes = client.get("/dominio/meu", headers=aluno).json()
         ex = exercicios[0]
-        url = f"/exercicios/{ex['id']}/responder"
+        url = f"/estudos/exercicios/{ex['id']}/responder"
         assert client.post(url, headers=outro, json={"opcao": 0}).status_code == 404   # de outro aluno
         assert client.post(url, headers=aluno, json={"opcao": 9}).status_code == 422   # alternativa fora do intervalo
         r = client.post(url, headers=aluno, json={"opcao": 0})                         # a certa e a 0 no falso
         assert r.status_code == 200 and r.json() == {"correta": True, "resposta_correta": 0, "explicacao": "x"}
         assert client.post(url, headers=aluno, json={"opcao": 1}).status_code == 409   # so uma vez
-        assert client.post(f"/exercicios/{exercicios[1]['id']}/responder", headers=aluno, json={"opcao": 2}).json()["correta"] is False
+        assert client.post(f"/estudos/exercicios/{exercicios[1]['id']}/responder", headers=aluno, json={"opcao": 2}).json()["correta"] is False
         # sobram 1 pendente: a tela nao recebe os ja respondidos
         assert [e["id"] for e in client.get("/estudos/meu", headers=aluno).json()] == [exercicios[2]["id"]]
         # pratica salva por competencia, separada do dominio (que nao mudou)
@@ -147,7 +147,7 @@ def test_terminou_os_pendentes_gera_novos_ate_o_limite_diario():
     try:
         aluno = token("aluno@domina.com")
         for e in client.get("/estudos/meu", headers=aluno).json():  # gera o 1o plano e responde tudo
-            client.post(f"/exercicios/{e['id']}/responder", headers=aluno, json={"opcao": 0})
+            client.post(f"/estudos/exercicios/{e['id']}/responder", headers=aluno, json={"opcao": 0})
         r_est.LIMITE_DIARIO = 0
         assert client.get("/estudos/meu", headers=aluno).status_code == 429  # acabou o plano e o limite diario ja foi
         r_est.LIMITE_DIARIO = 99
@@ -167,7 +167,7 @@ def test_meta_de_pratica_conclui_ao_responder():
                                                      "pontos": 20, "turma_id": turma})
         assert m.status_code == 201, m.text
         for e in client.get("/estudos/meu", headers=aluno).json()[:1]:
-            client.post(f"/exercicios/{e['id']}/responder", headers=aluno, json={"opcao": 0})
+            client.post(f"/estudos/exercicios/{e['id']}/responder", headers=aluno, json={"opcao": 0})
         item = [x for x in client.get("/metas/minhas", headers=aluno).json()["metas"] if x["id"] == m.json()["id"]][0]
         assert item["status"] == "CONCLUIDA"
     finally:

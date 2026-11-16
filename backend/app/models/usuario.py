@@ -255,32 +255,52 @@ class DominioAluno(Base):
 
 
 class Exercicio(Base):
+    """Exercicio de PRATICA criado pelo professor (escrito por ele ou com ajuda da IA, que ele revisa
+    antes de salvar). Nao vale nota: as provas continuam em Atividade. Os gerados pela IA a partir
+    dos pontos fracos do aluno NAO ficam aqui (app/estudos.py, gerados na hora)."""
     __tablename__ = "exercicio"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    tema_id = Column(UUID(as_uuid=True), ForeignKey("tema.id"), nullable=False)
+    # competencia ligada (opcional, sobra do esquema antigo); o tema livre fica em `assunto`
+    tema_id = Column(UUID(as_uuid=True), ForeignKey("tema.id"), nullable=True)
     enunciado = Column(Text, nullable=False)
+    # True = o professor usou a IA para criar (aparece um selo para o aluno); continua sendo "do professor"
     gerado_por_ia = Column(Boolean, default=True, nullable=False)
     aprovado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
-    # exercicio de pratica (multipla escolha) gerado PARA um aluno; tema_id e a competencia treinada
+    # exercicio de pratica que a IA gerou PARA um aluno so (plano de estudo, app/estudos.py); nulo = do professor
     aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
     titulo = Column(String(200), nullable=True)
-    opcoes = Column(JSON, nullable=True)
-    resposta_correta = Column(Integer, nullable=True)  # indice em opcoes; NUNCA vai ao aluno antes de responder
+    assunto = Column(String(200), nullable=True)  # tema digitado pelo professor (ex.: "Coesão", "Função afim")
+    materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=True)
+    turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), nullable=True)
+    # so alguns alunos da turma: lista de ids (texto). Nulo = a turma toda
+    alunos = Column(JSON, nullable=True)
+    criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    tipo = Column(String(12), nullable=False, default="OBJETIVO", server_default="OBJETIVO")  # OBJETIVO | DISCURSIVO
+    alternativas = Column(JSON, nullable=True)  # so no objetivo
+    resposta_correta = Column(Integer, nullable=True)  # indice da alternativa certa (objetivo)
+    resposta_exemplo = Column(Text, nullable=True)  # discursivo: o aluno compara depois de responder (= a 1a)
+    # discursivo com mais de uma resposta de exemplo (todas, inclusive a 1a); nulo = so a resposta_exemplo
+    respostas_exemplo = Column(JSON, nullable=True)
     explicacao = Column(Text, nullable=True)
+    # excluir = desativar (as respostas dos alunos ficam)
+    ativo = Column(Boolean, nullable=False, default=True, server_default=true())
     criado_em = Column(DateTime, server_default=func.now(), nullable=True)
 
 
 class ExercicioResposta(Base):
     __tablename__ = "exercicio_resposta"
-    __table_args__ = (UniqueConstraint("exercicio_id", "aluno_id", name="uq_exercicio_resposta_aluno"),)
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     exercicio_id = Column(UUID(as_uuid=True), ForeignKey("exercicio.id"), nullable=False)
     aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
-    resposta = Column(Text, nullable=False)  # a letra marcada (A, B, C ou D)
-    correta = Column(Boolean, nullable=True)  # calculado no servidor
-    respondida_em = Column(DateTime, server_default=func.now(), nullable=True)
+    resposta = Column(Text, nullable=False)
+    # objetivo: calculada na hora. Discursivo: nulo ate o professor marcar certo/errado
+    correta = Column(Boolean, nullable=True)
+    # CERTA | PARCIAL | ERRADA (nulo = discursivo ainda sem correcao). correta acompanha: PARCIAL -> nulo
+    resultado = Column(String(8), nullable=True)
+    comentario = Column(Text, nullable=True)  # comentario do professor para o aluno
+    criado_em = Column(DateTime, server_default=func.now(), nullable=True)
 
 
 class ConsentimentoLGPD(Base):
