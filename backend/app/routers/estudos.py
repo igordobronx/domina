@@ -10,10 +10,11 @@ import uuid
 from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.database import get_db
-from app.estudos import gerar_exercicios, salvar_exercicios
+from app.erros import registrar_erros
+from app.estudos import gerar_exercicios, gerar_exercicios_exatas, salvar_exercicios, salvar_exercicios_exatas
 from app.metas import avaliar_seguro
 from app.models.enum import PerfilEnum
-from app.models.usuario import Exercicio, ExercicioResposta, Tema, Usuario
+from app.models.usuario import ErroAluno, Exercicio, ExercicioResposta, Materia, Tema, Usuario
 from app.routers.dominio import _compartilha_turma, _dominio_de
 
 router = APIRouter(tags=["estudos"])
@@ -25,7 +26,9 @@ MAX_NA_TELA = 6
 class ExercicioAluno(BaseModel):
     """O que o aluno recebe: SEM gabarito e SEM explicacao (so vem depois de responder)."""
     id: uuid.UUID
-    habilidade_codigo: str
+    habilidade_codigo: str  # C1..C5 na redacao; vazio em exatas
+    materia: str | None = None  # so nos de exatas
+    motivo: str | None = None  # so nos de exatas: o erro da correcao que originou o exercicio
     titulo: str
     enunciado: str
     opcoes: list[str]
@@ -52,26 +55,38 @@ def _so_aluno(usuario: Usuario) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos usam esta rota.")
 
 
-def _pendentes(db: Session, aluno_id) -> list[tuple[Exercicio, str]]:
+def _pendentes(db: Session, aluno_id) -> list[tuple[Exercicio, str, float]]:
+    """(exercicio, codigo da competencia ou "", % de dominio/acerto de onde ele veio) ainda sem resposta."""
     respondidos = db.query(ExercicioResposta.exercicio_id).filter_by(aluno_id=aluno_id)
-    return (
-        db.query(Exercicio, Tema.habilidade_codigo).join(Tema, Tema.id == Exercicio.tema_id)
+    linhas = (
+        db.query(Exercicio, Tema.habilidade_codigo).outerjoin(Tema, Tema.id == Exercicio.tema_id)
         .filter(Exercicio.aluno_id == aluno_id, ~Exercicio.id.in_(respondidos))
-        .order_by(Exercicio.criado_em.desc(), Tema.habilidade_codigo).limit(MAX_NA_TELA).all()
+        .order_by(Exercicio.criado_em.desc()).limit(MAX_NA_TELA).all()
     )
+    return [(e, cod or "") for e, cod in linhas]
 
 
-# plano de estudo personalizado: exercicios gerados a partir do dominio REAL do aluno e SALVOS.
-# Devolve os ainda nao respondidos; so gera novos quando nao sobra nenhum (e ate o limite diario).
+def _erros_sem_exercicio(db: Session, aluno_id, limite: int) -> list[ErroAluno]:
+    feitos = db.query(Exercicio.erro_id).filter(Exercicio.erro_id.isnot(None))
+    return (db.query(ErroAluno).filter(ErroAluno.aluno_id == aluno_id, ~ErroAluno.id.in_(feitos))
+            .order_by(ErroAluno.percentual, ErroAluno.criado_em.desc()).limit(limite).all())
+
+
+# plano de estudo personalizado: exercicios gerados a partir do que o aluno erra (dominio C1-C5 na redacao;
+# questoes erradas nas correcoes de exatas) e SALVOS. Devolve os ainda nao respondidos; so gera novos
+# quando nao sobra nenhum (e ate o limite diario).
 @router.get("/estudos/meu", response_model=list[ExercicioAluno])
 def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     _so_aluno(usuario)
+    registrar_erros(db, usuario.id)
+    db.commit()
     evidenciado = [d for d in _dominio_de(db, usuario.id) if d.num_evidencias > 0]
-    if not evidenciado:
+    erros = _erros_sem_exercicio(db, usuario.id, 3)
+    pendentes = _pendentes(db, usuario.id)
+    if not evidenciado and not erros and not pendentes:
         raise HTTPException(
             status.HTTP_409_CONFLICT, "Ainda não há correções aprovadas para montar seu plano personalizado.",
         )
-    pendentes = _pendentes(db, usuario.id)
     if not pendentes:
         if not settings.ANTHROPIC_API_KEY:
             raise HTTPException(
@@ -82,15 +97,33 @@ def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = 
         if hoje >= LIMITE_DIARIO:
             raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                                 "Você já recebeu o máximo de exercícios novos por hoje. Volte amanhã!")
-        piores = sorted(evidenciado, key=lambda d: d.percentual_dominio)[:3]
-        novos = gerar_exercicios(usuario.id, piores, forcar=True)  # forcar: o que vale e o salvo no banco
-        salvar_exercicios(db, usuario.id, novos, {d.habilidade_codigo: d.tema_id for d in piores})
+        if evidenciado:
+            piores = sorted(evidenciado, key=lambda d: d.percentual_dominio)[:3]
+            novos = gerar_exercicios(usuario.id, piores, forcar=True)  # forcar: o que vale e o salvo no banco
+            salvar_exercicios(db, usuario.id, novos, {d.habilidade_codigo: d.tema_id for d in piores})
+        if erros:
+            nomes = {m.id: m.nome for m in db.query(Materia).filter(Materia.id.in_({e.materia_id for e in erros}))}
+            salvar_exercicios_exatas(db, usuario.id, gerar_exercicios_exatas(erros, nomes), erros)
         db.commit()
         pendentes = _pendentes(db, usuario.id)
     pct = {d.habilidade_codigo: d.percentual_dominio for d in evidenciado}
-    pendentes = sorted(pendentes, key=lambda p: pct.get(p[1], 100))  # competencia mais fraca primeiro
-    return [ExercicioAluno(id=e.id, habilidade_codigo=cod, titulo=e.titulo, enunciado=e.enunciado, opcoes=e.alternativas)
-            for e, cod in pendentes]
+    erro_por_id = {e.id: e for e in db.query(ErroAluno).filter(
+        ErroAluno.id.in_([x.erro_id for x, _ in pendentes if x.erro_id]))}
+    nomes_mat = {m.id: m.nome for m in db.query(Materia).filter(
+        Materia.id.in_([x.materia_id for x, _ in pendentes if x.materia_id]))}
+
+    def peso(p):  # mais fraco primeiro: % de dominio (redacao) ou % da questao que ele acertou (exatas)
+        e, cod = p
+        return float(erro_por_id[e.erro_id].percentual) if e.erro_id in erro_por_id else pct.get(cod, 100)
+
+    return [
+        ExercicioAluno(
+            id=e.id, habilidade_codigo=cod, titulo=e.titulo, enunciado=e.enunciado, opcoes=e.alternativas,
+            materia=nomes_mat.get(e.materia_id) if e.erro_id else None,
+            motivo=(f"Você errou: {erro_por_id[e.erro_id].enunciado[:160]}" if e.erro_id in erro_por_id else None),
+        )
+        for e, cod in sorted(pendentes, key=peso)
+    ]
 
 
 # o servidor confere (o navegador nunca recebe o gabarito antes de responder)

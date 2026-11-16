@@ -254,6 +254,27 @@ class DominioAluno(Base):
     atualizado_em = Column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
 
 
+class ErroAluno(Base):
+    """Onde o aluno errou numa questao de exatas (nota final < 80% da questao), guardado a partir
+    da correcao aprovada. E a base do plano de estudo de exatas: cada exercicio aponta para o seu erro."""
+    __tablename__ = "erro_aluno"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
+    materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=False)
+    atividade_id = Column(UUID(as_uuid=True), ForeignKey("atividade.id"), nullable=False)
+    correcao_id = Column(UUID(as_uuid=True), ForeignKey("correcao.id"), nullable=False)
+    # uma linha por questao corrigida: garante que registrar de novo nao duplica
+    criterio_id = Column(UUID(as_uuid=True), ForeignKey("correcao_criterio.id"), unique=True, nullable=False)
+    enunciado = Column(Text, nullable=False)  # a questao, como estava na prova
+    gabarito = Column(Text, nullable=True)
+    nota = Column(Numeric(6, 2), nullable=False)
+    valor = Column(Numeric(6, 2), nullable=False)  # quanto a questao valia
+    percentual = Column(Numeric(5, 2), nullable=False)  # nota / valor * 100
+    detalhe = Column(Text, nullable=False)  # onde errou: justificativa + os pontos de erro da correcao
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+
+
 class Exercicio(Base):
     """Exercicio de PRATICA criado pelo professor (escrito por ele ou com ajuda da IA, que ele revisa
     antes de salvar). Nao vale nota: as provas continuam em Atividade. Os gerados pela IA a partir
@@ -269,6 +290,8 @@ class Exercicio(Base):
     aprovado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
     # exercicio de pratica que a IA gerou PARA um aluno so (plano de estudo, app/estudos.py); nulo = do professor
     aluno_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    # exercicio de exatas gerado a partir de um erro registrado do aluno (ver ErroAluno)
+    erro_id = Column(UUID(as_uuid=True), ForeignKey("erro_aluno.id"), nullable=True)
     titulo = Column(String(200), nullable=True)
     assunto = Column(String(200), nullable=True)  # tema digitado pelo professor (ex.: "Coesão", "Função afim")
     materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=True)

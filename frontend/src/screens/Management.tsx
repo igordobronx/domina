@@ -279,7 +279,12 @@ function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string
             <p className="muted">Ainda sem correções aprovadas para estimar o domínio.</p>
           ) : (
             dominio.map((d) => (
-              <Progress key={d.tema_id} value={d.percentual_dominio} label={d.tema} />
+              <div key={d.tema_id}>
+                <p className="tiny">
+                  <strong>{d.habilidade_codigo}</strong> · {d.tema} · {Math.round(d.percentual_dominio)}%
+                </p>
+                <Progress value={d.percentual_dominio} label={d.tema} />
+              </div>
             ))
           )}
         </div>

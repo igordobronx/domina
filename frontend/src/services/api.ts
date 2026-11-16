@@ -478,7 +478,9 @@ export function evolucaoMinha(): Promise<EvolucaoMateriaAPI[]> {
 // exercicio de pratica SEM gabarito: o servidor confere quando o aluno responde
 export interface ExercicioAPI {
   id: string;
-  habilidade_codigo: string;
+  habilidade_codigo: string; // vazio nos de exatas
+  materia?: string | null;
+  motivo?: string | null; // exatas: o erro da correcao que originou o exercicio
   titulo: string;
   enunciado: string;
   opcoes: string[];

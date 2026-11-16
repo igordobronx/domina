@@ -92,3 +92,70 @@ def salvar_exercicios(db, aluno_id, exercicios: list[ExercicioGerado], tema_por_
         salvos.append(ex)
     db.flush()
     return salvos
+
+
+PROMPT_EXATAS = """Você é um professor. Abaixo estão questões em que UM aluno errou ou perdeu pontos, com a
+matéria, a questão, o gabarito e o que a correção apontou de errado. Para CADA uma, na mesma ordem, crie um
+exercício de múltipla escolha (4 alternativas, exatamente 1 correta) sobre o MESMO assunto e o MESMO tipo de
+erro, mas com outros números/contexto (não repita a questão). Uma das alternativas erradas deve ser o erro
+que o aluno cometeu. Na explicação, mostre o caminho certo, passo a passo e curto.
+
+Questões erradas:
+{erros}
+
+Responda em JSON, um exercício por questão, na mesma ordem:
+{{
+  "exercicios": [
+    {{
+      "erro_ref": "E1",
+      "titulo": "título curto (o assunto)",
+      "enunciado": "a pergunta, com o contexto necessário",
+      "opcoes": ["alternativa A", "alternativa B", "alternativa C", "alternativa D"],
+      "resposta_correta": 0,
+      "explicacao": "por que a correta está certa e onde está o erro comum"
+    }}
+  ]
+}}"""
+
+
+class ExercicioExatasGerado(BaseModel):
+    erro_ref: str
+    titulo: str
+    enunciado: str
+    opcoes: list[str] = Field(min_length=4, max_length=4)
+    resposta_correta: int = Field(ge=0, le=3)
+    explicacao: str
+
+
+class _RespostaExatasIA(BaseModel):
+    exercicios: list[ExercicioExatasGerado]
+
+
+def gerar_exercicios_exatas(erros: list, nomes_materia: dict) -> list[ExercicioExatasGerado]:
+    """erros: linhas ErroAluno; nomes_materia: materia_id -> nome. Um exercicio por erro (Haiku)."""
+    texto = "\n\n".join(
+        f"E{i}. Matéria: {nomes_materia.get(e.materia_id, '')}\nQuestão: {e.enunciado}\n"
+        f"Gabarito: {e.gabarito or '(não informado)'}\nO que a correção apontou: {e.detalhe}"
+        for i, e in enumerate(erros, 1)
+    )
+    resultado, _ = gerar_json(PROMPT_EXATAS.format(erros=texto), _RespostaExatasIA, model=settings.ANTHROPIC_MODEL_HAIKU)
+    return resultado.exercicios
+
+
+def salvar_exercicios_exatas(db, aluno_id, gerados: list[ExercicioExatasGerado], erros: list) -> list:
+    """Grava (sem commit) um exercicio por erro, ligado ao erro e a materia (sem competencia C1-C5)."""
+    from app.models.usuario import Exercicio
+    por_ref = {f"E{i}": e for i, e in enumerate(erros, 1)}
+    salvos = []
+    for g in gerados:
+        erro = por_ref.get(g.erro_ref)
+        if erro is None:
+            continue
+        ex = Exercicio(
+            aluno_id=aluno_id, erro_id=erro.id, materia_id=erro.materia_id, titulo=g.titulo, enunciado=g.enunciado,
+            alternativas=g.opcoes, resposta_correta=g.resposta_correta, explicacao=g.explicacao, gerado_por_ia=True,
+        )
+        db.add(ex)
+        salvos.append(ex)
+    db.flush()
+    return salvos

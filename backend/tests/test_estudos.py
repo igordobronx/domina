@@ -96,13 +96,15 @@ def test_gera_salva_e_nao_regera_enquanto_ha_pendentes_sem_vazar_gabarito():
         aluno = token("aluno@domina.com")
         r1 = client.get("/estudos/meu", headers=aluno)
         assert r1.status_code == 200, r1.text
-        exercicios = r1.json()
+        geradas = len(chamadas)  # 1 (redacao) + 1 se o aluno tiver erros de exatas vindos de outros testes
+        todos = r1.json()
+        exercicios = [e for e in todos if e["habilidade_codigo"]]  # so os de redacao (C1-C5)
         assert len(exercicios) == 3
         assert exercicios[0]["habilidade_codigo"] == "C4"  # ponto fraco de proposito do seed (ver seed.py)
-        assert all("resposta_correta" not in e and "explicacao" not in e for e in exercicios)  # sem gabarito
+        assert all("resposta_correta" not in e and "explicacao" not in e for e in todos)  # sem gabarito
         # segunda chamada: os 3 ainda nao foram respondidos -> vem do banco, sem chamar o Claude
-        assert client.get("/estudos/meu", headers=aluno).json() == exercicios
-        assert chamadas == [estudos_mod.settings.ANTHROPIC_MODEL_HAIKU]
+        assert client.get("/estudos/meu", headers=aluno).json() == todos
+        assert len(chamadas) == geradas and set(chamadas) == {estudos_mod.settings.ANTHROPIC_MODEL_HAIKU}
     finally:
         estudos_mod.gerar_json = original
 

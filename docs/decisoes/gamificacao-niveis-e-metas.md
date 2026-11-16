@@ -124,3 +124,12 @@ Os alunos são em boa parte menores de idade. Por isso:
   `GET /estudos/minha-pratica` (aluno) e `GET /alunos/{id}/pratica` (professor/gestor, mesmas regras de escopo do domínio).
 - Os exercícios de reforço que o agente gera depois de corrigir uma redação também são salvos e entram no plano do aluno.
 - As metas `PRATICA_RESPONDIDOS` e `PRATICA_ACERTOS` contam essas respostas.
+
+## Plano de estudo de exatas: onde o aluno erra
+- Quando uma correção de exatas é aprovada (ou ao abrir o plano, o que também pega correções antigas e as objetivas),
+  cada questão em que o aluno ficou **abaixo de 80% do valor dela** vira uma linha em `erro_aluno` (`app/erros.py`):
+  matéria, atividade, correção, a questão, o gabarito, a nota e **onde errou** (justificativa + pontos de erro da correção).
+  Uma linha por questão, então registrar de novo não duplica.
+- O plano gera um exercício por erro (os mais fracos primeiro), com o mesmo assunto e o mesmo tipo de erro. Cada exercício guarda
+  `erro_id`, então dá para ver de qual correção ele veio. O aluno vê a matéria e "Você errou: …" no cartão.
+- Redação continua pelo domínio C1–C5. O domínio não muda com a prática; os limites diários valem para os dois tipos.

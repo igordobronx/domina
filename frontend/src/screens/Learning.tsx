@@ -55,10 +55,10 @@ function doBackend(e: ExercicioAPI): ExercicioComum {
   return {
     id: e.id,
     real: true,
-    topic: HABILIDADE_NOME[e.habilidade_codigo] ?? e.habilidade_codigo,
+    topic: e.materia ?? HABILIDADE_NOME[e.habilidade_codigo] ?? e.habilidade_codigo,
     type: "Gerado para você",
     title: e.titulo,
-    description: `Baseado no seu desempenho real em ${e.habilidade_codigo}.`,
+    description: e.motivo ?? `Baseado no seu desempenho real em ${e.habilidade_codigo}.`,
     question: e.enunciado,
     options: e.opcoes,
   };
