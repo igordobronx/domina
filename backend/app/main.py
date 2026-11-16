@@ -108,3 +108,9 @@ async def erro_nao_tratado(request: Request, exc: Exception) -> JSONResponse:
 
 # tela de testes do OCR + correcao (mesma origem da API, sem CORS). Abrir em /laboratorio/
 app.mount("/laboratorio", StaticFiles(directory=Path(__file__).parent / "static" / "laboratorio", html=True), name="laboratorio")
+
+# hospedagem de teste (Dockerfile.render): serve o site ja construido na mesma URL da API.
+# Sem a pasta site_dist (dev.sh, docker-compose, testes) nada muda. Fica por ultimo para nao cobrir rotas.
+_site = Path(__file__).parent.parent / "site_dist"
+if _site.is_dir():
+    app.mount("/", StaticFiles(directory=_site, html=True), name="site")

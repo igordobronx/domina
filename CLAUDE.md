@@ -92,3 +92,9 @@ provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção
 | Cliente da API | `frontend/src/services/api.ts` |
 | Navegação por perfil | `frontend/src/App.tsx` (`navItems`) e `frontend/src/services/navigation.ts` (`allowedPages`) |
 | Docs de decisão | `docs/decisoes/`, README (fluxo do agente), `frontend/docs/` |
+
+## Hospedagem de teste na nuvem (Render) — 2026-11-16
+- `render.yaml` + `Dockerfile.render` na raiz: um serviço só (site React + API FastAPI na mesma URL) e um Postgres grátis. `backend/app/main.py` serve a pasta `site_dist` só se ela existir (no Docker de teste).
+- Cada push na branch `domina-ciclo-3` republica sozinho. Roda `migrar.py` + `seed.py` ao subir (login professor@domina.com / senha123).
+- Chaves de IA (ANTHROPIC_API_KEY, GEMINI_API_KEY) são coladas no painel do Render, nunca no GitHub. Plano grátis: dorme após ~15 min sem uso (1º acesso demora ~1 min); banco grátis expira em 30 dias.
+- Pendente: atualizar o graphify (só roda no Mac).

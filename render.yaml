@@ -1,0 +1,32 @@
+# Hospedagem de TESTE no Render (plano gratis): site + API + banco, tudo numa URL so.
+# Atualiza sozinha a cada push na branch indicada em "branch".
+databases:
+  - name: domina-db
+    plan: free
+    databaseName: domina
+    user: domina
+
+services:
+  - type: web
+    name: domina-teste
+    runtime: docker
+    plan: free
+    branch: domina-ciclo-3
+    dockerfilePath: ./Dockerfile.render
+    dockerContext: .
+    autoDeployTrigger: commit
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: domina-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CONFIAR_PROXY
+        value: "true"
+      # chaves de IA: o dono cola no painel do Render (nao ficam no GitHub)
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
