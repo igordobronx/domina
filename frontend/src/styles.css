@@ -2747,3 +2747,61 @@ mark.ponto {
 .botao-pequeno.botao-salvar:hover:not(:disabled) { background: #dcebd9; }
 /* cartões de exercício do professor: botão sempre no fim do cartão, na mesma altura */
 .ex-prof > :last-child { margin-top: auto; }
+
+/* menu da bolinha do perfil (canto superior direito) */
+button.top-avatar {
+  border: 0;
+  cursor: pointer;
+}
+.profile-menu-wrap {
+  position: relative;
+}
+.profile-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  min-width: 250px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(20, 30, 20, 0.12);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+}
+.profile-menu-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 4px;
+}
+.profile-menu-head strong {
+  font-size: 13px;
+}
+.profile-menu-head span {
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.profile-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 10px 12px;
+  min-height: 40px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.profile-menu button:hover {
+  background: #f1efe6;
+}
+.profile-menu button.danger {
+  color: #a23b32;
+}

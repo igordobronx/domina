@@ -7,18 +7,23 @@ from app.auditoria import registrar
 from app.auth.security import hash_password
 from app.auth.dependencies import confirmar_senha, escola_do_escopo, get_current_user
 from app.database import get_db
-from app.models.usuario import Escola, Turma, Usuario, UsuarioTurma
+from app.models.usuario import Escola, Materia, ProfessorMateria, Turma, Usuario, UsuarioTurma
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
 from app.routers.submissoes import _professor_da_turma
-from app.schemas.usuario import CriarUsuarioRequest, UsuarioResponse
+from app.schemas.usuario import (
+    AtivoRequest, CriarUsuarioRequest, DefinirVinculosRequest, EditarUsuarioRequest, NovaSenhaRequest, UsuarioResponse,
+    VinculoTurma,
+)
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
 
 def _resposta(db: Session, usuario: Usuario) -> UsuarioResponse:
     escola = db.get(Escola, usuario.escola_id)
+    turmas = [n for (n,) in db.query(Turma.nome).join(UsuarioTurma, UsuarioTurma.turma_id == Turma.id)
+              .filter(UsuarioTurma.usuario_id == usuario.id).order_by(Turma.nome)]
     return UsuarioResponse(
-        id=usuario.id, nome=usuario.nome, email=usuario.email,
+        id=usuario.id, nome=usuario.nome, email=usuario.email, ativo=usuario.ativo, turmas=turmas,
         perfil=usuario.perfil.value, escola_nome=escola.nome if escola else "Plataforma Domina",
     )
 
@@ -98,8 +103,112 @@ def criar_usuario(payload: CriarUsuarioRequest, usuario_atual: Usuario = Depends
     db.flush()
     if turma:  # mesma transacao: ou cria a conta ja na turma, ou nao cria nada
         db.add(UsuarioTurma(usuario_id=novo_usuario.id, turma_id=turma.id, papel=UsuarioTurmaPapelEnum(perfil.value)))
+    if payload.turmas:
+        if usuario_atual.perfil == PerfilEnum.PROFESSOR:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o gestor define turmas e matérias.")
+        _aplicar_vinculos(db, novo_usuario, payload.turmas)
     registrar(db, usuario_atual.id, "CRIAR", "Usuario", novo_usuario.id)
     db.commit()
     db.refresh(novo_usuario)
 
     return _resposta(db, novo_usuario)
+
+
+# ---------- o gestor cuida do cadastro de alunos e professores ----------
+
+def _aplicar_vinculos(db: Session, alvo: Usuario, vinculos: list[VinculoTurma]) -> None:
+    """Troca (sem commit) as turmas do aluno/professor e, no professor, a materia de cada turma. Substitui tudo:
+    turma que nao esta na lista sai (as atividades e notas dela ficam, so o vinculo some)."""
+    if alvo.perfil not in (PerfilEnum.ALUNO, PerfilEnum.PROFESSOR):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Só aluno e professor têm turmas.")
+    por_turma = {v.turma_id: set(v.materia_ids) for v in vinculos}  # turma repetida: vale a ultima
+    achadas = {t for (t,) in db.query(Turma.id).filter(Turma.id.in_(por_turma), Turma.escola_id == alvo.escola_id)}
+    if achadas != set(por_turma):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
+    todas = set().union(*por_turma.values()) if por_turma else set()
+    if alvo.perfil == PerfilEnum.ALUNO and todas:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Aluno não tem matérias para lecionar.")
+    if todas and {m for (m,) in db.query(Materia.id).filter(Materia.id.in_(todas), Materia.escola_id == alvo.escola_id)} != todas:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+
+    atuais = {ut.turma_id for ut in db.query(UsuarioTurma).filter_by(usuario_id=alvo.id)}
+    for turma_id in atuais - set(por_turma):
+        db.query(UsuarioTurma).filter_by(usuario_id=alvo.id, turma_id=turma_id).delete()
+    for turma_id in set(por_turma) - atuais:
+        db.add(UsuarioTurma(usuario_id=alvo.id, turma_id=turma_id, papel=UsuarioTurmaPapelEnum(alvo.perfil.value)))
+    if alvo.perfil == PerfilEnum.PROFESSOR:
+        db.query(ProfessorMateria).filter_by(usuario_id=alvo.id).delete()
+        db.flush()
+        for turma_id, materia_ids in por_turma.items():
+            for materia_id in materia_ids:
+                db.add(ProfessorMateria(usuario_id=alvo.id, turma_id=turma_id, materia_id=materia_id))
+    db.flush()
+
+
+def _gerido(db: Session, atual: Usuario, usuario_id: uuid.UUID) -> Usuario:
+    """O usuario que o gestor (ou o admin) pode mexer. Conta de gestor: so o admin."""
+    if atual.perfil not in (PerfilEnum.GESTOR, PerfilEnum.ADMIN):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o gestor cuida do cadastro de pessoas.")
+    alvo = db.get(Usuario, usuario_id)
+    if (not alvo or alvo.perfil == PerfilEnum.ADMIN
+            or (atual.perfil == PerfilEnum.GESTOR and alvo.escola_id != atual.escola_id)):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuário não encontrado.")
+    if alvo.perfil == PerfilEnum.GESTOR and atual.perfil != PerfilEnum.ADMIN:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o administrador da plataforma mexe em conta de gestor.")
+    return alvo
+
+
+@router.put("/{usuario_id}", response_model=UsuarioResponse)
+def editar_usuario(usuario_id: uuid.UUID, payload: EditarUsuarioRequest, usuario_atual: Usuario = Depends(get_current_user),
+                   db: Session = Depends(get_db)):
+    alvo = _gerido(db, usuario_atual, usuario_id)
+    outro = db.query(Usuario).filter(Usuario.email == payload.email, Usuario.id != alvo.id).first()
+    if outro:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Email já cadastrado.")
+    alvo.nome, alvo.email = payload.nome.strip(), payload.email
+    registrar(db, usuario_atual.id, "EDITAR", "Usuario", alvo.id)
+    db.commit()
+    return _resposta(db, alvo)
+
+
+# o gestor define a senha nova e passa para a pessoa (o sistema ainda nao envia e-mail); pede a senha dele de novo
+@router.put("/{usuario_id}/senha", status_code=status.HTTP_204_NO_CONTENT)
+def trocar_senha(usuario_id: uuid.UUID, payload: NovaSenhaRequest, usuario_atual: Usuario = Depends(get_current_user),
+                 db: Session = Depends(get_db), x_confirmar_senha: str | None = Header(default=None)):
+    alvo = _gerido(db, usuario_atual, usuario_id)
+    confirmar_senha(usuario_atual, x_confirmar_senha)
+    alvo.senha_hash = hash_password(payload.senha)
+    registrar(db, usuario_atual.id, "TROCAR_SENHA", "Usuario", alvo.id)
+    db.commit()
+
+
+@router.put("/{usuario_id}/ativo", response_model=UsuarioResponse)
+def ativar_ou_desativar(usuario_id: uuid.UUID, payload: AtivoRequest, usuario_atual: Usuario = Depends(get_current_user),
+                        db: Session = Depends(get_db)):
+    alvo = _gerido(db, usuario_atual, usuario_id)
+    if alvo.id == usuario_atual.id:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Você não pode desativar a própria conta.")
+    alvo.ativo = payload.ativo
+    registrar(db, usuario_atual.id, "ATIVAR" if payload.ativo else "DESATIVAR", "Usuario", alvo.id)
+    db.commit()
+    return _resposta(db, alvo)
+
+
+@router.get("/{usuario_id}/vinculos", response_model=DefinirVinculosRequest)
+def ver_vinculos(usuario_id: uuid.UUID, usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    alvo = _gerido(db, usuario_atual, usuario_id)
+    materias: dict = {}
+    for r in db.query(ProfessorMateria).filter_by(usuario_id=alvo.id):
+        materias.setdefault(r.turma_id, []).append(r.materia_id)
+    turmas = [ut.turma_id for ut in db.query(UsuarioTurma).filter_by(usuario_id=alvo.id)]
+    return DefinirVinculosRequest(turmas=[VinculoTurma(turma_id=t, materia_ids=materias.get(t, [])) for t in turmas])
+
+
+@router.put("/{usuario_id}/vinculos", response_model=DefinirVinculosRequest)
+def definir_vinculos(usuario_id: uuid.UUID, payload: DefinirVinculosRequest, usuario_atual: Usuario = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    alvo = _gerido(db, usuario_atual, usuario_id)
+    _aplicar_vinculos(db, alvo, payload.turmas)
+    registrar(db, usuario_atual.id, "EDITAR", "UsuarioTurma", alvo.id)
+    db.commit()
+    return ver_vinculos(usuario_id, usuario_atual, db)

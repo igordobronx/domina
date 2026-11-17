@@ -19,6 +19,7 @@ from app.config import settings
 from app.database import get_db
 from app.exercicios_ia import SugestaoExercicio, sugerir_exercicios, sugerir_resposta_exemplo
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
+from app.lecionados import leciona
 from app.models.usuario import Exercicio, ExercicioResposta, Materia, Turma, Usuario, UsuarioTurma
 from app.routers.submissoes import _professor_da_turma
 from app.schemas.exercicio import (
@@ -67,12 +68,14 @@ def _alvo(db: Session, ex: Exercicio) -> list[Usuario]:
 
 
 def _conferir(db: Session, usuario: Usuario, payload: ExercicioRequest) -> None:
-    _materia_da_escola(db, usuario, payload.materia_id)
+    materia = _materia_da_escola(db, usuario, payload.materia_id)
     turma = db.get(Turma, payload.turma_id)
     if not turma or turma.escola_id != usuario.escola_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
     if not _professor_da_turma(db, usuario, turma.id):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não leciona nesta turma.")
+    if not leciona(db, usuario, turma.id, materia.id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona {materia.nome} na turma {turma.nome}.")
     if payload.aluno_ids:
         da_turma = {ut.usuario_id for ut in db.query(UsuarioTurma).filter_by(
             turma_id=turma.id, papel=UsuarioTurmaPapelEnum.ALUNO)}

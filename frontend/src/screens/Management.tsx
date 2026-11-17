@@ -5,8 +5,14 @@ import { Badge, Button, Card, Empty, Progress, SectionTitle } from "../component
 import {
   criarTurma,
   criarUsuario,
+  definirMateriasDoProfessor,
   dominioDoAluno,
+  evolucaoDoAluno,
+  materiasDosProfessores,
+  type EvolucaoMateriaAPI,
+  baixarDocumento,
   enviarDocumento,
+  excluirDocumento,
   listarDocumentos,
   listarMaterias,
   listarTurmasMinhas,
@@ -154,9 +160,13 @@ function TurmaCard({
   const [membros, setMembros] = useState<MembroTurmaAPI[] | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
+  const [materias, setMaterias] = useState<MateriaAPI[]>([]);
+  const [vinculos, setVinculos] = useState<{ professor_id: string; materia_id: string }[]>([]);
 
   const recarregarMembros = () => {
     setCarregando(true);
+    listarMaterias().then(setMaterias).catch(() => {});
+    materiasDosProfessores(turma.id).then(setVinculos).catch(() => {});
     membrosTurma(turma.id)
       .then(setMembros)
       .catch(() => notify("Não foi possível carregar os alunos da turma."))
@@ -209,6 +219,21 @@ function TurmaCard({
                     <p className="muted">{m.email}</p>
                   </div>
                   <Badge tone="neutral">Professor(a)</Badge>
+                  {gestor ? (
+                    <MateriasDoProfessor
+                      turmaId={turma.id} professorId={m.id} materias={materias}
+                      escolhidas={vinculos.filter((v) => v.professor_id === m.id).map((v) => v.materia_id)}
+                      onSalvo={(ids) => setVinculos((vs) => [...vs.filter((v) => v.professor_id !== m.id),
+                        ...ids.map((id) => ({ professor_id: m.id, materia_id: id }))])}
+                      notify={notify}
+                    />
+                  ) : (
+                    <span className="tiny muted">
+                      {vinculos.length
+                        ? `Você leciona: ${materias.filter((x) => vinculos.some((v) => v.materia_id === x.id)).map((x) => x.nome).join(", ")}`
+                        : "Você ainda não tem matérias nesta turma. Peça ao gestor para definir."}
+                    </span>
+                  )}
                 </div>
               ),
             )
@@ -237,9 +262,54 @@ function TurmaCard({
   );
 }
 
+// gestor: marca as materias que o professor leciona nesta turma
+function MateriasDoProfessor({
+  turmaId, professorId, materias, escolhidas, onSalvo, notify,
+}: {
+  turmaId: string; professorId: string; materias: MateriaAPI[]; escolhidas: string[];
+  onSalvo: (ids: string[]) => void; notify: (s: string) => void;
+}) {
+  const [aberto, setAberto] = useState(false);
+  const [marcadas, setMarcadas] = useState<string[]>(escolhidas);
+  const [salvando, setSalvando] = useState(false);
+  const alterna = (id: string) => setMarcadas((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
+  const salvar = async () => {
+    setSalvando(true);
+    try {
+      await definirMateriasDoProfessor(turmaId, professorId, marcadas);
+      onSalvo(marcadas);
+      setAberto(false);
+      notify("Matérias do professor salvas.");
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "Não foi possível salvar.");
+    } finally {
+      setSalvando(false);
+    }
+  };
+  if (!aberto)
+    return (
+      <Button variant="secondary" onPress={() => { setMarcadas(escolhidas); setAberto(true); }}>
+        {escolhidas.length ? `Matérias: ${materias.filter((m) => escolhidas.includes(m.id)).map((m) => m.nome).join(", ")}` : "Definir matérias"}
+      </Button>
+    );
+  return (
+    <div className="botoes-escolha" role="group" aria-label="Matérias que o professor leciona nesta turma">
+      {materias.map((m) => (
+        <button key={m.id} aria-pressed={marcadas.includes(m.id)} className={marcadas.includes(m.id) ? "active" : ""}
+          onClick={() => alterna(m.id)}>
+          {m.nome}
+        </button>
+      ))}
+      <Button disabled={salvando} onPress={salvar}>{salvando ? "Salvando..." : "Salvar"}</Button>
+      <Button variant="secondary" onPress={() => setAberto(false)}>Cancelar</Button>
+    </div>
+  );
+}
+
 function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string) => void }) {
   const [aberto, setAberto] = useState(false);
   const [dominio, setDominio] = useState<DominioAPI[] | null>(null);
+  const [evolucao, setEvolucao] = useState<EvolucaoMateriaAPI[]>([]);
   const [carregando, setCarregando] = useState(false);
 
   const abrir = () => {
@@ -247,6 +317,7 @@ function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string
     setAberto(vaiAbrir);
     if (vaiAbrir && !dominio) {
       setCarregando(true);
+      evolucaoDoAluno(aluno.id).then(setEvolucao).catch(() => {});
       dominioDoAluno(aluno.id)
         .then(setDominio)
         .catch(() => notify("Não foi possível carregar o domínio deste aluno."))
@@ -275,17 +346,27 @@ function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string
         <div className="student-domain">
           {carregando ? (
             <p className="muted">Carregando...</p>
-          ) : !dominio?.length ? (
-            <p className="muted">Ainda sem correções aprovadas para estimar o domínio.</p>
+          ) : !dominio?.length && !evolucao.length ? (
+            <p className="muted">Ainda sem correções aprovadas nas matérias que você leciona para este aluno.</p>
           ) : (
-            dominio.map((d) => (
-              <div key={d.tema_id}>
-                <p className="tiny">
-                  <strong>{d.habilidade_codigo}</strong> · {d.tema} · {Math.round(d.percentual_dominio)}%
-                </p>
-                <Progress value={d.percentual_dominio} label={d.tema} />
-              </div>
-            ))
+            <>
+              {evolucao.map((e) => (
+                <div key={e.materia_id}>
+                  <p className="tiny">
+                    <strong>{e.materia}</strong> · média {Math.round(e.media_percentual)}% · {e.num_atividades} atividade(s)
+                  </p>
+                  <Progress value={e.media_percentual} label={e.materia} />
+                </div>
+              ))}
+              {(dominio ?? []).map((d) => (
+                <div key={d.tema_id}>
+                  <p className="tiny">
+                    <strong>{d.materia} · {d.habilidade_codigo}</strong> · {d.tema} · {Math.round(d.percentual_dominio)}%
+                  </p>
+                  <Progress value={d.percentual_dominio} label={d.tema} />
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}
@@ -445,6 +526,7 @@ function AdicionarMembro({
     </Card>
   );
 }
+const EXT_DOCUMENTO = /\.(pdf|docx|txt|png|jpe?g|webp)$/i;
 const TIPOS_DOCUMENTO: { value: DocumentoAPI["tipo"]; label: string }[] = [
   { value: "APOSTILA", label: "Apostila" },
   { value: "RUBRICA", label: "Rubrica de correção" },
@@ -475,7 +557,8 @@ export function Materials({
   // modo real: materia/documentos vem do backend (por matéria, ja que /materias/{id}/documentos
   // so lista os de uma materia por vez -- juntamos todas as materias da escola aqui)
   const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
-  const [documentos, setDocumentos] = useState<(DocumentoAPI & { materiaNome: string })[] | null>(null);
+  const [documentos, setDocumentos] = useState<DocumentoAPI[] | null>(null);
+  const [filtro, setFiltro] = useState(""); // matéria escolhida no filtro da lista (vazio = todas)
   const [materiaId, setMateriaId] = useState("");
   const [tipo, setTipo] = useState<DocumentoAPI["tipo"]>("APOSTILA");
   const [carregando, setCarregando] = useState(real);
@@ -487,12 +570,9 @@ export function Materials({
     listarMaterias()
       .then((ms) => {
         setMaterias(ms);
-        setMateriaId((id) => id || ms[0]?.id || "");
-        return Promise.all(
-          ms.map((m) => listarDocumentos(m.id).then((docs) => docs.map((d) => ({ ...d, materiaNome: m.nome })))),
-        );
+        return listarDocumentos();
       })
-      .then((listas) => setDocumentos(listas.flat()))
+      .then(setDocumentos)
       .catch(() => notify("Não foi possível carregar os materiais."))
       .finally(() => setCarregando(false));
   };
@@ -505,7 +585,7 @@ export function Materials({
     }
     if (real) {
       if (!materiaId) {
-        setError("Escolha uma matéria.");
+        setError("Escolha a matéria do material.");
         return;
       }
       setSalvando(true);
@@ -569,6 +649,7 @@ export function Materials({
                 <label>
                   Matéria
                   <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+                    <option value="">Escolha a matéria…</option>
                     {(materias ?? []).map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.nome}
@@ -613,13 +694,13 @@ export function Materials({
               Documento (até {real ? "20" : "10"} MB)
               <input
                 type="file"
-                accept={real ? undefined : ".pdf,.docx,.txt"}
+                accept={real ? ".pdf,.docx,.txt,.png,.jpg,.jpeg,.webp" : ".pdf,.docx,.txt"}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   const limite = real ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
-                  if (f && (f.size > limite || (!real && !/\.(pdf|docx|txt)$/i.test(f.name)))) {
+                  if (f && (f.size > limite || (!real && !/\.(pdf|docx|txt)$/i.test(f.name)) || (real && !EXT_DOCUMENTO.test(f.name)))) {
                     setFile(null);
-                    setError(real ? "Arquivo maior que 20 MB." : "Escolha PDF, DOCX ou TXT com até 10 MB.");
+                    setError(real ? "Envie PDF, DOCX, TXT ou imagem, com até 20 MB." : "Escolha PDF, DOCX ou TXT com até 10 MB.");
                     e.target.value = "";
                   } else {
                     setFile(f || null);
@@ -640,30 +721,65 @@ export function Materials({
         </Card>
       )}
       {real ? (
-        <Card>
+        <>
+          <div className="botoes-escolha" role="group" aria-label="Filtrar por matéria">
+            <button aria-pressed={filtro === ""} className={filtro === "" ? "active" : ""} onClick={() => setFiltro("")}>
+              Todas
+            </button>
+            {(materias ?? []).map((m) => (
+              <button key={m.id} aria-pressed={filtro === m.id} className={filtro === m.id ? "active" : ""}
+                onClick={() => setFiltro(m.id)}>
+                {m.nome}
+              </button>
+            ))}
+          </div>
           {carregando ? (
-            <p className="muted">Carregando...</p>
-          ) : !documentos?.length ? (
-            <Empty title="Nenhum material enviado" text="Envie apostilas, rubricas ou gabaritos para orientar as correções." />
+            <Card><p className="muted">Carregando...</p></Card>
           ) : (
-            documentos.map((d) => (
-              <div className="material-row" key={d.id}>
-                <div className="activity-icon">
-                  <BookOpen size={21} />
-                </div>
-                <div className="activity-info">
-                  <strong>{d.nome_arquivo}</strong>
-                  <span>
-                    {d.materiaNome} · {TIPOS_DOCUMENTO.find((t) => t.value === d.tipo)?.label ?? d.tipo}
-                  </span>
-                </div>
-                <Badge tone={d.status_processamento === "PROCESSADO" ? "green" : "amber"}>
-                  {d.status_processamento === "PROCESSADO" ? "Base aprovada" : "Aguardando integração"}
-                </Badge>
-              </div>
-            ))
+            (materias ?? []).filter((m) => !filtro || m.id === filtro).map((m) => {
+              const docs = (documentos ?? []).filter((d) => d.materia_id === m.id);
+              return (
+                <Card key={m.id}>
+                  <SectionTitle title={`${m.nome} · ${docs.length} ${docs.length === 1 ? "material" : "materiais"}`} />
+                  {!docs.length ? (
+                    <p className="muted">Nenhum material enviado para esta matéria.</p>
+                  ) : (
+                    docs.map((d) => (
+                      <div className="material-row" key={d.id}>
+                        <div className="activity-icon">
+                          <BookOpen size={21} />
+                        </div>
+                        <div className="activity-info">
+                          <strong>{d.nome_arquivo}</strong>
+                          <span>
+                            {TIPOS_DOCUMENTO.find((t) => t.value === d.tipo)?.label ?? d.tipo} · {d.enviado_por_nome} ·{" "}
+                            {new Date(d.criado_em).toLocaleDateString("pt-BR")}
+                            {d.tamanho_bytes ? ` · ${(d.tamanho_bytes / 1024 / 1024).toFixed(1)} MB` : ""}
+                          </span>
+                        </div>
+                        <Badge tone={d.status_processamento === "PROCESSADO" ? "green" : "amber"}>
+                          {d.status_processamento === "PROCESSADO" ? "Base aprovada" : "Aguardando integração"}
+                        </Badge>
+                        {d.pode_baixar && (
+                          <Button variant="secondary" onPress={() => baixarDocumento(d.id, d.nome_arquivo).catch((e) => notify(e instanceof Error ? e.message : "Não foi possível baixar."))}>
+                            Baixar
+                          </Button>
+                        )}
+                        <Button variant="secondary" onPress={async () => {
+                          if (!window.confirm(`Excluir "${d.nome_arquivo}"?`)) return;
+                          try { await excluirDocumento(d.id); notify("Material excluído."); recarregar(); }
+                          catch (e) { notify(e instanceof Error ? e.message : "Não foi possível excluir."); }
+                        }}>
+                          Excluir
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </Card>
+              );
+            })
           )}
-        </Card>
+        </>
       ) : (
         <Card>
           {state.materials.map((m) => (

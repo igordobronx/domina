@@ -2,6 +2,7 @@
 from datetime import date, timedelta
 
 from tests.test_rbac import client, token  # noqa: F401  (reusa o banco/seed do teste de RBAC)
+from vinculo_teste import vincular  # noqa: E402
 
 _c = {}
 
@@ -19,6 +20,7 @@ def _setup():
         a2 = mk("Beto Meta", "beto.meta@x.com", "ALUNO", turma)
         a3 = mk("Caio Alheio", "caio.meta@x.com", "ALUNO", outra)
         materia = client.post("/materias", headers=g, json={"nome": "Mat Metas", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        vincular("prof.metas@x.com", turma, materia)
         _c.update(turma=turma, outra=outra, prof=prof, a1=a1, a2=a2, a3=a3, materia=materia)
     return g, token("prof.metas@x.com", "123456"), _c
 

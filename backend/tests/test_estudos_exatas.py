@@ -89,7 +89,9 @@ def test_erro_vira_exercicio_da_materia_ligado_ao_erro_e_so_uma_vez():
     original, estudos_mod.gerar_json = estudos_mod.gerar_json, falso
     try:
         aluno = _login()
-        r = client.get("/estudos/meu", headers=aluno)
+        assert client.get("/estudos/meu", headers=aluno).json() == []  # abrir a tela nunca chama a IA
+        assert len(prompts) == 0
+        r = client.post("/estudos/meu/gerar", headers=aluno)  # so o botao gera
         assert r.status_code == 200, r.text
         itens = r.json()
         assert len(itens) == 1  # so a Q1 (40%) conta; a Q2 (90%) esta acima de 70%
@@ -97,8 +99,9 @@ def test_erro_vira_exercicio_da_materia_ligado_ao_erro_e_so_uma_vez():
         assert "raiz de f(x)" in itens[0]["motivo"]
         assert "gabarito" not in str(itens[0]).lower() and "resposta_correta" not in itens[0]
         assert "Passou o 6 com o sinal errado" in prompts[0]  # a IA recebe onde ele errou
-        # abrir de novo nao gera nada novo nem duplica o erro
+        # abrir de novo, ou apertar o botao com exercicio por fazer, nao gera nada novo nem duplica o erro
         assert client.get("/estudos/meu", headers=aluno).json()[0]["id"] == itens[0]["id"]
+        assert client.post("/estudos/meu/gerar", headers=aluno).json()[0]["id"] == itens[0]["id"]
         assert len(prompts) == 1
         with SessionLocal() as db:
             erros = db.query(ErroAluno).filter_by(aluno_id=_aluno_id()).all()

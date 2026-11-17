@@ -15,6 +15,7 @@ from app.auth.dependencies import exigir_perfil
 from app.database import get_db
 from app.metas import avaliar_metas, metas_do_aluno, nivel_de, pontos_do_aluno, progresso
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
+from app.lecionados import materias_do_professor
 from app.models.usuario import Materia, Meta, MetaConcluida, Turma, Usuario, UsuarioTurma
 from app.schemas.metas import (
     MetaAlunoResponse, MetaEditRequest, MetaRequest, MetaResponse, MinhasMetasResponse, NivelResponse, RankingItem,
@@ -93,6 +94,8 @@ def criar_meta(payload: MetaRequest, usuario: Usuario = Depends(EQUIPE), db: Ses
         materia = db.get(Materia, payload.materia_id)
         if not materia or materia.escola_id != usuario.escola_id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+        if professor and materia.id not in materias_do_professor(db, usuario.id):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona {materia.nome}.")
         if payload.tipo == "DOMINIO_COMPETENCIA" and not materia.tipo.value.startswith("REDACAO"):
             raise HTTPException(422, "Domínio por competência só existe em matéria de redação.")
 

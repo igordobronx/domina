@@ -54,6 +54,8 @@ class Usuario(Base):
     email = Column(String(255), unique=True, nullable=False)
     senha_hash = Column(String(255), nullable=False)
     perfil = Column(SQLEnum(PerfilEnum), nullable=False)
+    # desativar = a conta nao entra mais, mas notas e historico ficam (nunca excluimos pessoa)
+    ativo = Column(Boolean, nullable=False, default=True, server_default=true())
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
 
 class Turma(Base):
@@ -70,6 +72,16 @@ class UsuarioTurma(Base):
     usuario_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), primary_key=True)
     turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), primary_key=True)
     papel = Column(SQLEnum(UsuarioTurmaPapelEnum), nullable=False)
+
+class ProfessorMateria(Base):
+    """Qual materia o professor da em qual turma (quem define e o gestor). E o que limita o que o
+    professor ve e cria: ele so enxerga estatisticas de aluno nas materias que leciona nas turmas do aluno."""
+    __tablename__ = "professor_materia"
+
+    usuario_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), primary_key=True)
+    turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), primary_key=True)
+    materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), primary_key=True)
+
 
 class Materia(Base):
     __tablename__ = "materia"
@@ -110,6 +122,8 @@ class DocumentoBase(Base):
     nome_arquivo = Column(String(255), nullable=False)
     tipo = Column(SQLEnum(TipoDocumentoEnum), nullable=False)
     tamanho_bytes = Column(BigInteger, nullable=True)  # para medir o armazenamento da escola
+    caminho = Column(String(255), nullable=True)  # nome do arquivo em UPLOAD_DIR (nulo nos antigos, que nao dao para baixar)
+    ativo = Column(Boolean, nullable=False, default=True, server_default=true())  # excluir = arquivar
     status_processamento = Column(
         SQLEnum(StatusProcessamentoEnum), default=StatusProcessamentoEnum.PENDENTE, nullable=False
     )

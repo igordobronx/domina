@@ -12,6 +12,7 @@ from app.config import settings
 from app.database import get_db
 from app.erros import registrar_erros
 from app.estudos import gerar_exercicios, gerar_exercicios_exatas, salvar_exercicios, salvar_exercicios_exatas
+from app.lecionados import materias_visiveis_do_aluno
 from app.metas import avaliar_seguro
 from app.models.enum import PerfilEnum
 from app.models.usuario import ErroAluno, Exercicio, ExercicioResposta, Materia, Tema, Usuario
@@ -175,11 +176,13 @@ def responder(exercicio_id: uuid.UUID, payload: RespostaRequest, usuario: Usuari
     return ResultadoResposta(correta=correta, resposta_correta=ex.resposta_correta, explicacao=ex.explicacao or "")
 
 
-def _pratica_de(db: Session, aluno_id) -> list[PraticaItem]:
+def _pratica_de(db: Session, aluno_id, materia_ids=None) -> list[PraticaItem]:
     por = {}
     q = (db.query(Tema.habilidade_codigo, ExercicioResposta.correta)
          .join(Exercicio, Exercicio.tema_id == Tema.id).join(ExercicioResposta, ExercicioResposta.exercicio_id == Exercicio.id)
          .filter(ExercicioResposta.aluno_id == aluno_id))
+    if materia_ids is not None:
+        q = q.filter(Tema.materia_id.in_(list(materia_ids)))
     for cod, correta in q:
         r = por.setdefault(cod, [0, 0])
         r[0] += 1
@@ -203,4 +206,4 @@ def pratica_do_aluno(aluno_id: uuid.UUID, usuario: Usuario = Depends(get_current
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado.")
     elif usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores veem a prática de alunos.")
-    return _pratica_de(db, aluno.id)
+    return _pratica_de(db, aluno.id, materias_visiveis_do_aluno(db, usuario, aluno.id))

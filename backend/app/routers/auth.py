@@ -20,6 +20,9 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             detail="Email ou palavra passe estão incorretos",
             headers={"www-Authenticate": "Bearer"},
         )
+    if not usuario.ativo:
+        registrar_seguranca(LOGIN_FALHA, usuario.id, payload.email)
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Conta desativada. Fale com o gestor da escola.")
     escola_inativa(db, usuario)
     registrar_seguranca(LOGIN_OK, usuario.id)
     access_token = create_access_token(

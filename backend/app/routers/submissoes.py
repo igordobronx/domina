@@ -16,9 +16,10 @@ from app.models.enum import (
     PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, TipoMateriaEnum, UsuarioTurmaPapelEnum,
 )
 from app.models.usuario import (
-    Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, SubmissaoPagina, Tema, Turma, Usuario, UsuarioTurma,
+    Atividade, Correcao, CorrecaoCriterio, Materia, ProfessorMateria, Submissao, SubmissaoPagina, Tema, Turma, Usuario, UsuarioTurma,
 )
 from app.competencias import garantir_competencias
+from app.lecionados import leciona, materias_do_professor
 from app.metas import avaliar_seguro
 from app.routers.ocr import ler_imagem, ocr
 from app.schemas.submissao import (
@@ -116,6 +117,8 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
 @router.get("/materias", response_model=list[MateriaResponse])
 def listar_materias(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     materias = db.query(Materia).filter_by(escola_id=usuario.escola_id)
+    if usuario.perfil == PerfilEnum.PROFESSOR:  # so as que ele leciona (o gestor ve todas)
+        materias = materias.filter(Materia.id.in_(materias_do_professor(db, usuario.id) or {uuid.uuid4()}))
     return [MateriaResponse(id=m.id, nome=m.nome, tipo=m.tipo.value) for m in materias]
 
 
@@ -127,6 +130,9 @@ def criar_materia(payload: CriarMateriaRequest, usuario: Usuario = Depends(get_c
     materia = Materia(escola_id=usuario.escola_id, nome=payload.nome.strip(), tipo=TipoMateriaEnum(payload.tipo))
     db.add(materia)
     db.flush()
+    if usuario.perfil == PerfilEnum.PROFESSOR:  # quem cria a materia passa a leciona-la nas turmas dele
+        for (turma_id,) in db.query(UsuarioTurma.turma_id).filter_by(usuario_id=usuario.id, papel=UsuarioTurmaPapelEnum.PROFESSOR):
+            db.add(ProfessorMateria(usuario_id=usuario.id, turma_id=turma_id, materia_id=materia.id))
     if materia.tipo not in MATERIAS_EXATAS:
         garantir_competencias(db, materia)  # sem C1..C5 a redacao dessa materia nunca seria corrigida
     db.commit()
@@ -155,6 +161,8 @@ def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID)
     materia = db.get(Materia, payload.materia_id)
     if not materia or materia.escola_id != usuario.escola_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+    if not leciona(db, usuario, turma.id, materia.id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona {materia.nome} na turma {turma.nome}.")
     if materia.tipo in MATERIAS_EXATAS and not payload.questoes:
         raise HTTPException(422, "Informe as questões e o gabarito desta atividade.")
 

@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
-from app.models.usuario import DominioAluno, Tema, Usuario, UsuarioTurma
+from app.lecionados import materias_visiveis_do_aluno
+from app.models.usuario import DominioAluno, Materia, Tema, Usuario, UsuarioTurma
 from app.schemas.dominio import DominioResponse
 
 router = APIRouter(tags=["dominio"])
@@ -24,17 +25,21 @@ def _compartilha_turma(db: Session, professor_id, aluno_id) -> bool:
     return bool(turmas_professor & turmas_aluno)
 
 
-def _dominio_de(db: Session, aluno_id) -> list[DominioResponse]:
+def _dominio_de(db: Session, aluno_id, materia_ids=None) -> list[DominioResponse]:
+    """materia_ids: so essas materias (professor); None = todas (o proprio aluno, o gestor)."""
     registros = (
-        db.query(DominioAluno, Tema).join(Tema, Tema.id == DominioAluno.tema_id)
-        .filter(DominioAluno.aluno_id == aluno_id).order_by(Tema.habilidade_codigo)
+        db.query(DominioAluno, Tema, Materia).join(Tema, Tema.id == DominioAluno.tema_id)
+        .join(Materia, Materia.id == Tema.materia_id)
+        .filter(DominioAluno.aluno_id == aluno_id).order_by(Materia.nome, Tema.habilidade_codigo)
     )
+    if materia_ids is not None:
+        registros = registros.filter(Tema.materia_id.in_(list(materia_ids)))
     return [
         DominioResponse(
-            tema_id=d.tema_id, tema=t.nome, habilidade_codigo=t.habilidade_codigo,
+            tema_id=d.tema_id, tema=t.nome, materia=m.nome, habilidade_codigo=t.habilidade_codigo,
             percentual_dominio=float(d.percentual_dominio), num_evidencias=d.num_evidencias,
         )
-        for d, t in registros
+        for d, t, m in registros
     ]
 
 
@@ -55,4 +60,4 @@ def dominio_do_aluno(aluno_id: uuid.UUID, usuario: Usuario = Depends(get_current
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado.")
     elif usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores veem domínio de alunos.")
-    return _dominio_de(db, aluno.id)
+    return _dominio_de(db, aluno.id, materias_visiveis_do_aluno(db, usuario, aluno.id))

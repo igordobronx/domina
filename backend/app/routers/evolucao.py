@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.enum import PerfilEnum, StatusCorrecaoEnum
+from app.lecionados import materias_visiveis_do_aluno
 from app.models.usuario import Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, Usuario
+from app.routers.dominio import _compartilha_turma
 from app.schemas.evolucao import EvolucaoMateriaResponse, EvolucaoPontoResponse
 
 router = APIRouter(tags=["evolucao"])
@@ -21,16 +23,34 @@ router = APIRouter(tags=["evolucao"])
 def minha_evolucao(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     if usuario.perfil != PerfilEnum.ALUNO:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos usam esta rota.")
+    return _evolucao_de(db, usuario.id)
 
+
+# professor: so as materias que ele leciona nas turmas do aluno; gestor: todas
+@router.get("/alunos/{aluno_id}/evolucao", response_model=list[EvolucaoMateriaResponse])
+def evolucao_do_aluno(aluno_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    aluno = db.get(Usuario, aluno_id)
+    if not aluno or aluno.perfil != PerfilEnum.ALUNO or aluno.escola_id != usuario.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado.")
+    if usuario.perfil == PerfilEnum.PROFESSOR and not _compartilha_turma(db, usuario.id, aluno.id):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Aluno não encontrado.")
+    elif usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores veem a evolução de alunos.")
+    return _evolucao_de(db, aluno.id, materias_visiveis_do_aluno(db, usuario, aluno.id))
+
+
+def _evolucao_de(db: Session, aluno_id, materia_ids=None) -> list[EvolucaoMateriaResponse]:
     linhas = (
         db.query(Correcao, Submissao, Atividade, Materia)
         .join(Submissao, Submissao.id == Correcao.submissao_id)
         .join(Atividade, Atividade.id == Submissao.atividade_id)
         .join(Materia, Materia.id == Atividade.materia_id)
-        .filter(Submissao.aluno_id == usuario.id, Correcao.status == StatusCorrecaoEnum.APROVADA)
+        .filter(Submissao.aluno_id == aluno_id, Correcao.status == StatusCorrecaoEnum.APROVADA)
         .order_by(Submissao.criado_em)
-        .all()
     )
+    if materia_ids is not None:
+        linhas = linhas.filter(Materia.id.in_(list(materia_ids)))
+    linhas = linhas.all()
     num_criterios_por_correcao = dict(
         db.query(CorrecaoCriterio.correcao_id, func.count(CorrecaoCriterio.id))
         .group_by(CorrecaoCriterio.correcao_id)

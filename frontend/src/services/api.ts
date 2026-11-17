@@ -75,6 +75,14 @@ export interface UsuarioAtual {
   email: string;
   perfil: "ALUNO" | "PROFESSOR" | "GESTOR" | "ADMIN";
   escola_nome: string;
+  ativo?: boolean;
+  turmas?: string[]; // nomes das turmas (lista de pessoas)
+}
+
+// uma turma da pessoa; no professor, as materias que ele leciona NESTA turma
+export interface VinculoTurmaAPI {
+  turma_id: string;
+  materia_ids: string[];
 }
 
 export function perfilParaRole(perfil: UsuarioAtual["perfil"]): Role {
@@ -214,6 +222,29 @@ export function listarUsuarios(escolaId?: string): Promise<UsuarioAtual[]> {
   return request<UsuarioAtual[]>(`/usuarios${escolaId ? `?escola_id=${escolaId}` : ""}`);
 }
 
+export function editarUsuario(id: string, nome: string, email: string): Promise<UsuarioAtual> {
+  return request<UsuarioAtual>(`/usuarios/${id}`, { method: "PUT", body: JSON.stringify({ nome, email }) });
+}
+
+// o gestor define a senha nova e passa para a pessoa; confirma a propria senha (cabecalho, nunca na URL)
+export function trocarSenhaUsuario(id: string, senha: string, minhaSenha: string): Promise<void> {
+  return request<void>(`/usuarios/${id}/senha`, {
+    method: "PUT", body: JSON.stringify({ senha }), headers: { "X-Confirmar-Senha": minhaSenha },
+  });
+}
+
+export function ativarUsuario(id: string, ativo: boolean): Promise<UsuarioAtual> {
+  return request<UsuarioAtual>(`/usuarios/${id}/ativo`, { method: "PUT", body: JSON.stringify({ ativo }) });
+}
+
+export function vinculosDoUsuario(id: string): Promise<{ turmas: VinculoTurmaAPI[] }> {
+  return request<{ turmas: VinculoTurmaAPI[] }>(`/usuarios/${id}/vinculos`);
+}
+
+export function definirVinculos(id: string, turmas: VinculoTurmaAPI[]): Promise<{ turmas: VinculoTurmaAPI[] }> {
+  return request<{ turmas: VinculoTurmaAPI[] }>(`/usuarios/${id}/vinculos`, { method: "PUT", body: JSON.stringify({ turmas }) });
+}
+
 export function criarUsuario(payload: {
   nome: string;
   email: string;
@@ -221,6 +252,7 @@ export function criarUsuario(payload: {
   perfil: "ALUNO" | "PROFESSOR" | "GESTOR";
   escola_id?: string;
   turma_id?: string; // ja matricula na turma ao criar
+  turmas?: VinculoTurmaAPI[]; // varias turmas (e materias por turma, no professor)
 }, confirmarSenha?: string): Promise<UsuarioAtual> {
   // criar GESTOR exige a senha de novo (reautenticacao), enviada em cabecalho e nunca na URL
   return request<UsuarioAtual>("/usuarios", {
@@ -448,6 +480,7 @@ export function aprovarCorrecao(
 export interface DominioAPI {
   tema_id: string;
   tema: string;
+  materia: string;
   habilidade_codigo: string;
   percentual_dominio: number;
   num_evidencias: number;
@@ -473,6 +506,27 @@ export interface EvolucaoMateriaAPI {
 
 export function evolucaoMinha(): Promise<EvolucaoMateriaAPI[]> {
   return request<EvolucaoMateriaAPI[]>("/evolucao/minha");
+}
+
+// professor: so as materias que ele leciona nas turmas do aluno; gestor: todas
+export function evolucaoDoAluno(alunoId: string): Promise<EvolucaoMateriaAPI[]> {
+  return request<EvolucaoMateriaAPI[]>(`/alunos/${alunoId}/evolucao`);
+}
+
+export interface ProfessorMateriaAPI {
+  professor_id: string;
+  materia_id: string;
+}
+
+// quem leciona qual materia na turma (o gestor define; o professor ve so as dele)
+export function materiasDosProfessores(turmaId: string): Promise<ProfessorMateriaAPI[]> {
+  return request<ProfessorMateriaAPI[]>(`/turmas/${turmaId}/materias-dos-professores`);
+}
+
+export function definirMateriasDoProfessor(turmaId: string, professorId: string, materiaIds: string[]): Promise<ProfessorMateriaAPI[]> {
+  return request<ProfessorMateriaAPI[]>(`/turmas/${turmaId}/professores/${professorId}/materias`, {
+    method: "PUT", body: JSON.stringify({ materia_ids: materiaIds }),
+  });
 }
 
 // exercicio de pratica SEM gabarito: o servidor confere quando o aluno responde
@@ -655,13 +709,38 @@ export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {
 export interface DocumentoAPI {
   id: string;
   materia_id: string;
+  materia_nome: string;
   nome_arquivo: string;
   tipo: "APOSTILA" | "RUBRICA" | "PLANO_DE_AULA" | "GABARITO";
   status_processamento: "PENDENTE" | "PROCESSADO" | "FALHOU";
+  tamanho_bytes: number | null;
+  enviado_por_nome: string;
+  pode_baixar: boolean;
+  criado_em: string;
 }
 
-export function listarDocumentos(materiaId: string): Promise<DocumentoAPI[]> {
-  return request<DocumentoAPI[]>(`/materias/${materiaId}/documentos`);
+// professor: so os que ele enviou; gestor: os da escola toda
+export function listarDocumentos(): Promise<DocumentoAPI[]> {
+  return request<DocumentoAPI[]>("/documentos");
+}
+
+export function excluirDocumento(id: string): Promise<void> {
+  return request<void>(`/documentos/${id}`, { method: "DELETE" });
+}
+
+// o arquivo exige o token, entao baixamos como blob e disparamos o download local
+export async function baixarDocumento(id: string, nome: string): Promise<void> {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/documentos/${id}/arquivo`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new ApiError("O arquivo deste material não está disponível.");
+  const url = URL.createObjectURL(await response.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export function enviarDocumento(
