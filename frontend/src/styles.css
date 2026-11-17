@@ -716,6 +716,17 @@ a {
   display: flex;
   flex-direction: column;
 }
+.stat-card.stat-link {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.stat-card.stat-link:hover,
+.stat-card.stat-link:focus-visible {
+  border-color: #2a7958;
+}
 .stat-top {
   display: flex;
   justify-content: space-between;

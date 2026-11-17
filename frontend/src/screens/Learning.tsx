@@ -15,6 +15,7 @@ import {
   dominioMeu,
   evolucaoMinha,
   exerciciosDaTurma,
+  gerarMeusExercicios,
   meusExercicios,
   minhaPratica,
   responderPratica,
@@ -49,6 +50,8 @@ interface ExercicioComum {
   answer?: number;
   explanation?: string;
   real?: boolean;
+  // exercicio real ja respondido: o que o aluno marcou e o gabarito (vem do servidor)
+  feita?: { opcao: number; correta: boolean; resposta_correta: number; explicacao: string };
 }
 
 function doBackend(e: ExercicioAPI): ExercicioComum {
@@ -61,6 +64,9 @@ function doBackend(e: ExercicioAPI): ExercicioComum {
     description: e.motivo ?? `Baseado no seu desempenho real em ${e.habilidade_codigo}.`,
     question: e.enunciado,
     options: e.opcoes,
+    feita: e.respondida != null
+      ? { opcao: e.respondida, correta: !!e.correta, resposta_correta: e.resposta_correta ?? 0, explicacao: e.explicacao ?? "" }
+      : undefined,
   };
 }
 function doDemo(t: (typeof studyTasks)[number]): ExercicioComum {
@@ -279,12 +285,15 @@ function PlanoIA({
   const [carregando, setCarregando] = useState(real);
   const [pratica, setPratica] = useState<PraticaAPI[]>([]);
   const [erro, setErro] = useState("");
-  // devolve os exercicios ainda nao respondidos; quando acabam, o servidor gera um novo plano (ate o limite do dia)
-  const carregar = () => {
+  const [gerando, setGerando] = useState(false);
+  // abrir a tela so LE os exercicios salvos (os mesmos de antes, feitos ou nao): nao chama a IA.
+  // A IA so e chamada em gerar(), quando o aluno clica no botao.
+  const carregar = (gerar = false) => {
     if (!real) return;
     setCarregando(true);
+    setGerando(gerar);
     setErro("");
-    meusExercicios()
+    (gerar ? gerarMeusExercicios() : meusExercicios())
       .then(setExerciciosReais)
       .catch((e) =>
         setErro(e instanceof Error ? e.message : "Não foi possível montar seu plano de estudo."),
@@ -308,7 +317,7 @@ function PlanoIA({
         task={task}
         onBack={() => {
           select(null);
-          if (task.real) carregar(); // o respondido sai da lista; se acabou, vem um plano novo
+          if (task.real && !task.feita) carregar(); // marca como feito na lista (so leitura, sem IA)
         }}
         onComplete={() =>
           update((s) => ({
@@ -321,12 +330,28 @@ function PlanoIA({
   if (real && carregando)
     return (
       <Empty
-        title="Montando seu plano de estudo..."
-        text="Isso pode levar uns 20 a 30 segundos na primeira vez: estamos gerando exercícios específicos para o seu desempenho real."
+        title={gerando ? "Montando seus exercícios..." : "Carregando seus exercícios..."}
+        text={gerando
+          ? "Isso pode levar uns 20 a 30 segundos: estamos gerando exercícios específicos para o seu desempenho real."
+          : "Isso leva só um instante."}
       />
     );
   if (real && erro)
-    return <Empty title="Ainda não dá para montar seu plano" text={erro} />;
+    return (
+      <Empty title="Ainda não dá para montar seu plano" text={erro}>
+        {exerciciosReais !== null && <Button variant="secondary" onPress={() => carregar()}>Voltar aos exercícios</Button>}
+      </Empty>
+    );
+  if (real && !tarefas.length)
+    return (
+      <Empty
+        title="Você ainda não tem exercícios"
+        text="A IA monta exercícios a partir do que você mais errou. Eles ficam salvos: são os mesmos toda vez que você voltar aqui."
+      >
+        <Button icon={Sparkles} onPress={() => carregar(true)}>Gerar exercícios</Button>
+      </Empty>
+    );
+  const primeiroPorFazer = tarefas.findIndex((t) => !t.feita);
   return (
     <>
       <div className="info-banner">
@@ -348,12 +373,14 @@ function PlanoIA({
       )}
       <div className="study-grid">
         {tarefas.map((t, i) => {
-          const proximo = i === 0; // o respondido sai da lista: o verde e sempre o primeiro
+          const proximo = i === primeiroPorFazer; // o verde e o primeiro ainda nao feito
           return (
           <Card key={t.id} className="study-task">
             <div className="section-title">
               <span className="task-number">0{i + 1}</span>
-              {proximo ? (
+              {t.feita ? (
+                <Badge tone="neutral">Feito</Badge>
+              ) : proximo ? (
                 <Badge>Recomendado para você</Badge>
               ) : (
                 <Badge tone="neutral">{t.type}</Badge>
@@ -362,17 +389,23 @@ function PlanoIA({
             <span className="eyebrow">{t.topic}</span>
             <h2>{t.title}</h2>
             <p>{t.description}</p>
+            {t.feita && <ResultadoMini resultado={t.feita.correta ? "CERTA" : "ERRADA"} />}
             <Button
               variant={proximo ? "primary" : "secondary"}
               icon={ArrowRight}
               onPress={() => select(t.id)}
             >
-              Começar prática
+              {t.feita ? "Ver resposta" : "Começar prática"}
             </Button>
           </Card>
           );
         })}
       </div>
+      {real && primeiroPorFazer === -1 && (
+        <Button variant="secondary" icon={Sparkles} onPress={() => carregar(true)}>
+          Gerar novos exercícios
+        </Button>
+      )}
       <p className="tiny muted">
         {real
           ? "Exercícios gerados por IA a partir do seu desempenho real. Suas respostas ficam salvas e contam para as metas; elas não alteram a estimativa de domínio."
@@ -390,12 +423,13 @@ function Exercise({
   onBack: () => void;
   onComplete: () => void;
 }) {
-  const [answer, setAnswer] = useState<number | null>(null);
-  const [checked, setChecked] = useState(false);
+  // ja respondido: abre mostrando o que o aluno marcou e o gabarito (so leitura)
+  const [answer, setAnswer] = useState<number | null>(task.feita?.opcao ?? null);
+  const [checked, setChecked] = useState(!!task.feita);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
   // exercicio real: quem confere e o servidor (resposta salva); demonstracao: gabarito local
-  const [res, setRes] = useState<{ correta: boolean; resposta_correta: number; explicacao: string } | null>(null);
+  const [res, setRes] = useState<{ correta: boolean; resposta_correta: number; explicacao: string } | null>(task.feita ?? null);
   const conferir = async () => {
     if (answer === null) return;
     if (!task.real) {
@@ -453,7 +487,7 @@ function Exercise({
               <h3>{res.correta ? "Você acertou." : "Você errou."}</h3>
               <p>{res.explicacao}</p>
             </div>
-            <Button onPress={onBack}>Concluir prática</Button>
+            <Button onPress={onBack}>{task.feita ? "Voltar" : "Concluir prática"}</Button>
           </>
         ) : (
           <>

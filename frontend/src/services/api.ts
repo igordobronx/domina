@@ -484,6 +484,11 @@ export interface ExercicioAPI {
   titulo: string;
   enunciado: string;
   opcoes: string[];
+  // so vem depois que o aluno respondeu (antes disso o servidor nao manda o gabarito)
+  respondida?: number;
+  correta?: boolean;
+  resposta_correta?: number;
+  explicacao?: string;
 }
 
 export interface ResultadoRespostaAPI {
@@ -495,6 +500,11 @@ export interface ResultadoRespostaAPI {
 // devolve os exercicios ainda nao respondidos; o servidor so gera novos quando acabam
 export function meusExercicios(): Promise<ExercicioAPI[]> {
   return request<ExercicioAPI[]>("/estudos/meu");
+}
+
+// unica chamada que usa a IA: so quando o aluno clica em gerar
+export function gerarMeusExercicios(): Promise<ExercicioAPI[]> {
+  return request<ExercicioAPI[]>("/estudos/meu/gerar", { method: "POST" });
 }
 
 export function responderPratica(id: string, opcao: number): Promise<ResultadoRespostaAPI> {

@@ -235,8 +235,11 @@ export function App() {
       });
     }
   }, [notify]);
-  const navigate = (next: Page) => {
+  // filtro com que "Minhas atividades" abre (os numeros da visao geral levam direto para o status)
+  const [filtroAtividades, setFiltroAtividades] = useState("todas");
+  const navigate = (next: Page, filtro = "todas") => {
     setPage(allowedPages[role].includes(next) ? next : "inicio");
+    setFiltroAtividades(filtro);
     setActivity(null);
     setStudy(null);
     setMenu(false);
@@ -562,6 +565,7 @@ export function App() {
                 selected={activity}
                 select={setActivity}
                 reviewOnly={page === "revisoes"}
+                initialFilter={filtroAtividades}
                 currentUser={currentUser}
               />
             )}

@@ -24,7 +24,8 @@ MAX_NA_TELA = 6
 
 
 class ExercicioAluno(BaseModel):
-    """O que o aluno recebe: SEM gabarito e SEM explicacao (so vem depois de responder)."""
+    """O que o aluno recebe: SEM gabarito e SEM explicacao enquanto nao respondeu.
+    Depois de responder vem `respondida` (a alternativa dele), `correta`, `resposta_correta` e `explicacao`."""
     id: uuid.UUID
     habilidade_codigo: str  # C1..C5 na redacao; vazio em exatas
     materia: str | None = None  # so nos de exatas
@@ -32,6 +33,10 @@ class ExercicioAluno(BaseModel):
     titulo: str
     enunciado: str
     opcoes: list[str]
+    respondida: int | None = None
+    correta: bool | None = None
+    resposta_correta: int | None = None
+    explicacao: str | None = None
 
 
 class RespostaRequest(BaseModel):
@@ -55,15 +60,18 @@ def _so_aluno(usuario: Usuario) -> None:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só alunos usam esta rota.")
 
 
-def _pendentes(db: Session, aluno_id) -> list[tuple[Exercicio, str, float]]:
-    """(exercicio, codigo da competencia ou "", % de dominio/acerto de onde ele veio) ainda sem resposta."""
-    respondidos = db.query(ExercicioResposta.exercicio_id).filter_by(aluno_id=aluno_id)
+def _lote(db: Session, aluno_id) -> list[tuple]:
+    """Os ultimos exercicios que a IA gerou para o aluno, respondidos ou nao:
+    (exercicio, codigo da competencia ou "", resposta dele ou None)."""
     linhas = (
-        db.query(Exercicio, Tema.habilidade_codigo).outerjoin(Tema, Tema.id == Exercicio.tema_id)
-        .filter(Exercicio.aluno_id == aluno_id, ~Exercicio.id.in_(respondidos))
+        db.query(Exercicio, Tema.habilidade_codigo, ExercicioResposta)
+        .outerjoin(Tema, Tema.id == Exercicio.tema_id)
+        .outerjoin(ExercicioResposta, (ExercicioResposta.exercicio_id == Exercicio.id)
+                   & (ExercicioResposta.aluno_id == aluno_id))
+        .filter(Exercicio.aluno_id == aluno_id)
         .order_by(Exercicio.criado_em.desc()).limit(MAX_NA_TELA).all()
     )
-    return [(e, cod or "") for e, cod in linhas]
+    return [(e, cod or "", r) for e, cod, r in linhas]
 
 
 def _erros_sem_exercicio(db: Session, aluno_id, limite: int) -> list[ErroAluno]:
@@ -72,22 +80,61 @@ def _erros_sem_exercicio(db: Session, aluno_id, limite: int) -> list[ErroAluno]:
             .order_by(ErroAluno.percentual, ErroAluno.criado_em.desc()).limit(limite).all())
 
 
-# plano de estudo personalizado: exercicios gerados a partir do que o aluno erra (dominio C1-C5 na redacao;
-# questoes erradas nas correcoes de exatas) e SALVOS. Devolve os ainda nao respondidos; so gera novos
-# quando nao sobra nenhum (e ate o limite diario).
-@router.get("/estudos/meu", response_model=list[ExercicioAluno])
-def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+def _base(db: Session, usuario: Usuario):
+    """(competencias com evidencia, erros de exatas ainda sem exercicio, lote atual); 409 se nao ha nada."""
     _so_aluno(usuario)
     registrar_erros(db, usuario.id)
     db.commit()
     evidenciado = [d for d in _dominio_de(db, usuario.id) if d.num_evidencias > 0]
     erros = _erros_sem_exercicio(db, usuario.id, 3)
-    pendentes = _pendentes(db, usuario.id)
-    if not evidenciado and not erros and not pendentes:
+    lote = _lote(db, usuario.id)
+    if not evidenciado and not erros and not lote:
         raise HTTPException(
             status.HTTP_409_CONFLICT, "Ainda não há correções aprovadas para montar seu plano personalizado.",
         )
-    if not pendentes:
+    return evidenciado, erros, lote
+
+
+def _apresentar(db: Session, lote, evidenciado) -> list[ExercicioAluno]:
+    pct = {d.habilidade_codigo: d.percentual_dominio for d in evidenciado}
+    erro_por_id = {e.id: e for e in db.query(ErroAluno).filter(
+        ErroAluno.id.in_([x.erro_id for x, _, _ in lote if x.erro_id]))}
+    nomes_mat = {m.id: m.nome for m in db.query(Materia).filter(
+        Materia.id.in_([x.materia_id for x, _, _ in lote if x.materia_id]))}
+
+    def ordem(p):  # por fazer antes dos feitos; dentro disso, mais fraco primeiro
+        e, cod, r = p  # peso: % de dominio (redacao) ou % da questao que ele acertou (exatas)
+        return (r is not None,
+                float(erro_por_id[e.erro_id].percentual) if e.erro_id in erro_por_id else pct.get(cod, 100))
+
+    return [
+        ExercicioAluno(
+            id=e.id, habilidade_codigo=cod, titulo=e.titulo, enunciado=e.enunciado, opcoes=e.alternativas,
+            materia=nomes_mat.get(e.materia_id) if e.erro_id else None,
+            motivo=(f"Você errou: {erro_por_id[e.erro_id].enunciado[:160]}" if e.erro_id in erro_por_id else None),
+            # gabarito e explicacao so saem do servidor depois que o aluno respondeu
+            **({"respondida": ord(r.resposta[0]) - 65, "correta": bool(r.correta),
+                "resposta_correta": e.resposta_correta, "explicacao": e.explicacao or ""} if r else {}),
+        )
+        for e, cod, r in sorted(lote, key=ordem)
+    ]
+
+
+# plano de estudo personalizado: exercicios gerados a partir do que o aluno erra (dominio C1-C5 na redacao;
+# questoes erradas nas correcoes de exatas) e SALVOS no banco.
+# Abrir a tela (GET) NUNCA chama a IA: devolve sempre os mesmos exercicios salvos, feitos ou nao.
+@router.get("/estudos/meu", response_model=list[ExercicioAluno], response_model_exclude_none=True)
+def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    evidenciado, _, lote = _base(db, usuario)
+    return _apresentar(db, lote, evidenciado)
+
+
+# so aqui a IA e chamada, e so quando o aluno pede (botao). Se ainda sobra exercicio por fazer,
+# nao gera nada: devolve os mesmos. Vale o limite diario.
+@router.post("/estudos/meu/gerar", response_model=list[ExercicioAluno], response_model_exclude_none=True)
+def gerar_meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    evidenciado, erros, lote = _base(db, usuario)
+    if all(r is not None for _, _, r in lote):
         if not settings.ANTHROPIC_API_KEY:
             raise HTTPException(
                 status.HTTP_503_SERVICE_UNAVAILABLE, "Geração de exercícios indisponível: servidor sem chave do Claude.",
@@ -105,25 +152,8 @@ def meus_exercicios(usuario: Usuario = Depends(get_current_user), db: Session = 
             nomes = {m.id: m.nome for m in db.query(Materia).filter(Materia.id.in_({e.materia_id for e in erros}))}
             salvar_exercicios_exatas(db, usuario.id, gerar_exercicios_exatas(erros, nomes), erros)
         db.commit()
-        pendentes = _pendentes(db, usuario.id)
-    pct = {d.habilidade_codigo: d.percentual_dominio for d in evidenciado}
-    erro_por_id = {e.id: e for e in db.query(ErroAluno).filter(
-        ErroAluno.id.in_([x.erro_id for x, _ in pendentes if x.erro_id]))}
-    nomes_mat = {m.id: m.nome for m in db.query(Materia).filter(
-        Materia.id.in_([x.materia_id for x, _ in pendentes if x.materia_id]))}
-
-    def peso(p):  # mais fraco primeiro: % de dominio (redacao) ou % da questao que ele acertou (exatas)
-        e, cod = p
-        return float(erro_por_id[e.erro_id].percentual) if e.erro_id in erro_por_id else pct.get(cod, 100)
-
-    return [
-        ExercicioAluno(
-            id=e.id, habilidade_codigo=cod, titulo=e.titulo, enunciado=e.enunciado, opcoes=e.alternativas,
-            materia=nomes_mat.get(e.materia_id) if e.erro_id else None,
-            motivo=(f"Você errou: {erro_por_id[e.erro_id].enunciado[:160]}" if e.erro_id in erro_por_id else None),
-        )
-        for e, cod in sorted(pendentes, key=peso)
-    ]
+        lote = _lote(db, usuario.id)
+    return _apresentar(db, lote, evidenciado)
 
 
 # o servidor confere (o navegador nunca recebe o gabarito antes de responder)

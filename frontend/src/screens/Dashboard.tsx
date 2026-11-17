@@ -7,19 +7,20 @@ import {
   CheckCheck,
   Clock3,
   Flame,
-  GraduationCap,
+  ListTodo,
   Plus,
   Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
-import type { Activity, DemoState, Page, Role } from "../types";
+import type { Activity, ActivityStatus, DemoState, Page, Role } from "../types";
 import { topics, studyTasks } from "../data/demo";
 import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
 import type { UsuarioAtual } from "../services/api";
 import { carregarDominioReal, type Recomendacao } from "../services/dominio";
 import { minhasMetas, minhasSubmissoes, type DominioAPI, type NivelAPI } from "../services/api";
+import { carregarAtividadesDoAluno } from "../services/atividades";
 import { iso } from "../hooks/useCalendario";
 
 export function Dashboard({
@@ -32,16 +33,28 @@ export function Dashboard({
 }: {
   role: Role;
   state: DemoState;
-  navigate: (p: Page) => void;
+  navigate: (p: Page, filtro?: ActivityStatus) => void;
   openActivity: (a: Activity) => void;
   openStudy: (id: string) => void;
   currentUser?: UsuarioAtual | null;
 }) {
   const student = role === "aluno";
-  const pending = state.activities.filter((a) => a.status === "pendente");
-  const approved = state.activities.filter((a) => a.status === "aprovada");
   // mapa de dominio real: so para aluno autenticado de verdade; enquanto nao carrega, mantem os dados de demonstracao
   const real = student && !!currentUser;
+  // aluno de verdade: as MESMAS atividades de "Minhas atividades" (mesma funcao), nunca as de demonstracao
+  const [reais, setReais] = useState<Activity[] | null>(null);
+  useEffect(() => {
+    if (real && currentUser) carregarAtividadesDoAluno(currentUser.nome).then(setReais).catch(() => setReais([]));
+  }, [real, currentUser?.id]);
+  const atividades = real ? (reais ?? []) : state.activities;
+  const pending = atividades.filter((a) => a.status === "pendente");
+  const approved = atividades.filter((a) => a.status === "aprovada");
+  const paraFazer = atividades.filter((a) => a.status === "disponivel");
+  // recentes: ultimo envio primeiro; as que ainda nao tem envio ficam por ultimo
+  const recentes = real
+    ? atividades.slice().sort((x, y) => (y.enviadoEm ?? "").localeCompare(x.enviadoEm ?? "")).slice(0, 3)
+    : atividades.slice().reverse().slice(0, 3);
+  const conta = (n: number) => (real && reais === null ? "--" : String(n).padStart(2, "0"));
   const [dominioReal, setDominioReal] = useState<DominioAPI[] | null>(null);
   const [recomendacao, setRecomendacao] = useState<Recomendacao | null>(null);
   // dias (AAAA-MM-DD) em que o aluno enviou algo: alimenta "Um passo por dia" com dado real
@@ -239,22 +252,25 @@ export function Dashboard({
         />
         <Stat
           icon={CheckCheck}
-          value={String(approved.length).padStart(2, "0")}
+          value={conta(approved.length)}
           label="Atividades corrigidas"
           foot="Com revisão do professor"
+          onClick={() => navigate("atividades", "aprovada")}
         />
         <Stat
           icon={Clock3}
-          value={String(pending.length).padStart(2, "0")}
+          value={conta(pending.length)}
           label="Aguardando revisão"
           foot="Você recebe o resultado aqui"
           amber
+          onClick={() => navigate("atividades", "pendente")}
         />
         <Stat
-          icon={GraduationCap}
-          value="04"
-          label="Temas em construção"
-          foot="Um novo passo a cada prática"
+          icon={ListTodo}
+          value={conta(paraFazer.length)}
+          label="Para fazer"
+          foot="Esperando o seu envio"
+          onClick={() => navigate("atividades", "disponivel")}
         />
       </div>
       <div className="dashboard-middle">
@@ -398,17 +414,16 @@ export function Dashboard({
           onAction={() => navigate(student ? "atividades" : "revisoes")}
         />
         <div className="activity-list">
-          {state.activities
-            .slice()
-            .reverse()
-            .slice(0, 3)
-            .map((a) => (
-              <ActivityRow
-                key={a.id}
-                activity={a}
-                onClick={() => openActivity(a)}
-              />
-            ))}
+          {recentes.map((a) => (
+            <ActivityRow
+              key={a.id}
+              activity={a}
+              onClick={() => openActivity(a)}
+            />
+          ))}
+          {real && reais !== null && !recentes.length && (
+            <p className="tiny muted">Você ainda não tem atividades.</p>
+          )}
         </div>
       </Card>
       {!student && (
@@ -430,15 +445,17 @@ function Stat({
   label,
   foot,
   amber = false,
+  onClick,
 }: {
   icon: typeof Target;
   value: string;
   label: string;
   foot: string;
   amber?: boolean;
+  onClick?: () => void; // com onClick o cartao vira botao (leva para a lista ja filtrada)
 }) {
-  return (
-    <div className="stat-card">
+  const conteudo = (
+    <>
       <div className="stat-top">
         <span className={`stat-icon ${amber ? "stat-amber" : ""}`}>
           <Icon size={18} />
@@ -447,7 +464,12 @@ function Stat({
       </div>
       <strong>{label}</strong>
       <span className="stat-foot">{foot}</span>
-    </div>
+    </>
+  );
+  return onClick ? (
+    <button type="button" className="stat-card stat-link" onClick={onClick}>{conteudo}</button>
+  ) : (
+    <div className="stat-card">{conteudo}</div>
   );
 }
 export function ActivityRow({

@@ -1,4 +1,4 @@
-"""Plano de estudo: GET /estudos/meu gera exercicios a partir do dominio real do aluno.
+"""Plano de estudo: POST /estudos/meu/gerar gera exercicios (GET /estudos/meu so le os salvos) a partir do dominio real do aluno.
 
     cd backend && python -m pytest tests/test_estudos.py
 Mesma base de tests/test_fluxo_envio.py (sqlite temporario, sem chamar o Google de verdade).
@@ -94,7 +94,9 @@ def test_gera_salva_e_nao_regera_enquanto_ha_pendentes_sem_vazar_gabarito():
     chamadas, original = _com_claude_falso()
     try:
         aluno = token("aluno@domina.com")
-        r1 = client.get("/estudos/meu", headers=aluno)
+        assert client.get("/estudos/meu", headers=aluno).json() == []  # abrir a tela nao chama a IA
+        assert chamadas == []
+        r1 = client.post("/estudos/meu/gerar", headers=aluno)
         assert r1.status_code == 200, r1.text
         geradas = len(chamadas)  # 1 (redacao) + 1 se o aluno tiver erros de exatas vindos de outros testes
         todos = r1.json()
@@ -102,8 +104,9 @@ def test_gera_salva_e_nao_regera_enquanto_ha_pendentes_sem_vazar_gabarito():
         assert len(exercicios) == 3
         assert exercicios[0]["habilidade_codigo"] == "C4"  # ponto fraco de proposito do seed (ver seed.py)
         assert all("resposta_correta" not in e and "explicacao" not in e for e in todos)  # sem gabarito
-        # segunda chamada: os 3 ainda nao foram respondidos -> vem do banco, sem chamar o Claude
+        # abrir de novo ou pedir de novo com exercicio por fazer: os MESMOS, sem chamar o Claude
         assert client.get("/estudos/meu", headers=aluno).json() == todos
+        assert client.post("/estudos/meu/gerar", headers=aluno).json() == todos
         assert len(chamadas) == geradas and set(chamadas) == {estudos_mod.settings.ANTHROPIC_MODEL_HAIKU}
     finally:
         estudos_mod.gerar_json = original
@@ -114,7 +117,7 @@ def test_responder_o_servidor_confere_salva_e_nao_mexe_no_dominio():
     chamadas, original = _com_claude_falso()
     try:
         aluno, outro = token("aluno@domina.com"), token("aluno2@domina.com")
-        exercicios = client.get("/estudos/meu", headers=aluno).json()
+        exercicios = client.post("/estudos/meu/gerar", headers=aluno).json()
         dominio_antes = client.get("/dominio/meu", headers=aluno).json()
         ex = exercicios[0]
         url = f"/estudos/exercicios/{ex['id']}/responder"
@@ -124,8 +127,13 @@ def test_responder_o_servidor_confere_salva_e_nao_mexe_no_dominio():
         assert r.status_code == 200 and r.json() == {"correta": True, "resposta_correta": 0, "explicacao": "x"}
         assert client.post(url, headers=aluno, json={"opcao": 1}).status_code == 409   # so uma vez
         assert client.post(f"/estudos/exercicios/{exercicios[1]['id']}/responder", headers=aluno, json={"opcao": 2}).json()["correta"] is False
-        # sobram 1 pendente: a tela nao recebe os ja respondidos
-        assert [e["id"] for e in client.get("/estudos/meu", headers=aluno).json()] == [exercicios[2]["id"]]
+        # os 3 continuam na tela: o por fazer primeiro; os feitos trazem a resposta e o gabarito
+        tela = client.get("/estudos/meu", headers=aluno).json()
+        assert tela[0]["id"] == exercicios[2]["id"] and "resposta_correta" not in tela[0]
+        feitos = {e["id"]: e for e in tela[1:]}
+        assert set(feitos) == {exercicios[0]["id"], exercicios[1]["id"]}
+        assert feitos[ex["id"]]["respondida"] == 0 and feitos[ex["id"]]["correta"] is True
+        assert feitos[exercicios[1]["id"]]["respondida"] == 2 and feitos[exercicios[1]["id"]]["correta"] is False
         # pratica salva por competencia, separada do dominio (que nao mudou)
         pratica = {p["habilidade_codigo"]: p for p in client.get("/estudos/minha-pratica", headers=aluno).json()}
         assert pratica[ex["habilidade_codigo"]] == {"habilidade_codigo": ex["habilidade_codigo"], "respondidos": 1, "acertos": 1}
@@ -148,12 +156,18 @@ def test_terminou_os_pendentes_gera_novos_ate_o_limite_diario():
     limite = r_est.LIMITE_DIARIO
     try:
         aluno = token("aluno@domina.com")
-        for e in client.get("/estudos/meu", headers=aluno).json():  # gera o 1o plano e responde tudo
+        primeiros = client.post("/estudos/meu/gerar", headers=aluno).json()  # gera o 1o plano e responde tudo
+        for e in primeiros:
             client.post(f"/estudos/exercicios/{e['id']}/responder", headers=aluno, json={"opcao": 0})
+        geradas = len(chamadas)
+        # voltar a tela depois de responder tudo: os mesmos exercicios, sem IA
+        assert {e["id"] for e in client.get("/estudos/meu", headers=aluno).json()} == {e["id"] for e in primeiros}
+        assert len(chamadas) == geradas
         r_est.LIMITE_DIARIO = 0
-        assert client.get("/estudos/meu", headers=aluno).status_code == 429  # acabou o plano e o limite diario ja foi
+        assert client.post("/estudos/meu/gerar", headers=aluno).status_code == 429  # acabou o plano e o limite diario ja foi
         r_est.LIMITE_DIARIO = 99
-        assert len(client.get("/estudos/meu", headers=aluno).json()) == 3    # gera um plano novo
+        novos = [e for e in client.post("/estudos/meu/gerar", headers=aluno).json() if "respondida" not in e]
+        assert len(novos) >= 3 and len(chamadas) > geradas                    # so o botao gera um plano novo
     finally:
         r_est.LIMITE_DIARIO = limite
         estudos_mod.gerar_json = original
@@ -168,7 +182,7 @@ def test_meta_de_pratica_conclui_ao_responder():
         m = client.post("/metas", headers=prof, json={"titulo": "Praticar", "tipo": "PRATICA_RESPONDIDOS", "alvo": 1,
                                                      "pontos": 20, "turma_id": turma})
         assert m.status_code == 201, m.text
-        for e in client.get("/estudos/meu", headers=aluno).json()[:1]:
+        for e in client.post("/estudos/meu/gerar", headers=aluno).json()[:1]:
             client.post(f"/estudos/exercicios/{e['id']}/responder", headers=aluno, json={"opcao": 0})
         item = [x for x in client.get("/metas/minhas", headers=aluno).json()["metas"] if x["id"] == m.json()["id"]][0]
         assert item["status"] == "CONCLUIDA"
@@ -181,7 +195,7 @@ def test_sem_chave_do_claude_responde_503():
 
     original, settings.ANTHROPIC_API_KEY = settings.ANTHROPIC_API_KEY, None
     try:
-        r = client.get("/estudos/meu", headers=token("aluno2@domina.com"))
+        r = client.post("/estudos/meu/gerar", headers=token("aluno2@domina.com"))
         assert r.status_code == 503
     finally:
         settings.ANTHROPIC_API_KEY = original
