@@ -100,7 +100,7 @@ provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção
 - Pendente: atualizar o graphify (só roda no Mac).
 
 ## IA própria: memória do professor (RAG) — 2026-11-16
-- **Tudo está na branch `domina-ciclo-3`** (juntado em 16/11; a branch `ia-propria-rag` foi apagada). **Branch de trabalho agora: só a `domina-ciclo-3`.** Não está na main. Desenho e pendências: `docs/decisoes/ia-propria.md`.
+- **Tudo está na branch `domina-ciclo-3`** (juntado em 16/11; a branch `ia-propria-rag` ficou só como cópia antiga e pode ser apagada). **Branch de trabalho agora: só a `domina-ciclo-3`.** Não está na main. Desenho e pendências: `docs/decisoes/ia-propria.md`.
 - Regra: sem material do professor a IA usa a inteligência do modelo; com material, segue o professor. Vale para toda matéria.
 - `backend/app/ia/` (`extracao.py`, `embeddings.py`, `memoria.py`) + tabela `ia_trecho` (**migration 0019: mudou o banco, parar e rodar `./dev.sh` de novo**). Dependência nova: `pypdf`.
 - Material enviado em Materiais é lido na hora (PDF, foto, DOCX, TXT; escaneado vai pelo Gemini) e vira memória; correção **aprovada** vira exemplo. **Memória é de cada professor** (material do gestor vale para todos).
