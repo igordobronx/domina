@@ -4,6 +4,7 @@ O Gemini divergia demais do corretor humano do INEP nas calibracoes; a nota da r
 passou a vir do Claude. O OCR da foto e a correcao de exatas continuam no Gemini
 (app/ocr/gemini.py, app/correcao_exatas.py) -- so esta parte trocou de provedor.
 """
+import json
 import logging
 from functools import lru_cache
 
@@ -11,6 +12,7 @@ import anthropic
 from pydantic import BaseModel
 
 from app.config import settings
+from app.ia import registro
 
 logger = logging.getLogger(__name__)
 
@@ -48,4 +50,5 @@ def gerar_json(
         messages=[{"role": "user", "content": prompt}],
     )
     bloco = next(b for b in response.content if b.type == "tool_use")
+    registro.anotar(modelo, prompt, json.dumps(bloco.input, ensure_ascii=False))  # material de treino
     return schema.model_validate(bloco.input), modelo

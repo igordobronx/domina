@@ -19,7 +19,7 @@ provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção
 ## 2. Onde as coisas estão
 
 - **Repo:** `igordobronx/domina` (GitHub). **Pasta no Mac:** `/Users/joaopedro/Documentos/Faculdade/Projetos GitHub/projeto hackathon/domina` (mudou em 15/11; antes ficava em `Documentos/Coding/projeto hackathon/domina`). Pastas de dados: `essays/` (planilhas), fotos das redações em `.../projeto hackathon/fotos redacoes do enem`.
-- **Branch de trabalho: `domina-ciclo-2`.** Só fazer merge na `main` quando o usuário mandar. A `main` tem a correção da redação pelo Claude Sonnet.
+- **Branch de trabalho: `domina-ciclo-3`** (antes `domina-ciclo-2`). Só fazer merge na `main` quando o usuário mandar. A `main` tem a correção da redação pelo Claude Sonnet.
 - **Backend:** `backend/` (FastAPI + SQLAlchemy + Alembic, Python). **Frontend:** `frontend/` (React + Vite + TypeScript, PWA, deploy no Vercel com Root Directory `frontend`). Docs do frontend: `frontend/docs/FRONTEND.md`.
 - **Banco:** Postgres no docker (porta **5433**) por padrão; SQLite é o fallback (testes usam SQLite temporário). Migrations em `backend/migrations/versions/` (0001 a 0018).
 - **Subir tudo:** `./dev.sh` na raiz (banco + API na 8000 + site na 5173; já roda `migrar.py`; `./dev.sh --seed` roda o seed antes). A API e o site recarregam sozinhos quando o código muda; **só mudança de banco exige parar (Ctrl+C) e rodar `./dev.sh` de novo** (ou `cd backend && ../venv/bin/python migrar.py` em outro terminal).
@@ -98,3 +98,18 @@ provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção
 - Cada push na branch `domina-ciclo-3` republica sozinho. Roda `migrar.py` + `seed.py` ao subir (login professor@domina.com / senha123).
 - Chaves de IA (ANTHROPIC_API_KEY, GEMINI_API_KEY) são coladas no painel do Render, nunca no GitHub. Plano grátis: dorme após ~15 min sem uso (1º acesso demora ~1 min); banco grátis expira em 30 dias.
 - Pendente: atualizar o graphify (só roda no Mac).
+
+## IA própria: memória do professor (RAG) — 2026-11-16
+- **Tudo está na branch `domina-ciclo-3`** (juntado em 16/11; a branch `ia-propria-rag` foi apagada). **Branch de trabalho agora: só a `domina-ciclo-3`.** Não está na main. Desenho e pendências: `docs/decisoes/ia-propria.md`.
+- Regra: sem material do professor a IA usa a inteligência do modelo; com material, segue o professor. Vale para toda matéria.
+- `backend/app/ia/` (`extracao.py`, `embeddings.py`, `memoria.py`) + tabela `ia_trecho` (**migration 0019: mudou o banco, parar e rodar `./dev.sh` de novo**). Dependência nova: `pypdf`.
+- Material enviado em Materiais é lido na hora (PDF, foto, DOCX, TXT; escaneado vai pelo Gemini) e vira memória; correção **aprovada** vira exemplo. **Memória é de cada professor** (material do gestor vale para todos).
+- Quando o professor muda a nota da IA, a revisão mostra "Ensine a IA: por que você mudou a nota?" (opcional; `correcao.motivo_mudanca`); a IA trata a mudança como erro dela.
+- Aluno pode enviar a prova em PDF (cada página vira uma folha). Dependência nova: `pypdfium2`.
+- O modelo do app NÃO mudou (o usuário não quer o Fable no app; é só para construir).
+- Usam a memória: correção com gabarito (exatas e teóricas), redação (só o material; base continua v14), "Pedir para a IA" e "IA sugere uma resposta". Matéria teórica (`MATERIA_DISCURSIVA`) compara conteúdo, não palavras.
+- Configuração: `IA_EMBEDDINGS` (`gemini` = busca por sentido, `local` = por palavras), `GEMINI_MODEL_EMBEDDING`, `IA_MEMORIA_NA_REDACAO`. Testes: `backend/tests/test_memoria_ia.py` (9) e `tests/conftest.py` (força busca local).
+- **Tela "Treinar IA"** (menu do professor, antes "Materiais e critérios"; `frontend/src/screens/TreinarIA.tsx`, mesmo padrão da tela de Exercícios): escolhe a matéria, depois "Enviar arquivo" (apostila/rubrica/gabarito/plano de aula) ou "Escrever instruções" (texto livre que a IA segue SEMPRE naquela matéria, até 30 por professor/matéria; `POST/GET/DELETE /materias/{id}/instrucoes`, guardadas em `ia_trecho` origem INSTRUCAO). Mostra por matéria o que a IA já aprendeu (`GET /materias/{id}/ia`). O `Materials` de `Management.tsx` só sobrou para o modo demonstração.
+- **Só existe o Mac** como máquina de trabalho (o usuário pediu para esquecer qualquer outra).
+- **Material de treino da nossa IA:** tabela `ia_chamada` (**migration 0020**, `app/ia/registro.py`) guarda cada pedido e resposta do Claude/Gemini por tarefa, ligado à nota final do professor. Ciclo em `backend/exportar_treino.py` (`exportar` marca, `apagar-treinados` apaga só o que foi exportado). **Regra do usuário: nada é apagado sem a IA ter aprendido.** Meta dele: no futuro tudo é feito pela IA do Domina, sem Claude/Gemini.
+- Pendente: testar o embedding do Gemini com chave real; partes 2 (camada única para trocar de modelo) e 3 (ajuste fino); atualizar o graphify (só roda no Mac).

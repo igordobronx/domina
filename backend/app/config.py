@@ -13,6 +13,18 @@ class Settings(BaseSettings):
     # reserva quando o principal estoura cota (gratis: 20 chamadas/dia) ou esta sobrecarregado.
     # mais rapido, mas erra mais palavra em letra cursiva -- a confirmacao do aluno cobre
     GEMINI_MODEL_RESERVA: str = "gemini-3.5-flash-lite"
+    # memoria da IA (app/ia): "gemini" = busca por sentido (embeddings, usa a GEMINI_API_KEY);
+    # "local" = busca por palavras, sem chamar API nenhuma (testes e servidor sem chave)
+    IA_EMBEDDINGS: str = "gemini"
+    GEMINI_MODEL_EMBEDDING: str = "gemini-embedding-001"
+    # redacao: a base e o prompt v14 calibrado (inteligencia da propria IA). Com isto ligado, o
+    # MATERIAL que o professor subiu na materia entra junto como complemento (pedido do usuario em
+    # 16/11). Materia sem material = prompt v14 identico. As correcoes aprovadas NAO entram como
+    # exemplo na redacao: mudariam a nota calibrada sem teste (CLAUDE.md, secao 5).
+    IA_MEMORIA_NA_REDACAO: bool = True
+    # guarda cada pedido/resposta do Claude/Gemini como material de treino da IA propria
+    # (app/ia/registro.py). So texto, uma linha por chamada; false desliga.
+    IA_GUARDAR_TREINO: bool = True
     # nota da redacao (app/correcao.py): o Gemini divergia demais do corretor humano do INEP,
     # a nota da redacao passou a ser pelo Claude. OCR da foto e exatas continuam no Gemini.
     ANTHROPIC_API_KEY: str | None = None

@@ -9,6 +9,7 @@ from google.genai import types
 from pydantic import BaseModel, Field, field_validator
 
 from app.config import settings
+from app.ia import registro
 from app.correcao import NOTAS_VALIDAS, PontoIA
 from app.ocr.gemini import LADO_EXATAS, gerar, reduzir
 
@@ -24,7 +25,7 @@ Considere a resposta do aluno correta mesmo se estiver em formato diferente do g
 equivalentes contam). Considere errada se o valor final for diferente do gabarito, mesmo que
 o método usado pareça certo.
 
-Questões e gabarito (código da questão, enunciado, resposta correta):
+{instrucao_teorica}{contexto}Questões e gabarito (código da questão, enunciado, resposta correta):
 {questoes}
 
 {instrucao_figuras}{instrucao_foto}Respostas do aluno, transcritas do que ele entregou (podem estar fora de ordem ou sem
@@ -65,6 +66,18 @@ Responda em JSON com esta estrutura, uma entrada por questão, na mesma ordem re
   ],
   "confianca": 0.0
 }}"""
+
+# materia teorica/discursiva (historia, teoria musical, biologia...): a resposta e um texto, entao
+# "valor final igual ao gabarito" nao serve -- compara-se o conteudo
+INSTRUCAO_TEORICA = """ATENÇÃO: esta é uma matéria TEÓRICA. As respostas são explicações em texto, então NÃO exija
+as mesmas palavras do gabarito: compare o CONTEÚDO. Resposta com as ideias essenciais do gabarito,
+mesmo com outras palavras, vale 200. Faltou parte das ideias essenciais ou há um erro de conceito
+junto com acertos: nota intermediária (40 a 160) proporcional ao que está certo. Ideia central
+errada ou resposta fora do assunto: 0. Não desconte por estilo ou por erro de português, a menos
+que o material do professor peça isso. Onde o texto abaixo falar em "valor final", leia "ideias
+essenciais da resposta".
+
+"""
 
 INSTRUCAO_FIGURAS = """As figuras das questões (estruturas, gráficos, esquemas) vêm ANTES deste texto, cada uma
 identificada pelo código da questão. Elas fazem parte do enunciado: use-as para entender o que
@@ -125,17 +138,22 @@ def corrigir(
     questoes: list[tuple[str, str, str]],
     imagem: tuple[bytes, str] | list[tuple[bytes, str]] | None = None,
     figuras: dict[str, tuple[bytes, str]] | None = None,
+    contexto: str = "",
+    teorica: bool = False,
 ) -> tuple[ResultadoExatasIA, str]:
     # questoes: lista de (codigo, enunciado, resposta_correta), na ordem em que serao exibidas
     # imagem: (bytes, mime_type) da foto original, so quando a resposta foi enviada por foto --
     # nesse caso a IA tambem devolve "caixa" (onde na foto esta cada resposta)
     # figuras: {codigo da questao: (bytes, mime_type)} anexadas pelo professor ao enunciado
+    # contexto: memoria do professor (app/ia/memoria.py): material dele + correcoes que ja aprovou
     imagens = [imagem] if isinstance(imagem, tuple) else list(imagem or [])
     texto_questoes = "\n".join(
         f"{codigo}) {enunciado}\n   Gabarito: {resposta}" for codigo, enunciado, resposta in questoes
     )
     prompt = PROMPT.format(
         materia=materia_nome,
+        contexto=contexto,
+        instrucao_teorica=INSTRUCAO_TEORICA if teorica else "",
         questoes=texto_questoes,
         respostas=respostas_aluno,
         instrucao_figuras=INSTRUCAO_FIGURAS if figuras else "",
@@ -152,7 +170,8 @@ def corrigir(
         partes += [f"Prova do aluno (folha {n}):" if len(imagens) > 1 else "Prova do aluno (foto):",
                    types.Part.from_bytes(data=imagem_bytes, mime_type=mime_type)]
     contents = [*partes, prompt] if partes else prompt
-    response, modelo = gerar(
+    with registro.tarefa("corrigir_gabarito_teorica" if teorica else "corrigir_gabarito"):
+      response, modelo = gerar(
         contents,
         types.GenerateContentConfig(
             temperature=0, response_mime_type="application/json", response_schema=ResultadoExatasIA,

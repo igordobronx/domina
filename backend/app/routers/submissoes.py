@@ -20,7 +20,8 @@ from app.models.usuario import (
 )
 from app.competencias import garantir_competencias
 from app.metas import avaliar_seguro
-from app.routers.ocr import ler_imagem, ocr
+from app.ia import registro
+from app.routers.ocr import ler_folhas, ler_imagem, ocr
 from app.schemas.submissao import (
     AlunoResumo, AtividadeResponse, ConfirmarTextoRequest,
     CriarAtividadeLoteRequest, CriarAtividadeRequest, CriarMateriaRequest, CriterioResponse, EnviarObjetivaRequest, EnviarTextoRequest, LETRAS,
@@ -227,11 +228,12 @@ def enviar_imagem(
         raise HTTPException(422, "Envie ao menos uma foto.")
     if len(files) > MAX_FOLHAS:
         raise HTTPException(422, f"No máximo {MAX_FOLHAS} fotos por envio.")
-    fotos = [(ler_imagem(f), f.content_type, f.filename) for f in files]
+    fotos = ler_folhas(files, MAX_FOLHAS)  # foto = 1 folha; PDF = 1 folha por pagina
     exatas = db.get(Materia, atividade.materia_id).tipo in MATERIAS_EXATAS  # folha de exatas tem desenhos
     # UMA chamada de OCR para todas as folhas (o texto sai unido, na ordem); se falhar, nada e gravado
     texto = ocr(fotos[0][0], fotos[0][1], exatas, extras=[(b, m) for b, m, _ in fotos[1:]])
     registrar_uso(db, usuario.escola_id, chamadas_ocr=1)
+    registro.gravar(db, materia_id=atividade.materia_id, professor_id=atividade.criado_por)  # material de treino
 
     # guarda as fotos originais (o professor pode querer ver ao revisar)
     # ponytail: disco local; trocar por bucket (GCS/S3) quando houver mais de um servidor

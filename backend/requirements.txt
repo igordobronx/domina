@@ -17,3 +17,5 @@ anthropic>=0.69,<1
 pillow>=11,<13
 python-multipart>=0.0.12,<1
 alembic>=1.13,<2
+pypdfium2>=4.30,<6  # transforma pagina de PDF em imagem (PDF escaneado e prova enviada em PDF)
+pypdf>=5,<7  # le o texto dos PDFs que o professor sobe (app/ia/extracao.py)

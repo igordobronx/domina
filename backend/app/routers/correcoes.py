@@ -14,7 +14,8 @@ from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.custo import registrar_uso
 from app.database import get_db
-from app.models.enum import StatusCorrecaoEnum, TipoEnvioEnum
+from app.ia import memoria, registro
+from app.models.enum import PerfilEnum, StatusCorrecaoEnum, TipoEnvioEnum, TipoMateriaEnum
 from app.models.usuario import (
     Atividade, Correcao, CorrecaoCriterio, DominioAluno, Materia, Submissao, Tema, Usuario,
 )
@@ -113,6 +114,17 @@ def corrigir_submissao(
     if not (settings.GEMINI_API_KEY if exatas else settings.ANTHROPIC_API_KEY):
         provedor = "do Gemini" if exatas else "do Claude"
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"Correção indisponível: servidor sem chave {provedor}.")
+    # memoria do professor (RAG): material que ele subiu + correcoes parecidas que ja aprovou.
+    # Vazio enquanto a materia nao tem nada guardado -- ai o prompt e o mesmo de antes.
+    contexto = ""
+    if exatas or settings.IA_MEMORIA_NA_REDACAO:
+        consulta = "\n".join([atividade.titulo, *(f"{t.nome} {t.resposta_correta or ''}" for t in temas.values() if exatas),
+                              submissao.texto_confirmado])
+        contexto = memoria.contexto_do_professor(
+            db, materia.id, consulta,
+            professor_id=atividade.criado_por or (usuario.id if usuario.perfil == PerfilEnum.PROFESSOR else None),
+            **({} if exatas else {"exemplos": 0}),  # redacao: so o material do professor (ver config.py)
+        )
     try:
         if exatas:
             questoes = [(t.habilidade_codigo, t.nome, t.resposta_correta) for t in temas.values()]
@@ -130,13 +142,14 @@ def corrigir_submissao(
                     figuras[t.habilidade_codigo] = (Path(t.imagem).read_bytes(), mime_fig or "image/jpeg")
             resultado, modelo = ia_exatas.corrigir(
                 submissao.texto_confirmado, materia.nome, questoes, imagem=imagem, figuras=figuras,
+                contexto=contexto, teorica=materia.tipo == TipoMateriaEnum.MATERIA_DISCURSIVA,
             )
             itens = resultado.questoes
             versao_prompt = ia_exatas.VERSAO_PROMPT
             modelo_principal = ia_exatas.MODELO_PRINCIPAL
             feedback = None  # montado abaixo, depois de reescalar as notas (precisa dos pontos reais)
         else:
-            resultado, modelo = ia.corrigir(submissao.texto_confirmado, (payload.tema or "").strip() or atividade.titulo)
+            resultado, modelo = ia.corrigir(submissao.texto_confirmado, (payload.tema or "").strip() or atividade.titulo, contexto=contexto)
             itens = resultado.competencias
             versao_prompt = ia.VERSAO_PROMPT
             modelo_principal = ia.MODELO_PRINCIPAL
@@ -170,7 +183,7 @@ def corrigir_submissao(
         confianca=round(resultado.confianca, 2),
         status=StatusCorrecaoEnum.REQUER_ATENCAO if atencao else StatusCorrecaoEnum.PENDENTE,
         modelo_usado=modelo,
-        versao_prompt=versao_prompt,
+        versao_prompt=versao_prompt + ("+memoria" if contexto else ""),  # da para auditar quais usaram a memoria
         feedback=feedback,
     )
     db.add(correcao)
@@ -181,6 +194,7 @@ def corrigir_submissao(
             pontos=[p.model_dump() for p in i.pontos],
         ))
     # ponytail: estimativa de tokens por tamanho do texto (sem usage_metadata real da API ainda)
+    registro.gravar(db, materia_id=materia.id, professor_id=atividade.criado_por, correcao_id=correcao.id)
     tokens_estimados = len(submissao.texto_confirmado) // 4
     registrar_uso(db, usuario.escola_id, tokens_llm=tokens_estimados)
     db.commit()
@@ -261,12 +275,15 @@ def aprovar_correcao(
     correcao.status = StatusCorrecaoEnum.APROVADA
     if payload.feedback is not None:
         correcao.feedback = payload.feedback.strip()
+    correcao.motivo_mudanca = (payload.motivo_mudanca or "").strip() or None
     # RF-25/dominio real: so para redacao. As temas de exatas sao especificas de UMA atividade
     # (nunca se repetem), entao nao ha "evolucao" a acumular -- e um unico ponto fora da curva
     # dominaria /dominio/meu e /estudos/meu para sempre. O aluno ainda ve a nota/feedback normal.
     if materia.tipo not in MATERIAS_EXATAS:
         _atualizar_dominio(db, submissao.aluno_id, {codigo: c for codigo, (c, _) in criterios.items()})
     registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
+    db.flush()
+    memoria.indexar_correcao(db, correcao)  # a IA aprende com esta aprovacao (nunca bloqueia)
     db.commit()
     avaliar_seguro(submissao.aluno_id)  # metas de nota/dominio
     return _correcao_response(db, correcao)

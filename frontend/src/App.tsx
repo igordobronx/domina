@@ -48,6 +48,7 @@ import { Logs } from "./screens/Logs";
 import { Calendar } from "./screens/Calendar";
 import { Metas } from "./screens/Metas";
 import { ExerciciosProfessor } from "./screens/Exercicios";
+import { TreinarIA } from "./screens/TreinarIA";
 import { Equipe, Escolas, PainelEscola, PainelPlataforma } from "./screens/Admin";
 import { Help, Settings } from "./screens/Settings";
 
@@ -126,7 +127,7 @@ const navItems: {
   },
   {
     id: "materiais",
-    label: "Materiais e critérios",
+    label: "Treinar IA",
     icon: Layers,
     roles: ["professor"],
   },
@@ -585,9 +586,12 @@ export function App() {
             {page === "turmas" && (
               <Classes state={state} role={role} currentUser={currentUser} notify={notify} />
             )}
-            {page === "materiais" && (
-              <Materials state={state} update={update} notify={notify} role={role} currentUser={currentUser} />
-            )}
+            {page === "materiais" &&
+              (currentUser ? (
+                <TreinarIA notify={notify} />
+              ) : (
+                <Materials state={state} update={update} notify={notify} role={role} currentUser={currentUser} />
+              ))}
             {page === "configuracoes" && (
               <Settings
                 state={state}
@@ -620,8 +624,7 @@ export function App() {
                   {label
                     .replace("Minhas ", "")
                     .replace("Minha ", "")
-                    .replace("Visão geral", "Início")
-                    .replace("Materiais e critérios", "Materiais")}
+                    .replace("Visão geral", "Início")}
                 </span>
               </button>
             ))}

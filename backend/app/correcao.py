@@ -9,6 +9,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from app.config import settings
+from app.ia import registro
 from app.llm.claude import gerar_json
 
 VERSAO_PROMPT = "v14"  # v12 + C2 com piso 160 (repertorio externo legitimo e pertinente); uma correcao so
@@ -203,7 +204,7 @@ Responda em JSON com esta estrutura (exemplo de "pontos" só na primeira, mas to
   "feedback_geral": "..."
 }}
 
-Tema proposto: {tema}
+{contexto}Tema proposto: {tema}
 
 Redação:
 \"\"\"
@@ -257,7 +258,9 @@ class ResultadoIA(BaseModel):
         return sorted(v, key=lambda c: c.codigo)
 
 
-def corrigir(texto: str, tema: str) -> tuple[ResultadoIA, str]:
+def corrigir(texto: str, tema: str, contexto: str = "") -> tuple[ResultadoIA, str]:
+    # contexto: memoria do professor (app/ia/memoria.py); vazio = prompt v14 identico ao calibrado
     # devolve (resultado, modelo_usado). Levanta excecao se o modelo nao devolver JSON valido.
     # A IA age como UM corretor; a correcao dupla (media de 2) foi testada e nao melhorou o erro.
-    return gerar_json(PROMPT.format(tema=tema, texto=texto), ResultadoIA, temperature=0)
+    with registro.tarefa("corrigir_redacao"):
+        return gerar_json(PROMPT.format(tema=tema, texto=texto, contexto=contexto), ResultadoIA, temperature=0)

@@ -75,6 +75,9 @@ class AprovarRequest(BaseModel):
     # o router confere que bate exatamente com os criterios desta correcao.
     notas: list[NotaCriterioInput] = Field(min_length=1)
     feedback: str | None = Field(default=None, max_length=2000)
+    # por que o professor mudou a nota da IA (opcional). So a IA usa: vai para a memoria junto
+    # com o exemplo, para ela nao repetir o erro. O aluno nao ve.
+    motivo_mudanca: str | None = Field(default=None, max_length=1000)
 
     @field_validator("notas")
     @classmethod

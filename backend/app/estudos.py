@@ -6,6 +6,7 @@ raciocinio mais forte, e sai mais barato/rapido.
 from pydantic import BaseModel, Field
 
 from app.config import settings
+from app.ia import registro
 from app.llm.claude import gerar_json
 from app.schemas.dominio import DominioResponse
 
@@ -67,9 +68,10 @@ def gerar_exercicios(
         f"- {c.habilidade_codigo} ({c.tema}): {round(c.percentual_dominio)}% de domínio estimado"
         for c in competencias
     )
-    resultado, _ = gerar_json(
-        PROMPT.format(competencias=texto), _RespostaIA, model=settings.ANTHROPIC_MODEL_HAIKU,
-    )
+    with registro.tarefa("exercicios_de_reforco"):
+        resultado, _ = gerar_json(
+            PROMPT.format(competencias=texto), _RespostaIA, model=settings.ANTHROPIC_MODEL_HAIKU,
+        )
     exercicios = resultado.exercicios
     _cache[chave] = exercicios
     return exercicios

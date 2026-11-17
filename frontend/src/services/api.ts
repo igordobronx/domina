@@ -438,10 +438,11 @@ export function aprovarCorrecao(
   id: string,
   notas: { codigo: string; nota: number }[],
   feedback: string,
+  motivoMudanca?: string, // por que o professor mudou a nota da IA (só a IA usa, para aprender)
 ): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/aprovar`, {
     method: "PUT",
-    body: JSON.stringify({ notas, feedback }),
+    body: JSON.stringify({ notas, feedback, motivo_mudanca: motivoMudanca?.trim() || null }),
   });
 }
 
@@ -624,11 +625,43 @@ export interface DocumentoAPI {
   materia_id: string;
   nome_arquivo: string;
   tipo: "APOSTILA" | "RUBRICA" | "PLANO_DE_AULA" | "GABARITO";
-  status_processamento: "PENDENTE" | "PROCESSADO" | "FALHOU";
+  status_processamento: "PENDENTE" | "PROCESSADO" | "ERRO";
+  detalhe?: string | null; // motivo quando a IA não conseguiu ler o arquivo
 }
 
 export function listarDocumentos(materiaId: string): Promise<DocumentoAPI[]> {
   return request<DocumentoAPI[]>(`/materias/${materiaId}/documentos`);
+}
+
+// quanto a IA já aprendeu com este professor numa matéria
+export interface MemoriaIAAPI {
+  trechos_de_material: number;
+  correcoes_aprendidas: number;
+  instrucoes: number;
+}
+
+// instruções escritas pelo professor para a IA ("sempre faça tal coisa"); valem sempre naquela matéria
+export interface InstrucaoAPI {
+  id: string;
+  materia_id: string;
+  texto: string;
+  criado_em: string;
+}
+
+export function listarInstrucoes(materiaId: string): Promise<InstrucaoAPI[]> {
+  return request<InstrucaoAPI[]>(`/materias/${materiaId}/instrucoes`);
+}
+
+export function criarInstrucao(materiaId: string, texto: string): Promise<InstrucaoAPI> {
+  return request<InstrucaoAPI>(`/materias/${materiaId}/instrucoes`, { method: "POST", body: JSON.stringify({ texto }) });
+}
+
+export function excluirInstrucao(materiaId: string, id: string): Promise<void> {
+  return request<void>(`/materias/${materiaId}/instrucoes/${id}`, { method: "DELETE" });
+}
+
+export function verMemoriaIA(materiaId: string): Promise<MemoriaIAAPI> {
+  return request<MemoriaIAAPI>(`/materias/${materiaId}/ia`);
 }
 
 export function enviarDocumento(

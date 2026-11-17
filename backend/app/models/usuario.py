@@ -114,6 +114,46 @@ class DocumentoBase(Base):
         SQLEnum(StatusProcessamentoEnum), default=StatusProcessamentoEnum.PENDENTE, nullable=False
     )
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+    caminho = Column(String(500), nullable=True)  # arquivo em UPLOAD_DIR; nulo = enviado antes da memoria da IA
+    detalhe = Column(String(255), nullable=True)  # motivo quando a IA nao conseguiu ler (status ERRO)
+
+
+class IaTrecho(Base):
+    """Memoria da IA por materia (RAG): pedaco de material do professor ou correcao que ele
+    aprovou. Ver app/ia/memoria.py."""
+    __tablename__ = "ia_trecho"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=False, index=True)
+    professor_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    origem = Column(String(20), nullable=False)  # MATERIAL | CORRECAO
+    documento_id = Column(UUID(as_uuid=True), ForeignKey("documento_base.id"), nullable=True)
+    correcao_id = Column(UUID(as_uuid=True), ForeignKey("correcao.id"), nullable=True)
+    titulo = Column(String(255), nullable=False)
+    texto = Column(Text, nullable=False)
+    embedding = Column(JSON, nullable=True)  # vetor do texto; nulo = busca por palavras
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class IaChamada(Base):
+    """Material de treino da IA propria: um pedido ao modelo de fora e a resposta dele.
+    Ver app/ia/registro.py e exportar_treino.py."""
+    __tablename__ = "ia_chamada"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tarefa = Column(String(40), nullable=False, index=True)  # corrigir_redacao, corrigir_gabarito, criar_exercicios...
+    modelo = Column(String(100), nullable=False)  # quem respondeu (o "professor" do nosso modelo)
+    entrada = Column(Text, nullable=False)  # o pedido inteiro, ja com a memoria do professor
+    saida = Column(Text, nullable=False)
+    imagens = Column(Integer, nullable=False, default=0)  # quantas fotos foram junto (ficam em UPLOAD_DIR)
+    materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=True)
+    professor_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    # correcao gerada por esta chamada: e por ela que se chega a nota FINAL do professor
+    correcao_id = Column(UUID(as_uuid=True), ForeignKey("correcao.id"), nullable=True, index=True)
+    # quando entrou num arquivo de treino. So registro exportado pode ser apagado, e so depois
+    # que o treino deu certo (exportar_treino.py): NADA e apagado sem a IA ter aprendido.
+    exportado_em = Column(DateTime, nullable=True)
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)
 
 
 class Atividade(Base):
@@ -222,6 +262,8 @@ class Correcao(Base):
     modelo_usado = Column(String(100), nullable=False)
     versao_prompt = Column(String(50), nullable=False)
     feedback = Column(Text, nullable=True)  # feedback geral; o professor edita antes de liberar (RF-21)
+    # por que o professor mudou a nota da IA; so a memoria da IA usa (app/ia/memoria.py)
+    motivo_mudanca = Column(Text, nullable=True)
 
 
 class CorrecaoCriterio(Base):

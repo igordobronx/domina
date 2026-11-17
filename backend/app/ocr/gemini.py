@@ -8,6 +8,7 @@ from google.genai import errors, types
 from PIL import Image, ImageOps
 
 from app.config import settings
+from app.ia import registro
 
 logger = logging.getLogger(__name__)
 
@@ -89,15 +90,22 @@ def gerar(contents, config: types.GenerateContentConfig):
     # devolve (resposta, modelo_usado). Usado pelo OCR e pela correcao.
     # chamada BLOQUEANTE: so chame de rota sincrona (def), nunca de async def
     # ponytail: reserva simples; com faturamento ativo a cota deixa de ser problema
+    def anotado(resposta, modelo):
+        # material de treino da IA propria (app/ia/registro.py): o texto do pedido e a resposta
+        partes = [contents] if isinstance(contents, str) else list(contents)
+        registro.anotar(modelo, "\n".join(p for p in partes if isinstance(p, str)), getattr(resposta, "text", None) or "",
+                        imagens=sum(1 for p in partes if not isinstance(p, str)))
+        return resposta, modelo
+
     try:
-        return _client().models.generate_content(model=settings.GEMINI_MODEL, contents=contents, config=config), settings.GEMINI_MODEL
+        return anotado(_client().models.generate_content(model=settings.GEMINI_MODEL, contents=contents, config=config), settings.GEMINI_MODEL)
     except (errors.APIError, httpx.TimeoutException) as e:
         # timeout do lado do cliente (httpx) nao vira APIError, por isso entra aqui tambem
         if isinstance(e, errors.APIError) and e.code not in ERROS_DE_CAPACIDADE:
             raise
         logger.warning("Gemini %s indisponivel (%r), usando %s", settings.GEMINI_MODEL, e, settings.GEMINI_MODEL_RESERVA)
         modelo = settings.GEMINI_MODEL_RESERVA
-        return _client().models.generate_content(model=modelo, contents=contents, config=config), modelo
+        return anotado(_client().models.generate_content(model=modelo, contents=contents, config=config), modelo)
 
 
 MAIS_FOLHAS = """
@@ -114,7 +122,8 @@ def extract_text(image_bytes: bytes, mime_type: str, exatas: bool = False, extra
     prompt = PROMPT_EXATAS if exatas else PROMPT
     if len(folhas) > 1:
         prompt += MAIS_FOLHAS.format(n=len(folhas))
-    response, _ = gerar(
+    with registro.tarefa("ler_folha_exatas" if exatas else "ler_redacao"):
+      response, _ = gerar(
         [*(types.Part.from_bytes(data=b, mime_type=m) for b, m in folhas), prompt],
         # raciocinio "minimal": transcrever nao precisa pensar; na redacao real
         # caiu de 68s ("low") para 6s com a mesma fidelidade

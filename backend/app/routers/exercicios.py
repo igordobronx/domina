@@ -17,6 +17,7 @@ from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.database import get_db
+from app.ia import memoria, registro
 from app.exercicios_ia import SugestaoExercicio, sugerir_exercicios, sugerir_resposta_exemplo
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
 from app.models.usuario import Exercicio, ExercicioResposta, Materia, Turma, Usuario, UsuarioTurma
@@ -131,6 +132,15 @@ def _resposta_aluno(db: Session, ex: Exercicio, minha: ExercicioResposta | None)
         r.resposta_correta, r.resposta_exemplo, r.explicacao = ex.resposta_correta, ex.resposta_exemplo, ex.explicacao
         r.respostas_exemplo = _exemplos(ex)
     return r
+
+
+def _guardar_treino(db: Session, materia: Materia, usuario: Usuario) -> None:
+    # material de treino da IA propria (app/ia/registro.py); nunca derruba a rota
+    try:
+        registro.gravar(db, materia_id=materia.id, professor_id=usuario.id)
+        db.commit()
+    except Exception:
+        db.rollback()
 
 
 def _precisa_da_ia() -> None:
@@ -283,8 +293,14 @@ def sugerir(payload: SugerirRequest, usuario: Usuario = Depends(get_current_user
     _so_professor(usuario)
     materia = _materia_da_escola(db, usuario, payload.materia_id)
     _precisa_da_ia()
-    return sugerir_exercicios(materia.nome, payload.assunto.strip(), payload.tipo, payload.quantidade,
-                              (payload.instrucoes or "").strip() or None)
+    instrucoes = (payload.instrucoes or "").strip() or None
+    # memoria do professor (RAG): so o MATERIAL dele; exemplos de correcao nao ajudam a criar exercicio
+    contexto = memoria.contexto_do_professor(
+        db, materia.id, f"{payload.assunto} {instrucoes or ''}", professor_id=usuario.id, exemplos=0)
+    sugestoes = sugerir_exercicios(materia.nome, payload.assunto.strip(), payload.tipo, payload.quantidade,
+                                   instrucoes, contexto=contexto)
+    _guardar_treino(db, materia, usuario)
+    return sugestoes
 
 
 @router.post("/sugerir-resposta", response_model=SugestaoRespostaResponse)
@@ -294,8 +310,12 @@ def sugerir_resposta(payload: SugerirRespostaRequest, usuario: Usuario = Depends
     _so_professor(usuario)
     materia = _materia_da_escola(db, usuario, payload.materia_id)
     _precisa_da_ia()
-    return SugestaoRespostaResponse(resposta_exemplo=sugerir_resposta_exemplo(
-        materia.nome, (payload.assunto or "").strip(), payload.enunciado.strip()))
+    contexto = memoria.contexto_do_professor(
+        db, materia.id, f"{payload.assunto or ''} {payload.enunciado}", professor_id=usuario.id, exemplos=0)
+    resposta = sugerir_resposta_exemplo(
+        materia.nome, (payload.assunto or "").strip(), payload.enunciado.strip(), contexto=contexto)
+    _guardar_treino(db, materia, usuario)
+    return SugestaoRespostaResponse(resposta_exemplo=resposta)
 
 
 # ---------- aluno ----------

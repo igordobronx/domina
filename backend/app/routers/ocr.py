@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
 from sqlalchemy.orm import Session
@@ -35,6 +36,32 @@ def ler_imagem(file: UploadFile) -> bytes:
     if not image_bytes:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Arquivo vazio.")
     return image_bytes
+
+
+def ler_folhas(files: list[UploadFile], maximo: int) -> list[tuple[bytes, str, str]]:
+    """Uploads do envio do aluno -> lista de (bytes, mime, nome), uma por folha. Foto vale uma
+    folha; PDF vira uma folha por pagina (imagem), e dai em diante e tratado igual a foto."""
+    from app.ia.extracao import ArquivoNaoLido, paginas_do_pdf
+
+    folhas = []
+    for f in files:
+        if f.content_type == "application/pdf" or (f.filename or "").lower().endswith(".pdf"):
+            conteudo = f.file.read(MAX_IMAGEM_BYTES + 1)
+            if len(conteudo) > MAX_IMAGEM_BYTES:
+                raise HTTPException(status_code=413, detail="PDF maior que 10 MB.")
+            try:
+                paginas = paginas_do_pdf(conteudo, maximo)
+            except ArquivoNaoLido as e:
+                raise HTTPException(status_code=422, detail=str(e))
+            except Exception:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Não consegui abrir este PDF.")
+            nome = Path(f.filename or "prova.pdf").stem
+            folhas += [(p, "image/jpeg", f"{nome}-{n}.jpg") for n, p in enumerate(paginas, start=1)]
+        else:
+            folhas.append((ler_imagem(f), f.content_type, f.filename))
+    if len(folhas) > maximo:
+        raise HTTPException(status_code=422, detail=f"No máximo {maximo} folhas por envio (somando fotos e páginas de PDF).")
+    return folhas
 
 
 def ocr(image_bytes: bytes, mime_type: str, exatas: bool = False, extras=()) -> str:

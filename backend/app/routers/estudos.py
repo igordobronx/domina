@@ -9,6 +9,7 @@ from app.models.enum import PerfilEnum
 from app.models.usuario import Usuario
 from app.routers.dominio import _dominio_de
 
+from app.ia import registro
 router = APIRouter(prefix="/estudos", tags=["estudos"])
 
 
@@ -34,4 +35,10 @@ def meus_exercicios(
         )
 
     piores = sorted(evidenciado, key=lambda d: d.percentual_dominio)[:3]
-    return gerar_exercicios(usuario.id, piores, forcar=recarregar)
+    exercicios = gerar_exercicios(usuario.id, piores, forcar=recarregar)
+    try:  # material de treino da IA propria; nunca derruba a rota
+        registro.gravar(db)
+        db.commit()
+    except Exception:
+        db.rollback()
+    return exercicios

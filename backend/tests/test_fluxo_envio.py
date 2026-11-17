@@ -202,7 +202,7 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
         competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 200, "justificativa": "ok", "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(5, 0, -1)],
         feedback_geral="muito bom", confianca=0.9,
     )
-    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota_maxima, ia.MODELO_PRINCIPAL)
+    original, ia.corrigir = ia.corrigir, lambda texto, tema, contexto="": (nota_maxima, ia.MODELO_PRINCIPAL)
     try:
         # o proprio aluno pode gerar a correcao da sua submissao e ja ve o resultado,
         # provisorio ate o professor aprovar
@@ -218,7 +218,7 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
         assert vista_aluno["nota_ia"] == 1000 and vista_aluno["nota_professor"] is None
 
         # corrigida por um modelo diferente do principal: sempre "requer atencao", mesmo com confianca alta
-        ia.corrigir = lambda texto, tema: (nota_maxima, "outro-modelo")
+        ia.corrigir = lambda texto, tema, contexto="": (nota_maxima, "outro-modelo")
         sub2 = client.post("/submissoes/imagem", headers=prof, files=FOTO,
                            data={"atividade_id": atividades[0]["id"], "aluno_id": aluno_id}).json()
         client.put(f"/submissoes/{sub2['id']}/confirmar", headers=prof, json={"texto": "redacao"})
@@ -240,7 +240,7 @@ def test_aluno_gera_propria_correcao_e_professor_aprova_depois():
         competencias=[{"codigo": f"C{i}", "analise": "ok", "nota": 160, "justificativa": "ok", "pontos": [{"trecho": "ok", "tipo": "acerto", "comentario": "ok"}]} for i in range(5, 0, -1)],
         feedback_geral="bom trabalho", confianca=0.9,
     )
-    original, ia.corrigir = ia.corrigir, lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    original, ia.corrigir = ia.corrigir, lambda texto, tema, contexto="": (nota, ia.MODELO_PRINCIPAL)
     try:
         assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=aluno, json={}).status_code == 201
 

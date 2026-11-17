@@ -393,8 +393,8 @@ function ListaFotos({ files, onChange }: { files: File[]; onChange: (f: File[]) 
     <ol className="lista-fotos">
       {files.map((f, i) => (
         <li key={`${f.name}-${i}`}>
-          <img src={urls[i]} alt={`Folha ${i + 1}`} />
-          <span>Folha {i + 1} · {f.name}</span>
+          {/\.pdf$/i.test(f.name) ? <FileText size={28} aria-hidden /> : <img src={urls[i]} alt={`Folha ${i + 1}`} />}
+          <span>{/\.pdf$/i.test(f.name) ? "PDF" : `Folha ${i + 1}`} · {f.name}</span>
           <button className="back-link" disabled={i === 0} aria-label={`Subir folha ${i + 1}`} onClick={() => mover(i, -1)}>↑</button>
           <button className="back-link" disabled={i === files.length - 1} aria-label={`Descer folha ${i + 1}`} onClick={() => mover(i, 1)}>↓</button>
           <button className="back-link" aria-label={`Remover folha ${i + 1}`} onClick={() => onChange(files.filter((_, j) => j !== i))}><Trash2 size={14} /></button>
@@ -741,22 +741,22 @@ function ActivityDetail({
                 <strong>{files.length ? `${files.length} foto(s) escolhida(s)` : "Escolha sua atividade"}</strong>
                 <span>
                   {onSubmittedReal
-                    ? `JPG ou PNG · até 10 MB cada · até ${MAX_FOTOS} fotos do mesmo trabalho`
+                    ? `JPG, PNG ou PDF · até 10 MB cada · até ${MAX_FOTOS} folhas do mesmo trabalho`
                     : "PDF, JPG ou PNG · até 10 MB"}
                 </span>
                 <input
                   aria-label="Selecionar arquivo da atividade"
                   type="file"
                   multiple={!!onSubmittedReal}
-                  accept={onSubmittedReal ? ".png,.jpg,.jpeg" : ".pdf,.png,.jpg,.jpeg"}
+                  accept=".pdf,.png,.jpg,.jpeg"
                   onChange={(e) => {
                     const novas = Array.from(e.target.files ?? []);
                     e.target.value = ""; // permite escolher a mesma foto de novo
                     const valido = (f: File) =>
                       f.size <= 10 * 1024 * 1024 &&
-                      (onSubmittedReal ? /\.(png|jpe?g)$/i.test(f.name) : /\.(pdf|png|jpe?g)$/i.test(f.name));
+                      /\.(pdf|png|jpe?g)$/i.test(f.name);
                     if (novas.some((f) => !valido(f))) {
-                      setError(onSubmittedReal ? "Use JPG ou PNG com no máximo 10 MB." : "Use PDF, JPG ou PNG com no máximo 10 MB.");
+                      setError("Use PDF, JPG ou PNG com no máximo 10 MB.");
                       return;
                     }
                     const total = onSubmittedReal ? [...files, ...novas] : novas.slice(0, 1);
@@ -1032,6 +1032,7 @@ function RevisaoReal({
   const [correcao, setCorrecao] = useState<CorrecaoAPI | null>(null);
   const [notas, setNotas] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState("");
+  const [motivoMudanca, setMotivoMudanca] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [corrigindo, setCorrigindo] = useState(false);
   const [aprovando, setAprovando] = useState(false);
@@ -1094,6 +1095,7 @@ function RevisaoReal({
       a.id,
       Object.entries(notas).map(([codigo, nota]) => ({ codigo, nota: Math.round(nota * 100) / 100 })),
       feedback,
+      mudouNota ? motivoMudanca : undefined,
     )
       .then(() => onApproved())
       .catch((erro) => {
@@ -1104,6 +1106,10 @@ function RevisaoReal({
   };
 
   const aprovada = a.status === "aprovada";
+  // o professor mexeu em alguma nota que a IA deu? Então a IA errou ali e pode aprender o porquê
+  const mudouNota = !!correcao?.criterios.some(
+    (c) => Number.isFinite(notas[c.codigo]) && Math.abs(notas[c.codigo] - c.nota) > 0.01,
+  );
   const nota = Math.round(Object.values(notas).reduce((s, n) => s + (Number.isFinite(n) ? n : 0), 0) * 100) / 100;
 
   return (
@@ -1216,6 +1222,22 @@ function RevisaoReal({
                   />
                 ) : (
                   <p className="feedback-text">{feedback || "Ainda sem orientação registrada."}</p>
+                )}
+                {!aprovada && !readOnly && mudouNota && (
+                  <>
+                    <h3>Ensine a IA: por que você mudou a nota?</h3>
+                    <p className="muted">
+                      Opcional. Só a IA lê (o aluno não vê). Ela usa isso para corrigir do seu jeito nas próximas vezes.
+                    </p>
+                    <textarea
+                      aria-label="Por que você mudou a nota da IA"
+                      className="text-area"
+                      maxLength={1000}
+                      placeholder="Ex.: a IA deu nota cheia, mas eu exijo a verificação final da conta."
+                      value={motivoMudanca}
+                      onChange={(e) => setMotivoMudanca(e.target.value)}
+                    />
+                  </>
                 )}
                 {error && (
                   <p role="alert" className="error">

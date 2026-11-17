@@ -88,7 +88,7 @@ def test_agente_decide_os_passos_e_grava_o_passo_a_passo():
     falso, pedidos = _cliente_roteirizado(roteiro)
     originais = (agente_mod._client, ia.corrigir, agente_router.gerar_exercicios)
     agente_mod._client = lambda: falso
-    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    ia.corrigir = lambda texto, tema, contexto="": (nota, ia.MODELO_PRINCIPAL)
     agente_router.gerar_exercicios = lambda aluno_id, alvo: [exercicio]
     try:
         r = client.post(f"/submissoes/{sub['id']}/agente", headers=aluno, json={})
@@ -135,7 +135,7 @@ def test_agente_que_cai_ainda_entrega_a_correcao():
     falso.with_options = lambda **_: falso
     originais = (agente_mod._client, ia.corrigir)
     agente_mod._client = lambda: falso
-    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    ia.corrigir = lambda texto, tema, contexto="": (nota, ia.MODELO_PRINCIPAL)
     try:
         r = client.post(f"/submissoes/{sub['id']}/agente", headers=aluno, json={})
     finally:
@@ -158,7 +158,7 @@ def test_agente_nao_roda_de_novo_sem_refazer():
     falso, pedidos = _cliente_roteirizado(roteiro)
     originais = (agente_mod._client, ia.corrigir)
     agente_mod._client = lambda: falso
-    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    ia.corrigir = lambda texto, tema, contexto="": (nota, ia.MODELO_PRINCIPAL)
     try:
         url = f"/submissoes/{sub['id']}/agente"
         assert client.post(url, headers=aluno, json={}).status_code == 200
@@ -184,7 +184,7 @@ def test_sinalizar_nao_grava_sozinho_se_o_agente_cai():
     falso, _ = _cliente_roteirizado(roteiro)
     originais = (agente_mod._client, ia.corrigir)
     agente_mod._client = lambda: falso
-    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    ia.corrigir = lambda texto, tema, contexto="": (nota, ia.MODELO_PRINCIPAL)
     try:
         r = client.post(f"/submissoes/{sub['id']}/agente", headers=aluno, json={})
     finally:
@@ -208,7 +208,7 @@ def test_agente_que_parou_sem_correcao_tenta_de_novo_ao_clicar():
     falso, pedidos = _cliente_roteirizado(roteiro)
     originais = (agente_mod._client, ia.corrigir)
     agente_mod._client = lambda: falso
-    ia.corrigir = lambda texto, tema: (nota, ia.MODELO_PRINCIPAL)
+    ia.corrigir = lambda texto, tema, contexto="": (nota, ia.MODELO_PRINCIPAL)
     try:
         url = f"/submissoes/{sub['id']}/agente"
         assert client.post(url, headers=aluno, json={}).json()["correcao"] is None
