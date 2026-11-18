@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import { iso, useCalendario } from "../hooks/useCalendario";
 import {
   apagarEvento, criarEvento, listarEscolas, listarTurmasMinhas,
@@ -11,8 +11,9 @@ import type { Role } from "../types";
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 const SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
 const TIPOS: EventoPayload["tipo"][] = ["AVISO", "PROVA", "ENTREGA", "REUNIAO"];
-const ROTULO: Record<string, string> = { AVISO: "Aviso", PROVA: "Prova", ENTREGA: "Entrega", REUNIAO: "Reunião", FERIADO: "Feriado" };
-const TOM = (t: string) => (t === "FERIADO" ? "neutral" : t === "PROVA" ? "amber" : "green") as "green" | "amber" | "neutral";
+const TIPOS_ALUNO: EventoPayload["tipo"][] = ["ENTREGA", "PROVA", "AVISO"]; // lembrete pessoal do aluno
+const ROTULO: Record<string, string> = { AVISO: "Aviso", PROVA: "Prova", ENTREGA: "Entrega", REUNIAO: "Reunião", FERIADO: "Feriado", META: "Meta" };
+const TOM = (t: string) => (t === "FERIADO" ? "neutral" : t === "PROVA" || t === "META" ? "amber" : "green") as "green" | "amber" | "neutral";
 const br = (d: string) => d.split("-").reverse().join("/");
 
 // um item "cobre" o dia se inicio <= dia <= fim (fim nulo = so o proprio dia)
@@ -31,14 +32,14 @@ export function Calendar({ role, notify }: { role: Role; notify: (m: string) => 
   const de = iso(primeiro), ate = iso(ultimo);
   const precisaEscola = role === "admin";
   const { itens, erro, recarregar } = useCalendario(de, ate, precisaEscola ? escolaId : undefined);
-  const podeCriar = role !== "aluno";
+  const aluno = role === "aluno"; // aluno cria so lembretes pessoais (ninguem mais ve)
 
   useEffect(() => {
     if (precisaEscola) listarEscolas().then((e) => { setEscolas(e); setEscolaId(e[0]?.id); }).catch(() => {});
   }, [precisaEscola]);
   useEffect(() => {
-    if (podeCriar && (!precisaEscola || escolaId)) listarTurmasMinhas(escolaId).then(setTurmas).catch(() => {});
-  }, [podeCriar, precisaEscola, escolaId]);
+    if (!aluno && (!precisaEscola || escolaId)) listarTurmasMinhas(escolaId).then(setTurmas).catch(() => {});
+  }, [aluno, precisaEscola, escolaId]);
 
   const hoje = iso(new Date());
   const celulas = useMemo(() => {
@@ -50,14 +51,18 @@ export function Calendar({ role, notify }: { role: Role; notify: (m: string) => 
   const lista = dia ? doDia(dia) : itens;
 
   async function apagar(i: ItemCalendarioAPI) {
-    try { await apagarEvento(i.id); notify("Evento apagado."); recarregar(); }
+    try { await apagarEvento(i.id); notify(aluno ? "Lembrete apagado." : "Evento apagado."); recarregar(); }
     catch (e) { notify((e as Error).message); }
   }
 
   return (
     <div className="calendar-page">
       <SectionTitle title="Calendário" />
-      <p className="muted">O mesmo calendário para toda a escola. Atualiza sozinho.</p>
+      <p className="muted">
+        {aluno
+          ? "Os eventos da escola e da sua turma, mais os lembretes que você adicionar (só você vê)."
+          : "O mesmo calendário para toda a escola. Atualiza sozinho."}
+      </p>
       {precisaEscola && (
         <label>Instituição
           <select value={escolaId ?? ""} onChange={(e) => setEscolaId(e.target.value)}>
@@ -70,7 +75,7 @@ export function Calendar({ role, notify }: { role: Role; notify: (m: string) => 
           <button className="icon-btn" aria-label="Mês anterior" onClick={() => setRef(new Date(ref.getFullYear(), ref.getMonth() - 1, 1))}><ChevronLeft size={18} /></button>
           <strong>{MESES[ref.getMonth()]} de {ref.getFullYear()}</strong>
           <button className="icon-btn" aria-label="Próximo mês" onClick={() => setRef(new Date(ref.getFullYear(), ref.getMonth() + 1, 1))}><ChevronRight size={18} /></button>
-          {podeCriar && <Button icon={Plus} onPress={() => setNovo(!novo)}>Novo evento</Button>}
+          <Button icon={Plus} onPress={() => setNovo(true)}>{aluno ? "Adicionar" : role === "professor" ? "Adicionar atividade" : "Novo evento"}</Button>
         </div>
         {erro && <p className="error">{erro}</p>}
         <div className="cal-grid">
@@ -97,7 +102,7 @@ export function Calendar({ role, notify }: { role: Role; notify: (m: string) => 
                 <div>
                   <strong>{i.titulo}</strong>
                   <span className="tiny muted">
-                    {br(i.inicio)}{i.fim ? ` a ${br(i.fim)}` : ""}{i.turma ? ` · ${i.turma}` : i.origem === "evento" ? " · Escola toda" : ""}
+                    {br(i.inicio)}{i.fim ? ` a ${br(i.fim)}` : ""}{i.turma ? ` · ${i.turma}` : i.origem !== "evento" ? "" : aluno && i.editavel ? " · Só você vê" : " · Escola toda"}
                   </span>
                   {i.descricao && <span className="tiny">{i.descricao}</span>}
                 </div>
@@ -118,48 +123,68 @@ function NovoEvento({ turmas, role, escolaId, dia, fechar, notify, recarregar }:
 }) {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [tipo, setTipo] = useState<EventoPayload["tipo"]>("AVISO");
+  const aluno = role === "aluno";
+  const [tipo, setTipo] = useState<EventoPayload["tipo"]>(aluno ? "ENTREGA" : "AVISO");
   const [inicio, setInicio] = useState(dia);
   const [fim, setFim] = useState("");
-  // professor so cria para as proprias turmas; gestor/admin podem deixar "escola toda"
-  const [turmaId, setTurmaId] = useState("");
+  // professor so cria para as proprias turmas (uma ou varias); gestor/admin: nenhuma marcada = escola toda
+  const [turmaIds, setTurmaIds] = useState<string[]>([]);
+  const alternarTurma = (id: string) =>
+    setTurmaIds((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
   const [salvando, setSalvando] = useState(false);
 
   async function salvar() {
-    if (!titulo.trim()) return notify("Dê um título ao evento.");
-    if (role === "professor" && !turmaId) return notify("Escolha a turma do evento.");
+    if (!titulo.trim()) return notify(aluno ? "Escreva o que você precisa fazer." : "Dê um título ao evento.");
+    if (role === "professor" && !turmaIds.length) return notify("Escolha pelo menos uma turma.");
     setSalvando(true);
     try {
-      await criarEvento({ titulo: titulo.trim(), descricao: descricao.trim() || undefined, tipo, inicio, fim: fim || null, turma_id: turmaId || null }, escolaId);
-      notify("Evento criado. Já aparece para a escola.");
+      // varias turmas: cada turma recebe o seu evento (igual aos exercicios); nenhuma = escola toda / pessoal
+      const base = { titulo: titulo.trim(), descricao: descricao.trim() || undefined, tipo, inicio, fim: fim || null };
+      await Promise.all((turmaIds.length ? turmaIds : [null]).map((t) => criarEvento({ ...base, turma_id: t }, escolaId)));
+      notify(aluno ? "Adicionado ao seu calendário."
+        : turmaIds.length > 1 ? `Adicionado ao calendário de ${turmaIds.length} turmas.`
+        : turmaIds.length ? "Adicionado ao calendário da turma." : "Evento criado. Já aparece para a escola.");
       recarregar(); fechar();
     } catch (e) { notify((e as Error).message); }
     finally { setSalvando(false); }
   }
 
   return (
-    <Card>
-      <SectionTitle title="Novo evento" />
-      <label>Título<input value={titulo} maxLength={200} onChange={(e) => setTitulo(e.target.value)} /></label>
+    <Modal title={aluno ? "Adicionar ao meu calendário" : role === "professor" ? "Adicionar atividade ao calendário" : "Novo evento"} onClose={fechar}>
+      {aluno && <p className="tiny muted">Só você vê o que adicionar aqui.</p>}
+      <div className="form-grid">
+      <label>{aluno ? "O que você precisa fazer" : "Título"}<input value={titulo} maxLength={200} onChange={(e) => setTitulo(e.target.value)} /></label>
       <label>Tipo
         <select value={tipo} onChange={(e) => setTipo(e.target.value as EventoPayload["tipo"])}>
-          {TIPOS.map((t) => <option key={t} value={t}>{ROTULO[t]}</option>)}
+          {(aluno ? TIPOS_ALUNO : TIPOS).map((t) => <option key={t} value={t}>{aluno && t === "AVISO" ? "Lembrete" : ROTULO[t]}</option>)}
         </select>
       </label>
       <label>Início<input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} /></label>
       <label>Fim (opcional)<input type="date" value={fim} min={inicio} onChange={(e) => setFim(e.target.value)} /></label>
-      <label>Para quem
-        <select value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
-          {role !== "professor" && <option value="">Escola toda</option>}
-          {role === "professor" && <option value="">Escolha a turma…</option>}
-          {turmas.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-        </select>
-      </label>
-      <label>Descrição (opcional)<textarea value={descricao} maxLength={2000} onChange={(e) => setDescricao(e.target.value)} /></label>
+      </div>
+      {!aluno && (
+        <>
+          <p className="rotulo-escolha">
+            {role === "professor" ? "Turmas que vão ver (pode marcar mais de uma)" : "Turmas (nenhuma marcada = escola toda)"}
+          </p>
+          <div className="botoes-escolha" role="group" aria-label="Turmas">
+            {turmas.map((t) => (
+              <button type="button" key={t.id} aria-pressed={turmaIds.includes(t.id)}
+                className={turmaIds.includes(t.id) ? "active" : ""} onClick={() => alternarTurma(t.id)}>
+                {turmaIds.includes(t.id) && <Check size={14} />} {t.nome}
+              </button>
+            ))}
+          </div>
+          {!turmas.length && <p className="tiny muted">Você ainda não tem turmas.</p>}
+        </>
+      )}
+      <div className="form-grid" style={{ gridTemplateColumns: "1fr" }}>
+        <label>Descrição (opcional)<textarea value={descricao} maxLength={2000} onChange={(e) => setDescricao(e.target.value)} /></label>
+      </div>
       <div className="row">
-        <Button onPress={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Criar evento"}</Button>
+        <Button onPress={salvar} disabled={salvando}>{salvando ? "Salvando..." : aluno ? "Adicionar" : "Criar evento"}</Button>
         <Button variant="ghost" onPress={fechar}>Cancelar</Button>
       </div>
-    </Card>
+    </Modal>
   );
 }

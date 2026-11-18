@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Check,
   X,
-  RotateCcw,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -16,8 +15,12 @@ import {
   dominioMeu,
   evolucaoMinha,
   exerciciosDaTurma,
+  gerarMeusExercicios,
   meusExercicios,
+  minhaPratica,
+  responderPratica,
   responderExercicio,
+  type PraticaAPI,
   type DominioAPI,
   type ExercicioAlunoAPI,
   type EvolucaoMateriaAPI,
@@ -43,21 +46,27 @@ interface ExercicioComum {
   description: string;
   question: string;
   options: string[];
-  answer: number;
-  explanation: string;
+  // demonstracao: gabarito local. Exercicio real: nao tem (o servidor confere ao responder)
+  answer?: number;
+  explanation?: string;
+  real?: boolean;
+  // exercicio real ja respondido: o que o aluno marcou e o gabarito (vem do servidor)
+  feita?: { opcao: number; correta: boolean; resposta_correta: number; explicacao: string };
 }
 
-function doBackend(e: ExercicioAPI, i: number): ExercicioComum {
+function doBackend(e: ExercicioAPI): ExercicioComum {
   return {
-    id: `real-${i}`,
-    topic: HABILIDADE_NOME[e.habilidade_codigo] ?? e.habilidade_codigo,
+    id: e.id,
+    real: true,
+    topic: e.materia ?? HABILIDADE_NOME[e.habilidade_codigo] ?? e.habilidade_codigo,
     type: "Gerado para você",
     title: e.titulo,
-    description: `Baseado no seu desempenho real em ${e.habilidade_codigo}.`,
+    description: e.motivo ?? `Baseado no seu desempenho real em ${e.habilidade_codigo}.`,
     question: e.enunciado,
     options: e.opcoes,
-    answer: e.resposta_correta,
-    explanation: e.explicacao,
+    feita: e.respondida != null
+      ? { opcao: e.respondida, correta: !!e.correta, resposta_correta: e.resposta_correta ?? 0, explicacao: e.explicacao ?? "" }
+      : undefined,
   };
 }
 function doDemo(t: (typeof studyTasks)[number]): ExercicioComum {
@@ -221,22 +230,6 @@ function ResultadoMini({ resultado }: { resultado: "CERTA" | "ERRADA" | "PARCIAL
   return <p className="resultado-mini"><span className={`ponto ${classe}`}>{icone}</span>{texto}</p>;
 }
 
-// resposta do aluno nos exercicios da IA (so um envio): guardada no navegador, por aluno
-type RespostaIA = { escolha: number; certo: boolean };
-function useRespostasIA(userId?: string) {
-  const chave = `domina-ia-respostas:${userId ?? "demo"}`;
-  const ler = (): Record<string, RespostaIA> => {
-    try { return JSON.parse(localStorage.getItem(chave) ?? "{}"); } catch { return {}; }
-  };
-  const [mapa, setMapa] = useState<Record<string, RespostaIA>>(ler);
-  const salvar = (pergunta: string, r: RespostaIA) => {
-    const novo = { ...ler(), [pergunta]: r };
-    try { localStorage.setItem(chave, JSON.stringify(novo)); } catch { /* sem armazenamento: vale so ate sair da tela */ }
-    setMapa(novo);
-  };
-  return [mapa, salvar] as const;
-}
-
 export function Studies(props: {
   state: DemoState;
   update: (fn: (s: DemoState) => DemoState) => void;
@@ -288,21 +281,25 @@ function PlanoIA({
   currentUser?: UsuarioAtual | null;
 }) {
   const real = !!currentUser;
-  const [respostasIA, salvarRespostaIA] = useRespostasIA(currentUser?.id);
   const [exerciciosReais, setExerciciosReais] = useState<ExercicioAPI[] | null>(null);
   const [carregando, setCarregando] = useState(real);
-  const [recarregando, setRecarregando] = useState(false);
+  const [pratica, setPratica] = useState<PraticaAPI[]>([]);
   const [erro, setErro] = useState("");
-  const carregar = (recarregar = false) => {
+  const [gerando, setGerando] = useState(false);
+  // abrir a tela so LE os exercicios salvos (os mesmos de antes, feitos ou nao): nao chama a IA.
+  // A IA so e chamada em gerar(), quando o aluno clica no botao.
+  const carregar = (gerar = false) => {
     if (!real) return;
-    (recarregar ? setRecarregando : setCarregando)(true);
+    setCarregando(true);
+    setGerando(gerar);
     setErro("");
-    meusExercicios(recarregar)
+    (gerar ? gerarMeusExercicios() : meusExercicios())
       .then(setExerciciosReais)
       .catch((e) =>
         setErro(e instanceof Error ? e.message : "Não foi possível montar seu plano de estudo."),
       )
-      .finally(() => (recarregar ? setRecarregando : setCarregando)(false));
+      .finally(() => setCarregando(false));
+    minhaPratica().then(setPratica).catch(() => {});
   };
   useEffect(() => {
     carregar();
@@ -318,26 +315,43 @@ function PlanoIA({
       <Exercise
         key={task.id}
         task={task}
-        anterior={respostasIA[task.question] ?? null}
-        onBack={() => select(null)}
-        onComplete={(escolha, certo) => {
-          salvarRespostaIA(task.question, { escolha, certo });
+        onBack={() => {
+          select(null);
+          if (task.real && !task.feita) carregar(); // marca como feito na lista (so leitura, sem IA)
+        }}
+        onComplete={() =>
           update((s) => ({
             ...s,
             completed: [...new Set([...s.completed, task.id])],
-          }));
-        }}
+          }))
+        }
       />
     );
   if (real && carregando)
     return (
       <Empty
-        title="Montando seu plano de estudo..."
-        text="Isso pode levar uns 20 a 30 segundos na primeira vez: estamos gerando exercícios específicos para o seu desempenho real."
+        title={gerando ? "Montando seus exercícios..." : "Carregando seus exercícios..."}
+        text={gerando
+          ? "Isso pode levar uns 20 a 30 segundos: estamos gerando exercícios específicos para o seu desempenho real."
+          : "Isso leva só um instante."}
       />
     );
   if (real && erro)
-    return <Empty title="Ainda não dá para montar seu plano" text={erro} />;
+    return (
+      <Empty title="Ainda não dá para montar seu plano" text={erro}>
+        {exerciciosReais !== null && <Button variant="secondary" onPress={() => carregar()}>Voltar aos exercícios</Button>}
+      </Empty>
+    );
+  if (real && !tarefas.length)
+    return (
+      <Empty
+        title="Você ainda não tem exercícios"
+        text="A IA monta exercícios a partir do que você mais errou. Eles ficam salvos: são os mesmos toda vez que você voltar aqui."
+      >
+        <Button icon={Sparkles} onPress={() => carregar(true)}>Gerar exercícios</Button>
+      </Empty>
+    );
+  const primeiroPorFazer = tarefas.findIndex((t) => !t.feita);
   return (
     <>
       <div className="info-banner">
@@ -351,28 +365,20 @@ function PlanoIA({
           </p>
         </div>
       </div>
-      {real && (
-        <div className="form-actions left">
-          <Button
-            variant="secondary"
-            icon={RotateCcw}
-            disabled={recarregando}
-            onPress={() => carregar(true)}
-          >
-            {recarregando ? "Carregando..." : "Carregar exercícios (usar pouco)"}
-          </Button>
-        </div>
+      {real && pratica.length > 0 && (
+        <p className="tiny muted">
+          Você já respondeu {pratica.reduce((n, p) => n + p.respondidos, 0)} exercício(s) e acertou{" "}
+          {pratica.reduce((n, p) => n + p.acertos, 0)}. Suas respostas ficam salvas.
+        </p>
       )}
       <div className="study-grid">
         {tarefas.map((t, i) => {
-          const feito = respostasIA[t.question] ?? null;
-          // o botao verde (principal) e sempre o primeiro que ainda nao foi feito
-          const proximo = tarefas.findIndex((x) => !respostasIA[x.question]) === i;
+          const proximo = i === primeiroPorFazer; // o verde e o primeiro ainda nao feito
           return (
           <Card key={t.id} className="study-task">
             <div className="section-title">
               <span className="task-number">0{i + 1}</span>
-              {feito ? (
+              {t.feita ? (
                 <Badge tone="neutral">Feito</Badge>
               ) : proximo ? (
                 <Badge>Recomendado para você</Badge>
@@ -380,24 +386,29 @@ function PlanoIA({
                 <Badge tone="neutral">{t.type}</Badge>
               )}
             </div>
-            {feito && <ResultadoMini resultado={feito.certo ? "CERTA" : "ERRADA"} />}
             <span className="eyebrow">{t.topic}</span>
             <h2>{t.title}</h2>
             <p>{t.description}</p>
+            {t.feita && <ResultadoMini resultado={t.feita.correta ? "CERTA" : "ERRADA"} />}
             <Button
               variant={proximo ? "primary" : "secondary"}
               icon={ArrowRight}
               onPress={() => select(t.id)}
             >
-              {feito ? "Ver resposta" : "Começar prática"}
+              {t.feita ? "Ver resposta" : "Começar prática"}
             </Button>
           </Card>
           );
         })}
       </div>
+      {real && primeiroPorFazer === -1 && (
+        <Button variant="secondary" icon={Sparkles} onPress={() => carregar(true)}>
+          Gerar novos exercícios
+        </Button>
+      )}
       <p className="tiny muted">
         {real
-          ? "Exercícios gerados por IA a partir do seu desempenho real. A prática não altera a estimativa de domínio nesta versão."
+          ? "Exercícios gerados por IA a partir do seu desempenho real. Suas respostas ficam salvas e contam para as metas; elas não alteram a estimativa de domínio."
           : "Exercícios demonstrativos com respostas predefinidas. A prática não altera a estimativa de domínio nesta versão."}
       </p>
     </>
@@ -405,18 +416,40 @@ function PlanoIA({
 }
 function Exercise({
   task,
-  anterior,
   onBack,
   onComplete,
 }: {
   task: ExercicioComum;
-  anterior: RespostaIA | null;
   onBack: () => void;
-  onComplete: (escolha: number, certo: boolean) => void;
+  onComplete: () => void;
 }) {
-  // so uma resposta: se ja foi feito, abre mostrando o resultado
-  const [answer, setAnswer] = useState<number | null>(anterior?.escolha ?? null);
-  const [checked, setChecked] = useState(anterior !== null);
+  // ja respondido: abre mostrando o que o aluno marcou e o gabarito (so leitura)
+  const [answer, setAnswer] = useState<number | null>(task.feita?.opcao ?? null);
+  const [checked, setChecked] = useState(!!task.feita);
+  const [enviando, setEnviando] = useState(false);
+  const [erro, setErro] = useState("");
+  // exercicio real: quem confere e o servidor (resposta salva); demonstracao: gabarito local
+  const [res, setRes] = useState<{ correta: boolean; resposta_correta: number; explicacao: string } | null>(task.feita ?? null);
+  const conferir = async () => {
+    if (answer === null) return;
+    if (!task.real) {
+      setRes({ correta: answer === task.answer, resposta_correta: task.answer ?? 0, explicacao: task.explanation ?? "" });
+      setChecked(true);
+      onComplete();
+      return;
+    }
+    setEnviando(true);
+    setErro("");
+    try {
+      setRes(await responderPratica(task.id, answer));
+      setChecked(true);
+      onComplete();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível enviar sua resposta.");
+    } finally {
+      setEnviando(false);
+    }
+  };
   return (
     <>
       <button className="back-link" onClick={onBack}>
@@ -432,7 +465,7 @@ function Exercise({
           {task.options.map((o, i) => (
             <label
               key={o}
-              className={`option ${answer === i ? "chosen" : ""} ${checked && i === task.answer ? "correct" : ""} ${checked && answer === i && i !== task.answer ? "wrong" : ""}`}
+              className={`option ${answer === i ? "chosen" : ""} ${checked && res && i === res.resposta_correta ? "correct" : ""} ${checked && res && answer === i && i !== res.resposta_correta ? "wrong" : ""}`}
             >
               <input
                 type="radio"
@@ -448,28 +481,21 @@ function Exercise({
             </label>
           ))}
         </fieldset>
-        {checked ? (
+        {checked && res ? (
           <>
-            <div
-              className={`exercise-feedback ${answer === task.answer ? "" : "retry"}`}
-            >
-              <h3>
-                {answer === task.answer ? "Você acertou." : "Você errou."}
-              </h3>
-              <p>{task.explanation}</p>
+            <div className={`exercise-feedback ${res.correta ? "" : "retry"}`}>
+              <h3>{res.correta ? "Você acertou." : "Você errou."}</h3>
+              <p>{res.explicacao}</p>
             </div>
-            <Button onPress={onBack}>Concluir prática</Button>
+            <Button onPress={onBack}>{task.feita ? "Voltar" : "Concluir prática"}</Button>
           </>
         ) : (
-          <Button
-            disabled={answer === null}
-            onPress={() => {
-              setChecked(true);
-              onComplete(answer as number, answer === task.answer);
-            }}
-          >
-            Conferir resposta
-          </Button>
+          <>
+            {erro && <p className="error" role="alert">{erro}</p>}
+            <Button disabled={answer === null || enviando} onPress={conferir}>
+              {enviando ? "Enviando..." : "Conferir resposta"}
+            </Button>
+          </>
         )}
       </Card>
     </>

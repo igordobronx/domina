@@ -4,6 +4,7 @@ gabarito so aparece depois. A IA e falsa (nao chama o Claude).
     cd backend && python -m pytest tests/test_exercicios.py
 """
 from tests.test_rbac import client, token  # noqa: F401  (reusa o banco/seed do teste de RBAC)
+from vinculo_teste import vincular  # noqa: E402
 
 import app.exercicios_ia as ia_mod  # noqa: E402
 
@@ -21,6 +22,7 @@ def _setup():
         mk("Ana Exerc", "ana.exerc@x.com", "ALUNO", turma)
         mk("Caio Exerc", "caio.exerc@x.com", "ALUNO", outra)
         materia = client.post("/materias", headers=g, json={"nome": "Matematica Ex", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        vincular("prof.exerc@x.com", turma, materia)
         _c.update(turma=turma, outra=outra, materia=materia)
     return token("prof.exerc@x.com", "123456"), _c
 
@@ -128,6 +130,12 @@ def test_lote_respostas_avaliacao_e_resumo():
                      titulo="Disc lote")
     del disc["turma_id"]
     assert client.post("/exercicios/lote", headers=p, json={**disc, "turma_ids": [c["turma"], c["outra"]]}).status_code == 403
+    # na turma nova ele ainda nao leciona a materia: so depois que o gestor define
+    assert client.post("/exercicios/lote", headers=p, json={**disc, "turma_ids": [c["turma"], turma2]}).status_code == 403
+    assert client.put(f"/turmas/{turma2}/professores/{prof_id}/materias", headers=p,
+                      json={"materia_ids": [c["materia"]]}).status_code == 403  # professor nao define
+    assert client.put(f"/turmas/{turma2}/professores/{prof_id}/materias", headers=g,
+                      json={"materia_ids": [c["materia"]]}).status_code == 200
     r = client.post("/exercicios/lote", headers=p, json={**disc, "turma_ids": [c["turma"], turma2]})
     assert r.status_code == 201 and len(r.json()) == 2 and r.json()[0]["id"] != r.json()[1]["id"]
     ex = r.json()[0]

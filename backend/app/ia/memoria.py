@@ -17,6 +17,7 @@ from pathlib import Path
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.ia.embeddings import embutir
 from app.ia.extracao import ArquivoNaoLido, dividir, extrair_texto
 from app.models.enum import PerfilEnum, StatusProcessamentoEnum
@@ -72,6 +73,9 @@ def _do_professor(db: Session, materia_id, origem: str, professor_id):
     da IA, nao). Vale o que o proprio professor ensinou; material enviado pelo GESTOR e da
     escola e vale para todos os professores da materia."""
     q = db.query(IaTrecho).filter_by(materia_id=materia_id, origem=origem).filter(IaTrecho.ignorado.is_(False))
+    # material arquivado ("excluir" na tela de materiais) tambem deixa de ser usado, sem apagar nada
+    q = q.filter(or_(IaTrecho.documento_id.is_(None),
+                     IaTrecho.documento_id.notin_(db.query(DocumentoBase.id).filter(DocumentoBase.ativo.is_(False)))))
     if origem in (CORRECAO, EXERCICIO):
         return q.filter(IaTrecho.professor_id == professor_id)
     gestores = db.query(Usuario.id).filter(Usuario.perfil == PerfilEnum.GESTOR)
@@ -126,7 +130,7 @@ def indexar_documento(db: Session, documento: DocumentoBase) -> None:
     (com o motivo em documento.detalhe). Nao da commit: quem chama decide."""
     db.query(IaTrecho).filter_by(documento_id=documento.id).delete()
     try:
-        texto = extrair_texto(documento.nome_arquivo, Path(documento.caminho).read_bytes())
+        texto = extrair_texto(documento.nome_arquivo, (Path(settings.UPLOAD_DIR) / documento.caminho).read_bytes())
         partes = dividir(texto)[:MAX_TRECHOS_POR_DOCUMENTO]
         _guardar(db, [
             IaTrecho(materia_id=documento.materia_id, professor_id=documento.enviado_por, origem=MATERIAL,
@@ -444,7 +448,8 @@ def erros_da_ia(db: Session, materia_id, professor_id, limite: int = 5) -> list[
 def aprendido(db: Session, materia_id, professor_id) -> list[dict]:
     """O que a IA aprendeu deste professor (correcoes, exercicios e materiais), com 'em_uso'.
     Ordem: as correcoes em que a IA mais errou primeiro, depois o resto. Instrucao nao entra
-    (ela ja tem o proprio botao de apagar). Material aparece uma vez por arquivo."""
+    (ela ja tem o proprio botao de apagar). Material tambem nao: tirar de uso um material e
+    "Arquivar" na lista de materiais (DELETE /documentos/{id}), um botao so."""
     itens = []
     for t, c in (db.query(IaTrecho, Correcao).outerjoin(Correcao, Correcao.id == IaTrecho.correcao_id)
                  .filter(IaTrecho.materia_id == materia_id, IaTrecho.professor_id == professor_id,
@@ -455,18 +460,10 @@ def aprendido(db: Session, materia_id, professor_id) -> list[dict]:
             erro = abs(ia - prof) / max(ia, prof, 1.0) + (0.05 if c.explicacao_ruim else 0)
         itens.append({"tipo": t.origem, "id": t.id, "titulo": t.titulo, "trecho": " ".join(t.texto.split())[:160],
                       "em_uso": not t.ignorado, "erro": round(erro, 3)})
-    docs = db.query(DocumentoBase).filter(DocumentoBase.materia_id == materia_id,
-                                          DocumentoBase.enviado_por == professor_id).all()
-    for d in docs:
-        trechos = db.query(IaTrecho.ignorado).filter_by(documento_id=d.id).all()
-        if trechos:
-            itens.append({"tipo": MATERIAL, "id": d.id, "titulo": d.nome_arquivo, "trecho": "",
-                          "em_uso": not all(i for (i,) in trechos), "erro": 0.0})
     return sorted(itens, key=lambda i: -i["erro"])
 
 
 def tirar_de_uso(db: Session, materia_id, professor_id, tipo: str, item_id, em_uso: bool) -> bool:
     """Para de usar (ou volta a usar) um item na memoria. NUNCA apaga: o dado fica para treinar a IA propria."""
-    q = db.query(IaTrecho).filter_by(materia_id=materia_id, professor_id=professor_id)
-    q = q.filter_by(documento_id=item_id) if tipo == MATERIAL else q.filter_by(id=item_id, origem=tipo)
+    q = db.query(IaTrecho).filter_by(materia_id=materia_id, professor_id=professor_id, id=item_id, origem=tipo)
     return bool(q.update({IaTrecho.ignorado: not em_uso}, synchronize_session=False))

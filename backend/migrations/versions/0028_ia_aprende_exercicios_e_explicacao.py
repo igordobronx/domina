@@ -1,15 +1,15 @@
 """IA aprende com exercicios marcados pelo professor; professor marca explicacao ruim da IA
 
-Revision ID: 0023
-Revises: 0022
+Revision ID: 0028
+Revises: 0027
 """
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0023"
-down_revision: Union[str, None] = "0022"
+revision: str = "0028"
+down_revision: Union[str, None] = "0027"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -11,7 +11,8 @@ from app.models.enum import (
     PerfilEnum, StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, TipoMateriaEnum, UsuarioTurmaPapelEnum,
 )
 from app.models.usuario import (
-    Atividade, Correcao, CorrecaoCriterio, Escola, Materia, Submissao, Tema, Turma, Usuario, UsuarioTurma,
+    Atividade, Correcao, CorrecaoCriterio, Escola, Materia, ProfessorMateria, Submissao, Tema, Turma, Usuario,
+    UsuarioTurma,
 )
 from app.routers.correcoes import _atualizar_dominio
 
@@ -128,6 +129,7 @@ def run_seed():
 
         materia = get_or_create(db, Materia, escola_id=escola.id, tipo=TipoMateriaEnum.REDACAO_ENEM,
                                 defaults=dict(nome="Redação ENEM"))
+        get_or_create(db, ProfessorMateria, usuario_id=professor.id, turma_id=turma.id, materia_id=materia.id)
         temas = {}
         for codigo, nome in COMPETENCIAS_ENEM:
             temas[codigo] = get_or_create(db, Tema, materia_id=materia.id, habilidade_codigo=codigo,

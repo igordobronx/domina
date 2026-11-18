@@ -39,6 +39,7 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
       title: a.titulo,
       subject: a.materia,
       date: paraData(submissao.criado_em),
+      enviadoEm: submissao.criado_em,
       status: paraStatus(submissao.status),
       kind,
       student: nomeAluno,

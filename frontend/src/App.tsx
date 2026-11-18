@@ -22,7 +22,7 @@ import {
   WifiOff,
   Bell,
   Check,
-  LogIn,
+  LogOut,
 } from "lucide-react";
 import type { Activity, DemoState, Page, Role } from "./types";
 import { loadDemo, saveDemo } from "./services/demoStore";
@@ -129,7 +129,7 @@ const navItems: {
     id: "materiais",
     label: "Treinar IA",
     icon: Layers,
-    roles: ["professor"],
+    roles: ["professor", "gestor"],
   },
 ];
 function iniciais(nome: string): string {
@@ -150,9 +150,11 @@ export function App() {
   const [menu, setMenu] = useState(false),
     [toast, setToast] = useState("");
   const [modal, setModal] = useState<
-    "install" | "notifications" | "search" | "login" | null
+    "install" | "notifications" | "search" | null
   >(null);
   const [query, setQuery] = useState("");
+  const [perfilAberto, setPerfilAberto] = useState(false);
+  const perfilRef = useRef<HTMLDivElement>(null);
   const [currentUser, setCurrentUser] = useState<UsuarioAtual | null>(null);
   // enquanto nao sabemos se o token salvo ainda e valido, nao da pra decidir entre
   // mostrar a tela de login ou o app -- sem token, ja sabemos de cara (nada a checar)
@@ -236,8 +238,11 @@ export function App() {
       });
     }
   }, [notify]);
-  const navigate = (next: Page) => {
+  // filtro com que "Minhas atividades" abre (os numeros da visao geral levam direto para o status)
+  const [filtroAtividades, setFiltroAtividades] = useState("todas");
+  const navigate = (next: Page, filtro = "todas") => {
     setPage(allowedPages[role].includes(next) ? next : "inicio");
+    setFiltroAtividades(filtro);
     setActivity(null);
     setStudy(null);
     setMenu(false);
@@ -319,6 +324,19 @@ export function App() {
     setModal(null);
     notify("Você saiu da sua conta.");
   };
+  useEffect(() => {
+    if (!perfilAberto) return;
+    const fora = (e: MouseEvent) => {
+      if (!perfilRef.current?.contains(e.target as Node)) setPerfilAberto(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setPerfilAberto(false);
+    document.addEventListener("mousedown", fora);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("mousedown", fora);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [perfilAberto]);
   const count = state.activities.filter((a) => a.status === "pendente").length;
   if (!authChecked) return <div className="login-screen" />;
   if (!currentUser)
@@ -449,34 +467,6 @@ export function App() {
             <span />
           </div>
         </div>
-        <div className="sidebar-bottom">
-          <button
-            className={`nav-item ${page === "ajuda" ? "selected" : ""}`}
-            onClick={() => navigate("ajuda")}
-          >
-            <CircleHelp size={20} />
-            Central de ajuda
-          </button>
-          <button
-            className={`nav-item ${page === "configuracoes" ? "selected" : ""}`}
-            onClick={() => navigate("configuracoes")}
-          >
-            <Settings2 size={20} />
-            Preferências
-          </button>
-          <div className="sidebar-profile">
-            <div className="avatar">{iniciais(currentUser.nome)}</div>
-            <div>
-              <strong>{currentUser.nome}</strong>
-              <span>
-                {role === "aluno" ? "Estudante" : role === "professor" ? "Professor(a)" : role === "admin" ? "Administrador(a)" : "Gestor(a)"}
-              </span>
-            </div>
-            <button aria-label="Conta" className="profile-button" onClick={() => setModal("login")}>
-              <LogIn size={18} />
-            </button>
-          </div>
-        </div>
       </aside>
       <div className="main-shell" inert={mobile && menu}>
         <header className="topbar">
@@ -513,7 +503,40 @@ export function App() {
               />
               <span />
             </div>
-            <span className="top-avatar">{iniciais(currentUser.nome)}</span>
+            <div className="profile-menu-wrap" ref={perfilRef}>
+              <button
+                className="top-avatar"
+                aria-label="Menu do perfil"
+                aria-haspopup="menu"
+                aria-expanded={perfilAberto}
+                onClick={() => setPerfilAberto((v) => !v)}
+              >
+                {iniciais(currentUser.nome)}
+              </button>
+              {perfilAberto && (
+                <div className="profile-menu" role="menu">
+                  <div className="profile-menu-head">
+                    <strong>{currentUser.nome}</strong>
+                    <span>
+                      {role === "aluno" ? "Estudante" : role === "professor" ? "Professor(a)" : role === "admin" ? "Administrador(a)" : "Gestor(a)"}
+                      {" · "}{currentUser.email}
+                    </span>
+                  </div>
+                  <button role="menuitem" onClick={() => { setPerfilAberto(false); navigate("configuracoes"); }}>
+                    <Settings2 size={17} />
+                    Preferências
+                  </button>
+                  <button role="menuitem" onClick={() => { setPerfilAberto(false); navigate("ajuda"); }}>
+                    <CircleHelp size={17} />
+                    Central de ajuda
+                  </button>
+                  <button role="menuitem" className="danger" onClick={() => { setPerfilAberto(false); handleLogout(); }}>
+                    <LogOut size={17} />
+                    Sair da conta
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         {pwa.offline && (
@@ -563,6 +586,7 @@ export function App() {
                 selected={activity}
                 select={setActivity}
                 reviewOnly={page === "revisoes"}
+                initialFilter={filtroAtividades}
                 currentUser={currentUser}
               />
             )}
@@ -646,9 +670,7 @@ export function App() {
               ? "Leve o Domina com você"
               : modal === "search"
                 ? "O que você procura?"
-                : modal === "login"
-                  ? "Sua conta"
-                  : "Suas notificações"
+                : "Suas notificações"
           }
           onClose={() => setModal(null)}
         >
@@ -784,17 +806,6 @@ export function App() {
                     <p>Nenhum resultado. Tente “atividades” ou “cultura”.</p>
                   )}
               </div>
-            </>
-          )}
-          {modal === "login" && (
-            <>
-              <Logo />
-              <p>
-                Conectado como <strong>{currentUser.nome}</strong> ({currentUser.email}).
-              </p>
-              <Button variant="secondary" onPress={handleLogout}>
-                Sair da conta
-              </Button>
             </>
           )}
         </Modal>

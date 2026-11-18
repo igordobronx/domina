@@ -17,6 +17,8 @@ O ciclo tem 2 passos separados de proposito -- NADA e apagado sem a IA ter apren
   Extra) python exportar_treino.py materiais materiais.jsonl
      O que os professores ENSINARAM (trechos dos arquivos enviados em "Treinar IA" e os exemplos
      de correcao aprovada), por materia e professor. Isto e a base permanente: nunca e apagado.
+     Regra: o que o professor ESQUECEU (tirou de uso) ou ARQUIVOU nao entra no treino (nem nesta
+     exportacao, nem na "exportar"); o dado continua no banco e volta se ele voltar a usar.
 
 Cada linha do arquivo: tarefa, entrada (o pedido), saida_modelo (o que Claude/Gemini respondeu)
 e, nas correcoes, "correcao_final" com as notas do PROFESSOR, o motivo quando ele mudou a nota e
@@ -28,7 +30,9 @@ from datetime import datetime, timezone
 
 from app.database import SessionLocal
 from app.models.enum import StatusCorrecaoEnum
-from app.models.usuario import Correcao, CorrecaoCriterio, IaChamada, IaTrecho, Tema
+from sqlalchemy import or_
+
+from app.models.usuario import Correcao, CorrecaoCriterio, DocumentoBase, IaChamada, IaTrecho, Tema
 
 
 PESO_CHEIO, PESO_SEM_PROFESSOR = 1.0, 0.5
@@ -58,6 +62,9 @@ def _linha(db, chamada) -> dict:
 def exportar(db, destino: str, tarefa=None) -> int:
     """Grava os exemplos ainda nao exportados. Marca so os definitivos. Nao apaga nada."""
     q = db.query(IaChamada).filter(IaChamada.exportado_em.is_(None))
+    # correcao que o professor "esqueceu" (tirou de uso) nao entra no treino; se ele voltar a usar, entra
+    esquecidas = db.query(IaTrecho.correcao_id).filter(IaTrecho.correcao_id.isnot(None), IaTrecho.ignorado.is_(True))
+    q = q.filter(or_(IaChamada.correcao_id.is_(None), IaChamada.correcao_id.notin_(esquecidas)))
     if tarefa:
         q = q.filter(IaChamada.tarefa == tarefa)
     chamadas = q.order_by(IaChamada.criado_em).all()
@@ -75,11 +82,15 @@ def exportar(db, destino: str, tarefa=None) -> int:
 def exportar_materiais(db, destino: str) -> int:
     total = 0
     with open(destino, "w", encoding="utf-8") as f:
-        for t in db.query(IaTrecho).order_by(IaTrecho.materia_id, IaTrecho.criado_em).yield_per(500):
+        # fora do treino: o que o professor esqueceu e material arquivado (o dado continua no banco)
+        inativos = db.query(DocumentoBase.id).filter(DocumentoBase.ativo.is_(False))
+        validos = (db.query(IaTrecho).filter(IaTrecho.ignorado.is_(False))
+                   .filter(or_(IaTrecho.documento_id.is_(None), IaTrecho.documento_id.notin_(inativos))))
+        for t in validos.order_by(IaTrecho.materia_id, IaTrecho.criado_em).yield_per(500):
             f.write(json.dumps({"id": str(t.id), "origem": t.origem, "materia_id": str(t.materia_id),
                                 "professor_id": str(t.professor_id) if t.professor_id else None,
                                 "titulo": t.titulo, "texto": t.texto,
-                                "tirado_de_uso": t.ignorado}, ensure_ascii=False) + "\n")
+                                }, ensure_ascii=False) + "\n")
             total += 1
     return total
 

@@ -31,7 +31,7 @@ def get_current_user(
         raise credentials_exception
 
     usuario = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if usuario is None:
+    if usuario is None or not usuario.ativo:  # conta desativada: o token que ja existia deixa de valer
         raise credentials_exception
     escola_inativa(db, usuario)
     return usuario

@@ -2,6 +2,7 @@
 from datetime import date, timedelta
 
 from tests.test_rbac import client, token  # noqa: F401  (reusa o banco/seed do teste de RBAC)
+from vinculo_teste import vincular  # noqa: E402
 
 _c = {}
 
@@ -19,6 +20,7 @@ def _setup():
         a2 = mk("Beto Meta", "beto.meta@x.com", "ALUNO", turma)
         a3 = mk("Caio Alheio", "caio.meta@x.com", "ALUNO", outra)
         materia = client.post("/materias", headers=g, json={"nome": "Mat Metas", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        vincular("prof.metas@x.com", turma, materia)
         _c.update(turma=turma, outra=outra, prof=prof, a1=a1, a2=a2, a3=a3, materia=materia)
     return g, token("prof.metas@x.com", "123456"), _c
 
@@ -104,3 +106,24 @@ def test_editar_arquivar_e_pontos_ficam():
     antes = client.get("/metas/minhas", headers=token("beto.meta@x.com", "123456")).json()["nivel"]["pontos"]
     client.delete(f"/metas/{k['id']}", headers=p)                       # arquivar nao tira pontos ja ganhos
     assert client.get("/metas/minhas", headers=token("beto.meta@x.com", "123456")).json()["nivel"]["pontos"] == antes
+
+
+def test_fim_da_meta_aparece_no_calendario_so_para_quem_enxerga():
+    g, p, c = _setup()
+    fim = (date.today() + timedelta(days=3)).isoformat()
+    m = _meta(p, titulo="Meta no calendário", aluno_id=c["a1"], alvo=50, fim=fim).json()
+    de, ate = date.today().isoformat(), (date.today() + timedelta(days=10)).isoformat()
+    ver = lambda h: [i for i in client.get(f"/calendario?de={de}&ate={ate}", headers=h).json() if i["id"] == f"meta:{m['id']}"]  # noqa: E731
+    ana = token("ana.meta@x.com", "123456")
+    assert ver(p)[0]["inicio"] == fim and ver(p)[0]["origem"] == "meta"   # quem criou
+    assert ver(g) and ver(ana)                                            # gestor e a aluna-alvo
+    assert not ver(token("beto.meta@x.com", "123456"))                    # colega nao ve meta individual
+    assert not ver(token("caio.meta@x.com", "123456"))                    # nem aluno de outra turma
+    sem_fim = _meta(p, titulo="Sem fim", aluno_id=c["a1"]).json()
+    assert all(i["id"] != f"meta:{sem_fim['id']}" for i in client.get(f"/calendario?de={de}&ate={ate}", headers=p).json())
+    # editar o fim: mudar de data muda no calendario; null tira do calendario
+    nova = (date.today() + timedelta(days=5)).isoformat()
+    assert client.put(f"/metas/{m['id']}", headers=p, json={"fim": nova}).json()["fim"] == nova
+    assert ver(ana)[0]["inicio"] == nova
+    assert client.put(f"/metas/{m['id']}", headers=p, json={"fim": None, "descricao": None}).json()["fim"] is None
+    assert not ver(ana) and not ver(p)

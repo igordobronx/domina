@@ -175,6 +175,7 @@ type Props = {
   selected: string | null;
   select: (id: string | null) => void;
   reviewOnly?: boolean;
+  initialFilter?: string; // "todas" | "disponivel" | "pendente" | "aprovada"
   currentUser?: UsuarioAtual | null;
 };
 export function Activities({
@@ -185,9 +186,10 @@ export function Activities({
   selected,
   select,
   reviewOnly,
+  initialFilter = "todas",
   currentUser,
 }: Props) {
-  const [filter, setFilter] = useState("todas");
+  const [filter, setFilter] = useState(initialFilter);
   const [search, setSearch] = useState("");
   const [turmaFiltro, setTurmaFiltro] = useState(() => {
     try { return localStorage.getItem("domina.turmaRevisao") ?? ""; } catch { return ""; }

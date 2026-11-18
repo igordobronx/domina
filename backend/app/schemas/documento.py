@@ -12,10 +12,14 @@ class DocumentoBaseResponse(BaseModel):
 
     id: uuid.UUID
     materia_id: uuid.UUID
+    materia_nome: str = ""
     nome_arquivo: str
     tipo: TipoDocumentoEnum
     status_processamento: StatusProcessamentoEnum
     detalhe: str | None = None  # motivo quando a IA nao conseguiu ler o arquivo
+    tamanho_bytes: int | None = None
+    enviado_por_nome: str = ""
+    pode_baixar: bool = False  # false nos enviados antes de o arquivo ser guardado com caminho
     criado_em: datetime
 
 
@@ -67,7 +71,7 @@ class DispensarSugestaoRequest(BaseModel):
 
 
 class ItemAprendido(BaseModel):
-    tipo: Literal["MATERIAL", "CORRECAO", "EXERCICIO"]
+    tipo: Literal["CORRECAO", "EXERCICIO"]
     id: uuid.UUID
     titulo: str
     trecho: str

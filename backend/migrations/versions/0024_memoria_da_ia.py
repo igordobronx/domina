@@ -1,22 +1,21 @@
-"""memoria da IA por materia (RAG): tabela ia_trecho; documento_base guarda o caminho e o motivo do erro; correcao guarda por que o professor mudou a nota
+"""memoria da IA por materia (RAG): tabela ia_trecho; documento_base guarda o motivo do erro; correcao guarda por que o professor mudou a nota
 
-Revision ID: 0019
-Revises: 0018
+Revision ID: 0024
+Revises: 0023
 """
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0019"
-down_revision: Union[str, None] = "0018"
+revision: str = "0024"
+down_revision: Union[str, None] = "0023"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
     with op.batch_alter_table("documento_base") as b:
-        b.add_column(sa.Column("caminho", sa.String(500), nullable=True))
         b.add_column(sa.Column("detalhe", sa.String(255), nullable=True))
     with op.batch_alter_table("correcao") as b:
         b.add_column(sa.Column("motivo_mudanca", sa.Text(), nullable=True))
@@ -43,4 +42,3 @@ def downgrade() -> None:
         b.drop_column("motivo_mudanca")
     with op.batch_alter_table("documento_base") as b:
         b.drop_column("detalhe")
-        b.drop_column("caminho")

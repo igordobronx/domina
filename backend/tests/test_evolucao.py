@@ -17,6 +17,7 @@ os.environ.setdefault("UPLOAD_DIR", f"{_tmp}/uploads")
 from fastapi.testclient import TestClient  # noqa: E402
 
 import seed  # noqa: E402
+from vinculo_teste import vincular  # noqa: E402
 import app.correcao_exatas as exatas_mod  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -49,6 +50,7 @@ def test_evolucao_agrupa_por_materia_sem_tocar_dominio():
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
     materia = client.post("/materias", headers=gestor,
                           json={"nome": "Química", "tipo": "MATERIA_OBJETIVA"}).json()
+    vincular("professor@domina.com", turma_id, materia["id"])
     atividade = client.post("/atividades", headers=prof, json={
         "materia_id": materia["id"], "turma_id": turma_id, "titulo": "Lista - Estequiometria", "tipo": "EXERCICIO",
         "questoes": [

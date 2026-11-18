@@ -26,6 +26,7 @@ export interface Activity {
   title: string;
   subject: string;
   date: string;
+  enviadoEm?: string; // data/hora ISO do ultimo envio do aluno (ordena as "recentes" da visao geral)
   status: ActivityStatus;
   kind: "redacao" | "matematica";
   student: string;

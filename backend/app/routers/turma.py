@@ -6,9 +6,13 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import escola_do_escopo, get_current_user
 from app.database import get_db
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
-from app.models.usuario import Turma, Usuario, UsuarioTurma
+from app.auditoria import registrar
+from app.models.usuario import Materia, ProfessorMateria, Turma, Usuario, UsuarioTurma
 from app.routers.submissoes import _na_turma, _professor_da_turma
-from app.schemas.turma import CriarTurmaRequest, MatricularRequest, MembroTurmaResponse, TurmaResponse
+from app.schemas.turma import (
+    CriarTurmaRequest, DefinirMateriasRequest, MatricularRequest, MembroTurmaResponse, ProfessorMateriaResponse,
+    TurmaResponse,
+)
 
 router = APIRouter(prefix="/turmas", tags=["turmas"])
 
@@ -95,3 +99,40 @@ def matricular(turma_id: uuid.UUID, payload: MatricularRequest, usuario_atual: U
                          papel=UsuarioTurmaPapelEnum(payload.papel)))
     db.commit()
     return turma
+
+
+# quem leciona qual materia nesta turma: so o gestor define; o professor so ve as dele
+@router.get("/{turma_id}/materias-dos-professores", response_model=list[ProfessorMateriaResponse])
+def materias_dos_professores(turma_id: uuid.UUID, usuario_atual: Usuario = Depends(get_current_user),
+                             db: Session = Depends(get_db)):
+    turma = db.get(Turma, turma_id)
+    if not turma or turma.escola_id != usuario_atual.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
+    if usuario_atual.perfil not in (PerfilEnum.GESTOR, PerfilEnum.PROFESSOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores veem isto.")
+    q = db.query(ProfessorMateria).filter_by(turma_id=turma.id)
+    if usuario_atual.perfil == PerfilEnum.PROFESSOR:
+        q = q.filter_by(usuario_id=usuario_atual.id)
+    return [ProfessorMateriaResponse(professor_id=r.usuario_id, materia_id=r.materia_id) for r in q]
+
+
+@router.put("/{turma_id}/professores/{professor_id}/materias", response_model=list[ProfessorMateriaResponse])
+def definir_materias_do_professor(turma_id: uuid.UUID, professor_id: uuid.UUID, payload: DefinirMateriasRequest,
+                                  usuario_atual: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    _so_gestor(usuario_atual)
+    turma = db.get(Turma, turma_id)
+    if not turma or turma.escola_id != usuario_atual.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
+    professor = db.get(Usuario, professor_id)
+    if not professor or not _professor_da_turma(db, professor, turma.id) or professor.escola_id != turma.escola_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Professor não encontrado nesta turma.")
+    ids = set(payload.materia_ids)
+    achadas = {m for (m,) in db.query(Materia.id).filter(Materia.id.in_(ids), Materia.escola_id == usuario_atual.escola_id)}
+    if achadas != ids:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+    db.query(ProfessorMateria).filter_by(usuario_id=professor_id, turma_id=turma.id).delete()
+    for materia_id in ids:
+        db.add(ProfessorMateria(usuario_id=professor_id, turma_id=turma.id, materia_id=materia_id))
+    registrar(db, usuario_atual.id, "EDITAR", "ProfessorMateria", professor_id)
+    db.commit()
+    return [ProfessorMateriaResponse(professor_id=professor_id, materia_id=m) for m in ids]

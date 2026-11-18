@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge, Button, Card, Empty, Progress, SectionTitle } from "../components/ui";
 import {
-  arquivarMeta, criarMeta, listarMaterias, listarMetas, listarTurmasMinhas, minhasMetas, rankingMetas,
+  arquivarMeta, criarMeta, editarMeta, listarMaterias, listarMetas, listarTurmasMinhas, minhasMetas, rankingMetas,
   type MateriaAPI, type MetaAlunoAPI, type MetaAPI, type NivelAPI, type RankingItemAPI, type TipoMetaAPI,
   type TurmaAPI, type UsuarioAtual,
 } from "../services/api";
@@ -14,6 +14,8 @@ const TIPOS: { value: TipoMetaAPI; label: string; unidade: "entregas" | "%" }[] 
   { value: "NOTA_ATIVIDADE", label: "Tirar pelo menos X% numa atividade", unidade: "%" },
   { value: "MEDIA_MATERIA", label: "Média de X% numa matéria", unidade: "%" },
   { value: "DOMINIO_COMPETENCIA", label: "Domínio de X% numa competência da redação", unidade: "%" },
+  { value: "PRATICA_RESPONDIDOS", label: "Resolver exercícios do plano de estudo", unidade: "entregas" },
+  { value: "PRATICA_ACERTOS", label: "Acertar exercícios do plano de estudo", unidade: "entregas" },
 ];
 const br = (d: string) => d.split("-").reverse().join("/");
 const unidade = (t: TipoMetaAPI) => (TIPOS.find((x) => x.value === t)?.unidade === "%" ? "%" : "");
@@ -103,6 +105,7 @@ function MetasEquipe({ role, notify }: { role: Role; notify: (m: string) => void
   const [turmas, setTurmas] = useState<TurmaAPI[]>([]);
   const [materias, setMaterias] = useState<MateriaAPI[]>([]);
   const [criando, setCriando] = useState(false);
+  const [editando, setEditando] = useState<MetaAPI | null>(null);
   const recarregar = () => listarMetas().then(setMetas).catch(() => notify("Não foi possível carregar as metas."));
   useEffect(() => {
     recarregar();
@@ -120,6 +123,10 @@ function MetasEquipe({ role, notify }: { role: Role; notify: (m: string) => void
         <div><h1>Metas e níveis</h1><p>Crie metas para os alunos cumprirem e acompanhe o ranking de pontos.</p></div>
         {!criando && <Button icon={Plus} onPress={() => setCriando(true)}>Nova meta</Button>}
       </div>
+      {editando && (
+        <EditarMeta meta={editando} notify={notify} onFechar={() => setEditando(null)}
+          onSalva={() => { setEditando(null); recarregar(); }} />
+      )}
       {criando && (
         <NovaMeta role={role} turmas={turmas} materias={materias} notify={notify}
           onFechar={() => setCriando(false)} onCriada={() => { setCriando(false); recarregar(); }} />
@@ -136,17 +143,83 @@ function MetasEquipe({ role, notify }: { role: Role; notify: (m: string) => void
             </div>
             <p className="tiny muted">
               {TIPOS.find((t) => t.value === m.tipo)?.label.replace("X", String(m.alvo)) ?? m.tipo}
-              {m.tipo === "ENTREGAS" || m.tipo === "ENTREGAS_NO_PRAZO" ? ` (${m.alvo})` : ""}
+              {TIPOS.find((t) => t.value === m.tipo)?.unidade === "entregas" ? ` (${m.alvo})` : ""}
               {" · "}desde {br(m.inicio)}{m.fim ? ` até ${br(m.fim)}` : ""}
             </p>
             <Progress value={m.alunos_alvo ? Math.round((m.concluidos / m.alunos_alvo) * 100) : 0} label={`Concluíram ${m.titulo}`} />
             <p className="tiny muted">{m.concluidos} de {m.alunos_alvo} aluno(s) concluíram</p>
-            {m.pode_editar && <Button variant="ghost" icon={Trash2} onPress={() => arquivar(m)}>Arquivar</Button>}
+            {m.pode_editar && (
+              <div className="form-actions left">
+                <Button variant="secondary" icon={Pencil} onPress={() => { setCriando(false); setEditando(m); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar</Button>
+                <Button variant="ghost" icon={Trash2} onPress={() => arquivar(m)}>Arquivar</Button>
+              </div>
+            )}
           </div>
         ))}
       </Card>
       <Ranking role={role} turmas={turmas} notify={notify} />
     </>
+  );
+}
+
+// Edita uma meta. Titulo, descricao e fim sempre; alvo e pontos so enquanto ninguem concluiu
+// (o servidor confere: depois disso muda o nivel de alguem, entao responde 409).
+function EditarMeta({ meta, notify, onFechar, onSalva }: {
+  meta: MetaAPI; notify: (m: string) => void; onFechar: () => void; onSalva: () => void;
+}) {
+  const congelada = meta.concluidos > 0;
+  const percentual = TIPOS.find((t) => t.value === meta.tipo)?.unidade === "%";
+  const [titulo, setTitulo] = useState(meta.titulo);
+  const [descricao, setDescricao] = useState(meta.descricao ?? "");
+  const [fim, setFim] = useState(meta.fim ?? "");
+  const [alvo, setAlvo] = useState(meta.alvo);
+  const [pontos, setPontos] = useState(meta.pontos);
+  const [erro, setErro] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const salvar = async () => {
+    if (!titulo.trim()) return setErro("Dê um título para a meta.");
+    if (fim && fim < meta.inicio) return setErro("O fim não pode ser antes do início.");
+    setSalvando(true); setErro("");
+    try {
+      await editarMeta(meta.id, {
+        titulo: titulo.trim(), descricao: descricao.trim() || null, fim: fim || null,
+        ...(congelada ? {} : { alvo, pontos }),
+      });
+      notify("Meta atualizada.");
+      onSalva();
+    } catch (e) { setErro(e instanceof Error ? e.message : "Não foi possível salvar."); }
+    finally { setSalvando(false); }
+  };
+  return (
+    <Card>
+      <SectionTitle title="Editar meta" />
+      <p className="tiny muted">
+        {meta.escopo === "ESCOLA" ? "Escola toda" : meta.escopo_nome} · começa em {br(meta.inicio)}
+        {congelada && " · já há alunos que concluíram: o alvo e os pontos não mudam mais (crie uma nova meta para isso)."}
+      </p>
+      <div className="form-grid">
+        <label>Título<input value={titulo} onChange={(e) => setTitulo(e.target.value)} /></label>
+        <label>Descrição (opcional)<textarea rows={2} value={descricao} onChange={(e) => setDescricao(e.target.value)} /></label>
+        <label>Termina em (vazio = sem fim)<input type="date" value={fim} onChange={(e) => setFim(e.target.value)} /></label>
+        {!congelada && (
+          <>
+            <label>{percentual ? "Percentual (X)" : "Quantidade"}
+              <input type="number" min={1} max={percentual ? 100 : 1000} value={alvo} onChange={(e) => setAlvo(Number(e.target.value))} />
+            </label>
+            <label>Pontos que a meta vale
+              <select value={pontos} onChange={(e) => setPontos(Number(e.target.value))}>
+                {[...new Set([10, 20, 30, 50, 100, meta.pontos])].sort((a, b) => a - b).map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </label>
+          </>
+        )}
+      </div>
+      {erro && <p className="error" role="alert">{erro}</p>}
+      <div className="form-actions left">
+        <Button variant="secondary" onPress={onFechar}>Cancelar</Button>
+        <Button onPress={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar alterações"}</Button>
+      </div>
+    </Card>
   );
 }
 
@@ -207,7 +280,7 @@ function NovaMeta({ role, turmas, materias, notify, onFechar, onCriada }: {
         <label>{percentual ? "Percentual (X)" : "Quantidade"}
           <input type="number" min={1} max={percentual ? 100 : 1000} value={alvo} onChange={(e) => setAlvo(Number(e.target.value))} />
         </label>
-        {(precisaMateria || tipo !== "ENTREGAS_NO_PRAZO") && (
+        {(precisaMateria || tipo === "ENTREGAS" || tipo === "NOTA_ATIVIDADE") && (
           <label>Matéria {precisaMateria ? "" : "(opcional: vazio = todas)"}
             <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
               <option value="">{precisaMateria ? "Escolha..." : "Todas"}</option>

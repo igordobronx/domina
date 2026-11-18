@@ -34,6 +34,8 @@ ou 100. Assim o ritmo do nível depende da dificuldade da meta, não só de quan
 | `NOTA_ATIVIDADE` | teve **pelo menos X%** em UMA atividade com correção aprovada | percentual (1–100) |
 | `MEDIA_MATERIA` | tem **média de X%** nas correções aprovadas de uma matéria | percentual (1–100) |
 | `DOMINIO_COMPETENCIA` | chegou a **X% de domínio** numa competência (C1–C5) de uma matéria de redação | percentual (1–100) |
+| `PRATICA_RESPONDIDOS` | respondeu N exercícios do plano de estudo no período | quantidade |
+| `PRATICA_ACERTOS` | **acertou** N exercícios do plano de estudo no período | quantidade |
 
 Detalhes que valem para todas:
 - **Só conta a partir da data de início** da meta (padrão: hoje). Uma meta nova nunca nasce cumprida
@@ -72,6 +74,13 @@ ou meta de outra escola dá 404; escola toda por professor dá 403. Quem edita: 
 - "Excluir" **arquiva** a meta (`ativa = false`). Quem já concluiu **mantém os pontos**. Nada é apagado.
 - Toda criação, edição e arquivamento entra na auditoria (`CRIAR`, `EDITAR`, `ARQUIVAR` em `Meta`).
 
+## Tela de edição e calendário
+- Na tela "Metas e níveis", quem criou a meta (ou o gestor) vê **Editar** e **Arquivar**. A edição mostra título, descrição e fim;
+  alvo e pontos só aparecem enquanto ninguém concluiu (depois disso a tela avisa e o servidor recusa com 409).
+  Limpar o campo "Termina em" tira o fim da meta.
+- O **fim da meta aparece no calendário** (tipo "Meta", "Fim da meta: …") no dia do fim, para quem enxerga a meta:
+  o aluno vê só as dele que ainda não concluiu; professor e gestor veem as da lista de metas deles. Meta sem fim não aparece.
+
 ## Ranking: privacidade (LGPD)
 Os alunos são em boa parte menores de idade. Por isso:
 - O ranking é **só para professor e gestor** (rota `GET /metas/ranking`); o aluno recebe 403.
@@ -82,8 +91,7 @@ Os alunos são em boa parte menores de idade. Por isso:
 - Não dá pontos por login, tempo de uso ou nota solta; só por meta concluída.
 - Não tem ranking público entre alunos.
 - Não tira pontos: nível não desce, nem quando a meta é arquivada.
-- Ainda não há tela para editar meta (a API já aceita), nem medalhas, sequência de dias, ou o fim da meta
-  no calendário.
+- Ainda não há medalhas nem sequência de dias.
 
 ## Onde está no código
 | Parte | Arquivo |
@@ -106,3 +114,22 @@ Os alunos são em boa parte menores de idade. Por isso:
 | `DELETE /metas/{id}` | quem criou, ou gestor | arquiva |
 | `GET /metas/minhas` | aluno | nível e metas com progresso |
 | `GET /metas/ranking?turma_id=` | professor, gestor | ranking por pontos |
+
+## Plano de estudo: respostas salvas
+- Os exercícios do plano (`GET /estudos/meu`) ficam **salvos no banco** (`exercicio`), ligados à competência e ao aluno.
+  O aluno recebe o exercício **sem gabarito**; quem confere é o servidor (`POST /exercicios/{id}/responder`), que grava a resposta
+  (`exercicio_resposta`, uma por aluno e exercício) e só então devolve certo/errado e a explicação.
+- A rota só gera exercícios novos quando não sobra nenhum pendente, e até 9 por aluno por dia (`LIMITE_DIARIO`).
+- A prática fica **separada do domínio**: o domínio continua vindo só de correções aprovadas. A prática por competência está em
+  `GET /estudos/minha-pratica` (aluno) e `GET /alunos/{id}/pratica` (professor/gestor, mesmas regras de escopo do domínio).
+- Os exercícios de reforço que o agente gera depois de corrigir uma redação também são salvos e entram no plano do aluno.
+- As metas `PRATICA_RESPONDIDOS` e `PRATICA_ACERTOS` contam essas respostas.
+
+## Plano de estudo de exatas: onde o aluno erra
+- Quando uma correção de exatas é aprovada (ou ao abrir o plano, o que também pega correções antigas e as objetivas),
+  cada questão em que o aluno ficou **abaixo de 80% do valor dela** vira uma linha em `erro_aluno` (`app/erros.py`):
+  matéria, atividade, correção, a questão, o gabarito, a nota e **onde errou** (justificativa + pontos de erro da correção).
+  Uma linha por questão, então registrar de novo não duplica.
+- O plano gera um exercício por erro (os mais fracos primeiro), com o mesmo assunto e o mesmo tipo de erro. Cada exercício guarda
+  `erro_id`, então dá para ver de qual correção ele veio. O aluno vê a matéria e "Você errou: …" no cartão.
+- Redação continua pelo domínio C1–C5. O domínio não muda com a prática; os limites diários valem para os dois tipos.

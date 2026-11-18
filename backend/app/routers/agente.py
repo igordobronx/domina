@@ -17,9 +17,9 @@ from app.auth.dependencies import get_current_user
 from app.config import settings
 from app.custo import registrar_uso
 from app.database import get_db
-from app.estudos import gerar_exercicios
+from app.estudos import gerar_exercicios, salvar_exercicios
 from app.models.enum import StatusCorrecaoEnum
-from app.models.usuario import AgenteExecucao, Atividade, Correcao, Materia, Submissao, Usuario
+from app.models.usuario import AgenteExecucao, Atividade, Correcao, Materia, Submissao, Tema, Usuario
 from app.routers.dominio import _dominio_de
 from app.routers.correcoes import _correcao_response, _pode_corrigir, _pode_ver_correcao, corrigir_submissao
 from app.routers.submissoes import MATERIAS_EXATAS, _submissao_visivel
@@ -137,6 +137,9 @@ def _ferramentas(
         if not alvo:
             raise ErroFerramenta("Informe competências válidas (C1 a C5).")
         exercicios = gerar_exercicios(submissao.aluno_id, alvo)
+        # salva para o aluno responder depois (aparecem no plano de estudo dele, sem gabarito)
+        tema_por_codigo = {t.habilidade_codigo: t.id for t in db.query(Tema).filter_by(materia_id=materia.id, atividade_id=None)}
+        salvar_exercicios(db, submissao.aluno_id, exercicios, tema_por_codigo)
         estado["exercicios"] = [e.model_dump() for e in exercicios]
         return {"exercicios_gerados": [{"competencia": e.habilidade_codigo, "titulo": e.titulo} for e in exercicios]}
 

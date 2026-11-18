@@ -29,3 +29,12 @@ class MembroTurmaResponse(BaseModel):
     nome: str
     email: str
     papel: str
+
+
+class ProfessorMateriaResponse(BaseModel):
+    professor_id: uuid.UUID
+    materia_id: uuid.UUID
+
+
+class DefinirMateriasRequest(BaseModel):
+    materia_ids: list[uuid.UUID]

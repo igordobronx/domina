@@ -29,8 +29,25 @@ def test_evento_da_escola_toda_aparece_para_todos_e_nao_vaza_para_outra_escola()
     assert "Reunião de pais" not in _titulos(token("gestor2@domina.com"))
 
 
-def test_aluno_nao_cria_e_professor_so_para_a_propria_turma():
-    assert _evento(token("aluno@domina.com")).status_code == 403
+def test_lembrete_do_aluno_e_so_dele():
+    a = token("aluno@domina.com")
+    # mesmo mandando turma, o lembrete do aluno fica pessoal (sem turma)
+    r = _evento(a, titulo="Estudar funcao", tipo="AVISO", turma_id=_turma_da_escola())
+    assert r.status_code == 201, r.text
+    assert r.json()["turma_id"] is None and r.json()["editavel"] is True
+    eid = r.json()["id"].split(":")[1]
+    assert "Estudar funcao" in _titulos(a)
+    for email in ("aluno2@domina.com", "professor@domina.com", "gestor@domina.com"):  # ninguem mais ve
+        assert "Estudar funcao" not in _titulos(token(email))
+        assert client.delete(f"/eventos/{eid}", headers=token(email)).status_code == 404
+    # aluno nao apaga evento da escola
+    escola = _evento(token("gestor@domina.com"), titulo="Simulado").json()["id"].split(":")[1]
+    assert client.delete(f"/eventos/{escola}", headers=a).status_code == 403
+    assert client.delete(f"/eventos/{eid}", headers=a).status_code == 204
+    assert "Estudar funcao" not in _titulos(a)
+
+
+def test_professor_so_cria_para_a_propria_turma():
     p = token("professor@domina.com")
     assert _evento(p).status_code == 403  # sem turma = escola toda: so gestor
     assert _evento(p, turma_id=_turma_da_escola()).status_code == 201

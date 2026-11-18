@@ -3,13 +3,21 @@ import { Building2, Plus, Power, Save } from "lucide-react";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
 import {
   criarEscola,
+  ativarUsuario,
   criarUsuario,
+  definirVinculos,
   editarEscola,
+  editarUsuario,
   listarEscolas,
+  listarMaterias,
   listarTurmasMinhas,
   listarUsuarios,
   painelEscola,
   painelPlataforma,
+  trocarSenhaUsuario,
+  vinculosDoUsuario,
+  type MateriaAPI,
+  type VinculoTurmaAPI,
   type EscolaAPI,
   type ResumoEscolaAPI,
   type ResumoPlataformaAPI,
@@ -183,15 +191,17 @@ function NovaConta({
   const [senha, setSenha] = useState("");
   const [perfil, setPerfil] = useState<PerfilConta>(perfis[0]);
   const [turmas, setTurmas] = useState<TurmaAPI[]>([]);
-  const [turmaId, setTurmaId] = useState("");
+  const [vinculos, setVinculos] = useState<VinculoTurmaAPI[]>([]);
+  const [materias, setMaterias] = useState<MateriaAPI[]>([]);
   const [erro, setErro] = useState("");
   const [minhaSenha, setMinhaSenha] = useState(""); // reautenticacao ao criar gestor
   const [salvando, setSalvando] = useState(false);
   useEffect(() => {
-    setTurmaId("");
+    setVinculos([]);
     listarTurmasMinhas(escolaId)
       .then(setTurmas)
       .catch(() => setTurmas([]));
+    if (!escolaId) listarMaterias().then(setMaterias).catch(() => setMaterias([]));
   }, [escolaId]);
   const salvar = async () => {
     if (!nome.trim() || !email.trim() || senha.length < 6) {
@@ -203,10 +213,10 @@ function NovaConta({
     try {
       const novo = await criarUsuario({
         nome: nome.trim(), email: email.trim(), senha, perfil, escola_id: escolaId,
-        turma_id: perfil === "GESTOR" ? undefined : turmaId || undefined,
+        turmas: perfil === "GESTOR" || !vinculos.length ? undefined : vinculos,
       }, perfil === "GESTOR" ? minhaSenha : undefined);
-      const turma = turmas.find((t) => t.id === turmaId);
-      notify(`${novo.nome} cadastrado(a) como ${ROTULO[perfil].toLowerCase()}${turma && perfil !== "GESTOR" ? ` na turma ${turma.nome}` : ""}.`);
+      notify(`${novo.nome} cadastrado(a) como ${ROTULO[perfil].toLowerCase()}${vinculos.length && perfil !== "GESTOR" ? ` em ${vinculos.length} turma(s)` : ""}.`);
+      setVinculos([]);
       setNome("");
       setEmail("");
       setSenha("");
@@ -250,20 +260,10 @@ function NovaConta({
             <input type="password" autoComplete="current-password" value={minhaSenha} onChange={(e) => setMinhaSenha(e.target.value)} />
           </label>
         )}
-        {perfil !== "GESTOR" && (
-          <label>
-            Turma
-            <select value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
-              <option value="">Sem turma por enquanto</option>
-              {turmas.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome} ({t.ano})
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
       </div>
+      {perfil !== "GESTOR" && (
+        <TurmasEMaterias perfil={perfil} turmas={turmas} materias={materias} valor={vinculos} onChange={setVinculos} />
+      )}
       {erro && (
         <p className="error" role="alert">
           {erro}
@@ -276,13 +276,121 @@ function NovaConta({
   );
 }
 
-function ListaContas({ escolaId, versao }: { escolaId?: string; versao: number }) {
+// Escolhe as turmas da pessoa; no professor, tambem a materia que ele leciona em CADA turma
+function TurmasEMaterias({
+  perfil, turmas, materias, valor, onChange,
+}: {
+  perfil: PerfilConta; turmas: TurmaAPI[]; materias: MateriaAPI[];
+  valor: VinculoTurmaAPI[]; onChange: (v: VinculoTurmaAPI[]) => void;
+}) {
+  const da = (id: string) => valor.find((v) => v.turma_id === id);
+  const alternaTurma = (id: string) =>
+    onChange(da(id) ? valor.filter((v) => v.turma_id !== id) : [...valor, { turma_id: id, materia_ids: [] }]);
+  const alternaMateria = (turmaId: string, materiaId: string) =>
+    onChange(valor.map((v) => v.turma_id !== turmaId ? v : {
+      ...v, materia_ids: v.materia_ids.includes(materiaId) ? v.materia_ids.filter((m) => m !== materiaId) : [...v.materia_ids, materiaId],
+    }));
+  if (!turmas.length) return <p className="muted">Nenhuma turma cadastrada ainda.</p>;
+  return (
+    <div>
+      <p className="tiny muted">
+        {perfil === "PROFESSOR" ? "Turmas e, em cada uma, as matérias que ele leciona" : "Turmas do aluno"}
+      </p>
+      {turmas.map((t) => (
+        <div key={t.id} className="botoes-escolha" role="group" aria-label={`Turma ${t.nome}`}>
+          <button aria-pressed={!!da(t.id)} className={da(t.id) ? "active" : ""} onClick={() => alternaTurma(t.id)}>
+            {t.nome} ({t.ano})
+          </button>
+          {perfil === "PROFESSOR" && da(t.id) && (
+            materias.length ? materias.map((m) => (
+              <button key={m.id} aria-pressed={da(t.id)!.materia_ids.includes(m.id)}
+                className={da(t.id)!.materia_ids.includes(m.id) ? "active" : ""} onClick={() => alternaMateria(t.id, m.id)}>
+                {m.nome}
+              </button>
+            )) : <span className="tiny muted">Nenhuma matéria cadastrada.</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Editar: dados, senha, turmas/materias e desativar. Gestor mexe em aluno e professor; conta de gestor so o admin.
+function EditarConta({
+  conta, podeVinculos, onMudou, notify,
+}: { conta: UsuarioAtual; podeVinculos: boolean; onMudou: () => void; notify: (s: string) => void }) {
+  const [nome, setNome] = useState(conta.nome);
+  const [email, setEmail] = useState(conta.email);
+  const [novaSenha, setNovaSenha] = useState("");
+  const [minhaSenha, setMinhaSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [turmas, setTurmas] = useState<TurmaAPI[]>([]);
+  const [materias, setMaterias] = useState<MateriaAPI[]>([]);
+  const [vinculos, setVinculos] = useState<VinculoTurmaAPI[] | null>(null);
+  const perfil = conta.perfil as PerfilConta;
+  useEffect(() => {
+    if (!podeVinculos || perfil === "GESTOR") return;
+    listarTurmasMinhas().then(setTurmas).catch(() => {});
+    listarMaterias().then(setMaterias).catch(() => {});
+    vinculosDoUsuario(conta.id).then((r) => setVinculos(r.turmas)).catch(() => setVinculos([]));
+  }, [conta.id, podeVinculos, perfil]);
+  const rodar = async (fn: () => Promise<unknown>, ok: string) => {
+    setErro("");
+    try {
+      await fn();
+      notify(ok);
+      onMudou();
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : "Não foi possível salvar.");
+    }
+  };
+  const ativa = conta.ativo !== false;
+  return (
+    <div className="student-domain">
+      <div className="form-grid">
+        <label>Nome<input value={nome} onChange={(e) => setNome(e.target.value)} /></label>
+        <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+      </div>
+      <Button variant="secondary" onPress={() => rodar(() => editarUsuario(conta.id, nome.trim(), email.trim()), "Dados salvos.")}>
+        Salvar dados
+      </Button>
+      <div className="form-grid">
+        <label>Nova senha (mín. 6)<input type="password" autoComplete="new-password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} /></label>
+        <label>Sua senha (para confirmar)<input type="password" autoComplete="current-password" value={minhaSenha} onChange={(e) => setMinhaSenha(e.target.value)} /></label>
+      </div>
+      <Button variant="secondary" disabled={novaSenha.length < 6 || !minhaSenha}
+        onPress={() => rodar(async () => { await trocarSenhaUsuario(conta.id, novaSenha, minhaSenha); setNovaSenha(""); setMinhaSenha(""); }, "Senha trocada. Passe a senha nova para a pessoa.")}>
+        Trocar senha
+      </Button>
+      {podeVinculos && perfil !== "GESTOR" && vinculos && (
+        <>
+          <TurmasEMaterias perfil={perfil} turmas={turmas} materias={materias} valor={vinculos} onChange={setVinculos} />
+          <Button variant="secondary" onPress={() => rodar(() => definirVinculos(conta.id, vinculos), "Turmas salvas.")}>
+            Salvar turmas{perfil === "PROFESSOR" ? " e matérias" : ""}
+          </Button>
+        </>
+      )}
+      {erro && <p className="error" role="alert">{erro}</p>}
+      <Button variant="secondary" icon={Power}
+        onPress={() => {
+          if (ativa && !window.confirm(`Desativar ${conta.nome}? A pessoa não consegue mais entrar; o histórico fica.`)) return;
+          rodar(() => ativarUsuario(conta.id, !ativa), ativa ? "Conta desativada." : "Conta reativada.");
+        }}>
+        {ativa ? "Desativar conta" : "Reativar conta"}
+      </Button>
+    </div>
+  );
+}
+
+function ListaContas({ escolaId, versao, notify }: { escolaId?: string; versao: number; notify: (s: string) => void }) {
   const [contas, setContas] = useState<UsuarioAtual[] | null>(null);
+  const [aberta, setAberta] = useState<string | null>(null);
+  const [v, setV] = useState(0);
   useEffect(() => {
     listarUsuarios(escolaId)
       .then(setContas)
       .catch(() => setContas([]));
-  }, [escolaId, versao]);
+  }, [escolaId, versao, v]);
   return (
     <Card>
       <SectionTitle title="Contas da instituição" />
@@ -291,15 +399,34 @@ function ListaContas({ escolaId, versao }: { escolaId?: string; versao: number }
       ) : !contas.length ? (
         <p className="muted">Nenhuma conta ainda.</p>
       ) : (
-        contas.map((c) => (
-          <div className="material-row" key={c.id}>
-            <div className="activity-info">
-              <strong>{c.nome}</strong>
-              <span>{c.email}</span>
+        contas.map((c) => {
+          const gestorEditando = !escolaId; // sem escolaId = gestor logado; o admin informa a escola
+          const editavel = c.perfil !== "ADMIN" && (c.perfil !== "GESTOR" || !gestorEditando);
+          return (
+            <div key={c.id}>
+              <div className="material-row">
+                <div className="activity-info">
+                  <strong>{c.nome}</strong>
+                  <span>
+                    {c.email}
+                    {c.turmas?.length ? ` · ${c.turmas.join(", ")}` : ""}
+                  </span>
+                </div>
+                {c.ativo === false && <Badge tone="amber">Desativada</Badge>}
+                <Badge tone="neutral">{ROTULO[c.perfil as PerfilConta] ?? c.perfil}</Badge>
+                {editavel && (
+                  <Button variant="secondary" onPress={() => setAberta(aberta === c.id ? null : c.id)}>
+                    {aberta === c.id ? "Fechar" : "Editar"}
+                  </Button>
+                )}
+              </div>
+              {aberta === c.id && (
+                <EditarConta key={c.id + (c.ativo === false)} conta={c} podeVinculos={gestorEditando}
+                  onMudou={() => setV((n) => n + 1)} notify={notify} />
+              )}
             </div>
-            <Badge tone="neutral">{ROTULO[c.perfil as PerfilConta] ?? c.perfil}</Badge>
-          </div>
-        ))
+          );
+        })
       )}
     </Card>
   );
@@ -314,11 +441,11 @@ export function Equipe({ notify }: { notify: (s: string) => void }) {
         <div>
           <div className="eyebrow">MINHA ESCOLA</div>
           <h1>Equipe e alunos</h1>
-          <p>Cadastre professores e alunos da sua instituição.</p>
+          <p>Cadastre, edite e desative professores e alunos, e defina as turmas e matérias de cada um.</p>
         </div>
       </div>
       <NovaConta perfis={["PROFESSOR", "ALUNO"]} onCriada={() => setVersao((v) => v + 1)} notify={notify} />
-      <ListaContas versao={versao} />
+      <ListaContas versao={versao} notify={notify} />
     </>
   );
 }
@@ -437,7 +564,7 @@ export function Escolas({ notify }: { notify: (s: string) => void }) {
               notify={notify}
             />
           )}
-          <ListaContas escolaId={escola.id} versao={versao} />
+          <ListaContas escolaId={escola.id} versao={versao} notify={notify} />
           <PainelEscola escolaId={escola.id} notify={notify} />
         </>
       )}

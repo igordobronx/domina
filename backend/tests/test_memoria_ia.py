@@ -43,7 +43,7 @@ def token(email):
 
 
 def nova_materia(nome):
-    r = client.post("/materias", headers=token("gestor@domina.com"), json={"nome": nome, "tipo": "MATERIA_OBJETIVA"})
+    r = client.post("/materias", headers=token("professor@domina.com"), json={"nome": nome, "tipo": "MATERIA_OBJETIVA"})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
@@ -77,9 +77,10 @@ def test_material_e_lido_na_hora_e_formato_desconhecido_vira_erro():
     assert r.status_code == 201, r.text
     assert r.json()["status_processamento"] == "PROCESSADO" and r.json()["detalhe"] is None
 
-    r = subir(prof, materia_id, "planilha.xlsx", b"\x00\x01\x02\x03" * 10)
+    assert subir(prof, materia_id, "planilha.xlsx", b"\x00\x01\x02\x03" * 10).status_code == 422  # formato nao aceito
+    r = subir(prof, materia_id, "quebrado.pdf", b"isto nao e um pdf")  # aceito, mas a IA nao consegue ler
     assert r.status_code == 201, r.text
-    assert r.json()["status_processamento"] == "ERRO" and "PDF" in r.json()["detalhe"]
+    assert r.json()["status_processamento"] == "ERRO" and r.json()["detalhe"]
 
     resumo = client.get(f"/materias/{materia_id}/ia", headers=prof).json()
     assert (resumo["trechos_de_material"], resumo["correcoes_aprendidas"], resumo["instrucoes"]) == (1, 0, 0)
@@ -137,7 +138,7 @@ def test_correcao_de_exatas_usa_material_e_correcoes_aprovadas_do_professor():
 
 def test_materia_teorica_compara_o_conteudo_e_nao_as_palavras():
     prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
-    r = client.post("/materias", headers=token("gestor@domina.com"), json={"nome": "Teoria musical", "tipo": "MATERIA_DISCURSIVA"})
+    r = client.post("/materias", headers=prof, json={"nome": "Teoria musical", "tipo": "MATERIA_DISCURSIVA"})
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
     atividade = client.post("/atividades", headers=prof, json={
         "materia_id": r.json()["id"], "turma_id": turma_id, "titulo": "Escalas", "tipo": "EXERCICIO",
@@ -266,9 +267,10 @@ def test_memoria_e_de_cada_professor_e_material_do_gestor_vale_para_todos():
         exercicios_mod.gerar_json = original
     assert client.get(f"/materias/{materia_id}/ia", headers=prof).json()["trechos_de_material"] == 2
     assert client.get(f"/materias/{materia_id}/ia", headers=outro).json()["trechos_de_material"] == 1
-    # na tela "Treinar IA" cada professor ve o que ele enviou e o que e da escola (gestor)
+    # na lista de materiais o professor ve so o que ele enviou (regra da tela de materiais); o gestor ve tudo.
+    # A IA, porem, usa tambem o material da escola (o gestor): ver os trechos acima.
     nomes = lambda h: sorted(d["nome_arquivo"] for d in client.get(f"/materias/{materia_id}/documentos", headers=h).json())  # noqa: E731
-    assert nomes(prof) == ["da_escola.txt", "do_beto.txt"] and nomes(outro) == ["da_escola.txt"]
+    assert nomes(prof) == ["do_beto.txt"] and nomes(outro) == []
     assert len(nomes(gestor)) == 2
     import exportar_treino
     from app.database import SessionLocal
@@ -470,10 +472,12 @@ def test_selo_de_prontidao_grafico_e_lista_de_erros_da_ia():
 
 
 def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
+    import uuid
+
     import exportar_treino
     from app.database import SessionLocal
     from app.ia import memoria
-    from app.models.usuario import IaTrecho
+    from app.models.usuario import IaChamada, IaTrecho
 
     prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
     materia_id = nova_materia("Matemática jeito")
@@ -503,7 +507,6 @@ def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
     r = client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": "BOA"})
     assert r.status_code == 200 and r.json()["avaliacao_ia"] == "BOA" and r.json()["nota_professor"] == 500
     assert client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=aluno, json={"avaliacao": "BOA"}).status_code == 403
-    import uuid
     mid = uuid.UUID(materia_id)
     with SessionLocal() as db:
         prof_id = db.query(IaTrecho.professor_id).filter_by(materia_id=mid).first()[0]
@@ -515,23 +518,41 @@ def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
     itens = client.get(f"/materias/{materia_id}/aprendido", headers=prof).json()
     assert len(itens) == 3 and all(i["em_uso"] for i in itens) and itens[0]["erro"] >= itens[-1]["erro"] > 0
     alvo = itens[0]
+    with SessionLocal() as db:  # uma chamada ao modelo ligada a correcao que vai ser esquecida (o fake de exatas nao grava)
+        cid = db.query(IaTrecho.correcao_id).filter_by(id=uuid.UUID(alvo["id"])).scalar()
+        db.add(IaChamada(tarefa="corrigir_gabarito", modelo="falso", entrada="pedido", saida="resposta", correcao_id=cid))
+        db.commit()
     assert client.put(f"/materias/{materia_id}/aprendido/{alvo['tipo']}/{alvo['id']}", headers=prof,
                       json={"em_uso": False}).status_code == 204
     assert ia()["correcoes_aprendidas"] == 2  # a memoria nao usa mais
+    def no_treino():  # trechos desta materia que entram no material de treino (e as chamadas ligadas ao esquecido)
+        with SessionLocal() as db:
+            exportar_treino.exportar_materiais(db, f"{_tmp}/materiais.jsonl")
+            exportar_treino.exportar(db, f"{_tmp}/treino.jsonl")
+            trechos = [l for l in open(f"{_tmp}/materiais.jsonl", encoding="utf-8") if materia_id in l]
+            correcao_do_alvo = db.query(IaTrecho.correcao_id).filter_by(id=uuid.UUID(alvo["id"])).scalar()
+            chamadas = db.query(IaChamada.id).filter_by(correcao_id=correcao_do_alvo).all()
+            texto = open(f"{_tmp}/treino.jsonl", encoding="utf-8").read()
+            return len(trechos), sum(str(i) in texto for (i,) in chamadas), len(chamadas)
+
     with SessionLocal() as db:
         assert db.query(IaTrecho).filter_by(materia_id=mid, origem="CORRECAO").count() == 3  # mas continua guardada
-        assert exportar_treino.exportar_materiais(db, f"{_tmp}/materiais.jsonl") >= 3
-    assert '"tirado_de_uso": true' in open(f"{_tmp}/materiais.jsonl").read()
+    # o que foi esquecido NAO entra no treino da nossa IA (nem as chamadas dele), mas continua no banco
+    trechos, chamadas_no_treino, chamadas = no_treino()
+    assert trechos == 2 and chamadas > 0 and chamadas_no_treino == 0
     # aprovar de novo (reindexar) nao "destira"; e da para voltar a usar
     assert client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": "MA"}).status_code == 200
     assert ia()["correcoes_aprendidas"] == 2
     assert client.put(f"/materias/{materia_id}/aprendido/{alvo['tipo']}/{alvo['id']}", headers=prof,
                       json={"em_uso": True}).status_code == 204
     assert ia()["correcoes_aprendidas"] == 3
-    # material: tirar de uso o arquivo inteiro
+    trechos, chamadas_no_treino, chamadas = no_treino()  # voltou a usar: volta para o treino
+    assert trechos == 3 and chamadas_no_treino == chamadas
+    # material: "Arquivar" (um botao so): a IA para de usar e o treino tambem ignora, sem apagar
     doc = subir(prof, materia_id, "rubrica.txt", RUBRICA.encode()).json()
     assert ia()["trechos_de_material"] > 0
-    assert client.put(f"/materias/{materia_id}/aprendido/MATERIAL/{doc['id']}", headers=prof, json={"em_uso": False}).status_code == 204
+    assert client.delete(f"/documentos/{doc['id']}", headers=prof).status_code == 204
     assert ia()["trechos_de_material"] == 0
-    assert client.put(f"/materias/{materia_id}/aprendido/MATERIAL/{doc['id']}", headers=token("aluno@domina.com"),
-                      json={"em_uso": False}).status_code == 403
+    with SessionLocal() as db:
+        assert db.query(IaTrecho).filter_by(materia_id=mid, origem="MATERIAL").count() > 0  # guardado
+    assert no_treino()[0] == 3  # mas fora do treino

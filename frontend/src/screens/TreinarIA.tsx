@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BookOpen, PenLine, Sparkles, Trash2, Upload } from "lucide-react";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
 import {
-  criarInstrucao, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
+  baixarDocumento, excluirDocumento, criarInstrucao, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
   verMemoriaIA, type DocumentoAPI, type ErroDaIAAPI, type InstrucaoAPI, type ItemAprendidoAPI, type MateriaAPI, type MemoriaIAAPI, type SugestaoInstrucaoAPI,
 } from "../services/api";
 
@@ -66,6 +66,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const [salvando, setSalvando] = useState(false);
   const [memoria, setMemoria] = useState<Record<string, MemoriaIAAPI>>({});
   const [documentos, setDocumentos] = useState<DocumentoAPI[]>([]);
+  const [filtroMateria, setFiltroMateria] = useState(""); // filtro da lista de materiais (vazio = todas)
   const [instrucoes, setInstrucoes] = useState<InstrucaoAPI[]>([]);
   const [sugestoes, setSugestoes] = useState<SugestaoInstrucaoAPI[]>([]);
   const [erros, setErros] = useState<ErroDaIAAPI[]>([]);
@@ -75,9 +76,10 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     Promise.all(ms.map((m) => verMemoriaIA(m.id).then((r) => [m.id, r] as const)))
       .then((pares) => setMemoria(Object.fromEntries(pares)))
       .catch(() => setMemoria({})); // o resumo e um extra: se falhar a tela continua funcionando
+  const carregarDocumentos = () => listarDocumentos().then(setDocumentos).catch(() => setDocumentos([]));
   const carregarMateria = (id: string) => {
+    carregarDocumentos();
     if (!id) return;
-    listarDocumentos(id).then(setDocumentos).catch(() => setDocumentos([]));
     listarInstrucoes(id).then(setInstrucoes).catch(() => setInstrucoes([]));
     listarSugestoesInstrucao(id).then(setSugestoes).catch(() => setSugestoes([]));
     listarErrosDaIA(id).then(setErros).catch(() => setErros([]));
@@ -93,6 +95,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
       .catch(() => { setMaterias([]); notify("Não foi possível carregar as matérias."); });
   }, []);
   useEffect(() => carregarMateria(materiaId), [materiaId]);
+  const mb = (b: number | null) => (b === null ? "" : b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
   const depois = (aviso: string) => {
     notify(aviso);
@@ -143,6 +146,11 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const trocarUso = async (i: ItemAprendidoAPI) => {
     try { await usoDoItem(materiaId, i, !i.em_uso); depois(i.em_uso ? "A IA parou de usar isso (continua guardado)." : "A IA voltou a usar isso."); }
     catch (e) { notify(erroDe(e, "Não foi possível mudar.")); }
+  };
+  const arquivar = async (d: DocumentoAPI) => {
+    if (!window.confirm("Arquivar este material? A IA para de usar, mas o arquivo continua guardado.")) return;
+    try { await excluirDocumento(d.id); depois("Material arquivado. A IA parou de usar."); }
+    catch (e) { notify(erroDe(e, "Não foi possível arquivar.")); }
   };
   const nomeMateria = materias?.find((m) => m.id === materiaId)?.nome;
 
@@ -264,6 +272,44 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
         )}
       </Card>
 
+      {!!materias?.length && (
+        <Card>
+          <SectionTitle title="Materiais enviados" />
+          <div className="form-grid">
+            <label>Ver materiais de
+              <select value={filtroMateria} onChange={(e) => setFiltroMateria(e.target.value)}>
+                <option value="">Todas as matérias</option>
+                {materias.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
+              </select>
+            </label>
+          </div>
+          <p className="tiny muted">Arquivar tira o material de uso: a IA para de usar e ele sai do treino, mas o arquivo continua guardado.</p>
+          {!documentos.filter((d) => !filtroMateria || d.materia_id === filtroMateria).length ? (
+            <Empty title="Nenhum material enviado" text="Envie apostilas, rubricas ou gabaritos para a IA aprender." />
+          ) : documentos.filter((d) => !filtroMateria || d.materia_id === filtroMateria).map((d) => (
+            <div className="material-row" key={d.id}>
+              <div className="activity-icon"><BookOpen size={21} /></div>
+              <div className="activity-info">
+                <strong>{d.nome_arquivo}</strong>
+                <span>
+                  {TIPOS.find((t) => t.value === d.tipo)?.label ?? d.tipo} · {d.materia_nome} · enviado por {d.enviado_por_nome}
+                  {d.tamanho_bytes !== null ? ` · ${mb(d.tamanho_bytes)}` : ""}
+                </span>
+              </div>
+              <Badge tone={d.status_processamento === "PROCESSADO" ? "green" : "amber"}>
+                {d.status_processamento === "PROCESSADO" ? "A IA já aprendeu"
+                  : d.status_processamento === "ERRO" ? d.detalhe || "A IA não conseguiu ler"
+                  : "Enviado antes da IA aprender"}
+              </Badge>
+              {d.pode_baixar && (
+                <Button variant="secondary" onPress={() => baixarDocumento(d.id, d.nome_arquivo).catch((e) => notify(erroDe(e, "Não foi possível baixar.")))}>Baixar</Button>
+              )}
+              <Button variant="secondary" onPress={() => arquivar(d)}>Arquivar</Button>
+            </div>
+          ))}
+        </Card>
+      )}
+
       {!!materiaId && (
         <>
           {!!sugestoes.length && (
@@ -310,11 +356,11 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
               </p>
               {aprendido.map((i) => (
                 <div className="material-row" key={`${i.tipo}-${i.id}`} style={i.em_uso ? undefined : { opacity: 0.6 }}>
-                  <div className="activity-icon">{i.tipo === "MATERIAL" ? <BookOpen size={21} /> : <Sparkles size={21} />}</div>
+                  <div className="activity-icon"><Sparkles size={21} /></div>
                   <div className="activity-info">
                     <strong>{i.titulo}</strong>
                     <span>
-                      {i.tipo === "MATERIAL" ? "Material" : i.tipo === "CORRECAO" ? "Correção aprovada" : "Exercício corrigido"}
+                      {i.tipo === "CORRECAO" ? "Correção aprovada" : "Exercício corrigido"}
                       {i.erro > 0 ? " · a IA errou aqui" : ""}{i.em_uso ? "" : " · fora de uso"}
                     </span>
                     {!!i.trecho && <span className="tiny muted">{i.trecho}</span>}
@@ -333,25 +379,6 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
                 <div className="activity-icon"><PenLine size={21} /></div>
                 <div className="activity-info"><strong>{i.texto}</strong></div>
                 <button className="back-link" aria-label="Apagar instrução" onClick={() => apagar(i)}><Trash2 size={16} /></button>
-              </div>
-            ))}
-          </Card>
-          <Card>
-            <SectionTitle title={`Materiais enviados para ${nomeMateria ?? "a matéria"}`} />
-            {!documentos.length ? (
-              <Empty title="Nenhum material enviado" text="Envie apostilas, rubricas ou gabaritos para a IA aprender." />
-            ) : documentos.map((d) => (
-              <div className="material-row" key={d.id}>
-                <div className="activity-icon"><BookOpen size={21} /></div>
-                <div className="activity-info">
-                  <strong>{d.nome_arquivo}</strong>
-                  <span>{TIPOS.find((t) => t.value === d.tipo)?.label ?? d.tipo}</span>
-                </div>
-                <Badge tone={d.status_processamento === "PROCESSADO" ? "green" : "amber"}>
-                  {d.status_processamento === "PROCESSADO" ? "A IA já aprendeu"
-                    : d.status_processamento === "ERRO" ? d.detalhe || "A IA não conseguiu ler"
-                    : "Enviado antes da IA aprender"}
-                </Badge>
               </div>
             ))}
           </Card>

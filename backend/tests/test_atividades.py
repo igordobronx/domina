@@ -1,5 +1,6 @@
 """Professor com varias turmas: lancar em lote, editar e excluir/arquivar atividade."""
 from tests.test_rbac import client, token  # noqa: F401  (reusa o banco/seed do teste de RBAC)
+from vinculo_teste import vincular  # noqa: E402
 
 
 _cache = {}
@@ -15,6 +16,8 @@ def _setup():
                            "senha": "123456", "perfil": "PROFESSOR", "turma_id": t1}).json()
         client.post(f"/turmas/{t2}/matricular", headers=g, json={"usuario_id": prof["id"], "papel": "PROFESSOR"})
         materia = client.post("/materias", headers=g, json={"nome": "Física", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        vincular("prof.lote@x.com", t1, materia)
+        vincular("prof.lote@x.com", t2, materia)
         _cache.update(t1=t1, t2=t2, materia=materia)
     p = token("prof.lote@x.com", "123456")
     return g, p, _cache["t1"], _cache["t2"], _cache["materia"]

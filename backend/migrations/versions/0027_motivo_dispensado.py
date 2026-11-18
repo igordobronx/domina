@@ -1,15 +1,15 @@
 """correcao.motivo_dispensado: o professor recusou virar instrucao o motivo desta correcao
 
-Revision ID: 0022
-Revises: 0021
+Revision ID: 0027
+Revises: 0026
 """
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0022"
-down_revision: Union[str, None] = "0021"
+revision: str = "0027"
+down_revision: Union[str, None] = "0026"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

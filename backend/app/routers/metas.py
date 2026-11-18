@@ -15,6 +15,7 @@ from app.auth.dependencies import exigir_perfil
 from app.database import get_db
 from app.metas import avaliar_metas, metas_do_aluno, nivel_de, pontos_do_aluno, progresso
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
+from app.lecionados import materias_do_professor
 from app.models.usuario import Materia, Meta, MetaConcluida, Turma, Usuario, UsuarioTurma
 from app.schemas.metas import (
     MetaAlunoResponse, MetaEditRequest, MetaRequest, MetaResponse, MinhasMetasResponse, NivelResponse, RankingItem,
@@ -93,6 +94,8 @@ def criar_meta(payload: MetaRequest, usuario: Usuario = Depends(EQUIPE), db: Ses
         materia = db.get(Materia, payload.materia_id)
         if not materia or materia.escola_id != usuario.escola_id:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
+        if professor and materia.id not in materias_do_professor(db, usuario.id):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona {materia.nome}.")
         if payload.tipo == "DOMINIO_COMPETENCIA" and not materia.tipo.value.startswith("REDACAO"):
             raise HTTPException(422, "Domínio por competência só existe em matéria de redação.")
 
@@ -109,15 +112,20 @@ def criar_meta(payload: MetaRequest, usuario: Usuario = Depends(EQUIPE), db: Ses
     return _resposta(db, usuario, meta)
 
 
-@router.get("/metas", response_model=list[MetaResponse])
-def listar_metas(usuario: Usuario = Depends(EQUIPE), db: Session = Depends(get_db)):
+def metas_da_equipe(db: Session, usuario: Usuario):
+    """Query das metas ativas que o professor/gestor enxerga (usada na lista e no calendario)."""
     q = db.query(Meta).filter(Meta.escola_id == usuario.escola_id, Meta.ativa.is_(True))
     if usuario.perfil == PerfilEnum.PROFESSOR:
         turmas = _turmas_do_professor(db, usuario)
         meus_alunos = [a.id for a in _alunos_das_turmas(db, turmas)] if turmas else []
         q = q.filter(or_(Meta.criado_por == usuario.id, Meta.turma_id.in_(list(turmas)), Meta.aluno_id.in_(meus_alunos),
                          (Meta.turma_id.is_(None)) & (Meta.aluno_id.is_(None))))
-    return [_resposta(db, usuario, m) for m in q.order_by(Meta.inicio.desc())]
+    return q
+
+
+@router.get("/metas", response_model=list[MetaResponse])
+def listar_metas(usuario: Usuario = Depends(EQUIPE), db: Session = Depends(get_db)):
+    return [_resposta(db, usuario, m) for m in metas_da_equipe(db, usuario).order_by(Meta.inicio.desc())]
 
 
 @router.put("/metas/{meta_id}", response_model=MetaResponse)

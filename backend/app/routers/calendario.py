@@ -3,6 +3,7 @@
 Quem ve o que (decidido AQUI, no backend):
 - ALUNO/PROFESSOR: eventos da escola toda + os das proprias turmas, e os prazos das proprias turmas.
 - GESTOR/ADMIN: tudo da escola (o admin informa escola_id).
+- Lembrete PESSOAL do aluno (evento criado por um aluno): so o proprio aluno ve, edita e apaga.
 """
 import uuid
 from datetime import date, timedelta
@@ -15,12 +16,14 @@ from app.auth.dependencies import escola_do_escopo, exigir_perfil, get_current_u
 from app.database import get_db
 from app.feriados import feriados
 from app.models.enum import PerfilEnum
-from app.models.usuario import Atividade, Evento, Turma, Usuario, UsuarioTurma
+from app.metas import metas_do_aluno
+from app.models.usuario import Atividade, Evento, MetaConcluida, Turma, Usuario, UsuarioTurma
+from app.routers.metas import metas_da_equipe
 from app.schemas.calendario import EventoRequest, ItemCalendario
 
 router = APIRouter(tags=["calendario"])
 GERENTES = (PerfilEnum.GESTOR, PerfilEnum.ADMIN)
-PODE_CRIAR = exigir_perfil(PerfilEnum.PROFESSOR, PerfilEnum.GESTOR, PerfilEnum.ADMIN)
+PODE_CRIAR = exigir_perfil(PerfilEnum.ALUNO, PerfilEnum.PROFESSOR, PerfilEnum.GESTOR, PerfilEnum.ADMIN)
 
 
 def _escola(db: Session, usuario: Usuario, escola_id: uuid.UUID | None) -> uuid.UUID:
@@ -34,7 +37,14 @@ def _minhas_turmas(db: Session, usuario: Usuario) -> set[uuid.UUID]:
 
 
 def _pode_mexer(usuario: Usuario, evento: Evento) -> bool:
-    return usuario.perfil in GERENTES or (usuario.perfil == PerfilEnum.PROFESSOR and evento.criado_por == usuario.id)
+    # professor e aluno so mexem no que eles mesmos criaram
+    return usuario.perfil in GERENTES or evento.criado_por == usuario.id
+
+
+def _de_alunos(db: Session):
+    # ponytail: "pessoal" = criado por um aluno (sem coluna nova nem migration); se um dia o professor
+    # tambem quiser lembrete pessoal, vira uma coluna `pessoal` em `evento`.
+    return db.query(Usuario.id).filter(Usuario.perfil == PerfilEnum.ALUNO)
 
 
 @router.get("/calendario", response_model=list[ItemCalendario])
@@ -59,6 +69,8 @@ def ver_calendario(
     )
     if turmas is not None:
         eventos = eventos.filter(or_(Evento.turma_id.is_(None), Evento.turma_id.in_(turmas)))
+    # lembrete pessoal de aluno: so o dono ve (nem colega, nem professor, nem gestor)
+    eventos = eventos.filter(or_(Evento.criado_por == usuario.id, ~Evento.criado_por.in_(_de_alunos(db))))
     itens = [ItemCalendario(
         id=f"evento:{e.id}", origem="evento", titulo=e.titulo, descricao=e.descricao, tipo=e.tipo,
         inicio=e.inicio, fim=e.fim, turma_id=e.turma_id, turma=nomes.get(e.turma_id),
@@ -73,6 +85,19 @@ def ver_calendario(
         id=f"prazo:{a.id}", origem="prazo", titulo=f"Entrega: {a.titulo}", tipo="ENTREGA",
         inicio=a.prazo, turma_id=a.turma_id, turma=nomes.get(a.turma_id),
     ) for a in prazos]
+
+    # fim das metas (aluno: so as dele que ainda nao concluiu; professor/gestor: as que enxergam)
+    if usuario.perfil == PerfilEnum.ALUNO:
+        feitas = {m for (m,) in db.query(MetaConcluida.meta_id).filter_by(aluno_id=usuario.id)}
+        metas = [m for m in metas_do_aluno(db, usuario) if m.id not in feitas]
+    elif usuario.perfil in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
+        metas = metas_da_equipe(db, usuario).all()
+    else:
+        metas = []  # admin nao tem metas (sao da escola)
+    itens += [ItemCalendario(
+        id=f"meta:{m.id}", origem="meta", titulo=f"Fim da meta: {m.titulo}", descricao=f"Vale {m.pontos} pontos",
+        tipo="META", inicio=m.fim, turma_id=m.turma_id, turma=nomes.get(m.turma_id),
+    ) for m in metas if m.fim and de <= m.fim <= ate]
 
     for ano in range(de.year, ate.year + 1):
         itens += [ItemCalendario(id=f"feriado:{d}", origem="feriado", titulo=n, tipo="FERIADO", inicio=d)
@@ -96,6 +121,8 @@ def _validar_turma(db: Session, usuario: Usuario, escola: uuid.UUID, turma_id: u
 def criar_evento(payload: EventoRequest, escola_id: uuid.UUID | None = None,
                  usuario: Usuario = Depends(PODE_CRIAR), db: Session = Depends(get_db)):
     escola = _escola(db, usuario, escola_id)
+    if usuario.perfil == PerfilEnum.ALUNO:
+        payload.turma_id = None  # lembrete pessoal: nunca vai para turma nenhuma
     _validar_turma(db, usuario, escola, payload.turma_id)
     e = Evento(escola_id=escola, criado_por=usuario.id, titulo=payload.titulo.strip(), descricao=payload.descricao,
                tipo=payload.tipo, inicio=payload.inicio, fim=payload.fim, turma_id=payload.turma_id)
@@ -114,7 +141,9 @@ def _item(db: Session, usuario: Usuario, e: Evento) -> ItemCalendario:
 def _evento_do_usuario(db: Session, usuario: Usuario, evento_id: uuid.UUID) -> Evento:
     e = db.get(Evento, evento_id)
     # evento de outra escola = 404 (nao revela que existe), igual ao resto do RBAC
-    if not e or (usuario.perfil != PerfilEnum.ADMIN and e.escola_id != usuario.escola_id):
+    alheio_pessoal = e and e.criado_por != usuario.id and db.query(Usuario.perfil).filter_by(
+        id=e.criado_por).scalar() == PerfilEnum.ALUNO  # lembrete pessoal de outro = nao existe
+    if not e or alheio_pessoal or (usuario.perfil != PerfilEnum.ADMIN and e.escola_id != usuario.escola_id):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Evento não encontrado.")
     if not _pode_mexer(usuario, e):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não pode alterar este evento.")
@@ -125,6 +154,8 @@ def _evento_do_usuario(db: Session, usuario: Usuario, evento_id: uuid.UUID) -> E
 def editar_evento(evento_id: uuid.UUID, payload: EventoRequest,
                   usuario: Usuario = Depends(PODE_CRIAR), db: Session = Depends(get_db)):
     e = _evento_do_usuario(db, usuario, evento_id)
+    if usuario.perfil == PerfilEnum.ALUNO:
+        payload.turma_id = None
     _validar_turma(db, usuario, e.escola_id, payload.turma_id)
     e.titulo, e.descricao, e.tipo = payload.titulo.strip(), payload.descricao, payload.tipo
     e.inicio, e.fim, e.turma_id = payload.inicio, payload.fim, payload.turma_id

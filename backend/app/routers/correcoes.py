@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app import correcao as ia
 from app import correcao_exatas as ia_exatas
+from app.erros import registrar_erros
 from app.correcao import NOTAS_VALIDAS
 from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
@@ -325,6 +326,8 @@ def aprovar_correcao(
     # dominaria /dominio/meu e /estudos/meu para sempre. O aluno ainda ve a nota/feedback normal.
     if materia.tipo not in MATERIAS_EXATAS:
         _atualizar_dominio(db, submissao.aluno_id, {codigo: c for codigo, (c, _) in criterios.items()})
+    if materia.tipo in MATERIAS_EXATAS:
+        registrar_erros(db, submissao.aluno_id)  # onde ele errou, para o plano de estudo
     registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
     db.flush()
     memoria.indexar_correcao(db, correcao)  # a IA aprende com esta aprovacao (nunca bloqueia)

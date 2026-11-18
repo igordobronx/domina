@@ -75,6 +75,14 @@ export interface UsuarioAtual {
   email: string;
   perfil: "ALUNO" | "PROFESSOR" | "GESTOR" | "ADMIN";
   escola_nome: string;
+  ativo?: boolean;
+  turmas?: string[]; // nomes das turmas (lista de pessoas)
+}
+
+// uma turma da pessoa; no professor, as materias que ele leciona NESTA turma
+export interface VinculoTurmaAPI {
+  turma_id: string;
+  materia_ids: string[];
 }
 
 export function perfilParaRole(perfil: UsuarioAtual["perfil"]): Role {
@@ -214,6 +222,29 @@ export function listarUsuarios(escolaId?: string): Promise<UsuarioAtual[]> {
   return request<UsuarioAtual[]>(`/usuarios${escolaId ? `?escola_id=${escolaId}` : ""}`);
 }
 
+export function editarUsuario(id: string, nome: string, email: string): Promise<UsuarioAtual> {
+  return request<UsuarioAtual>(`/usuarios/${id}`, { method: "PUT", body: JSON.stringify({ nome, email }) });
+}
+
+// o gestor define a senha nova e passa para a pessoa; confirma a propria senha (cabecalho, nunca na URL)
+export function trocarSenhaUsuario(id: string, senha: string, minhaSenha: string): Promise<void> {
+  return request<void>(`/usuarios/${id}/senha`, {
+    method: "PUT", body: JSON.stringify({ senha }), headers: { "X-Confirmar-Senha": minhaSenha },
+  });
+}
+
+export function ativarUsuario(id: string, ativo: boolean): Promise<UsuarioAtual> {
+  return request<UsuarioAtual>(`/usuarios/${id}/ativo`, { method: "PUT", body: JSON.stringify({ ativo }) });
+}
+
+export function vinculosDoUsuario(id: string): Promise<{ turmas: VinculoTurmaAPI[] }> {
+  return request<{ turmas: VinculoTurmaAPI[] }>(`/usuarios/${id}/vinculos`);
+}
+
+export function definirVinculos(id: string, turmas: VinculoTurmaAPI[]): Promise<{ turmas: VinculoTurmaAPI[] }> {
+  return request<{ turmas: VinculoTurmaAPI[] }>(`/usuarios/${id}/vinculos`, { method: "PUT", body: JSON.stringify({ turmas }) });
+}
+
 export function criarUsuario(payload: {
   nome: string;
   email: string;
@@ -221,6 +252,7 @@ export function criarUsuario(payload: {
   perfil: "ALUNO" | "PROFESSOR" | "GESTOR";
   escola_id?: string;
   turma_id?: string; // ja matricula na turma ao criar
+  turmas?: VinculoTurmaAPI[]; // varias turmas (e materias por turma, no professor)
 }, confirmarSenha?: string): Promise<UsuarioAtual> {
   // criar GESTOR exige a senha de novo (reautenticacao), enviada em cabecalho e nunca na URL
   return request<UsuarioAtual>("/usuarios", {
@@ -465,6 +497,7 @@ export function avaliarIA(id: string, avaliacao: "BOA" | "MA" | null): Promise<C
 export interface DominioAPI {
   tema_id: string;
   tema: string;
+  materia: string;
   habilidade_codigo: string;
   percentual_dominio: number;
   num_evidencias: number;
@@ -492,17 +525,71 @@ export function evolucaoMinha(): Promise<EvolucaoMateriaAPI[]> {
   return request<EvolucaoMateriaAPI[]>("/evolucao/minha");
 }
 
+// professor: so as materias que ele leciona nas turmas do aluno; gestor: todas
+export function evolucaoDoAluno(alunoId: string): Promise<EvolucaoMateriaAPI[]> {
+  return request<EvolucaoMateriaAPI[]>(`/alunos/${alunoId}/evolucao`);
+}
+
+export interface ProfessorMateriaAPI {
+  professor_id: string;
+  materia_id: string;
+}
+
+// quem leciona qual materia na turma (o gestor define; o professor ve so as dele)
+export function materiasDosProfessores(turmaId: string): Promise<ProfessorMateriaAPI[]> {
+  return request<ProfessorMateriaAPI[]>(`/turmas/${turmaId}/materias-dos-professores`);
+}
+
+export function definirMateriasDoProfessor(turmaId: string, professorId: string, materiaIds: string[]): Promise<ProfessorMateriaAPI[]> {
+  return request<ProfessorMateriaAPI[]>(`/turmas/${turmaId}/professores/${professorId}/materias`, {
+    method: "PUT", body: JSON.stringify({ materia_ids: materiaIds }),
+  });
+}
+
+// exercicio de pratica SEM gabarito: o servidor confere quando o aluno responde
 export interface ExercicioAPI {
-  habilidade_codigo: string;
+  id: string;
+  habilidade_codigo: string; // vazio nos de exatas
+  materia?: string | null;
+  motivo?: string | null; // exatas: o erro da correcao que originou o exercicio
   titulo: string;
   enunciado: string;
   opcoes: string[];
+  // so vem depois que o aluno respondeu (antes disso o servidor nao manda o gabarito)
+  respondida?: number;
+  correta?: boolean;
+  resposta_correta?: number;
+  explicacao?: string;
+}
+
+export interface ResultadoRespostaAPI {
+  correta: boolean;
   resposta_correta: number;
   explicacao: string;
 }
 
-export function meusExercicios(recarregar = false): Promise<ExercicioAPI[]> {
-  return request<ExercicioAPI[]>(`/estudos/meu${recarregar ? "?recarregar=true" : ""}`);
+// devolve os exercicios ainda nao respondidos; o servidor so gera novos quando acabam
+export function meusExercicios(): Promise<ExercicioAPI[]> {
+  return request<ExercicioAPI[]>("/estudos/meu");
+}
+
+// unica chamada que usa a IA: so quando o aluno clica em gerar
+export function gerarMeusExercicios(): Promise<ExercicioAPI[]> {
+  return request<ExercicioAPI[]>("/estudos/meu/gerar", { method: "POST" });
+}
+
+export function responderPratica(id: string, opcao: number): Promise<ResultadoRespostaAPI> {
+  return request<ResultadoRespostaAPI>(`/estudos/exercicios/${id}/responder`, { method: "POST", body: JSON.stringify({ opcao }) });
+}
+
+export interface PraticaAPI {
+  habilidade_codigo: string;
+  respondidos: number;
+  acertos: number;
+}
+
+export function minhaPratica(): Promise<PraticaAPI[]> {
+  return request<PraticaAPI[]>("/estudos/minha-pratica");
 }
 
 // ---- exercicios de pratica do professor (a mao ou com ajuda da IA); nao valem nota ----
@@ -639,14 +726,39 @@ export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {
 export interface DocumentoAPI {
   id: string;
   materia_id: string;
+  materia_nome: string;
   nome_arquivo: string;
   tipo: "APOSTILA" | "RUBRICA" | "PLANO_DE_AULA" | "GABARITO";
-  status_processamento: "PENDENTE" | "PROCESSADO" | "ERRO";
+  status_processamento: "PENDENTE" | "PROCESSADO" | "ERRO" | "FALHOU";
   detalhe?: string | null; // motivo quando a IA não conseguiu ler o arquivo
+  tamanho_bytes: number | null;
+  enviado_por_nome: string;
+  pode_baixar: boolean;
+  criado_em: string;
 }
 
-export function listarDocumentos(materiaId: string): Promise<DocumentoAPI[]> {
-  return request<DocumentoAPI[]>(`/materias/${materiaId}/documentos`);
+// professor: so os que ele enviou; gestor: os da escola toda
+export function listarDocumentos(): Promise<DocumentoAPI[]> {
+  return request<DocumentoAPI[]>("/documentos");
+}
+
+export function excluirDocumento(id: string): Promise<void> {
+  return request<void>(`/documentos/${id}`, { method: "DELETE" });
+}
+
+// o arquivo exige o token, entao baixamos como blob e disparamos o download local
+export async function baixarDocumento(id: string, nome: string): Promise<void> {
+  const token = getToken();
+  const response = await fetch(`${API_URL}/documentos/${id}/arquivo`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) throw new ApiError("O arquivo deste material não está disponível.");
+  const url = URL.createObjectURL(await response.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // quanto a IA já aprendeu com este professor numa matéria
@@ -849,8 +961,8 @@ export function painelPlataforma(mes: string): Promise<ResumoPlataformaAPI> {
 
 // ---- calendario (um so por escola; o backend filtra pelo perfil) ----
 export interface ItemCalendarioAPI {
-  id: string; // "evento:<uuid>" | "prazo:<uuid>" | "feriado:<data>"
-  origem: "evento" | "prazo" | "feriado";
+  id: string; // "evento:<uuid>" | "prazo:<uuid>" | "meta:<uuid>" | "feriado:<data>"
+  origem: "evento" | "prazo" | "meta" | "feriado";
   titulo: string;
   descricao: string | null;
   tipo: string;
@@ -903,7 +1015,8 @@ export const logsIntegridade = () => request<IntegridadeAPI>("/logs/integridade"
 
 
 // ---- niveis e metas ----
-export type TipoMetaAPI = "ENTREGAS" | "ENTREGAS_NO_PRAZO" | "NOTA_ATIVIDADE" | "MEDIA_MATERIA" | "DOMINIO_COMPETENCIA";
+export type TipoMetaAPI = "ENTREGAS" | "ENTREGAS_NO_PRAZO" | "NOTA_ATIVIDADE" | "MEDIA_MATERIA" | "DOMINIO_COMPETENCIA"
+  | "PRATICA_RESPONDIDOS" | "PRATICA_ACERTOS";
 
 export interface MetaPayload {
   titulo: string;
@@ -919,8 +1032,9 @@ export interface MetaPayload {
   aluno_id?: string;
 }
 
-export interface MetaAPI extends Omit<MetaPayload, "turma_id" | "aluno_id" | "inicio" | "fim"> {
+export interface MetaAPI extends Omit<MetaPayload, "turma_id" | "aluno_id" | "inicio" | "fim" | "descricao"> {
   id: string;
+  descricao: string | null;
   inicio: string;
   fim: string | null;
   escopo: "ESCOLA" | "TURMA" | "ALUNO";
@@ -963,6 +1077,9 @@ export interface RankingItemAPI {
 
 export const criarMeta = (p: MetaPayload) => request<MetaAPI>("/metas", { method: "POST", body: JSON.stringify(p) });
 export const listarMetas = () => request<MetaAPI[]>("/metas");
+// alvo/pontos so mudam enquanto ninguem concluiu a meta (o servidor responde 409 depois); fim null tira o fim
+export const editarMeta = (id: string, p: { titulo?: string; descricao?: string | null; fim?: string | null; alvo?: number; pontos?: number }) =>
+  request<MetaAPI>(`/metas/${id}`, { method: "PUT", body: JSON.stringify(p) });
 export const arquivarMeta = (id: string) => request<void>(`/metas/${id}`, { method: "DELETE" });
 export const minhasMetas = () => request<{ nivel: NivelAPI; metas: MetaAlunoAPI[] }>("/metas/minhas");
 export const rankingMetas = (turmaId?: string) =>
@@ -970,7 +1087,7 @@ export const rankingMetas = (turmaId?: string) =>
 
 // o que a IA aprendeu com o professor; "esquecer" = tirar de uso (nada é apagado)
 export interface ItemAprendidoAPI {
-  tipo: "MATERIAL" | "CORRECAO" | "EXERCICIO";
+  tipo: "CORRECAO" | "EXERCICIO";
   id: string;
   titulo: string;
   trecho: string;
