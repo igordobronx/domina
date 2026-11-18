@@ -41,10 +41,11 @@ describe("Navegação", () => {
       page: "atividades",
       activity: "a1",
     }));
-  it("não abre a revisão por um link do gestor", () =>
+  // o gestor tem a página de Revisões (só leitura: a tela não deixa aprovar), então o link abre
+  it("abre a revisão por um link do gestor", () =>
     expect(readRoute("#gestor/revisoes/a1")).toMatchObject({
       role: "gestor",
-      page: "inicio",
-      activity: null,
+      page: "revisoes",
+      activity: "a1",
     }));
 });
