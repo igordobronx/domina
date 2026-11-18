@@ -21,6 +21,7 @@ class TipoDocumentoEnum(str, enum.Enum):
     RUBRICA = "RUBRICA"
     PLANO_DE_AULA = "PLANO_DE_AULA"
     GABARITO = "GABARITO"
+    OUTRO = "OUTRO"
 
 class StatusProcessamentoEnum(str, enum.Enum):
     PENDENTE = "PENDENTE"

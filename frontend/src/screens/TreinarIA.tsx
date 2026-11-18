@@ -17,6 +17,7 @@ const TIPOS: { value: DocumentoAPI["tipo"]; label: string }[] = [
   { value: "RUBRICA", label: "Rubrica de correção" },
   { value: "GABARITO", label: "Gabarito" },
   { value: "PLANO_DE_AULA", label: "Plano de aula" },
+  { value: "OUTRO", label: "Outros" },
 ];
 const EXEMPLOS = [
   "Sempre exijo a verificação final da conta.",
@@ -67,6 +68,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const [memoria, setMemoria] = useState<Record<string, MemoriaIAAPI>>({});
   const [documentos, setDocumentos] = useState<DocumentoAPI[]>([]);
   const [filtroMateria, setFiltroMateria] = useState(""); // filtro da lista de materiais (vazio = todas)
+  const [materiaInstr, setMateriaInstr] = useState(""); // matéria do cartão "Instruções" (independente de "Ensinar a IA")
   const [instrucoes, setInstrucoes] = useState<InstrucaoAPI[]>([]);
   const [sugestoes, setSugestoes] = useState<SugestaoInstrucaoAPI[]>([]);
   const [erros, setErros] = useState<ErroDaIAAPI[]>([]);
@@ -80,8 +82,6 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const carregarMateria = (id: string) => {
     carregarDocumentos();
     if (!id) return;
-    listarInstrucoes(id).then(setInstrucoes).catch(() => setInstrucoes([]));
-    listarSugestoesInstrucao(id).then(setSugestoes).catch(() => setSugestoes([]));
     listarErrosDaIA(id).then(setErros).catch(() => setErros([]));
     listarAprendido(id).then(setAprendido).catch(() => setAprendido([]));
   };
@@ -89,18 +89,25 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     listarMaterias()
       .then((ms) => {
         setMaterias(ms);
-        if (ms.length === 1) setMateriaId(ms[0].id);
+        if (ms.length === 1) { setMateriaId(ms[0].id); setMateriaInstr(ms[0].id); }
         carregarResumo(ms);
       })
       .catch(() => { setMaterias([]); notify("Não foi possível carregar as matérias."); });
   }, []);
   useEffect(() => carregarMateria(materiaId), [materiaId]);
+  const carregarInstrucoes = (id: string) => {
+    if (!id) { setInstrucoes([]); setSugestoes([]); return; }
+    listarInstrucoes(id).then(setInstrucoes).catch(() => setInstrucoes([]));
+    listarSugestoesInstrucao(id).then(setSugestoes).catch(() => setSugestoes([]));
+  };
+  useEffect(() => carregarInstrucoes(materiaInstr), [materiaInstr]);
   const mb = (b: number | null) => (b === null ? "" : b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
   const depois = (aviso: string) => {
     notify(aviso);
     setErro("");
     carregarMateria(materiaId);
+    carregarInstrucoes(materiaInstr);
     if (materias) carregarResumo(materias);
   };
   const enviarArquivo = async () => {
@@ -135,12 +142,12 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   };
   const adotar = async (g: SugestaoInstrucaoAPI) => {
     try {
-      await criarInstrucao(materiaId, g.texto);
+      await criarInstrucao(materiaInstr, g.texto);
       depois("Pronto: a IA vai seguir isso sempre nesta matéria.");
     } catch (e) { notify(erroDe(e, "Não foi possível salvar a instrução.")); }
   };
   const dispensar = async (g: SugestaoInstrucaoAPI) => {
-    try { await dispensarSugestaoInstrucao(materiaId, g.correcao_ids); depois("Sugestão dispensada."); }
+    try { await dispensarSugestaoInstrucao(materiaInstr, g.correcao_ids); depois("Sugestão dispensada."); }
     catch (e) { notify(erroDe(e, "Não foi possível dispensar.")); }
   };
   const trocarUso = async (i: ItemAprendidoAPI) => {
@@ -154,6 +161,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     catch (e) { notify(erroDe(e, "Não foi possível mudar.")); }
   };
   const nomeMateria = materias?.find((m) => m.id === materiaId)?.nome;
+  const nomeMateriaInstr = materias?.find((m) => m.id === materiaInstr)?.nome;
 
   return (
     <>
@@ -191,11 +199,14 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
                       {r.revisadas < 10 ? ". Ainda poucas para saber ao certo." : "."}
                     </span>
                   )}
-                  {r && r.vies !== null && r.revisadas >= 3 && (
-                    <span>
-                      Seu jeito: {Math.abs(r.vies) < 5 ? "suas notas são parecidas com as da IA"
-                        : `você costuma dar notas uns ${Math.abs(r.vies)}% ${r.vies < 0 ? "mais baixas" : "mais altas"} que a IA`}.
-                    </span>
+                  {r && r.vies !== null && r.diferenca_media !== null && r.revisadas >= 3 && (
+                    <>
+                      <span>
+                        {r.vies === 0 ? "Em média, suas notas ficam no mesmo nível das notas da IA."
+                          : `Em média, suas notas ficam ${Math.abs(r.vies)}% ${r.vies < 0 ? "mais baixas" : "mais altas"} que as da IA.`}
+                      </span>
+                      <span>Correção a correção, a diferença média é de {r.diferenca_media}%.</span>
+                    </>
                   )}
                   {r && !!r.falta.length && <span>Falta: {r.falta.join(" ")}</span>}
                   {r && <Evolucao pontos={r.evolucao} />}
@@ -311,25 +322,54 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
         </Card>
       )}
 
+      {!!materias?.length && (
+        <>
+          <Card>
+            <SectionTitle title="Instruções por matéria" />
+            <p className="rotulo-escolha">Ver instruções de</p>
+            <div className="botoes-escolha" role="group" aria-label="Matéria das instruções">
+              {materias.map((m) => (
+                <button key={m.id} type="button" aria-pressed={materiaInstr === m.id}
+                  className={materiaInstr === m.id ? "active" : ""} onClick={() => setMateriaInstr(m.id)}>{m.nome}</button>
+              ))}
+            </div>
+          </Card>
+        {!!sugestoes.length && (
+          <Card>
+            <SectionTitle title="A IA sugere" />
+            <p className="muted">Você mudou a nota por motivos parecidos várias vezes. Quer que a IA siga isso sempre?</p>
+            {sugestoes.map((g) => (
+              <div className="material-row" key={g.correcao_ids[0]}>
+                <div className="activity-icon"><Sparkles size={21} /></div>
+                <div className="activity-info">
+                  <strong>{g.texto}</strong>
+                  <span>Você deu esse motivo em {g.vezes} correções.</span>
+                </div>
+                <Button onPress={() => adotar(g)}>Adotar como instrução</Button>
+                <Button variant="secondary" onPress={() => dispensar(g)}>Dispensar</Button>
+              </div>
+            ))}
+          </Card>
+        )}
+          {!!materiaInstr && (
+          <Card>
+            <SectionTitle title={`Instruções para ${nomeMateriaInstr ?? "a matéria"}`} />
+            {!instrucoes.length ? (
+              <Empty title="Nenhuma instrução ainda" text='Use "Escrever instruções" para dizer à IA como você quer que ela aja.' />
+            ) : instrucoes.map((i) => (
+              <div className="material-row" key={i.id}>
+                <div className="activity-icon"><PenLine size={21} /></div>
+                <div className="activity-info"><strong>{i.texto}</strong></div>
+                <button className="back-link" aria-label="Apagar instrução" onClick={() => apagar(i)}><Trash2 size={16} /></button>
+              </div>
+            ))}
+          </Card>
+          )}
+        </>
+      )}
+
       {!!materiaId && (
         <>
-          {!!sugestoes.length && (
-            <Card>
-              <SectionTitle title="A IA sugere" />
-              <p className="muted">Você mudou a nota por motivos parecidos várias vezes. Quer que a IA siga isso sempre?</p>
-              {sugestoes.map((g) => (
-                <div className="material-row" key={g.correcao_ids[0]}>
-                  <div className="activity-icon"><Sparkles size={21} /></div>
-                  <div className="activity-info">
-                    <strong>{g.texto}</strong>
-                    <span>Você deu esse motivo em {g.vezes} correções.</span>
-                  </div>
-                  <Button onPress={() => adotar(g)}>Adotar como instrução</Button>
-                  <Button variant="secondary" onPress={() => dispensar(g)}>Dispensar</Button>
-                </div>
-              ))}
-            </Card>
-          )}
           {!!erros.length && (
             <Card>
               <SectionTitle title="Onde a IA mais errou" />
@@ -371,18 +411,6 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
               ))}
             </Card>
           )}
-          <Card>
-            <SectionTitle title={`Instruções para ${nomeMateria ?? "a matéria"}`} />
-            {!instrucoes.length ? (
-              <Empty title="Nenhuma instrução ainda" text='Use "Escrever instruções" para dizer à IA como você quer que ela aja.' />
-            ) : instrucoes.map((i) => (
-              <div className="material-row" key={i.id}>
-                <div className="activity-icon"><PenLine size={21} /></div>
-                <div className="activity-info"><strong>{i.texto}</strong></div>
-                <button className="back-link" aria-label="Apagar instrução" onClick={() => apagar(i)}><Trash2 size={16} /></button>
-              </div>
-            ))}
-          </Card>
         </>
       )}
 

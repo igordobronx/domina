@@ -52,7 +52,6 @@
   "60": "E4 Correção por IA — Nota estimada, feedback e nível de confiança",
   "68": "Documentação do frontend Domina",
   "70": "Banco compartilhado + escola_id + RLS (estratégia escolhida)",
-  "71": "package.json",
   "74": "compilerOptions",
   "76": "E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor",
   "79": "E10 Privacidade e operação — LGPD, auditoria e custo",
@@ -82,10 +81,8 @@
   "129": "scripts",
   "132": "@playwright/test",
   "134": "usePwa.ts",
-  "144": "0015_exercicio_alunos.py",
   "145": "3. Versão por versão",
   "148": "6. Fluxos e estados",
-  "154": "0008_atividade_arquivada.py",
   "155": "0009_tema_alternativas.py",
   "156": "0012_atividade_criado_por.py",
   "157": "0013_backfill_atividade_criado_por.py"

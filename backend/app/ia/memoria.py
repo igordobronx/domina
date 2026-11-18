@@ -361,7 +361,12 @@ def concordancia(db: Session, materia_id, professor_id, recentes: int = 20) -> d
 
     classes = [classe(ia, prof) for ia, prof in linhas]
     # "seu jeito": media com sinal de (professor - IA) em % da maior nota. Negativo = mais rigoroso que a IA.
-    vies = round(100 * sum((float(p) - float(i)) / max(float(i), float(p), 1.0) for i, p in linhas) / len(linhas)) if linhas else None
+    # diferenca total ponderada (as notas maiores pesam mais): (soma do professor - soma da IA) / soma da IA
+    total_ia = sum(float(i) for i, _ in linhas)
+    vies = round(100 * (sum(float(p) for _, p in linhas) - total_ia) / total_ia) if total_ia > 0 else None
+    # mesmo com a media perto de zero, as notas podem diferir correcao a correcao: diferenca media absoluta
+    diferenca_media = (round(100 * sum(abs(float(p) - float(i)) / max(float(i), float(p), 1.0) for i, p in linhas) / len(linhas))
+                       if linhas else None)
 
     def taxa(lista):
         return round(100 * sum(c != "longe" for c in lista) / len(lista)) if lista else None
@@ -373,6 +378,7 @@ def concordancia(db: Session, materia_id, professor_id, recentes: int = 20) -> d
                 for i in range(0, len(ordem), 10) if len(ordem[i:i + 10]) >= 5]
     return {
         "vies": vies,
+        "diferenca_media": diferenca_media,
         "evolucao": evolucao,
         "revisadas": len(classes),
         "iguais": classes.count("igual"),

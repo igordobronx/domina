@@ -35,7 +35,8 @@ class MemoriaIAResponse(BaseModel):
     concordancia: int | None = None  # % de notas iguais ou proximas; nulo = ainda sem revisoes
     concordancia_recente: int | None = None  # so das ultimas 20
     exercicios_aprendidos: int = 0
-    vies: int | None = None  # media de (nota do professor - nota da IA) em %; negativo = professor mais rigoroso
+    vies: int | None = None  # diferenca total ponderada (professor - IA) em %; negativo = professor mais rigoroso
+    diferenca_media: int | None = None  # media de |professor - IA| por correcao, em %
     nivel: str = "SEM_TREINO"  # SEM_TREINO | APRENDENDO | QUASE | PRONTA
     falta: list[str] = []  # o que ainda falta para a IA ficar pronta, em frases simples
     evolucao: list[dict] = []  # concordancia a cada 10 revisadas, da mais antiga para a mais nova

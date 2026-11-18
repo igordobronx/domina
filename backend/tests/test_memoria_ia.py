@@ -62,6 +62,12 @@ def espia_gemini(notas, vistos):
     return gerar
 
 
+def test_material_do_tipo_outros_e_aceito():
+    prof = token("professor@domina.com")
+    r = subir(prof, nova_materia("Matemática outros"), "resumo.txt", RUBRICA.encode(), tipo="OUTRO")
+    assert r.status_code == 201 and r.json()["tipo"] == "OUTRO" and r.json()["status_processamento"] == "PROCESSADO"
+
+
 def test_dividir_corta_em_trechos_sem_perder_texto():
     texto = "\n\n".join(f"Parágrafo {i} " + "palavra " * 60 for i in range(10))
     trechos = dividir(texto, tamanho=600, sobra=50)
@@ -464,6 +470,8 @@ def test_selo_de_prontidao_grafico_e_lista_de_erros_da_ia():
     finally:
         exatas_mod.gerar = original
     r = ia()
+    # 1 de 5 com o professor em metade da nota da IA (1000 -> 500): total (4500-5000)/5000 = -10%; media por correcao 10%
+    assert r["vies"] == -10 and r["diferenca_media"] == 10
     assert r["revisadas"] == 5 and [e["ate"] for e in r["evolucao"]] == [5] and r["evolucao"][0]["concordancia"] == 80
     erros = client.get(f"/materias/{materia_id}/erros-da-ia", headers=prof).json()
     assert len(erros) == 2 and erros[0]["nota_ia"] == 1000 and erros[0]["nota_professor"] == 500
@@ -501,7 +509,7 @@ def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
         exatas_mod.gerar = original
 
     # 1) "seu jeito": 50% mais baixo que a IA em todas
-    assert ia()["vies"] == -50
+    assert ia()["vies"] == -50 and ia()["diferenca_media"] == 50  # (500-1000)*3 / (1000*3); |500-1000|/1000 em cada
 
     # 2) boa/ma sem mudar a nota, mesmo depois de aprovada; a boa vem primeiro na busca
     r = client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": "BOA"})

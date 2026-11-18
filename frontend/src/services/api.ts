@@ -728,7 +728,7 @@ export interface DocumentoAPI {
   materia_id: string;
   materia_nome: string;
   nome_arquivo: string;
-  tipo: "APOSTILA" | "RUBRICA" | "PLANO_DE_AULA" | "GABARITO";
+  tipo: "APOSTILA" | "RUBRICA" | "PLANO_DE_AULA" | "GABARITO" | "OUTRO";
   status_processamento: "PENDENTE" | "PROCESSADO" | "ERRO" | "FALHOU";
   detalhe?: string | null; // motivo quando a IA não conseguiu ler o arquivo
   tamanho_bytes: number | null;
@@ -779,7 +779,8 @@ export interface MemoriaIAAPI {
   concordancia: number | null; // % de notas iguais ou próximas às suas
   concordancia_recente: number | null; // só das últimas 20
   exercicios_aprendidos: number;
-  vies: number | null; // média de (sua nota - nota da IA) em %; negativo = você é mais rigoroso que a IA
+  vies: number | null; // diferença total ponderada (sua nota - nota da IA) em %; negativo = você é mais rigoroso
+  diferenca_media: number | null; // média de |sua nota - nota da IA| por correção, em %
   nivel: "SEM_TREINO" | "APRENDENDO" | "QUASE" | "PRONTA";
   falta: string[]; // o que ainda falta para a IA ficar pronta
   evolucao: { ate: number; concordancia: number }[]; // concordância a cada 10 revisadas, da mais antiga à mais nova

@@ -532,6 +532,7 @@ const TIPOS_DOCUMENTO: { value: DocumentoAPI["tipo"]; label: string }[] = [
   { value: "RUBRICA", label: "Rubrica de correção" },
   { value: "GABARITO", label: "Gabarito" },
   { value: "PLANO_DE_AULA", label: "Plano de aula" },
+  { value: "OUTRO", label: "Outros" },
 ];
 
 export function Materials({
