@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1794962490.024955,
-    "seen": 1794962752.8237498,
-    "ast_hash": "21e5a349b812ff5b77ae8d54b8cd16da",
+    "mtime": 1794964190.6061687,
+    "seen": 1794964194.348624,
+    "ast_hash": "2f5b78356432074e0d1343b537674a59",
     "semantic_hash": ""
   },
   "backend/app/ocr/gemini.py": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1794960829.607698,
-    "seen": 1794961100.8215191,
-    "ast_hash": "db87614edc3a18414a43b1a0986fbc60",
+    "mtime": 1794963435.9668703,
+    "seen": 1794963450.2679732,
+    "ast_hash": "8bd494e4f3dd79e0673a5fd3c44f8a2b",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
@@ -1320,9 +1320,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Exercicios.tsx": {
-    "mtime": 1794776340.8101592,
-    "seen": 1794961100.821541,
-    "ast_hash": "38cfccfcd4b8f9c094678635cfdc2a18",
+    "mtime": 1794964186.4165277,
+    "seen": 1794964194.348604,
+    "ast_hash": "ebc378a556af333842d0b5297aba5ac7",
     "semantic_hash": ""
   },
   "frontend/src/screens/Metas.tsx": {
@@ -1422,9 +1422,9 @@
     "semantic_hash": ""
   },
   "backend/app/ia/memoria.py": {
-    "mtime": 1794962453.4411218,
-    "seen": 1794962752.8234901,
-    "ast_hash": "b7011320660504b9bea9588ce638e228",
+    "mtime": 1794963327.489436,
+    "seen": 1794963388.9580119,
+    "ast_hash": "6d53de7393ac019cd1e337800e195712",
     "semantic_hash": ""
   },
   "backend/app/ia/registro.py": {
@@ -1518,9 +1518,9 @@
     "semantic_hash": ""
   },
   "backend/tests/test_memoria_ia.py": {
-    "mtime": 1794962453.4429836,
-    "seen": 1794962752.8236558,
-    "ast_hash": "6719e3b56e326cf59e6b8d916f903530",
+    "mtime": 1794963327.4907289,
+    "seen": 1794963388.958239,
+    "ast_hash": "a7452a6ee9cafb279cf024d40d849c07",
     "semantic_hash": ""
   },
   "backend/tests/test_pessoas.py": {
@@ -1536,9 +1536,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/TreinarIA.tsx": {
-    "mtime": 1794962453.445571,
-    "seen": 1794962752.823721,
-    "ast_hash": "20021679a5bed8c9c93c53818298c2e3",
+    "mtime": 1794964186.4169202,
+    "seen": 1794964194.348609,
+    "ast_hash": "74821d03831a6543cb39ea6f2bc72865",
     "semantic_hash": ""
   },
   ".trail/README.md": {
@@ -1581,6 +1581,12 @@
     "mtime": 1794962121.384451,
     "seen": 1794962420.703742,
     "ast_hash": "f8152ff0d7c900530bfe23f15e4c4c81",
+    "semantic_hash": ""
+  },
+  ".trail/learnings/2026-11-18-treinar-ia-por-mate-ria-18-joa.md": {
+    "mtime": 1794963410.7811105,
+    "seen": 1794963450.268045,
+    "ast_hash": "3031d66e102f938d9c4815f703ce08cf",
     "semantic_hash": ""
   }
 }

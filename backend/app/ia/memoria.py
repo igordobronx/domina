@@ -415,14 +415,14 @@ def _prontidao(r: dict) -> tuple[str, list[str]]:
     """Selo e lista do que falta para a IA ficar pronta nesta materia (so regra simples, sem modelo)."""
     aprendeu = r["trechos_de_material"] + r["correcoes_aprendidas"] + r["instrucoes"] + r["exercicios_aprendidos"]
     if not aprendeu:
-        return "SEM_TREINO", ["Envie um material ou escreva uma instrução para começar."]
+        return "SEM_TREINO", ["envie um material ou escreva uma instrução para começar."]
     falta = []
     if not r["trechos_de_material"] and not r["instrucoes"]:
-        falta.append("Envie um material ou escreva uma instrução.")
+        falta.append("envie um material ou escreva uma instrução.")
     if r["revisadas"] < PRONTA_REVISADAS:
-        falta.append(f"Revise mais {PRONTA_REVISADAS - r['revisadas']} correção(ões) da IA.")
+        falta.append(f"revise mais {PRONTA_REVISADAS - r['revisadas']} correção(ões) da IA.")
     elif (r["concordancia_recente"] or 0) < PRONTA_CONCORDANCIA:
-        falta.append(f"A concordância recente ({r['concordancia_recente']}%) precisa chegar a {PRONTA_CONCORDANCIA}%.")
+        falta.append(f"a concordância recente ({r['concordancia_recente']}%) precisa chegar a {PRONTA_CONCORDANCIA}%.")
     if not falta:
         return "PRONTA", []
     quase = r["revisadas"] >= MIN_REVISADAS and (r["concordancia_recente"] or 0) >= CONCORDANCIA_BAIXA

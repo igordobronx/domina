@@ -488,7 +488,7 @@ function ListaPorTurma({ lista, turmas, notify, onEditar, onExcluir }: {
   const unicas = [...new Set(ids)];
   const nome = (id: string) => turmas.find((t) => t.id === id)?.nome ?? lista.find((e) => e.turma_id === id)?.turma_nome ?? "Turma";
   const [turma, setTurma] = useState("");
-  const atual = turma && unicas.includes(turma) ? turma : unicas[0] ?? "";
+  const atual = unicas.includes(turma) ? turma : ""; // nada pré-marcado; clicar de novo desmarca
   const daTurma = lista.filter((e) => e.turma_id === atual);
   const [verResumo, setVerResumo] = useState(false);
   const [abertoId, setAbertoId] = useState<string | null>(null);
@@ -497,10 +497,11 @@ function ListaPorTurma({ lista, turmas, notify, onEditar, onExcluir }: {
   return (
     <Card>
       <SectionTitle title="Meus exercícios por turma" />
+      <p className="rotulo-escolha">Escolha a turma para ver os exercícios dela</p>
       <div className="botoes-escolha" role="group" aria-label="Turma">
         {unicas.map((id) => (
           <button type="button" key={id} aria-pressed={id === atual} className={id === atual ? "active" : ""}
-            onClick={() => { setTurma(id); setAbertoId(null); }}>
+            onClick={() => { setTurma(id === atual ? "" : id); setAbertoId(null); }}>
             {nome(id)} ({lista.filter((e) => e.turma_id === id).length})
           </button>
         ))}
@@ -513,7 +514,7 @@ function ListaPorTurma({ lista, turmas, notify, onEditar, onExcluir }: {
         </div>
       )}
       {verResumo && atual && <ResumoTurma key={atual} turmaId={atual} notify={notify} />}
-      {!daTurma.length ? (
+      {!atual ? null : !daTurma.length ? (
         <Empty title="Nenhum exercício nesta turma" text="Crie um em “Novo exercício” e marque esta turma." />
       ) : daTurma.map((ex) => (
         <div className="meta-linha" key={ex.id}>

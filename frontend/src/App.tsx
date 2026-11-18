@@ -90,6 +90,12 @@ const navItems: {
   },
   { id: "estudos", label: "Exercícios", icon: NotebookPen, roles: ["aluno", "professor"] },
   {
+    id: "materiais",
+    label: "Treinar IA",
+    icon: Layers,
+    roles: ["professor", "gestor"],
+  },
+  {
     id: "calendario",
     label: "Calendário",
     icon: CalendarDays,
@@ -124,12 +130,6 @@ const navItems: {
     label: "Instituições",
     icon: Building2,
     roles: ["admin"],
-  },
-  {
-    id: "materiais",
-    label: "Treinar IA",
-    icon: Layers,
-    roles: ["professor", "gestor"],
   },
 ];
 function iniciais(nome: string): string {

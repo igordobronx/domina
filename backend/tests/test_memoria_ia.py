@@ -452,7 +452,7 @@ def test_selo_de_prontidao_grafico_e_lista_de_erros_da_ia():
     ia = lambda: client.get(f"/materias/{materia_id}/ia", headers=prof).json()  # noqa: E731
     assert ia()["nivel"] == "SEM_TREINO" and ia()["falta"]
     assert client.post(f"/materias/{materia_id}/instrucoes", headers=prof, json={"texto": "Exijo a verificação."}).status_code == 201
-    assert ia()["nivel"] == "APRENDENDO" and "Revise mais 20" in " ".join(ia()["falta"])
+    assert ia()["nivel"] == "APRENDENDO" and "revise mais 20" in " ".join(ia()["falta"])
     original, exatas_mod.gerar = exatas_mod.gerar, espia_gemini([200], [])
     try:
         for n in range(5):
