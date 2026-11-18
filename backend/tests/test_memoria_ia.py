@@ -82,7 +82,7 @@ def test_material_e_lido_na_hora_e_formato_desconhecido_vira_erro():
     assert r.json()["status_processamento"] == "ERRO" and "PDF" in r.json()["detalhe"]
 
     resumo = client.get(f"/materias/{materia_id}/ia", headers=prof).json()
-    assert resumo == {"trechos_de_material": 1, "correcoes_aprendidas": 0, "instrucoes": 0}
+    assert (resumo["trechos_de_material"], resumo["correcoes_aprendidas"], resumo["instrucoes"]) == (1, 0, 0)
     assert client.get(f"/materias/{materia_id}/ia", headers=token("aluno@domina.com")).status_code == 403
 
 
@@ -110,8 +110,8 @@ def test_correcao_de_exatas_usa_material_e_correcoes_aprovadas_do_professor():
             "motivo_mudanca": "Sem a verificação eu só dou metade da questão.",
         })
         assert r.status_code == 200, r.text
-        assert client.get(f"/materias/{materia_id}/ia", headers=prof).json() == {
-            "trechos_de_material": 1, "correcoes_aprendidas": 1, "instrucoes": 0}
+        m = client.get(f"/materias/{materia_id}/ia", headers=prof).json()
+        assert (m["trechos_de_material"], m["correcoes_aprendidas"], m["instrucoes"]) == (1, 1, 0)
 
         # 3) na proxima correcao a IA recebe a rubrica e o exemplo do jeito do professor
         sub2 = client.post("/submissoes/texto", headers=aluno2,
@@ -123,6 +123,12 @@ def test_correcao_de_exatas_usa_material_e_correcoes_aprovadas_do_professor():
         assert "Nota do professor: 500 de 1000" in prompt and "o professor CORRIGIU a nota" in prompt
         assert "a IA ERROU aqui, foi generosa demais" in prompt  # ela deu 1000 e ele baixou para 500
         assert "Sem a verificação eu só dou metade da questão." in prompt  # o porque, escrito pelo professor
+        # o professor ve o que a IA usou (e o aluno nao pode ver o material dele)
+        fontes = client.get(f"/submissoes/{sub2['id']}/fontes-ia", headers=prof).json()
+        assert {f["tipo"] for f in fontes["fontes"]} == {"material", "exemplo"} and fontes["aviso"] is None
+        assert "verificação final" in str(fontes["fontes"])
+        assert client.get(f"/submissoes/{sub2['id']}/fontes-ia", headers=aluno2).status_code == 403
+        assert client.get(f"/submissoes/{sub1['id']}/fontes-ia", headers=prof).json()["fontes"] == []  # memoria vazia na epoca
         assert "Faltou a verificação final." in prompt
         assert prompt.index("MEMÓRIA DO DOMINA") < prompt.index("Respostas do aluno")
     finally:
@@ -315,8 +321,9 @@ def test_cada_resposta_do_modelo_vira_material_de_treino_ligado_a_nota_do_profes
     from app.models.usuario import IaChamada
     prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
+    materia_treino = nova_materia("Matemática treino")
     atividade = client.post("/atividades", headers=prof, json={
-        "materia_id": nova_materia("Matemática treino"), "turma_id": turma_id, "titulo": "Soma", "tipo": "EXERCICIO",
+        "materia_id": materia_treino, "turma_id": turma_id, "titulo": "Soma", "tipo": "EXERCICIO",
         "questoes": [{"enunciado": "Quanto é 2 + 2?", "resposta_correta": "4"}],
     }).json()
     resposta = json.dumps({"questoes": [{"codigo": "Q1", "nota": 200, "justificativa": "bate"}], "confianca": 0.9})
@@ -351,6 +358,10 @@ def test_cada_resposta_do_modelo_vira_material_de_treino_ligado_a_nota_do_profes
         assert db.get(IaChamada, chamadas[0].id) is not None  # exportar so marca, nao apaga
         assert exportar_treino.apagar_treinados(db) == 1      # depois do treino: apaga so o que foi exportado
         assert db.get(IaChamada, chamadas[0].id) is None
+    # concordancia: a IA deu 1000 e o professor 800 (20% de diferenca) = discordou; sem revisao nao conta
+    c = client.get(f"/materias/{materia_treino}/ia", headers=prof).json()
+    assert (c["revisadas"], c["iguais"], c["proximas"], c["longe"], c["concordancia"]) == (1, 0, 0, 1, 0)
+    assert client.get(f"/materias/{nova_materia('Sem revisao')}/ia", headers=prof).json()["concordancia"] is None
 
 
 def test_instrucoes_escritas_valem_sempre_e_so_o_dono_apaga():
@@ -387,3 +398,140 @@ def test_instrucoes_escritas_valem_sempre_e_so_o_dono_apaga():
     assert client.delete(f"{url}/{gid}", headers=prof).status_code == 404
     assert client.delete(f"{url}/{instrucao_id}", headers=prof).status_code == 204
     assert [i["texto"] for i in client.get(url, headers=prof).json()] == ["Regra da escola: chamar o aluno de você."]
+
+
+def test_aviso_so_quando_ha_revisoes_suficientes_e_a_concordancia_e_baixa():
+    from app.ia.memoria import concorda_pouco
+    assert not concorda_pouco({"revisadas": 5, "concordancia_recente": 0})      # poucas revisoes: nao julga
+    assert not concorda_pouco({"revisadas": 30, "concordancia_recente": 80})    # concorda bem
+    assert concorda_pouco({"revisadas": 30, "concordancia_recente": 40})        # erra o jeito dele
+
+
+def test_motivo_repetido_vira_sugestao_de_instrucao_e_so_vira_instrucao_se_o_professor_aceitar():
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    materia_id = nova_materia("Matemática sugestão")
+    turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
+    url = f"/materias/{materia_id}/sugestoes-instrucoes"
+    vistos = []
+    original, exatas_mod.gerar = exatas_mod.gerar, espia_gemini([200], vistos)
+    try:
+        for n in range(3):
+            atv = client.post("/atividades", headers=prof, json={
+                "materia_id": materia_id, "turma_id": turma_id, "titulo": f"Lista {n}", "tipo": "EXERCICIO",
+                "questoes": [{"enunciado": "Quanto é 2 + 2?", "resposta_correta": "4"}]}).json()
+            sub = client.post("/submissoes/texto", headers=aluno, json={"atividade_id": atv["id"], "texto": "Q1: 4"}).json()
+            assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).status_code == 201
+            assert client.get(url, headers=prof).json() == []  # com menos de 3 motivos iguais nao sugere
+            r = client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
+                "notas": [{"codigo": "Q1", "nota": 500}], "feedback": "ok",
+                "motivo_mudanca": "Faltou mostrar a conta completa passo a passo."})
+            assert r.status_code == 200, r.text
+    finally:
+        exatas_mod.gerar = original
+    sugestoes = client.get(url, headers=prof).json()
+    assert len(sugestoes) == 1 and sugestoes[0]["vezes"] == 3 and "conta completa" in sugestoes[0]["texto"]
+    # dispensar esconde; nada vira instrucao sozinho
+    assert client.get(f"/materias/{materia_id}/instrucoes", headers=prof).json() == []
+    assert client.post(url + "/dispensar", headers=prof, json={"correcao_ids": sugestoes[0]["correcao_ids"]}).status_code == 204
+    assert client.get(url, headers=prof).json() == []
+    assert client.get(url, headers=token("aluno@domina.com")).status_code == 403
+
+
+def test_selo_de_prontidao_grafico_e_lista_de_erros_da_ia():
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    materia_id = nova_materia("Matemática prontidão")
+    turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
+    ia = lambda: client.get(f"/materias/{materia_id}/ia", headers=prof).json()  # noqa: E731
+    assert ia()["nivel"] == "SEM_TREINO" and ia()["falta"]
+    assert client.post(f"/materias/{materia_id}/instrucoes", headers=prof, json={"texto": "Exijo a verificação."}).status_code == 201
+    assert ia()["nivel"] == "APRENDENDO" and "Revise mais 20" in " ".join(ia()["falta"])
+    original, exatas_mod.gerar = exatas_mod.gerar, espia_gemini([200], [])
+    try:
+        for n in range(5):
+            atv = client.post("/atividades", headers=prof, json={
+                "materia_id": materia_id, "turma_id": turma_id, "titulo": f"Lista {n}", "tipo": "EXERCICIO",
+                "questoes": [{"enunciado": "Quanto é 2 + 2?", "resposta_correta": "4"}]}).json()
+            sub = client.post("/submissoes/texto", headers=aluno, json={"atividade_id": atv["id"], "texto": "Q1: 4"}).json()
+            c = client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={})
+            assert c.status_code == 201
+            ia_nota = c.json()["nota_ia"]
+            nota = ia_nota / 2 if n == 0 else ia_nota  # so a primeira: a IA errou
+            r = client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
+                "notas": [{"codigo": "Q1", "nota": nota}], "feedback": "ok", "explicacao_ruim": n == 1})
+            assert r.status_code == 200, r.text
+    finally:
+        exatas_mod.gerar = original
+    r = ia()
+    assert r["revisadas"] == 5 and [e["ate"] for e in r["evolucao"]] == [5] and r["evolucao"][0]["concordancia"] == 80
+    erros = client.get(f"/materias/{materia_id}/erros-da-ia", headers=prof).json()
+    assert len(erros) == 2 and erros[0]["nota_ia"] == 1000 and erros[0]["nota_professor"] == 500
+    assert erros[1]["explicacao_ruim"] is True  # nota certa, mas a explicacao estava ruim
+    assert client.get(f"/materias/{materia_id}/erros-da-ia", headers=aluno).status_code == 403
+
+
+def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
+    import exportar_treino
+    from app.database import SessionLocal
+    from app.ia import memoria
+    from app.models.usuario import IaTrecho
+
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    materia_id = nova_materia("Matemática jeito")
+    turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
+    ia = lambda: client.get(f"/materias/{materia_id}/ia", headers=prof).json()  # noqa: E731
+    subs = []
+    original, exatas_mod.gerar = exatas_mod.gerar, espia_gemini([200], [])
+    try:
+        for n in range(3):
+            atv = client.post("/atividades", headers=prof, json={
+                "materia_id": materia_id, "turma_id": turma_id, "titulo": f"Equação {n}", "tipo": "EXERCICIO",
+                "questoes": [{"enunciado": "Quanto é 2 + 2?", "resposta_correta": "4"}]}).json()
+            sub = client.post("/submissoes/texto", headers=aluno, json={"atividade_id": atv["id"], "texto": "Q1: 4"}).json()
+            c = client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={})
+            assert c.status_code == 201
+            r = client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
+                "notas": [{"codigo": "Q1", "nota": c.json()["nota_ia"] / 2}], "feedback": "ok"})  # professor mais rigoroso
+            assert r.status_code == 200, r.text
+            subs.append(sub["id"])
+    finally:
+        exatas_mod.gerar = original
+
+    # 1) "seu jeito": 50% mais baixo que a IA em todas
+    assert ia()["vies"] == -50
+
+    # 2) boa/ma sem mudar a nota, mesmo depois de aprovada; a boa vem primeiro na busca
+    r = client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": "BOA"})
+    assert r.status_code == 200 and r.json()["avaliacao_ia"] == "BOA" and r.json()["nota_professor"] == 500
+    assert client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=aluno, json={"avaliacao": "BOA"}).status_code == 403
+    import uuid
+    mid = uuid.UUID(materia_id)
+    with SessionLocal() as db:
+        prof_id = db.query(IaTrecho.professor_id).filter_by(materia_id=mid).first()[0]
+        achados = memoria.buscar(db, mid, "Equação Quanto é 2 + 2", memoria.CORRECAO, 1, prof_id)
+        assert len(achados) == 1 and "EXEMPLO MODELO" in achados[0].texto
+    assert client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": None}).json()["avaliacao_ia"] is None
+
+    # 3) esquecer = tirar de uso: a lista vem com as que a IA mais errou primeiro; nada e apagado
+    itens = client.get(f"/materias/{materia_id}/aprendido", headers=prof).json()
+    assert len(itens) == 3 and all(i["em_uso"] for i in itens) and itens[0]["erro"] >= itens[-1]["erro"] > 0
+    alvo = itens[0]
+    assert client.put(f"/materias/{materia_id}/aprendido/{alvo['tipo']}/{alvo['id']}", headers=prof,
+                      json={"em_uso": False}).status_code == 204
+    assert ia()["correcoes_aprendidas"] == 2  # a memoria nao usa mais
+    with SessionLocal() as db:
+        assert db.query(IaTrecho).filter_by(materia_id=mid, origem="CORRECAO").count() == 3  # mas continua guardada
+        assert exportar_treino.exportar_materiais(db, f"{_tmp}/materiais.jsonl") >= 3
+    assert '"tirado_de_uso": true' in open(f"{_tmp}/materiais.jsonl").read()
+    # aprovar de novo (reindexar) nao "destira"; e da para voltar a usar
+    assert client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": "MA"}).status_code == 200
+    assert ia()["correcoes_aprendidas"] == 2
+    assert client.put(f"/materias/{materia_id}/aprendido/{alvo['tipo']}/{alvo['id']}", headers=prof,
+                      json={"em_uso": True}).status_code == 204
+    assert ia()["correcoes_aprendidas"] == 3
+    # material: tirar de uso o arquivo inteiro
+    doc = subir(prof, materia_id, "rubrica.txt", RUBRICA.encode()).json()
+    assert ia()["trechos_de_material"] > 0
+    assert client.put(f"/materias/{materia_id}/aprendido/MATERIAL/{doc['id']}", headers=prof, json={"em_uso": False}).status_code == 204
+    assert ia()["trechos_de_material"] == 0
+    assert client.put(f"/materias/{materia_id}/aprendido/MATERIAL/{doc['id']}", headers=token("aluno@domina.com"),
+                      json={"em_uso": False}).status_code == 403

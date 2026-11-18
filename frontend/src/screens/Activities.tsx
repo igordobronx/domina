@@ -24,6 +24,7 @@ import {
 } from "../services/demoStore";
 import {
   aprovarCorrecao,
+  avaliarIA,
   confirmarTexto,
   anexarFiguraQuestao,
   criarAtividadesLote,
@@ -41,6 +42,8 @@ import {
   urlImagemSubmissao,
   verAgente,
   verCorrecao,
+  verFontesIA,
+  type FontesIAAPI,
   verSubmissao,
   type AgenteAPI,
   type AtividadeAPI,
@@ -1033,6 +1036,7 @@ function RevisaoReal({
   const [notas, setNotas] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState("");
   const [motivoMudanca, setMotivoMudanca] = useState("");
+  const [avaliacao, setAvaliacao] = useState<"BOA" | "MA" | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [corrigindo, setCorrigindo] = useState(false);
   const [aprovando, setAprovando] = useState(false);
@@ -1042,6 +1046,7 @@ function RevisaoReal({
 
   const aplicarCorrecao = (c: CorrecaoAPI) => {
     setCorrecao(c);
+    setAvaliacao(c.avaliacao_ia);
     setFeedback(c.feedback ?? "");
     setNotas(Object.fromEntries(c.criterios.map((cr) => [cr.codigo, cr.nota_professor ?? cr.nota])));
   };
@@ -1096,6 +1101,7 @@ function RevisaoReal({
       Object.entries(notas).map(([codigo, nota]) => ({ codigo, nota: Math.round(nota * 100) / 100 })),
       feedback,
       mudouNota ? motivoMudanca : undefined,
+      avaliacao,
     )
       .then(() => onApproved())
       .catch((erro) => {
@@ -1239,6 +1245,23 @@ function RevisaoReal({
                     />
                   </>
                 )}
+                {!readOnly && (
+                  <>
+                    <p className="tiny muted">Ensine a IA com 1 clique (não muda a nota; o aluno não vê):</p>
+                    <div className="botoes-escolha" role="group" aria-label="Avaliar a correção da IA">
+                      {([["BOA", "Boa correção (exemplo modelo)"], ["MA", "Explicação ruim"]] as const).map(([valor, texto]) => (
+                        <button type="button" key={valor} aria-pressed={avaliacao === valor}
+                          className={avaliacao === valor ? "active" : ""}
+                          onClick={() => {
+                            const novo = avaliacao === valor ? null : valor;
+                            if (!aprovada) return setAvaliacao(novo);
+                            avaliarIA(a.id, novo).then((c) => setAvaliacao(c.avaliacao_ia))
+                              .catch((erro) => setError(erro instanceof Error ? erro.message : "Não foi possível salvar."));
+                          }}>{texto}</button>
+                      ))}
+                    </div>
+                  </>
+                )}
                 {error && (
                   <p role="alert" className="error">
                     {error}
@@ -1278,6 +1301,7 @@ function RevisaoReal({
           </Card>
           <div className="agente-coluna">
           {agente && <PassoAPassoAgente agente={agente} />}
+          {correcao && <FontesDaIA submissaoId={a.id} />}
           <Card>
             <SectionTitle title="Texto enviado" />
             <div className="essay">
@@ -1308,6 +1332,40 @@ const NOMES_FERRAMENTAS: Record<string, string> = {
   pedir_nova_foto: "Pediu uma nova foto",
   finalizar: "Finalizou",
 };
+
+const ROTULO_FONTE = { material: "Material", instrucao: "Instrução", exemplo: "Correção sua parecida" } as const;
+
+// mostra ao professor o que da memória dele a IA usou nesta correção, e avisa se ela anda errando o jeito dele
+function FontesDaIA({ submissaoId }: { submissaoId: string }) {
+  const [dados, setDados] = useState<FontesIAAPI | null>(null);
+  useEffect(() => {
+    let ativo = true;
+    verFontesIA(submissaoId).then((d) => ativo && setDados(d)).catch(() => undefined);
+    return () => {
+      ativo = false;
+    };
+  }, [submissaoId]);
+  if (!dados || (!dados.aviso && !dados.fontes.length)) return null;
+  return (
+    <div className="fontes-ia">
+      {dados.aviso && <p role="alert" className="error">{dados.aviso}</p>}
+      {dados.fontes.length > 0 && (
+        <details>
+          <summary>O que a IA usou do seu material ({dados.fontes.length})</summary>
+          <ul>
+            {dados.fontes.map((f, i) => (
+              <li key={i}>
+                <strong>{ROTULO_FONTE[f.tipo]}: {f.titulo}</strong>
+                <br />
+                <small>{f.trecho}</small>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
 
 function PassoAPassoAgente({ agente }: { agente: AgenteAPI }) {
   const passos = agente.passos.filter((p) => p.tipo !== "pensamento" || p.texto);

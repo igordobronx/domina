@@ -260,6 +260,9 @@ def avaliar_resposta(exercicio_id: uuid.UUID, aluno_id: uuid.UUID, payload: Aval
         db.rollback()
         raise HTTPException(422, "Para marcar como parcial ou errada, escreva um comentário para o aluno.")
     registrar(db, usuario.id, "AVALIAR", "ExercicioResposta", r.id)
+    db.flush()
+    if ex.tipo == "DISCURSIVO":
+        memoria.indexar_exercicio(db, ex, r)  # a IA aprende com o que o professor marcou (nunca bloqueia)
     db.commit()
     aluno = db.get(Usuario, aluno_id)
     return RespostaAlunoResponse(aluno_id=aluno_id, nome=aluno.nome, fez=True, resposta=r.resposta,

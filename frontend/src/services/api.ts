@@ -391,6 +391,17 @@ export interface CorrecaoAPI {
   status: string;
   feedback: string | null;
   criterios: CriterioAPI[];
+  avaliacao_ia: "BOA" | "MA" | null; // BOA = exemplo modelo; MA = explicação ruim (só a IA usa)
+}
+
+// o que da memória do professor a IA usou numa correção (só professor/gestor veem)
+export interface FontesIAAPI {
+  fontes: { tipo: "material" | "instrucao" | "exemplo"; titulo: string; trecho: string }[];
+  aviso: string | null; // a IA tem concordado pouco com este professor nesta matéria
+}
+
+export function verFontesIA(submissaoId: string): Promise<FontesIAAPI> {
+  return request<FontesIAAPI>(`/submissoes/${submissaoId}/fontes-ia`);
 }
 
 export function corrigirSubmissao(id: string, tema?: string): Promise<CorrecaoAPI> {
@@ -439,11 +450,16 @@ export function aprovarCorrecao(
   notas: { codigo: string; nota: number }[],
   feedback: string,
   motivoMudanca?: string, // por que o professor mudou a nota da IA (só a IA usa, para aprender)
+  avaliacaoIA: "BOA" | "MA" | null = null, // 1 clique: boa correção (modelo) ou explicação ruim, sem mudar a nota
 ): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/aprovar`, {
     method: "PUT",
-    body: JSON.stringify({ notas, feedback, motivo_mudanca: motivoMudanca?.trim() || null }),
+    body: JSON.stringify({ notas, feedback, motivo_mudanca: motivoMudanca?.trim() || null, explicacao_ruim: avaliacaoIA === "MA", boa_correcao: avaliacaoIA === "BOA" }),
   });
+}
+
+export function avaliarIA(id: string, avaliacao: "BOA" | "MA" | null): Promise<CorrecaoAPI> {
+  return request<CorrecaoAPI>(`/submissoes/${id}/avaliacao-ia`, { method: "PUT", body: JSON.stringify({ avaliacao }) });
 }
 
 export interface DominioAPI {
@@ -638,6 +654,31 @@ export interface MemoriaIAAPI {
   trechos_de_material: number;
   correcoes_aprendidas: number;
   instrucoes: number;
+  revisadas: number;
+  iguais: number;
+  proximas: number;
+  longe: number;
+  concordancia: number | null; // % de notas iguais ou próximas às suas
+  concordancia_recente: number | null; // só das últimas 20
+  exercicios_aprendidos: number;
+  vies: number | null; // média de (sua nota - nota da IA) em %; negativo = você é mais rigoroso que a IA
+  nivel: "SEM_TREINO" | "APRENDENDO" | "QUASE" | "PRONTA";
+  falta: string[]; // o que ainda falta para a IA ficar pronta
+  evolucao: { ate: number; concordancia: number }[]; // concordância a cada 10 revisadas, da mais antiga à mais nova
+}
+
+// onde a IA mais errou segundo o professor
+export interface ErroDaIAAPI {
+  submissao_id: string;
+  atividade: string;
+  nota_ia: number;
+  nota_professor: number | null;
+  motivo: string | null;
+  explicacao_ruim: boolean;
+}
+
+export function listarErrosDaIA(materiaId: string): Promise<ErroDaIAAPI[]> {
+  return request<ErroDaIAAPI[]>(`/materias/${materiaId}/erros-da-ia`);
 }
 
 // instruções escritas pelo professor para a IA ("sempre faça tal coisa"); valem sempre naquela matéria
@@ -658,6 +699,24 @@ export function criarInstrucao(materiaId: string, texto: string): Promise<Instru
 
 export function excluirInstrucao(materiaId: string, id: string): Promise<void> {
   return request<void>(`/materias/${materiaId}/instrucoes/${id}`, { method: "DELETE" });
+}
+
+// a IA sugere virar instrução um motivo que o professor deu várias vezes ao mudar a nota
+export interface SugestaoInstrucaoAPI {
+  texto: string;
+  vezes: number;
+  correcao_ids: string[];
+}
+
+export function listarSugestoesInstrucao(materiaId: string): Promise<SugestaoInstrucaoAPI[]> {
+  return request<SugestaoInstrucaoAPI[]>(`/materias/${materiaId}/sugestoes-instrucoes`);
+}
+
+export function dispensarSugestaoInstrucao(materiaId: string, correcaoIds: string[]): Promise<void> {
+  return request<void>(`/materias/${materiaId}/sugestoes-instrucoes/dispensar`, {
+    method: "POST",
+    body: JSON.stringify({ correcao_ids: correcaoIds }),
+  });
 }
 
 export function verMemoriaIA(materiaId: string): Promise<MemoriaIAAPI> {
@@ -908,3 +967,24 @@ export const arquivarMeta = (id: string) => request<void>(`/metas/${id}`, { meth
 export const minhasMetas = () => request<{ nivel: NivelAPI; metas: MetaAlunoAPI[] }>("/metas/minhas");
 export const rankingMetas = (turmaId?: string) =>
   request<RankingItemAPI[]>(`/metas/ranking${turmaId ? `?turma_id=${turmaId}` : ""}`);
+
+// o que a IA aprendeu com o professor; "esquecer" = tirar de uso (nada é apagado)
+export interface ItemAprendidoAPI {
+  tipo: "MATERIAL" | "CORRECAO" | "EXERCICIO";
+  id: string;
+  titulo: string;
+  trecho: string;
+  em_uso: boolean;
+  erro: number;
+}
+
+export function listarAprendido(materiaId: string): Promise<ItemAprendidoAPI[]> {
+  return request<ItemAprendidoAPI[]>(`/materias/${materiaId}/aprendido`);
+}
+
+export function usoDoItem(materiaId: string, item: ItemAprendidoAPI, emUso: boolean): Promise<void> {
+  return request<void>(`/materias/${materiaId}/aprendido/${item.tipo}/${item.id}`, {
+    method: "PUT",
+    body: JSON.stringify({ em_uso: emUso }),
+  });
+}

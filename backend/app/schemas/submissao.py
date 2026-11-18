@@ -58,6 +58,7 @@ class CorrecaoResponse(BaseModel):
     modelo_usado: str
     feedback: str | None
     criterios: list[CriterioResponse]
+    avaliacao_ia: str | None = None  # BOA (exemplo modelo) | MA (explicacao ruim) | nulo
 
 
 class NotaCriterioInput(BaseModel):
@@ -78,6 +79,9 @@ class AprovarRequest(BaseModel):
     # por que o professor mudou a nota da IA (opcional). So a IA usa: vai para a memoria junto
     # com o exemplo, para ela nao repetir o erro. O aluno nao ve.
     motivo_mudanca: str | None = Field(default=None, max_length=1000)
+    # 1 clique: "a explicacao da IA estava ruim" (mesmo com a nota certa). So a IA usa.
+    explicacao_ruim: bool = False
+    boa_correcao: bool = False  # 1 clique: esta correcao e um exemplo modelo para a IA
 
     @field_validator("notas")
     @classmethod
@@ -224,3 +228,7 @@ class MinhaSubmissaoResponse(BaseModel):
     criterios: list[CriterioResponse] | None = None  # idem; nota_professor vem nulo ate aprovar
     texto: str | None = None  # texto confirmado (ou OCR, se ainda nao confirmado)
     tipo_envio: str  # "TEXTO" | "IMAGEM" -- pro frontend saber se busca a foto original
+
+
+class AvaliacaoIARequest(BaseModel):
+    avaliacao: Literal["BOA", "MA"] | None = None

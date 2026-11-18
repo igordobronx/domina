@@ -126,11 +126,15 @@ class IaTrecho(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=False, index=True)
     professor_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
-    origem = Column(String(20), nullable=False)  # MATERIAL | CORRECAO
+    origem = Column(String(20), nullable=False)  # MATERIAL | CORRECAO | INSTRUCAO | EXERCICIO
     documento_id = Column(UUID(as_uuid=True), ForeignKey("documento_base.id"), nullable=True)
     correcao_id = Column(UUID(as_uuid=True), ForeignKey("correcao.id"), nullable=True)
+    # origem EXERCICIO: a resposta de aluno que o professor marcou certo/parcial/errado
+    exercicio_resposta_id = Column(UUID(as_uuid=True), ForeignKey("exercicio_resposta.id"), nullable=True)
     titulo = Column(String(255), nullable=False)
     texto = Column(Text, nullable=False)
+    # "tirado de uso": a memoria nao usa mais, mas o dado fica guardado (base de treino da IA propria)
+    ignorado = Column(Boolean, nullable=False, default=False, server_default=false())
     embedding = Column(JSON, nullable=True)  # vetor do texto; nulo = busca por palavras
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
 
@@ -264,6 +268,14 @@ class Correcao(Base):
     feedback = Column(Text, nullable=True)  # feedback geral; o professor edita antes de liberar (RF-21)
     # por que o professor mudou a nota da IA; so a memoria da IA usa (app/ia/memoria.py)
     motivo_mudanca = Column(Text, nullable=True)
+    # o que da memoria do professor entrou no pedido a IA (so o professor ve; app/ia/memoria.py > montar_contexto)
+    fontes_ia = Column(JSON, nullable=True)
+    # o professor dispensou a sugestao de instrucao feita a partir do motivo desta correcao
+    motivo_dispensado = Column(Boolean, nullable=False, default=False, server_default=false())
+    # o professor marcou que a explicacao/feedback da IA estava ruim, mesmo com a nota certa
+    explicacao_ruim = Column(Boolean, nullable=False, default=False, server_default=false())
+    # o professor marcou esta correcao como exemplo modelo: entra primeiro na busca de exemplos
+    boa_correcao = Column(Boolean, nullable=False, default=False, server_default=false())
 
 
 class CorrecaoCriterio(Base):

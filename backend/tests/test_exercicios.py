@@ -186,3 +186,22 @@ def test_discursivo_com_varias_respostas_de_exemplo():
     ana = token("ana.exerc@x.com", "123456")
     r = client.post(f"/exercicios/{r.json()['id']}/responder", headers=ana, json={"resposta": "Minha"}).json()
     assert r["respostas_exemplo"] == ["Primeira.", "Segunda."]
+
+
+def test_ia_aprende_com_o_que_o_professor_marcou_no_discursivo():
+    p, c = _setup()
+    ex = client.post("/exercicios", headers=p, json=_objetivo(
+        c, tipo="DISCURSIVO", alternativas=None, resposta_correta=None, resposta_exemplo="Quatro.", titulo="Aprende")).json()
+    ana_h = token("ana.exerc@x.com", "123456")
+    client.post(f"/exercicios/{ex['id']}/responder", headers=ana_h, json={"resposta": "Acho que é cinco"})
+    aluno_id = next(l for l in client.get(f"/exercicios/{ex['id']}/respostas", headers=p).json() if l["nome"] == "Ana Exerc")["aluno_id"]
+    ia = lambda: client.get(f"/materias/{c['materia']}/ia", headers=p).json()  # noqa: E731
+    antes = ia()["exercicios_aprendidos"]
+    url = f"/exercicios/{ex['id']}/respostas/{aluno_id}"
+    assert client.put(url, headers=p, json={"resultado": "ERRADA", "comentario": "2+2 é 4."}).status_code == 200
+    assert ia()["exercicios_aprendidos"] == antes + 1
+    # mudar a marca troca o exemplo (nao duplica); marca vazia apaga
+    assert client.put(url, headers=p, json={"resultado": "PARCIAL", "comentario": "Quase."}).status_code == 200
+    assert ia()["exercicios_aprendidos"] == antes + 1
+    assert client.put(url, headers=p, json={"resultado": None}).status_code == 200
+    assert ia()["exercicios_aprendidos"] == antes

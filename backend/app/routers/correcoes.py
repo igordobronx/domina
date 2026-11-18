@@ -22,7 +22,7 @@ from app.models.usuario import (
 from app.competencias import garantir_competencias
 from app.metas import avaliar_seguro
 from app.routers.submissoes import MATERIAS_EXATAS, _gestor_da_escola, caminhos_da_submissao, _professor_da_turma, _submissao_visivel
-from app.schemas.submissao import AprovarRequest, CorrecaoResponse, CorrigirRequest, CriterioResponse
+from app.schemas.submissao import AprovarRequest, AvaliacaoIARequest, CorrecaoResponse, CorrigirRequest, CriterioResponse
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
         revisado_por=correcao.revisado_por,
         confianca=float(correcao.confianca), status=correcao.status.value, modelo_usado=correcao.modelo_usado,
         feedback=correcao.feedback,
+        avaliacao_ia="BOA" if correcao.boa_correcao else "MA" if correcao.explicacao_ruim else None,
         criterios=[
             CriterioResponse(
                 codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
@@ -116,11 +117,11 @@ def corrigir_submissao(
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"Correção indisponível: servidor sem chave {provedor}.")
     # memoria do professor (RAG): material que ele subiu + correcoes parecidas que ja aprovou.
     # Vazio enquanto a materia nao tem nada guardado -- ai o prompt e o mesmo de antes.
-    contexto = ""
+    contexto, fontes = "", []
     if exatas or settings.IA_MEMORIA_NA_REDACAO:
         consulta = "\n".join([atividade.titulo, *(f"{t.nome} {t.resposta_correta or ''}" for t in temas.values() if exatas),
                               submissao.texto_confirmado])
-        contexto = memoria.contexto_do_professor(
+        contexto, fontes = memoria.montar_contexto(
             db, materia.id, consulta,
             professor_id=atividade.criado_por or (usuario.id if usuario.perfil == PerfilEnum.PROFESSOR else None),
             **({} if exatas else {"exemplos": 0}),  # redacao: so o material do professor (ver config.py)
@@ -177,6 +178,11 @@ def corrigir_submissao(
     # tudo com "95% de confianca". Vai para o topo da fila do professor junto com as de baixa confianca
     # exatas por foto tambem: a confianca nao distingue leitura estavel de instavel (Q3 deu 0 e 80)
     atencao = resultado.confianca < CONFIANCA_MINIMA or modelo != modelo_principal or (exatas and imagem is not None)
+    # nesta materia o professor vem mudando muito a nota da IA: a IA ainda nao pegou o jeito dele,
+    # entao a correcao vai para o topo da fila para ele olhar com cuidado
+    dono = atividade.criado_por or (usuario.id if usuario.perfil == PerfilEnum.PROFESSOR else None)
+    if dono and memoria.concorda_pouco(memoria.concordancia(db, materia.id, dono)):
+        atencao = True
     correcao = Correcao(
         submissao_id=submissao.id,
         nota_ia=sum(i.nota for i in itens),
@@ -185,6 +191,7 @@ def corrigir_submissao(
         modelo_usado=modelo,
         versao_prompt=versao_prompt + ("+memoria" if contexto else ""),  # da para auditar quais usaram a memoria
         feedback=feedback,
+        fontes_ia=fontes or None,
     )
     db.add(correcao)
     db.flush()
@@ -211,6 +218,23 @@ def ver_correcao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current
     return _correcao_response(db, correcao)
 
 
+# O que da memoria do professor a IA usou nesta correcao, para ele conferir. So professor/gestor:
+# o aluno nao pode ver o material do professor.
+@router.get("/submissoes/{submissao_id}/fontes-ia")
+def ver_fontes_da_ia(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    if usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores veem o que a IA usou.")
+    submissao = _submissao_visivel(db, submissao_id, usuario)
+    correcao = db.query(Correcao).filter_by(submissao_id=submissao.id).first()
+    if not correcao:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
+    atividade = db.get(Atividade, submissao.atividade_id)
+    c = memoria.concordancia(db, atividade.materia_id, correcao.revisado_por or atividade.criado_por)
+    aviso = (f"Nesta matéria a IA tem concordado pouco com você ({c['concordancia_recente']}% nas últimas "
+             "correções). Confira esta com cuidado.") if memoria.concorda_pouco(c) else None
+    return {"fontes": correcao.fontes_ia or [], "aviso": aviso}
+
+
 # RF-25: cada aprovacao e uma "evidencia" de desempenho do aluno naquela competencia (tema).
 # percentual_dominio e uma media movel: pondera o historico pelo numero de evidencias ja visto.
 def _atualizar_dominio(db: Session, aluno_id, criterios: dict) -> None:
@@ -227,6 +251,24 @@ def _atualizar_dominio(db: Session, aluno_id, criterios: dict) -> None:
                 float(dominio.percentual_dominio) * dominio.num_evidencias + nota_pct
             ) / (dominio.num_evidencias + 1)
             dominio.num_evidencias += 1
+
+
+@router.put("/submissoes/{submissao_id}/avaliacao-ia", response_model=CorrecaoResponse)
+def avaliar_ia(submissao_id: uuid.UUID, payload: AvaliacaoIARequest,
+               usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    """1 clique: marca a correcao como BOA (exemplo modelo) ou MA (explicacao ruim), sem mexer na nota.
+    Depois de aprovada, a memoria da IA e refeita na hora."""
+    submissao = _submissao_visivel(db, submissao_id, usuario)
+    _so_professor(db, submissao, usuario)
+    correcao = db.query(Correcao).filter_by(submissao_id=submissao.id).first()
+    if not correcao:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
+    correcao.boa_correcao = payload.avaliacao == "BOA"
+    correcao.explicacao_ruim = payload.avaliacao == "MA"
+    if correcao.status == StatusCorrecaoEnum.APROVADA:
+        memoria.indexar_correcao(db, correcao)
+    db.commit()
+    return _correcao_response(db, correcao)
 
 
 @router.put("/submissoes/{submissao_id}/aprovar", response_model=CorrecaoResponse)
@@ -276,6 +318,8 @@ def aprovar_correcao(
     if payload.feedback is not None:
         correcao.feedback = payload.feedback.strip()
     correcao.motivo_mudanca = (payload.motivo_mudanca or "").strip() or None
+    correcao.explicacao_ruim = payload.explicacao_ruim and not payload.boa_correcao
+    correcao.boa_correcao = payload.boa_correcao
     # RF-25/dominio real: so para redacao. As temas de exatas sao especificas de UMA atividade
     # (nunca se repetem), entao nao ha "evolucao" a acumular -- e um unico ponto fora da curva
     # dominaria /dominio/meu e /estudos/meu para sempre. O aluno ainda ve a nota/feedback normal.

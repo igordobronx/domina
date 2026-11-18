@@ -21,12 +21,13 @@ from app.ia.embeddings import embutir
 from app.ia.extracao import ArquivoNaoLido, dividir, extrair_texto
 from app.models.enum import PerfilEnum, StatusProcessamentoEnum
 from app.models.usuario import (
-    Atividade, Correcao, CorrecaoCriterio, DocumentoBase, IaTrecho, Submissao, Tema, Usuario,
+    Atividade, Correcao, CorrecaoCriterio, DocumentoBase, Exercicio, ExercicioResposta, IaTrecho, Submissao, Tema,
+    Usuario,
 )
 
 logger = logging.getLogger(__name__)
 
-MATERIAL, CORRECAO, INSTRUCAO = "MATERIAL", "CORRECAO", "INSTRUCAO"
+MATERIAL, CORRECAO, INSTRUCAO, EXERCICIO = "MATERIAL", "CORRECAO", "INSTRUCAO", "EXERCICIO"
 MAX_INSTRUCOES = 30        # por professor e materia
 MAX_LETRAS_INSTRUCOES = 8000  # o que entra no pedido ao modelo
 # ponytail: a busca compara com os trechos da materia em memoria (Python). Aguenta bem milhares
@@ -70,8 +71,8 @@ def _do_professor(db: Session, materia_id, origem: str, professor_id):
     """A memoria e de CADA professor: o jeito de corrigir muda de um para outro (a inteligencia
     da IA, nao). Vale o que o proprio professor ensinou; material enviado pelo GESTOR e da
     escola e vale para todos os professores da materia."""
-    q = db.query(IaTrecho).filter_by(materia_id=materia_id, origem=origem)
-    if origem == CORRECAO:
+    q = db.query(IaTrecho).filter_by(materia_id=materia_id, origem=origem).filter(IaTrecho.ignorado.is_(False))
+    if origem in (CORRECAO, EXERCICIO):
         return q.filter(IaTrecho.professor_id == professor_id)
     gestores = db.query(Usuario.id).filter(Usuario.perfil == PerfilEnum.GESTOR)
     return q.filter(or_(IaTrecho.professor_id == professor_id, IaTrecho.professor_id.in_(gestores)))
@@ -102,7 +103,13 @@ def buscar(db: Session, materia_id, consulta: str, origem: str, k: int = 4,
         notas = _por_palavras(consulta, [t.texto for t in candidatos])
         pares = [(nota, t) for nota, t in zip(notas, candidatos) if nota > 0]
     pares.sort(key=lambda par: par[0], reverse=True)
-    return [t for _, t in pares[:k]]
+    if origem != CORRECAO:
+        return [t for _, t in pares[:k]]
+    # correcoes marcadas "boa" pelo professor sao exemplo modelo: entre as 2k mais parecidas, vem primeiro
+    topo = [t for _, t in pares[:2 * k]]
+    boas = {cid for (cid,) in db.query(Correcao.id).filter(
+        Correcao.id.in_([t.correcao_id for t in topo if t.correcao_id]), Correcao.boa_correcao.is_(True))}
+    return sorted(topo, key=lambda t: t.correcao_id not in boas)[:k]
 
 
 # ---------- guardar ----------
@@ -161,6 +168,11 @@ def _exemplo(db: Session, correcao: Correcao, submissao: Submissao, atividade: A
         else:
             linha += f" (professor concordou com a IA: {c.justificativa[:300]})"
         linhas.append(linha)
+    if correcao.boa_correcao:
+        linhas.append("O professor marcou esta correção como EXEMPLO MODELO: imite o rigor, a explicação e o tom.")
+    if correcao.explicacao_ruim:
+        linhas.append("O professor marcou que a EXPLICAÇÃO da IA estava ruim (mesmo onde a nota estava certa): "
+                      "explique de forma mais clara e útil para o aluno.")
     if mudou and correcao.motivo_mudanca:
         linhas.append(f"POR QUE o professor mudou a nota (explicação dele para a IA): {correcao.motivo_mudanca[:1000]}")
     if correcao.feedback:
@@ -175,31 +187,73 @@ def indexar_correcao(db: Session, correcao: Correcao) -> None:
             return
         submissao = db.get(Submissao, correcao.submissao_id)
         atividade = db.get(Atividade, submissao.atividade_id)
+        antigo = db.query(IaTrecho).filter_by(correcao_id=correcao.id).first()
+        ignorado = bool(antigo and antigo.ignorado)  # refazer a memoria nao "destira" o que o professor tirou
         db.query(IaTrecho).filter_by(correcao_id=correcao.id).delete()
         _guardar(db, [IaTrecho(
             materia_id=atividade.materia_id, professor_id=correcao.revisado_por, origem=CORRECAO,
-            correcao_id=correcao.id, titulo=atividade.titulo[:255],
+            correcao_id=correcao.id, titulo=atividade.titulo[:255], ignorado=ignorado,
             texto=_exemplo(db, correcao, submissao, atividade),
         )])
     except Exception:
         logger.exception("falha ao guardar a correcao %s na memoria", correcao.id)
 
 
+def indexar_exercicio(db: Session, exercicio: Exercicio, resposta: ExercicioResposta) -> None:
+    """A IA aprende com o que o professor marcou (certo/parcial/errado) numa resposta discursiva.
+    Sem marca, apaga o exemplo antigo. Nunca levanta erro."""
+    try:
+        antigo = db.query(IaTrecho).filter_by(exercicio_resposta_id=resposta.id).first()
+        ignorado = bool(antigo and antigo.ignorado)
+        db.query(IaTrecho).filter_by(exercicio_resposta_id=resposta.id).delete()
+        if not resposta.resultado or not exercicio.materia_id or not exercicio.criado_por:
+            return
+        linhas = [f"Exercício: {exercicio.enunciado.strip()[:800]}",
+                  f'Resposta do aluno: """{resposta.resposta.strip()[:1200]}"""',
+                  f"O professor marcou: {resposta.resultado}"]
+        if resposta.comentario:
+            linhas.append(f"Comentário do professor: {resposta.comentario[:600]}")
+        exemplos = exercicio.respostas_exemplo or ([exercicio.resposta_exemplo] if exercicio.resposta_exemplo else [])
+        if exemplos:
+            linhas.append("Resposta de exemplo do professor: " + " | ".join(e[:400] for e in exemplos[:3]))
+        _guardar(db, [IaTrecho(
+            materia_id=exercicio.materia_id, professor_id=exercicio.criado_por, origem=EXERCICIO,
+            exercicio_resposta_id=resposta.id, titulo=(exercicio.titulo or exercicio.enunciado)[:255], ignorado=ignorado,
+            texto="\n".join(linhas),
+        )])
+    except Exception:
+        logger.exception("falha ao guardar o exercicio %s na memoria", resposta.id)
+
+
 # ---------- usar ----------
 
 def contexto_do_professor(db: Session, materia_id, consulta: str, professor_id=None,
                           materiais: int = 4, exemplos: int = 3) -> str:
+    """So o texto do contexto (ver montar_contexto)."""
+    return montar_contexto(db, materia_id, consulta, professor_id, materiais, exemplos)[0]
+
+
+def _fonte(tipo: str, titulo: str, texto: str) -> dict:
+    resumo = " ".join(texto.split())
+    return {"tipo": tipo, "titulo": titulo, "trecho": resumo[:220] + ("..." if len(resumo) > 220 else "")}
+
+
+def montar_contexto(db: Session, materia_id, consulta: str, professor_id=None,
+                    materiais: int = 4, exemplos: int = 3) -> tuple[str, list[dict]]:
     """Bloco de texto para colar no prompt: material do professor + correcoes parecidas que ele
-    ja aprovou. Devolve "" quando a memoria nao tem nada util (o prompt fica igual ao de antes)."""
+    ja aprovou. Devolve ("", []) quando a memoria nao tem nada util (o prompt fica igual ao de antes).
+    A lista de fontes diz o que entrou no pedido, para o professor conferir na revisao."""
     try:
         do_material = buscar(db, materia_id, consulta, MATERIAL, materiais, professor_id)
         das_correcoes = buscar(db, materia_id, consulta, CORRECAO, exemplos, professor_id) if exemplos else []
+        dos_exercicios = buscar(db, materia_id, consulta, EXERCICIO, 2, professor_id) if exemplos else []
         instrucoes = instrucoes_de(db, materia_id, professor_id)
     except Exception:
         logger.exception("falha ao buscar na memoria da materia %s", materia_id)
-        return ""
-    if not do_material and not das_correcoes and not instrucoes:
-        return ""
+        return "", []
+    if not do_material and not das_correcoes and not instrucoes and not dos_exercicios:
+        return "", []
+    fontes: list[dict] = []
     partes = ["=== MEMÓRIA DO DOMINA: COMO ESTE PROFESSOR TRABALHA ===",
               "Use o que estiver abaixo para trabalhar do jeito DESTE professor. Ignore o que não "
               "tiver relação com o pedido atual. O que o professor pede aqui é um COMPLEMENTO: sem "
@@ -211,24 +265,208 @@ def contexto_do_professor(db: Session, materia_id, consulta: str, professor_id=N
                 break
             usado += len(t.texto)
             linhas.append(f"- {t.texto}")
+            fontes.append(_fonte("instrucao", "Instrução sua", t.texto))
         partes.append("\nINSTRUÇÕES que o professor pediu para você SEMPRE seguir (valem mais que o resto da "
                       "memória; só não valem contra o gabarito e as regras do pedido atual):")
         partes += linhas
     if do_material:
         partes.append("\nTrechos do material que o professor enviou:")
         partes += [f"[{t.titulo}]\n{t.texto}" for t in do_material]
+        fontes += [_fonte("material", t.titulo, t.texto) for t in do_material]
     if das_correcoes:
         partes.append("\nCorreções parecidas que o professor já aprovou (imite o rigor, o critério "
                       "de nota e o tom dele. Onde ele mudou a nota, a IA tinha ERRADO: entenda o motivo e "
                       "não repita o mesmo erro em casos parecidos):")
         partes += [f"--- Exemplo {i} ---\n{t.texto}" for i, t in enumerate(das_correcoes, start=1)]
+        fontes += [_fonte("exemplo", "Correção sua parecida", t.texto) for t in das_correcoes]
+    if dos_exercicios:
+        partes.append("\nExercícios parecidos em que o professor corrigiu a resposta do aluno (use para entender "
+                      "o que ele aceita como certo, parcial ou errado):")
+        partes += [f"--- Exercício {i} ---\n{t.texto}" for i, t in enumerate(dos_exercicios, start=1)]
+        fontes += [_fonte("exemplo", "Exercício seu parecido", t.texto) for t in dos_exercicios]
     partes.append("=== FIM DA MEMÓRIA ===")
-    return "\n".join(partes) + "\n\n"
+    return "\n".join(partes) + "\n\n", fontes
+
+
+SIMILAR_MIN, VEZES_MIN, COBERTO_MIN = 0.4, 3, 0.6
+
+
+def _chave(texto: str) -> set[str]:
+    return {p for p in _palavras(texto) if len(p) > 3}
+
+
+def sugerir_instrucoes(db: Session, materia_id, professor_id, limite: int = 3) -> list[dict]:
+    """Quando o professor muda a nota varias vezes pelo mesmo motivo, sugere virar instrucao.
+
+    Agrupa os "por que voce mudou a nota" parecidos (palavras em comum) deste professor nesta
+    materia. Grupo com 3 ou mais vira sugestao, a menos que ja exista instrucao dizendo o mesmo ou
+    ele tenha dispensado. Nada vira instrucao sem ele aceitar. Sem chamada a modelo: nao gasta token.
+    """
+    linhas = (
+        db.query(Correcao.id, Correcao.motivo_mudanca)
+        .join(Submissao, Submissao.id == Correcao.submissao_id)
+        .join(Atividade, Atividade.id == Submissao.atividade_id)
+        .filter(Atividade.materia_id == materia_id, Correcao.revisado_por == professor_id,
+                Correcao.motivo_mudanca.isnot(None), Correcao.motivo_dispensado.is_(False))
+        .order_by(Submissao.criado_em.desc())
+        .all()
+    )
+    grupos: list[dict] = []
+    for cid, motivo in linhas:
+        chave = _chave(motivo or "")
+        if not chave:
+            continue
+        for g in grupos:
+            if len(chave & g["chave"]) / len(chave | g["chave"]) >= SIMILAR_MIN:
+                g["ids"].append(cid)
+                break
+        else:
+            grupos.append({"texto": motivo.strip(), "chave": chave, "ids": [cid]})
+    ja_ditas = [_chave(t.texto) for t in instrucoes_de(db, materia_id, professor_id)]
+    return [
+        {"texto": g["texto"], "vezes": len(g["ids"]), "correcao_ids": [str(i) for i in g["ids"]]}
+        for g in sorted(grupos, key=lambda g: -len(g["ids"]))
+        if len(g["ids"]) >= VEZES_MIN
+        and not any(len(g["chave"] & k) / len(g["chave"]) >= COBERTO_MIN for k in ja_ditas)
+    ][:limite]
+
+
+def concordancia(db: Session, materia_id, professor_id, recentes: int = 20) -> dict:
+    """Quanto o professor concorda com a IA: compara a nota da IA com a nota final dele.
+
+    'igual' = mesma nota; 'proxima' = diferenca de ate 10% (o mesmo criterio do ENEM: 20 em 200).
+    So conta correcao que o professor realmente revisou (tem nota_professor). Sem nota dele nao ha
+    o que comparar. Serve para o cliente ver se a IA ja corrige como ele, e para saber a hora de
+    trocar o Claude/Gemini pela IA do Domina.
+    """
+    linhas = (
+        db.query(Correcao.nota_ia, Correcao.nota_professor)
+        .join(Submissao, Submissao.id == Correcao.submissao_id)
+        .join(Atividade, Atividade.id == Submissao.atividade_id)
+        .filter(Atividade.materia_id == materia_id, Correcao.revisado_por == professor_id,
+                Correcao.nota_professor.isnot(None))
+        .order_by(Submissao.criado_em.desc())
+        .all()
+    )
+
+    def classe(ia, prof):
+        ia, prof = float(ia), float(prof)
+        if ia == prof:
+            return "igual"
+        return "proxima" if abs(ia - prof) <= 0.10 * max(ia, prof, 1.0) else "longe"
+
+    classes = [classe(ia, prof) for ia, prof in linhas]
+    # "seu jeito": media com sinal de (professor - IA) em % da maior nota. Negativo = mais rigoroso que a IA.
+    vies = round(100 * sum((float(p) - float(i)) / max(float(i), float(p), 1.0) for i, p in linhas) / len(linhas)) if linhas else None
+
+    def taxa(lista):
+        return round(100 * sum(c != "longe" for c in lista) / len(lista)) if lista else None
+
+    # a cada 10 revisadas (da mais antiga para a mais nova): semana nao serve, o professor pode
+    # corrigir poucas provas numa semana. Ultimo bloco so entra com 5 ou mais.
+    ordem = classes[::-1]
+    evolucao = [{"ate": min(i + 10, len(ordem)), "concordancia": taxa(ordem[i:i + 10])}
+                for i in range(0, len(ordem), 10) if len(ordem[i:i + 10]) >= 5]
+    return {
+        "vies": vies,
+        "evolucao": evolucao,
+        "revisadas": len(classes),
+        "iguais": classes.count("igual"),
+        "proximas": classes.count("proxima"),
+        "longe": classes.count("longe"),
+        "concordancia": taxa(classes),
+        "concordancia_recente": taxa(classes[:recentes]),
+    }
+
+
+MIN_REVISADAS, CONCORDANCIA_BAIXA = 10, 60  # com pelo menos 10 revisadas, abaixo de 60% = a IA ainda erra o jeito dele
+
+
+def concorda_pouco(c: dict) -> bool:
+    return c["revisadas"] >= MIN_REVISADAS and (c["concordancia_recente"] or 0) < CONCORDANCIA_BAIXA
 
 
 def resumo(db: Session, materia_id, professor_id) -> dict:
     """Quanto a IA ja aprendeu com ESTE professor nesta materia (para a tela dele)."""
     def conta(origem):
         return _do_professor(db, materia_id, origem, professor_id).count()
-    return {"trechos_de_material": conta(MATERIAL), "correcoes_aprendidas": conta(CORRECAO),
-            "instrucoes": conta(INSTRUCAO)}
+    c = concordancia(db, materia_id, professor_id)
+    r = {"trechos_de_material": conta(MATERIAL), "correcoes_aprendidas": conta(CORRECAO),
+         "instrucoes": conta(INSTRUCAO), "exercicios_aprendidos": conta(EXERCICIO), **c}
+    r["nivel"], r["falta"] = _prontidao(r)
+    return r
+
+
+# limites escolhidos por nos (ainda sem dado real): ajustar quando houver correcoes de verdade
+PRONTA_REVISADAS, PRONTA_CONCORDANCIA = 20, 85
+
+
+def _prontidao(r: dict) -> tuple[str, list[str]]:
+    """Selo e lista do que falta para a IA ficar pronta nesta materia (so regra simples, sem modelo)."""
+    aprendeu = r["trechos_de_material"] + r["correcoes_aprendidas"] + r["instrucoes"] + r["exercicios_aprendidos"]
+    if not aprendeu:
+        return "SEM_TREINO", ["Envie um material ou escreva uma instrução para começar."]
+    falta = []
+    if not r["trechos_de_material"] and not r["instrucoes"]:
+        falta.append("Envie um material ou escreva uma instrução.")
+    if r["revisadas"] < PRONTA_REVISADAS:
+        falta.append(f"Revise mais {PRONTA_REVISADAS - r['revisadas']} correção(ões) da IA.")
+    elif (r["concordancia_recente"] or 0) < PRONTA_CONCORDANCIA:
+        falta.append(f"A concordância recente ({r['concordancia_recente']}%) precisa chegar a {PRONTA_CONCORDANCIA}%.")
+    if not falta:
+        return "PRONTA", []
+    quase = r["revisadas"] >= MIN_REVISADAS and (r["concordancia_recente"] or 0) >= CONCORDANCIA_BAIXA
+    return ("QUASE" if quase else "APRENDENDO"), falta
+
+
+def erros_da_ia(db: Session, materia_id, professor_id, limite: int = 5) -> list[dict]:
+    """Correcoes em que a IA mais errou segundo o professor (maior diferenca de nota, ou ele marcou
+    a explicacao como ruim). So correcoes que ele ja revisou."""
+    linhas = (
+        db.query(Correcao, Atividade.titulo)
+        .join(Submissao, Submissao.id == Correcao.submissao_id)
+        .join(Atividade, Atividade.id == Submissao.atividade_id)
+        .filter(Atividade.materia_id == materia_id, Correcao.revisado_por == professor_id,
+                Correcao.nota_professor.isnot(None))
+        .all()
+    )
+
+    def peso(c: Correcao) -> float:
+        ia, prof = float(c.nota_ia), float(c.nota_professor)
+        return abs(ia - prof) / max(ia, prof, 1.0) + (0.05 if c.explicacao_ruim else 0)
+
+    ruins = sorted((l for l in linhas if peso(l[0]) > 0), key=lambda l: -peso(l[0]))[:limite]
+    return [{"submissao_id": c.submissao_id, "atividade": titulo, "nota_ia": float(c.nota_ia),
+             "nota_professor": float(c.nota_professor), "motivo": c.motivo_mudanca,
+             "explicacao_ruim": c.explicacao_ruim} for c, titulo in ruins]
+
+
+def aprendido(db: Session, materia_id, professor_id) -> list[dict]:
+    """O que a IA aprendeu deste professor (correcoes, exercicios e materiais), com 'em_uso'.
+    Ordem: as correcoes em que a IA mais errou primeiro, depois o resto. Instrucao nao entra
+    (ela ja tem o proprio botao de apagar). Material aparece uma vez por arquivo."""
+    itens = []
+    for t, c in (db.query(IaTrecho, Correcao).outerjoin(Correcao, Correcao.id == IaTrecho.correcao_id)
+                 .filter(IaTrecho.materia_id == materia_id, IaTrecho.professor_id == professor_id,
+                         IaTrecho.origem.in_([CORRECAO, EXERCICIO])).all()):
+        erro = 0.0
+        if c is not None and c.nota_professor is not None:
+            ia, prof = float(c.nota_ia), float(c.nota_professor)
+            erro = abs(ia - prof) / max(ia, prof, 1.0) + (0.05 if c.explicacao_ruim else 0)
+        itens.append({"tipo": t.origem, "id": t.id, "titulo": t.titulo, "trecho": " ".join(t.texto.split())[:160],
+                      "em_uso": not t.ignorado, "erro": round(erro, 3)})
+    docs = db.query(DocumentoBase).filter(DocumentoBase.materia_id == materia_id,
+                                          DocumentoBase.enviado_por == professor_id).all()
+    for d in docs:
+        trechos = db.query(IaTrecho.ignorado).filter_by(documento_id=d.id).all()
+        if trechos:
+            itens.append({"tipo": MATERIAL, "id": d.id, "titulo": d.nome_arquivo, "trecho": "",
+                          "em_uso": not all(i for (i,) in trechos), "erro": 0.0})
+    return sorted(itens, key=lambda i: -i["erro"])
+
+
+def tirar_de_uso(db: Session, materia_id, professor_id, tipo: str, item_id, em_uso: bool) -> bool:
+    """Para de usar (ou volta a usar) um item na memoria. NUNCA apaga: o dado fica para treinar a IA propria."""
+    q = db.query(IaTrecho).filter_by(materia_id=materia_id, professor_id=professor_id)
+    q = q.filter_by(documento_id=item_id) if tipo == MATERIAL else q.filter_by(id=item_id, origem=tipo)
+    return bool(q.update({IaTrecho.ignorado: not em_uso}, synchronize_session=False))

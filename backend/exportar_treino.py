@@ -48,6 +48,7 @@ def _linha(db, chamada) -> dict:
         linha["correcao_final"] = {
             "notas": notas,
             "professor_mudou": any(abs(n["nota_ia"] - n["nota_professor"]) > 0.01 for n in notas),
+            "avaliacao_professor": "BOA" if correcao.boa_correcao else "MA" if correcao.explicacao_ruim else None,
             "motivo_mudanca": correcao.motivo_mudanca,
             "feedback": correcao.feedback,
         }
@@ -77,7 +78,8 @@ def exportar_materiais(db, destino: str) -> int:
         for t in db.query(IaTrecho).order_by(IaTrecho.materia_id, IaTrecho.criado_em).yield_per(500):
             f.write(json.dumps({"id": str(t.id), "origem": t.origem, "materia_id": str(t.materia_id),
                                 "professor_id": str(t.professor_id) if t.professor_id else None,
-                                "titulo": t.titulo, "texto": t.texto}, ensure_ascii=False) + "\n")
+                                "titulo": t.titulo, "texto": t.texto,
+                                "tirado_de_uso": t.ignorado}, ensure_ascii=False) + "\n")
             total += 1
     return total
 

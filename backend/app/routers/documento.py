@@ -10,8 +10,11 @@ from app.config import settings
 from app.database import get_db
 from app.ia import memoria, registro
 from app.models.enum import PerfilEnum, TipoDocumentoEnum
-from app.models.usuario import DocumentoBase, IaTrecho, Materia, Usuario
-from app.schemas.documento import DocumentoBaseResponse, InstrucaoRequest, InstrucaoResponse, MemoriaIAResponse
+from app.models.usuario import Correcao, DocumentoBase, IaTrecho, Materia, Usuario
+from app.schemas.documento import (
+    DispensarSugestaoRequest, DocumentoBaseResponse, InstrucaoRequest, InstrucaoResponse, MemoriaIAResponse,
+    EmUsoRequest, ErroDaIA, ItemAprendido, SugestaoInstrucao,
+)
 
 router = APIRouter(tags=["documentos"])
 
@@ -123,6 +126,49 @@ def criar_instrucao(materia_id: uuid.UUID, payload: InstrucaoRequest,
     db.commit()
     db.refresh(trecho)
     return InstrucaoResponse(id=trecho.id, materia_id=trecho.materia_id, texto=trecho.texto, criado_em=trecho.criado_em)
+
+
+@router.get("/materias/{materia_id}/erros-da-ia", response_model=list[ErroDaIA])
+def erros_da_ia(materia_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    """As correcoes em que a IA mais errou (para o professor ver onde ela ainda falha)."""
+    _materia_de_quem_ensina(db, usuario, materia_id)
+    return memoria.erros_da_ia(db, materia_id, usuario.id)
+
+
+@router.get("/materias/{materia_id}/aprendido", response_model=list[ItemAprendido])
+def ver_aprendido(materia_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    _materia_de_quem_ensina(db, usuario, materia_id)
+    return memoria.aprendido(db, materia_id, usuario.id)
+
+
+# "Esquecer" = tirar de uso: a IA para de usar o item nas correcoes, mas NADA e apagado (a regra do
+# projeto: o que a IA propria ainda nao aprendeu fica guardado; ia_trecho e ia_chamada continuam).
+@router.put("/materias/{materia_id}/aprendido/{tipo}/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def uso_do_item(materia_id: uuid.UUID, tipo: str, item_id: uuid.UUID, payload: EmUsoRequest,
+                usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    _materia_de_quem_ensina(db, usuario, materia_id)
+    tipo = tipo.upper()
+    if tipo not in (memoria.MATERIAL, memoria.CORRECAO, memoria.EXERCICIO) or not memoria.tirar_de_uso(
+            db, materia_id, usuario.id, tipo, item_id, payload.em_uso):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Item não encontrado.")
+    db.commit()
+
+
+# Quando o professor muda a nota varias vezes pelo mesmo motivo, a IA sugere virar instrucao.
+# So vira instrucao se ele aceitar (POST /instrucoes); "dispensar" esconde a sugestao.
+@router.get("/materias/{materia_id}/sugestoes-instrucoes", response_model=list[SugestaoInstrucao])
+def sugestoes_de_instrucao(materia_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    _materia_de_quem_ensina(db, usuario, materia_id)
+    return memoria.sugerir_instrucoes(db, materia_id, usuario.id)
+
+
+@router.post("/materias/{materia_id}/sugestoes-instrucoes/dispensar", status_code=status.HTTP_204_NO_CONTENT)
+def dispensar_sugestao(materia_id: uuid.UUID, payload: DispensarSugestaoRequest,
+                       usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
+    _materia_de_quem_ensina(db, usuario, materia_id)
+    db.query(Correcao).filter(Correcao.id.in_(payload.correcao_ids), Correcao.revisado_por == usuario.id).update(
+        {Correcao.motivo_dispensado: True}, synchronize_session=False)
+    db.commit()
 
 
 @router.delete("/materias/{materia_id}/instrucoes/{instrucao_id}", status_code=status.HTTP_204_NO_CONTENT)
