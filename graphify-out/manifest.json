@@ -42,8 +42,8 @@
     "semantic_hash": ""
   },
   "backend/app/config.py": {
-    "mtime": 1794859818.9566696,
-    "seen": 1794961100.821286,
+    "mtime": 1794964529.218415,
+    "seen": 1794965887.193085,
     "ast_hash": "ffec5dc0541c0ecd132639135da07062",
     "semantic_hash": ""
   },
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1794964190.6061687,
-    "seen": 1794964194.348624,
-    "ast_hash": "2f5b78356432074e0d1343b537674a59",
+    "mtime": 1794965883.480246,
+    "seen": 1794965887.1932428,
+    "ast_hash": "f195c94a160f9e62a9b1618a3e848f1a",
     "semantic_hash": ""
   },
   "backend/app/ocr/gemini.py": {
@@ -180,8 +180,8 @@
     "semantic_hash": ""
   },
   "backend/app/correcao.py": {
-    "mtime": 1794859819.3649716,
-    "seen": 1794961100.8212879,
+    "mtime": 1794964529.2186198,
+    "seen": 1794965887.1930869,
     "ast_hash": "dbb1f69cbad9e7ee368b93daaf2cfe5c",
     "semantic_hash": ""
   },
@@ -576,8 +576,8 @@
     "semantic_hash": ""
   },
   "backend/app/estudos.py": {
-    "mtime": 1794960255.1775262,
-    "seen": 1794961100.821304,
+    "mtime": 1794964529.218979,
+    "seen": 1794965887.193092,
     "ast_hash": "46d1abdb6077848cabfedda4c62a2a8b",
     "semantic_hash": ""
   },
@@ -606,8 +606,8 @@
     "semantic_hash": ""
   },
   "backend/app/llm/__init__.py": {
-    "mtime": 1792709024.3340392,
-    "seen": 1794961100.8213189,
+    "mtime": 1794964529.2192852,
+    "seen": 1794965887.1931,
     "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
     "semantic_hash": ""
   },
@@ -1206,8 +1206,8 @@
     "semantic_hash": ""
   },
   "backend/app/exercicios_ia.py": {
-    "mtime": 1794859820.5435507,
-    "seen": 1794961100.8213062,
+    "mtime": 1794964529.2191656,
+    "seen": 1794965887.193093,
     "ast_hash": "73b73bf69f42bb93fc4eeb356f98f8b0",
     "semantic_hash": ""
   },
@@ -1320,9 +1320,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Exercicios.tsx": {
-    "mtime": 1794964186.4165277,
-    "seen": 1794964194.348604,
-    "ast_hash": "ebc378a556af333842d0b5297aba5ac7",
+    "mtime": 1794964277.6080384,
+    "seen": 1794965887.1932218,
+    "ast_hash": "e9f3b40c953cd189b2effb0598e95877",
     "semantic_hash": ""
   },
   "frontend/src/screens/Metas.tsx": {
@@ -1587,6 +1587,12 @@
     "mtime": 1794963410.7811105,
     "seen": 1794963450.268045,
     "ast_hash": "3031d66e102f938d9c4815f703ce08cf",
+    "semantic_hash": ""
+  },
+  "docs/historico_domina.md": {
+    "mtime": 1794965880.3481302,
+    "seen": 1794965887.19329,
+    "ast_hash": "c30e282e3371f816c51ec4c21c5cafad",
     "semantic_hash": ""
   }
 }
