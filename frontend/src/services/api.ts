@@ -734,12 +734,18 @@ export interface DocumentoAPI {
   tamanho_bytes: number | null;
   enviado_por_nome: string;
   pode_baixar: boolean;
+  ativo?: boolean; // false = tirado de uso
   criado_em: string;
 }
 
 // professor: so os que ele enviou; gestor: os da escola toda
-export function listarDocumentos(): Promise<DocumentoAPI[]> {
-  return request<DocumentoAPI[]>("/documentos");
+export function listarDocumentos(incluirInativos = false): Promise<DocumentoAPI[]> {
+  return request<DocumentoAPI[]>(`/documentos${incluirInativos ? "?incluir_inativos=true" : ""}`);
+}
+
+// tirar de uso / voltar a usar um material (a IA para de usar; nada é apagado)
+export function usoDoDocumento(id: string, emUso: boolean): Promise<DocumentoAPI> {
+  return request<DocumentoAPI>(`/documentos/${id}/uso`, { method: "PUT", body: JSON.stringify({ em_uso: emUso }) });
 }
 
 export function excluirDocumento(id: string): Promise<void> {

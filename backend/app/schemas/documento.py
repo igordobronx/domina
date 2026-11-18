@@ -16,6 +16,7 @@ class DocumentoBaseResponse(BaseModel):
     nome_arquivo: str
     tipo: TipoDocumentoEnum
     status_processamento: StatusProcessamentoEnum
+    ativo: bool = True  # false = tirado de uso: a IA nao usa e o treino ignora, mas o arquivo fica guardado
     detalhe: str | None = None  # motivo quando a IA nao conseguiu ler o arquivo
     tamanho_bytes: int | None = None
     enviado_por_nome: str = ""

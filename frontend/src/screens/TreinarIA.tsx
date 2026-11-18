@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { BookOpen, PenLine, Sparkles, Trash2, Upload } from "lucide-react";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
 import {
-  baixarDocumento, excluirDocumento, criarInstrucao, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
+  baixarDocumento, usoDoDocumento, criarInstrucao, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
   verMemoriaIA, type DocumentoAPI, type ErroDaIAAPI, type InstrucaoAPI, type ItemAprendidoAPI, type MateriaAPI, type MemoriaIAAPI, type SugestaoInstrucaoAPI,
 } from "../services/api";
 
@@ -76,7 +76,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     Promise.all(ms.map((m) => verMemoriaIA(m.id).then((r) => [m.id, r] as const)))
       .then((pares) => setMemoria(Object.fromEntries(pares)))
       .catch(() => setMemoria({})); // o resumo e um extra: se falhar a tela continua funcionando
-  const carregarDocumentos = () => listarDocumentos().then(setDocumentos).catch(() => setDocumentos([]));
+  const carregarDocumentos = () => listarDocumentos(true).then(setDocumentos).catch(() => setDocumentos([]));
   const carregarMateria = (id: string) => {
     carregarDocumentos();
     if (!id) return;
@@ -147,10 +147,11 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     try { await usoDoItem(materiaId, i, !i.em_uso); depois(i.em_uso ? "A IA parou de usar isso (continua guardado)." : "A IA voltou a usar isso."); }
     catch (e) { notify(erroDe(e, "Não foi possível mudar.")); }
   };
-  const arquivar = async (d: DocumentoAPI) => {
-    if (!window.confirm("Arquivar este material? A IA para de usar, mas o arquivo continua guardado.")) return;
-    try { await excluirDocumento(d.id); depois("Material arquivado. A IA parou de usar."); }
-    catch (e) { notify(erroDe(e, "Não foi possível arquivar.")); }
+  const trocarUsoMaterial = async (d: DocumentoAPI) => {
+    const tirar = d.ativo !== false;
+    if (tirar && !window.confirm("Tirar este material de uso? A IA para de usar, mas o arquivo continua guardado.")) return;
+    try { await usoDoDocumento(d.id, !tirar); depois(tirar ? "A IA parou de usar este material (continua guardado)." : "A IA voltou a usar este material."); }
+    catch (e) { notify(erroDe(e, "Não foi possível mudar.")); }
   };
   const nomeMateria = materias?.find((m) => m.id === materiaId)?.nome;
 
@@ -283,17 +284,17 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
               </select>
             </label>
           </div>
-          <p className="tiny muted">Arquivar tira o material de uso: a IA para de usar e ele sai do treino, mas o arquivo continua guardado.</p>
+          <p className="tiny muted">Tirar de uso: a IA para de usar o material e ele sai do treino, mas o arquivo continua guardado. Você pode voltar a usar quando quiser.</p>
           {!documentos.filter((d) => !filtroMateria || d.materia_id === filtroMateria).length ? (
             <Empty title="Nenhum material enviado" text="Envie apostilas, rubricas ou gabaritos para a IA aprender." />
           ) : documentos.filter((d) => !filtroMateria || d.materia_id === filtroMateria).map((d) => (
-            <div className="material-row" key={d.id}>
+            <div className="material-row" key={d.id} style={d.ativo === false ? { opacity: 0.6 } : undefined}>
               <div className="activity-icon"><BookOpen size={21} /></div>
               <div className="activity-info">
                 <strong>{d.nome_arquivo}</strong>
                 <span>
                   {TIPOS.find((t) => t.value === d.tipo)?.label ?? d.tipo} · {d.materia_nome} · enviado por {d.enviado_por_nome}
-                  {d.tamanho_bytes !== null ? ` · ${mb(d.tamanho_bytes)}` : ""}
+                  {d.tamanho_bytes !== null ? ` · ${mb(d.tamanho_bytes)}` : ""}{d.ativo === false ? " · fora de uso" : ""}
                 </span>
               </div>
               <Badge tone={d.status_processamento === "PROCESSADO" ? "green" : "amber"}>
@@ -304,7 +305,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
               {d.pode_baixar && (
                 <Button variant="secondary" onPress={() => baixarDocumento(d.id, d.nome_arquivo).catch((e) => notify(erroDe(e, "Não foi possível baixar.")))}>Baixar</Button>
               )}
-              <Button variant="secondary" onPress={() => arquivar(d)}>Arquivar</Button>
+              <Button variant="secondary" onPress={() => trocarUsoMaterial(d)}>{d.ativo === false ? "Voltar a usar" : "Tirar de uso"}</Button>
             </div>
           ))}
         </Card>

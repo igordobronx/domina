@@ -556,3 +556,10 @@ def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
     with SessionLocal() as db:
         assert db.query(IaTrecho).filter_by(materia_id=mid, origem="MATERIAL").count() > 0  # guardado
     assert no_treino()[0] == 3  # mas fora do treino
+    # "Voltar a usar": volta para a memoria e para o treino
+    lista = client.get("/documentos?incluir_inativos=true", headers=prof).json()
+    assert next(d for d in lista if d["id"] == doc["id"])["ativo"] is False
+    assert doc["id"] not in [d["id"] for d in client.get("/documentos", headers=prof).json()]
+    assert client.put(f"/documentos/{doc['id']}/uso", headers=prof, json={"em_uso": True}).json()["ativo"] is True
+    assert ia()["trechos_de_material"] > 0 and no_treino()[0] > 3
+    assert client.put(f"/documentos/{doc['id']}/uso", headers=token("aluno@domina.com"), json={"em_uso": False}).status_code == 403

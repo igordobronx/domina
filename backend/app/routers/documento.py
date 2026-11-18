@@ -36,12 +36,15 @@ def _materia_da_escola(db: Session, usuario: Usuario, materia_id) -> Materia:
     return materia
 
 
-def _visiveis(db: Session, usuario: Usuario):
-    """Gestor ve os materiais da escola toda; professor so os que ele mesmo enviou."""
+def _visiveis(db: Session, usuario: Usuario, inativos: bool = False):
+    """Gestor ve os materiais da escola toda; professor so os que ele mesmo enviou.
+    inativos=True inclui os "tirados de uso" (arquivados), para a tela poder mostrar o botao "Voltar a usar"."""
     q = (db.query(DocumentoBase, Materia, Usuario)
          .join(Materia, Materia.id == DocumentoBase.materia_id)
          .join(Usuario, Usuario.id == DocumentoBase.enviado_por)
-         .filter(Materia.escola_id == usuario.escola_id, DocumentoBase.ativo.is_(True)))
+         .filter(Materia.escola_id == usuario.escola_id))
+    if not inativos:
+        q = q.filter(DocumentoBase.ativo.is_(True))
     if usuario.perfil == PerfilEnum.PROFESSOR:
         q = q.filter(DocumentoBase.enviado_por == usuario.id)
     return q
@@ -51,15 +54,15 @@ def _resposta(d: DocumentoBase, m: Materia, u: Usuario) -> DocumentoBaseResponse
     return DocumentoBaseResponse(
         id=d.id, materia_id=d.materia_id, materia_nome=m.nome, nome_arquivo=d.nome_arquivo, tipo=d.tipo,
         status_processamento=d.status_processamento, tamanho_bytes=d.tamanho_bytes, enviado_por_nome=u.nome,
-        pode_baixar=bool(d.caminho), criado_em=d.criado_em, detalhe=d.detalhe,
+        pode_baixar=bool(d.caminho) and d.ativo, criado_em=d.criado_em, detalhe=d.detalhe, ativo=d.ativo,
     )
 
 
 @router.get("/documentos", response_model=list[DocumentoBaseResponse])
-def listar_documentos(materia_id: uuid.UUID | None = None, usuario: Usuario = Depends(get_current_user),
-                      db: Session = Depends(get_db)):
+def listar_documentos(materia_id: uuid.UUID | None = None, incluir_inativos: bool = False,
+                      usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     _so_equipe(usuario)
-    q = _visiveis(db, usuario)
+    q = _visiveis(db, usuario, incluir_inativos)
     if materia_id:
         q = q.filter(DocumentoBase.materia_id == materia_id)
     return [_resposta(d, m, u) for d, m, u in q.order_by(DocumentoBase.criado_em.desc()).all()]
@@ -70,7 +73,7 @@ def listar_documentos_da_materia(materia_id: uuid.UUID, usuario: Usuario = Depen
                                  db: Session = Depends(get_db)):
     _so_equipe(usuario)
     _materia_da_escola(db, usuario, materia_id)
-    return listar_documentos(materia_id, usuario, db)
+    return listar_documentos(materia_id=materia_id, usuario=usuario, db=db)
 
 
 # RF-13: professor/gestor sobe material de apoio (apostila, rubrica, gabarito) de uma materia da escola.
@@ -242,3 +245,19 @@ def apagar_instrucao(materia_id: uuid.UUID, instrucao_id: uuid.UUID,
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Instrução não encontrada.")
     db.delete(trecho)
     db.commit()
+
+
+# "Tirar de uso" / "Voltar a usar" um material (na tela Treinar IA): mesmo efeito do excluir acima, mas
+# reversivel. Tirado de uso, a IA nao usa e o treino da IA propria ignora; nada e apagado.
+@router.put("/documentos/{documento_id}/uso", response_model=DocumentoBaseResponse)
+def uso_do_documento(documento_id: uuid.UUID, payload: EmUsoRequest, usuario: Usuario = Depends(get_current_user),
+                     db: Session = Depends(get_db)):
+    _so_equipe(usuario)
+    linha = _visiveis(db, usuario, inativos=True).filter(DocumentoBase.id == documento_id).first()
+    if not linha:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Material não encontrado.")
+    d, m, u = linha
+    d.ativo = payload.em_uso
+    registrar(db, usuario.id, "REATIVAR" if payload.em_uso else "ARQUIVAR", "DocumentoBase", d.id)
+    db.commit()
+    return _resposta(d, m, u)
