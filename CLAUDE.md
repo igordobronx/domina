@@ -26,7 +26,7 @@ provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção
 - **Logins do seed** (senha `senha123`): `professor@domina.com` (Beto Andrade, turma "3º Ano A"), `gestor@domina.com`, `admin@domina.com`, `gestor2@domina.com` (outra escola), alunos `aluno@domina.com` (Ana Beatriz), `aluno2@domina.com` (Bruno), `aluno3@domina.com` (Carla).
 - **Chaves** em `backend/.env` (fora do git; nunca imprimir nem commitar): `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`. No cloud environment do projeto a `GEMINI_API_KEY` já existe.
 - **Modelos:** redação e agente = Claude Sonnet (`claude-sonnet-5-5`); exercícios gerados pela IA = Claude Haiku (`claude-haiku-5-5`); OCR e correção de exatas = Gemini (`gemini-3.5-flash`, reserva `gemini-3.5-flash-lite`). Camada única em `backend/app/llm/` e `backend/app/ocr/`.
-- **Testes:** `cd backend && python -m pytest -q tests/test_X.py` (todos passam; rodar por arquivo). Frontend: `npx tsc --noEmit -p .`, `npm test` (1 teste já falhava antes: "não abre a revisão por um link do gestor") e `npm run test:e2e` (Playwright).
+- **Testes:** `cd backend && python -m pytest -q tests/test_X.py` (todos passam; rodar por arquivo). Frontend: `npx tsc --noEmit -p .`, `npm test` (todos passam; o teste do gestor foi atualizado em 18/11: o gestor abre Revisões em modo leitura) e `npm run test:e2e` (Playwright).
 - **graphify:** usar sempre (regra do projeto). Antes de explorar: `graphify query "<pergunta>"`. Depois de editar código: `graphify update .`. Não commitar o cache de `graphify-out/cache`.
 
 ## 3. Regras de trabalho (preferências do usuário)
