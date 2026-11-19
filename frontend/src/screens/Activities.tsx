@@ -172,7 +172,7 @@ type Props = {
   selected: string | null;
   select: (id: string | null) => void;
   reviewOnly?: boolean;
-  initialFilter?: string; // "todas" | "disponivel" | "pendente" | "aprovada"
+  initialFilter?: string; // "todas" | "disponivel" | "pendente" | "corrigida_ia" (so aluno) | "aprovada"
   currentUser?: UsuarioAtual | null;
 };
 export function Activities({
@@ -317,12 +317,20 @@ export function Activities({
       <Card>
         <div className="list-toolbar">
           <div className="tabs" role="group" aria-label="Filtrar atividades">
-            {[
-              ["todas", "Todas"],
-              ...(!reviewOnly ? [["disponivel", "Para fazer"]] : []),
-              ["pendente", "Em revisão"],
-              ["aprovada", "Corrigidas"],
-            ].map(([id, label]) => (
+            {(reviewOnly
+              ? [
+                  ["todas", "Todas"],
+                  ["pendente", "Em revisão"],
+                  ["aprovada", "Corrigidas"],
+                ]
+              : [
+                  ["todas", "Todas"],
+                  ["disponivel", "Para fazer"],
+                  ["pendente", "Enviadas"],
+                  ["corrigida_ia", "Corrigidas pela IA"],
+                  ["aprovada", "Corrigidas"],
+                ]
+            ).map(([id, label]) => (
               <button
                 key={id}
                 aria-pressed={filter === id}
@@ -357,7 +365,7 @@ export function Activities({
         </div>
         {list.length ? (
           list.map((a) => (
-            <ActivityRow key={a.id} activity={a} onClick={() => select(a.id)} />
+            <ActivityRow key={a.id} activity={a} onClick={() => select(a.id)} aluno={!reviewOnly} />
           ))
         ) : (
           <Empty
@@ -863,7 +871,7 @@ function ActivityDetail({
                     : "Revisão da atividade"
                 }
               />
-              <Badge tone={a.status === "aprovada" ? "green" : "amber"}>
+              <Badge tone={a.status === "aprovada" ? "green" : a.status === "corrigida_ia" ? "blue" : "amber"}>
                 {a.status === "aprovada"
                   ? "Revisada pelo professor"
                   : onCorrigidaReal

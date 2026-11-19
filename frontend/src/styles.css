@@ -708,6 +708,33 @@ a {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
 }
+/* visao geral do aluno: 5 cartoes no computador. Uma classe so, para as @media do fim
+   do arquivo (2 por linha no celular) continuarem valendo */
+.stats-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+/* notebook pequeno (antes de virar 2 por linha em 1020px): cartoes mais compactos para os 5 caberem */
+@media (max-width: 1350px) and (min-width: 1021px) {
+  .stats-5 {
+    gap: 12px;
+  }
+  .stats-5 .stat-card {
+    padding: 14px 12px;
+  }
+  .stats-5 .stat-top {
+    margin-bottom: 10px;
+  }
+  .stats-5 .stat-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .stats-5 .stat-value {
+    font-size: 22px;
+  }
+  .stats-5 .stat-card strong {
+    font-size: 12px;
+  }
+}
 .stat-card {
   border: 1px solid var(--line);
   border-radius: 13px;
@@ -745,6 +772,10 @@ a {
 .stat-amber {
   background: #f5ebd5;
   color: #94611b;
+}
+.stat-blue {
+  background: #dde8f5;
+  color: #22558c;
 }
 .stat-value {
   font-family: "IBM Plex Mono";
@@ -924,6 +955,10 @@ a {
 .badge-neutral {
   background: #ecebe3;
   color: #666b65;
+}
+.badge-blue {
+  background: #dde8f5;
+  color: #22558c;
 }
 .next-card h3 {
   font-size: 25px;
