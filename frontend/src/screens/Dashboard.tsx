@@ -237,7 +237,7 @@ export function Dashboard({
             <div style={{ flex: 1 }}>
               <strong>Nível {nivel.nivel} · {nivel.nome}</strong>
               <p className="tiny muted">
-                {nivel.pontos} pontos{nivel.pontos_proximo != null ? ` · faltam ${nivel.pontos_proximo - nivel.pontos} para o próximo nível` : ""}
+                {nivel.pontos} XP{nivel.pontos_proximo != null ? ` · faltam ${nivel.pontos_proximo - nivel.pontos} XP para o próximo nível` : ""}
               </p>
             </div>
             <Button variant="secondary" onPress={() => navigate("metas")}>Ver metas</Button>
