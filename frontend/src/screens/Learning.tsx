@@ -11,6 +11,7 @@ import { studyTasks } from "../data/demo";
 import type { DemoState } from "../types";
 import { Badge, Button, Card, Empty, Progress, SectionTitle } from "../components/ui";
 import { RealSparkline } from "../components/Chart";
+import { PainelXP } from "./Gamificacao";
 import {
   dominioMeu,
   evolucaoMinha,
@@ -103,16 +104,32 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
       .finally(() => setCarregando(false));
   }, [currentUser?.id]);
 
-  if (carregando) return <Empty title="Carregando sua evolução..." text="Isso leva só um instante." />;
-  if (erro) return <Empty title="Ainda não dá para ver sua evolução" text={erro} />;
+  // topo (titulo + nivel/XP) aparece sempre; o dominio por materia vem embaixo, quando existir
+  const topo = (
+    <>
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">APRENDER É UM PROCESSO</div>
+          <h1>Olha o quanto você avançou.</h1>
+          <p>Compare você com você. Cada conquista tem seu valor.</p>
+        </div>
+      </div>
+      {currentUser && <PainelXP alunoId={currentUser.id} />}
+    </>
+  );
+  if (carregando) return <>{topo}<Empty title="Carregando sua evolução..." text="Isso leva só um instante." /></>;
+  if (erro) return <>{topo}<Empty title="Ainda não dá para ver sua evolução" text={erro} /></>;
 
   const materias = porMateria ?? [];
   if (!materias.length) {
     return (
-      <Empty
-        title="Sua evolução aparece aqui em breve"
-        text="Assim que o professor aprovar a primeira correção de uma atividade sua, o histórico desta matéria passa a aparecer aqui."
-      />
+      <>
+        {topo}
+        <Empty
+          title="Seu domínio por matéria aparece aqui em breve"
+          text="Assim que o professor aprovar a primeira correção de uma atividade sua, o histórico desta matéria passa a aparecer aqui."
+        />
+      </>
     );
   }
 
@@ -136,13 +153,7 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
 
   return (
     <>
-      <div className="page-heading">
-        <div>
-          <div className="eyebrow">APRENDER É UM PROCESSO</div>
-          <h1>Olha o quanto você avançou.</h1>
-          <p>Compare você com você. Cada conquista tem seu valor.</p>
-        </div>
-      </div>
+      {topo}
       <Card>
         <SectionTitle title="Seu domínio ao longo do tempo" />
         <div className="evolution-highlight">

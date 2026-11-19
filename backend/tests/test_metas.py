@@ -63,7 +63,7 @@ def test_meta_conclui_sozinha_sobe_nivel_e_aparece_no_ranking():
     r = client.get("/metas/minhas", headers=antes).json()
     mine = next(x for x in r["metas"] if x["id"] == m["id"])
     assert mine["status"] == "CONCLUIDA" and mine["progresso"] == 1
-    assert r["nivel"]["pontos"] >= 25 and r["nivel"]["nivel"] >= 2    # 20+ pontos = Aprendiz
+    assert r["nivel"]["pontos"] >= 25 and r["nivel"]["nivel"] >= 2    # meta + envio + conquistas passam de 80 XP (Aprendiz)
     # meta individual: a colega nao enxerga a do Beto
     ana = client.get("/metas/minhas", headers=token("ana.meta@x.com", "123456")).json()
     assert m["id"] not in [x["id"] for x in ana["metas"]]

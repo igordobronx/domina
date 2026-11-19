@@ -49,6 +49,10 @@ Detalhe, em ordem, de tudo: `docs/historico_domina.md`. Em uma linha por área:
 - **Exercícios (15/11):** professor cria (escrever ou pedir para a IA, por turma/aluno), aluno responde uma vez; prática, não vale nota.
 - **IA própria (16 a 18/11):** memória do professor (RAG), tela Treinar IA, material de treino. Resumo abaixo.
 
+**Status "Corrigida pela IA" do aluno (17/11, branch `student-status-gamification`):** o aluno vê 4 status: Para fazer, Enviada (amarelo, sem correção), **Corrigida pela IA** (azul, tem notas da IA e falta o professor) e Corrigida (verde). Só no site: `paraStatusAluno` em `frontend/src/services/atividades.ts` (status `corrigida_ia`); `paraStatus` continua para o professor, que segue vendo "Em revisão". Abas do aluno: Todas, Para fazer, Enviadas, Corrigidas pela IA, Corrigidas. Visão geral do aluno com 5 cartões (classe `stats-5`; no celular 2 por linha). Spec e plano em `docs/superpowers/`. Sem mudança de banco. Commit `69a9580`.
+
+**XP e gamificação (18/11, mesma branch):** nível agora = **XP** (ações do aluno + metas), calculado na hora em `backend/app/gamificacao.py` (sem migration). Tabela de XP, teto de 30 XP/dia em exercícios, 9 conquistas, sequência de dias e faixas novas (80, 300, 550, 850, 1200, 1600) em `docs/decisoes/gamificacao-niveis-e-metas.md`. Rota `GET /gamificacao/minha` (só aluno). Tela "Minha evolução" com nível + barra de XP, sequência, conquistas, histórico e "Como ganhar XP" (`frontend/src/screens/Gamificacao.tsx`). Visão geral, "Metas e níveis" e ranking falam em XP. Testes: `backend/tests/test_gamificacao.py` (13). Sem mudança de banco.
+
 ## 5. Correção da redação: estado do prompt
 
 > **Regra do usuário: não mude o prompt "de jeito louco".** Antes de testar: ache a CAUSA do erro (quais redações, qual competência, para que lado, se repete nas 2 rodadas), explique ao usuário em poucas frases por que a mudança deve ajudar, espere o ok e teste **uma** mudança. Sem causa clara, não mude nada.

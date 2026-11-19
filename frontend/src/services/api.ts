@@ -1057,7 +1057,25 @@ export interface NivelAPI {
   pontos: number;
   pontos_nivel_atual: number;
   pontos_proximo: number | null;
+  nome_proximo?: string | null;
 }
+
+// XP, sequencia de dias e conquistas do proprio aluno ("pontos" do nivel = XP total)
+export interface ConquistaAPI {
+  codigo: string;
+  nome: string;
+  descricao: string;
+  alvo: number;
+  progresso: number;
+  conquistada_em: string | null;
+}
+export interface GamificacaoAPI {
+  nivel: NivelAPI;
+  sequencia: { atual: number; melhor: number; estudou_hoje: boolean };
+  conquistas: ConquistaAPI[];
+  historico: { data: string; xp: number; motivo: string }[];
+}
+export const minhaGamificacao = () => request<GamificacaoAPI>("/gamificacao/minha");
 
 export interface MetaAlunoAPI {
   id: string;

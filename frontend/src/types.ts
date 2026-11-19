@@ -15,7 +15,8 @@ export type Page =
   | "escolas"
   | "configuracoes"
   | "ajuda";
-export type ActivityStatus = "disponivel" | "pendente" | "aprovada";
+// pendente = "Enviada" para o aluno e "Em revisão" para o professor; corrigida_ia so aparece para o aluno
+export type ActivityStatus = "disponivel" | "pendente" | "corrigida_ia" | "aprovada";
 export interface Activity {
   id: string;
   // so quando ja existe submissao real (lado do aluno): id da submissao, distinto do id da
