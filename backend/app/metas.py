@@ -16,9 +16,10 @@ from app.models.usuario import (
 logger = logging.getLogger("domina.metas")
 
 TIPOS_PERCENTUAIS = ("NOTA_ATIVIDADE", "MEDIA_MATERIA", "DOMINIO_COMPETENCIA")
-# (pontos minimos, nome): o nivel e a posicao + 1
-NIVEIS = [(0, "Iniciante"), (20, "Aprendiz"), (50, "Explorador"), (100, "Estudante dedicado"),
-          (180, "Veterano"), (300, "Mestre"), (500, "Lenda")]
+# (XP minimo, nome): o nivel e a posicao + 1. Um aluno ativo faz uns 80-100 XP por semana:
+# nivel 2 em ~1 semana, depois 2 a 3 semanas por nivel (combinado com o usuario em 18/11/2026)
+NIVEIS = [(0, "Iniciante"), (80, "Aprendiz"), (300, "Explorador"), (550, "Estudante dedicado"),
+          (850, "Veterano"), (1200, "Mestre"), (1600, "Lenda")]
 
 
 def nivel_de(pontos: int) -> dict:
@@ -26,6 +27,7 @@ def nivel_de(pontos: int) -> dict:
     return {
         "nivel": i + 1, "nome": NIVEIS[i][1], "pontos": pontos, "pontos_nivel_atual": NIVEIS[i][0],
         "pontos_proximo": NIVEIS[i + 1][0] if i + 1 < len(NIVEIS) else None,
+        "nome_proximo": NIVEIS[i + 1][1] if i + 1 < len(NIVEIS) else None,
     }
 
 

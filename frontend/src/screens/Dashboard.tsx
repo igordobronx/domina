@@ -48,6 +48,7 @@ export function Dashboard({
   }, [real, currentUser?.id]);
   const atividades = real ? (reais ?? []) : state.activities;
   const pending = atividades.filter((a) => a.status === "pendente");
+  const corrigidasIA = atividades.filter((a) => a.status === "corrigida_ia");
   const approved = atividades.filter((a) => a.status === "aprovada");
   const paraFazer = atividades.filter((a) => a.status === "disponivel");
   // recentes: ultimo envio primeiro; as que ainda nao tem envio ficam por ultimo
@@ -236,14 +237,14 @@ export function Dashboard({
             <div style={{ flex: 1 }}>
               <strong>Nível {nivel.nivel} · {nivel.nome}</strong>
               <p className="tiny muted">
-                {nivel.pontos} pontos{nivel.pontos_proximo != null ? ` · faltam ${nivel.pontos_proximo - nivel.pontos} para o próximo nível` : ""}
+                {nivel.pontos} XP{nivel.pontos_proximo != null ? ` · faltam ${nivel.pontos_proximo - nivel.pontos} XP para o próximo nível` : ""}
               </p>
             </div>
             <Button variant="secondary" onPress={() => navigate("metas")}>Ver metas</Button>
           </div>
         </Card>
       )}
-      <div className="stats-grid">
+      <div className={`stats-grid ${student ? "stats-5" : ""}`}>
         <Stat
           icon={Target}
           value={real ? (mediaReal != null ? `${mediaReal}%` : "--") : "67%"}
@@ -257,11 +258,21 @@ export function Dashboard({
           foot="Com revisão do professor"
           onClick={() => navigate("atividades", "aprovada")}
         />
+        {student && (
+          <Stat
+            icon={Sparkles}
+            value={conta(corrigidasIA.length)}
+            label="Corrigidas pela IA"
+            foot="Nota provisória, falta o professor"
+            blue
+            onClick={() => navigate("atividades", "corrigida_ia")}
+          />
+        )}
         <Stat
           icon={Clock3}
           value={conta(pending.length)}
-          label="Aguardando revisão"
-          foot="Você recebe o resultado aqui"
+          label={student ? "Enviadas" : "Aguardando revisão"}
+          foot={student ? "Você pode pedir a correção da IA" : "Você recebe o resultado aqui"}
           amber
           onClick={() => navigate("atividades", "pendente")}
         />
@@ -419,6 +430,7 @@ export function Dashboard({
               key={a.id}
               activity={a}
               onClick={() => openActivity(a)}
+              aluno={student}
             />
           ))}
           {real && reais !== null && !recentes.length && (
@@ -445,6 +457,7 @@ function Stat({
   label,
   foot,
   amber = false,
+  blue = false,
   onClick,
 }: {
   icon: typeof Target;
@@ -452,12 +465,13 @@ function Stat({
   label: string;
   foot: string;
   amber?: boolean;
+  blue?: boolean;
   onClick?: () => void; // com onClick o cartao vira botao (leva para a lista ja filtrada)
 }) {
   const conteudo = (
     <>
       <div className="stat-top">
-        <span className={`stat-icon ${amber ? "stat-amber" : ""}`}>
+        <span className={`stat-icon ${amber ? "stat-amber" : ""} ${blue ? "stat-blue" : ""}`}>
           <Icon size={18} />
         </span>
         <span className="stat-value">{value}</span>
@@ -475,9 +489,11 @@ function Stat({
 export function ActivityRow({
   activity: a,
   onClick,
+  aluno = false,
 }: {
   activity: Activity;
   onClick: () => void;
+  aluno?: boolean; // aluno ve "Enviada"; professor ve "Em revisão" para o mesmo status
 }) {
   return (
     <button className="activity-row" onClick={onClick}>
@@ -498,16 +514,20 @@ export function ActivityRow({
         tone={
           a.status === "aprovada"
             ? "green"
-            : a.status === "pendente"
-              ? "amber"
-              : "neutral"
+            : a.status === "corrigida_ia"
+              ? "blue"
+              : a.status === "pendente"
+                ? "amber"
+                : "neutral"
         }
       >
         {a.status === "aprovada"
           ? "Corrigida"
-          : a.status === "pendente"
-            ? "Em revisão"
-            : "Para fazer"}
+          : a.status === "corrigida_ia"
+            ? "Corrigida pela IA"
+            : a.status === "pendente"
+              ? aluno ? "Enviada" : "Em revisão"
+              : "Para fazer"}
       </Badge>
       {a.status === "aprovada" && (
         <span className="row-score">

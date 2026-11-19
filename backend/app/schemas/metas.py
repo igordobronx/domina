@@ -74,6 +74,7 @@ class NivelResponse(BaseModel):
     pontos: int
     pontos_nivel_atual: int
     pontos_proximo: int | None
+    nome_proximo: str | None = None
 
 
 class MetaAlunoResponse(BaseModel):  # visao do aluno
