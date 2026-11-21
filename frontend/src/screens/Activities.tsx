@@ -30,7 +30,6 @@ import {
   editarAtividade,
   excluirAtividade,
   listarAtividades,
-  criarMateria,
   enviarImagem,
   enviarTexto,
   enviarObjetiva,
@@ -172,7 +171,7 @@ type Props = {
   selected: string | null;
   select: (id: string | null) => void;
   reviewOnly?: boolean;
-  initialFilter?: string; // "todas" | "disponivel" | "pendente" | "corrigida_ia" (so aluno) | "aprovada"
+  initialFilter?: string; // "todas" | "disponivel" | "pendente" | "corrigida_ia" | "aprovada"
   currentUser?: UsuarioAtual | null;
 };
 export function Activities({
@@ -317,20 +316,13 @@ export function Activities({
       <Card>
         <div className="list-toolbar">
           <div className="tabs" role="group" aria-label="Filtrar atividades">
-            {(reviewOnly
-              ? [
-                  ["todas", "Todas"],
-                  ["pendente", "Em revisão"],
-                  ["aprovada", "Corrigidas"],
-                ]
-              : [
-                  ["todas", "Todas"],
-                  ["disponivel", "Para fazer"],
-                  ["pendente", "Enviadas"],
-                  ["corrigida_ia", "Corrigidas pela IA"],
-                  ["aprovada", "Corrigidas"],
-                ]
-            ).map(([id, label]) => (
+            {[
+              ["todas", "Todas"],
+              ...(!reviewOnly ? [["disponivel", "Para fazer"]] : []),
+              ["pendente", "Enviadas"],
+              ["corrigida_ia", "Corrigidas pela IA"],
+              ["aprovada", "Corrigidas"],
+            ].map(([id, label]) => (
               <button
                 key={id}
                 aria-pressed={filter === id}
@@ -365,7 +357,7 @@ export function Activities({
         </div>
         {list.length ? (
           list.map((a) => (
-            <ActivityRow key={a.id} activity={a} onClick={() => select(a.id)} aluno={!reviewOnly} />
+            <ActivityRow key={a.id} activity={a} onClick={() => select(a.id)} />
           ))
         ) : (
           <Empty
@@ -1492,13 +1484,6 @@ const TIPOS_ATIVIDADE: { value: string; label: string }[] = [
   { value: "EXERCICIO", label: "Exercício" },
 ];
 
-const TIPOS_MATERIA: { value: MateriaAPI["tipo"]; label: string }[] = [
-  { value: "MATERIA_OBJETIVA", label: "Exatas (matemática, física, química...)" },
-  { value: "REDACAO_ENEM", label: "Redação ENEM" },
-  { value: "REDACAO_OUTRO_VESTIBULAR", label: "Redação (outro vestibular)" },
-  { value: "MATERIA_DISCURSIVA", label: "Outra matéria discursiva" },
-];
-
 // correcao por gabarito (nao e a rubrica de redacao): a atividade precisa das questoes e da
 // resposta correta de cada uma
 const MATERIAS_COM_GABARITO: MateriaAPI["tipo"][] = ["MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"];
@@ -1602,17 +1587,6 @@ function NovaAtividade({
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
 
-  const [criandoMateria, setCriandoMateria] = useState(false);
-  const [novaMateriaNome, setNovaMateriaNome] = useState("");
-  const [novaMateriaTipo, setNovaMateriaTipo] = useState(TIPOS_MATERIA[0].value);
-  const [salvandoMateria, setSalvandoMateria] = useState(false);
-
-  const recarregarMaterias = () =>
-    listarMaterias().then((m) => {
-      setMaterias(m);
-      return m;
-    });
-
   useEffect(() => {
     Promise.all([listarTurmasMinhas(), listarMaterias()]).then(([t, m]) => {
       setTurmas(t);
@@ -1630,23 +1604,6 @@ function NovaAtividade({
   useEffect(() => {
     if (exigeGabarito && tipo === "REDACAO") setTipo("EXERCICIO");
   }, [exigeGabarito]);
-
-  const criarNovaMateria = () => {
-    if (!novaMateriaNome.trim()) {
-      setError("Dê um nome para a matéria.");
-      return;
-    }
-    setSalvandoMateria(true);
-    setError("");
-    criarMateria({ nome: novaMateriaNome.trim(), tipo: novaMateriaTipo })
-      .then((nova) => recarregarMaterias().then(() => {
-        setMateriaId(nova.id);
-        setCriandoMateria(false);
-        setNovaMateriaNome("");
-      }))
-      .catch((erro) => setError(erro instanceof Error ? erro.message : "Não foi possível criar a matéria."))
-      .finally(() => setSalvandoMateria(false));
-  };
 
   const salvar = () => {
     if (!titulo.trim()) {
@@ -1800,47 +1757,6 @@ function NovaAtividade({
                 </select>
               </label>
             </div>
-
-            {!criandoMateria ? (
-              <Button variant="secondary" icon={Plus} onPress={() => setCriandoMateria(true)}>
-                Nova matéria
-              </Button>
-            ) : (
-              <Card>
-                <SectionTitle title="Nova matéria" />
-                <div className="form-grid">
-                  <label>
-                    Nome
-                    <input
-                      value={novaMateriaNome}
-                      onChange={(e) => setNovaMateriaNome(e.target.value)}
-                      placeholder="Ex.: Matemática"
-                    />
-                  </label>
-                  <label>
-                    Tipo
-                    <select
-                      value={novaMateriaTipo}
-                      onChange={(e) => setNovaMateriaTipo(e.target.value as MateriaAPI["tipo"])}
-                    >
-                      {TIPOS_MATERIA.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-                <div className="form-actions">
-                  <Button variant="secondary" onPress={() => setCriandoMateria(false)}>
-                    Cancelar
-                  </Button>
-                  <Button disabled={salvandoMateria} onPress={criarNovaMateria}>
-                    {salvandoMateria ? "Salvando..." : "Criar matéria"}
-                  </Button>
-                </div>
-              </Card>
-            )}
 
             {exigeGabarito && (
               <Card>

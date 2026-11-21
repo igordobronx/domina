@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { paraStatus, paraStatusAluno } from "./atividades";
+import { paraStatusAluno, paraStatusRevisao } from "./atividades";
 
 describe("Status do aluno", () => {
   it("enviada sem correção fica 'pendente' (Enviada)", () =>
@@ -12,6 +12,13 @@ describe("Status do aluno", () => {
     expect(paraStatusAluno("REQUER_ATENCAO", false)).toBe("pendente"));
   it("aprovada pelo professor (ou prova objetiva) é 'aprovada'", () =>
     expect(paraStatusAluno("APROVADA", true)).toBe("aprovada"));
-  it("o status do professor não muda", () =>
-    expect(paraStatus("PENDENTE")).toBe("pendente"));
+});
+
+describe("Status na fila do professor", () => {
+  it("separa enviada, corrigida pela IA e corrigida", () => {
+    expect(paraStatusRevisao("AGUARDANDO_CORRECAO")).toBe("pendente");
+    expect(paraStatusRevisao("PENDENTE")).toBe("corrigida_ia");
+    expect(paraStatusRevisao("REQUER_ATENCAO")).toBe("corrigida_ia");
+    expect(paraStatusRevisao("APROVADA")).toBe("aprovada");
+  });
 });

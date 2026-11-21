@@ -777,6 +777,10 @@ a {
   background: #dde8f5;
   color: #22558c;
 }
+.stat-gray {
+  background: #ecebe3;
+  color: #666b65;
+}
 .stat-value {
   font-family: "IBM Plex Mono";
   font-size: 28px;

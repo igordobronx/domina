@@ -280,6 +280,7 @@ export function Dashboard({
           icon={ListTodo}
           value={conta(paraFazer.length)}
           label="Para fazer"
+          gray
           foot="Esperando o seu envio"
           onClick={() => navigate("atividades", "disponivel")}
         />
@@ -430,7 +431,6 @@ export function Dashboard({
               key={a.id}
               activity={a}
               onClick={() => openActivity(a)}
-              aluno={student}
             />
           ))}
           {real && reais !== null && !recentes.length && (
@@ -458,6 +458,7 @@ function Stat({
   foot,
   amber = false,
   blue = false,
+  gray = false,
   onClick,
 }: {
   icon: typeof Target;
@@ -466,12 +467,13 @@ function Stat({
   foot: string;
   amber?: boolean;
   blue?: boolean;
+  gray?: boolean; // cinza = ainda sem fazer (mesma cor do selo "Para fazer")
   onClick?: () => void; // com onClick o cartao vira botao (leva para a lista ja filtrada)
 }) {
   const conteudo = (
     <>
       <div className="stat-top">
-        <span className={`stat-icon ${amber ? "stat-amber" : ""} ${blue ? "stat-blue" : ""}`}>
+        <span className={`stat-icon ${amber ? "stat-amber" : ""} ${blue ? "stat-blue" : ""} ${gray ? "stat-gray" : ""}`}>
           <Icon size={18} />
         </span>
         <span className="stat-value">{value}</span>
@@ -489,11 +491,9 @@ function Stat({
 export function ActivityRow({
   activity: a,
   onClick,
-  aluno = false,
 }: {
   activity: Activity;
   onClick: () => void;
-  aluno?: boolean; // aluno ve "Enviada"; professor ve "Em revisão" para o mesmo status
 }) {
   return (
     <button className="activity-row" onClick={onClick}>
@@ -526,7 +526,7 @@ export function ActivityRow({
           : a.status === "corrigida_ia"
             ? "Corrigida pela IA"
             : a.status === "pendente"
-              ? aluno ? "Enviada" : "Em revisão"
+              ? "Enviada"
               : "Para fazer"}
       </Badge>
       {a.status === "aprovada" && (

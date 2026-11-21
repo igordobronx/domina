@@ -15,7 +15,7 @@ export type Page =
   | "escolas"
   | "configuracoes"
   | "ajuda";
-// pendente = "Enviada" para o aluno e "Em revisão" para o professor; corrigida_ia so aparece para o aluno
+// pendente = "Enviada" (sem correcao da IA); corrigida_ia = tem nota da IA, falta o professor
 export type ActivityStatus = "disponivel" | "pendente" | "corrigida_ia" | "aprovada";
 export interface Activity {
   id: string;
