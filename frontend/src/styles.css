@@ -708,6 +708,33 @@ a {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
 }
+/* visao geral do aluno: 5 cartoes no computador. Uma classe so, para as @media do fim
+   do arquivo (2 por linha no celular) continuarem valendo */
+.stats-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+/* notebook pequeno (antes de virar 2 por linha em 1020px): cartoes mais compactos para os 5 caberem */
+@media (max-width: 1350px) and (min-width: 1021px) {
+  .stats-5 {
+    gap: 12px;
+  }
+  .stats-5 .stat-card {
+    padding: 14px 12px;
+  }
+  .stats-5 .stat-top {
+    margin-bottom: 10px;
+  }
+  .stats-5 .stat-icon {
+    width: 30px;
+    height: 30px;
+  }
+  .stats-5 .stat-value {
+    font-size: 22px;
+  }
+  .stats-5 .stat-card strong {
+    font-size: 12px;
+  }
+}
 .stat-card {
   border: 1px solid var(--line);
   border-radius: 13px;
@@ -745,6 +772,14 @@ a {
 .stat-amber {
   background: #f5ebd5;
   color: #94611b;
+}
+.stat-blue {
+  background: #dde8f5;
+  color: #22558c;
+}
+.stat-gray {
+  background: #ecebe3;
+  color: #666b65;
 }
 .stat-value {
   font-family: "IBM Plex Mono";
@@ -924,6 +959,10 @@ a {
 .badge-neutral {
   background: #ecebe3;
   color: #666b65;
+}
+.badge-blue {
+  background: #dde8f5;
+  color: #22558c;
 }
 .next-card h3 {
   font-size: 25px;
@@ -2804,4 +2843,67 @@ button.top-avatar {
 }
 .profile-menu button.danger {
   color: #a23b32;
+}
+
+/* ---------- XP e conquistas (Minha evolucao do aluno) ---------- */
+.xp-topo { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 18px; margin-bottom: 18px; }
+.xp-nivel-linha { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; }
+.xp-selo { width: 72px; height: 72px; flex: none; border-radius: 50%; display: grid; place-items: center; font-family: "IBM Plex Mono"; font-size: 32px; font-weight: 700; color: #fff; background: radial-gradient(circle at 30% 30%, #2f9a6c, #196d4e); box-shadow: 0 0 0 5px #e4eee1; }
+.xp-nivel-texto h2 { margin: 2px 0 4px; font-size: 22px; }
+.xp-total { font-family: "IBM Plex Mono"; font-size: 15px; color: #196d4e; }
+.xp-barra { height: 12px; border-radius: 99px; background: #ecebe3; overflow: hidden; margin-bottom: 8px; }
+.xp-barra span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #2f9a6c, #196d4e); transition: width .6s ease; }
+.xp-sequencia { display: flex; gap: 14px; align-items: flex-start; color: #9a9d97; }
+.xp-sequencia.ativa { color: #d0701c; background: #fdf4ea; border-color: #f3dcc2; }
+.xp-sequencia > div { color: var(--ink, #1f2a24); }
+.xp-dias { display: block; font-size: 20px; margin-bottom: 2px; }
+.xp-hoje { display: flex; align-items: center; gap: 5px; font-size: 12px; margin: 10px 0 0; color: #196d4e; }
+.xp-sequencia:not(.ativa) .xp-hoje { color: #777d78; }
+.xp-conquistas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.xp-conquista { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 12px; border: 1px dashed #d9d8cf; background: #f6f5ef; opacity: .75; }
+.xp-conquista.ganha { opacity: 1; border: 1px solid #cfe2d3; background: #f1f7f0; }
+.xp-conquista-icone { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: #ecebe3; color: #9a9d97; margin-bottom: 4px; }
+.xp-conquista.ganha .xp-conquista-icone { background: #faedcf; color: #b0700f; }
+.xp-conquista-pe { font-size: 11px; color: #777d78; margin-top: auto; padding-top: 4px; }
+.xp-conquista.ganha .xp-conquista-pe { color: #196d4e; }
+.xp-mini-barra { display: block; height: 4px; border-radius: 99px; background: #e4e3da; overflow: hidden; margin-top: 4px; }
+.xp-mini-barra span { display: block; height: 100%; background: #9fbfa9; }
+.xp-baixo { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; margin: 18px 0; }
+.xp-historico, .xp-regras { list-style: none; margin: 0; padding: 0; }
+.xp-historico li { display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid rgba(0,0,0,.07); font-size: 13px; }
+.xp-historico li:first-child { border-top: 0; }
+.xp-historico b { font-family: "IBM Plex Mono"; color: #196d4e; font-size: 12px; }
+.xp-regras li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid rgba(0,0,0,.07); font-size: 13px; }
+.xp-regras li:first-child { border-top: 0; }
+.xp-regras b { font-family: "IBM Plex Mono"; color: #196d4e; font-size: 12px; white-space: nowrap; }
+@media (max-width: 1020px) {
+  .xp-topo, .xp-baixo { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .xp-conquistas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .xp-selo { width: 58px; height: 58px; font-size: 26px; }
+  .xp-historico li { grid-template-columns: 60px 1fr; }
+  .xp-historico li .tiny { grid-column: 2; }
+}
+
+/* ---------- Turmas: resumo do dominio de um aluno (professor/gestor) ---------- */
+.resumo-aluno { display: flex; flex-direction: column; gap: 16px; padding-right: 8px; }
+.resumo-numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.resumo-numeros > div { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #f9f8f3; color: #2a7958; }
+.resumo-numeros strong { font-family: "IBM Plex Mono"; font-size: 20px; color: var(--ink); }
+.resumo-numeros span { grid-column: 1 / -1; font-size: 11px; color: #777d78; margin-top: 2px; }
+.resumo-destaques { display: flex; flex-wrap: wrap; gap: 8px; }
+.resumo-destaques p { display: flex; align-items: center; gap: 6px; margin: 0; padding: 7px 10px; border-radius: 8px; font-size: 12px; }
+.resumo-forte { background: #e2f0e6; color: #196d4e; }
+.resumo-fraco { background: #faedcf; color: #80500e; }
+.resumo-bloco h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 13px; }
+.resumo-materia { margin-bottom: 12px; }
+.resumo-linha { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
+.resumo-pct { font-family: "IBM Plex Mono"; font-weight: 600; }
+.resumo-grafico { max-width: 420px; margin-top: 6px; }
+.resumo-competencias { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
+.resumo-competencia.baixo .resumo-pct { color: #94611b; }
+@media (max-width: 760px) {
+  .resumo-numeros, .resumo-competencias { grid-template-columns: 1fr; }
+  .student-domain { padding-left: 0; }
 }

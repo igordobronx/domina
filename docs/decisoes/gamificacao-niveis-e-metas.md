@@ -5,22 +5,41 @@ Professores e gestores criam **metas**; o aluno cumpre; cada meta cumprida dá *
 somados definem o **nível**. Tudo é calculado dos dados reais (envios, notas aprovadas, domínio):
 ninguém marca "cumprido" à mão.
 
-## Como o aluno sobe de nível
-**Nível = soma dos pontos das metas concluídas.** Não existe outro caminho: nota alta, tempo de uso
-ou número de logins não dão nível por si; só uma meta concluída dá.
+## Como o aluno sobe de nível (XP, desde 18/11/2026)
+**Nível = XP total.** O XP vem de **ações do aluno + metas cumpridas** e é **calculado na hora** dos dados
+que já existem (`backend/app/gamificacao.py`); nada é gravado, então o passado conta sozinho.
 
-| Nível | Nome | Pontos a partir de |
+| Ação do aluno | XP |
+|---|---|
+| Enviar uma atividade (confirmada; 1 vez por atividade) | +10 |
+| Enviar dentro do prazo | +5 a mais |
+| Professor aprovou a correção | +5 |
+| Nota aprovada de 80% ou mais | +10 a mais |
+| Responder um exercício | +2 |
+| Acertar um exercício ("Parcial" não conta como acerto) | +3 a mais |
+| Cumprir uma meta | os pontos da meta |
+| A cada 7 dias seguidos estudando | +15 |
+| Ganhar uma conquista | +20 |
+
+- **Nota da IA não dá XP.** Só a nota aprovada pelo professor.
+- **Exercícios: no máximo 30 XP por dia** (não dá para subir só gerando exercícios da IA).
+- **Dia de estudo** = enviou atividade ou respondeu exercício. A sequência continua viva se estudou hoje ou ontem.
+- **Conquistas** (+20 XP cada): Primeiro passo, Pontual (5 no prazo), Redator (5 redações), Nota 900+,
+  Mão na massa (20 exercícios), Certeiro (50 certos), Constância (7 dias seguidos), Imparável (30 dias), Meta batida.
+- A data do "+5 aprovada" no histórico é a data do envio (o banco não guarda quando o professor aprovou).
+
+| Nível | Nome | XP a partir de |
 |---|---|---|
 | 1 | Iniciante | 0 |
-| 2 | Aprendiz | 20 |
-| 3 | Explorador | 50 |
-| 4 | Estudante dedicado | 100 |
-| 5 | Veterano | 180 |
-| 6 | Mestre | 300 |
-| 7 | Lenda | 500 |
+| 2 | Aprendiz | 80 (cerca de 1 semana) |
+| 3 | Explorador | 300 |
+| 4 | Estudante dedicado | 550 |
+| 5 | Veterano | 850 |
+| 6 | Mestre | 1200 |
+| 7 | Lenda | 1600 |
 
-As faixas ficam em `NIVEIS`, em `backend/app/metas.py`. Mudar a tabela muda o nível de todos
-na hora, porque o nível não é gravado, é calculado.
+As faixas ficam em `NIVEIS`, em `backend/app/metas.py`. A API continua chamando o XP de `pontos`
+(`NivelResponse`); a tela mostra "XP". O aluno vê tudo em "Minha evolução" (`GET /gamificacao/minha`).
 
 O professor/gestor escolhe quanto cada meta vale: **10, 20, 30, 50 ou 100 pontos** (a API aceita
 1 a 100). Regra prática: meta fácil e curta vale 10 a 20; meta que exige semanas ou nota alta vale 50
@@ -84,14 +103,14 @@ ou meta de outra escola dá 404; escola toda por professor dá 403. Quem edita: 
 ## Ranking: privacidade (LGPD)
 Os alunos são em boa parte menores de idade. Por isso:
 - O ranking é **só para professor e gestor** (rota `GET /metas/ranking`); o aluno recebe 403.
-- Ordena por **pontos**, nunca por nota. Não mostra notas nem erros de ninguém.
+- Ordena por **XP**, nunca por nota. Não mostra notas nem erros de ninguém.
 - O aluno vê só o próprio nível e as próprias metas; metas individuais de um aluno não aparecem para os colegas.
 
 ## O que o sistema não faz (de propósito)
-- Não dá pontos por login, tempo de uso ou nota solta; só por meta concluída.
+- Não dá XP por login, tempo de uso ou nota da IA.
 - Não tem ranking público entre alunos.
 - Não tira pontos: nível não desce, nem quando a meta é arquivada.
-- Ainda não há medalhas nem sequência de dias.
+- Não há medalhas criadas pelo professor (as 9 conquistas são fixas).
 
 ## Onde está no código
 | Parte | Arquivo |

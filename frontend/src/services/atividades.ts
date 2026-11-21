@@ -1,10 +1,18 @@
 import type { Activity, ActivityStatus } from "../types";
 import { listarAtividades, minhasSubmissoes, type MinhaSubmissaoAPI } from "./api";
 
-// chamada so quando ja existe submissao; qualquer status != APROVADA conta como "em revisao"
-// (AGUARDANDO_CORRECAO, PENDENTE ou REQUER_ATENCAO -- o aluno nao distingue essas fases)
-export function paraStatus(statusBackend: string): ActivityStatus {
-  return statusBackend === "APROVADA" ? "aprovada" : "pendente";
+// status para o ALUNO: separa "Enviada" (pendente, sem correcao) de "Corrigida pela IA"
+// (corrigida_ia: tem notas da IA, falta o professor). Sem notas (ex.: o agente so pediu
+// nova foto) continua "Enviada", para o aluno ainda poder gerar a correcao.
+export function paraStatusAluno(statusBackend: string, temCorrecao: boolean): ActivityStatus {
+  if (statusBackend === "APROVADA") return "aprovada";
+  return temCorrecao ? "corrigida_ia" : "pendente";
+}
+
+// status na fila do PROFESSOR/GESTOR: mesmos status do aluno. A fila nao traz as notas da IA, mas
+// toda correcao gravada tem notas, entao "tem correcao" = status diferente de AGUARDANDO_CORRECAO
+export function paraStatusRevisao(statusBackend: string): ActivityStatus {
+  return paraStatusAluno(statusBackend, statusBackend !== "AGUARDANDO_CORRECAO");
 }
 
 function paraData(iso: string): string {
@@ -40,7 +48,7 @@ export async function carregarAtividadesDoAluno(nomeAluno: string): Promise<Acti
       subject: a.materia,
       date: paraData(submissao.criado_em),
       enviadoEm: submissao.criado_em,
-      status: paraStatus(submissao.status),
+      status: paraStatusAluno(submissao.status, !!submissao.criterios?.length),
       kind,
       student: nomeAluno,
       questoes,
