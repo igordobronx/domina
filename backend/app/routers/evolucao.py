@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.pontos import valor_da_questao
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.enum import PerfilEnum, StatusCorrecaoEnum
@@ -84,8 +85,8 @@ def _evolucao_de(db: Session, aluno_id, materia_ids=None) -> list[EvolucaoMateri
             .filter(CorrecaoCriterio.correcao_id == correcao.id).all()
         if not criterios:
             continue
-        valor_questao = float(atividade.valor_total) / len(criterios)
         for c, t in criterios:
+            valor_questao = valor_da_questao(atividade, t, len(criterios))
             if not t.subtopico:
                 continue
             nota = float(c.nota_professor if c.nota_professor is not None else c.nota)

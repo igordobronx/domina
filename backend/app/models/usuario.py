@@ -91,6 +91,9 @@ class Materia(Base):
     escola_id = Column(UUID(as_uuid=True), ForeignKey("escola.id"), nullable=False)
     nome = Column(String(150), nullable=False)
     tipo = Column(SQLEnum(TipoMateriaEnum), nullable=False)
+    # area do conhecimento (EXATAS, NATUREZA, HUMANAS, LINGUAGENS, REDACAO, OUTRA); o formato da atividade
+    # (redacao x gabarito) vem do tipo da ATIVIDADE, nao da materia
+    area = Column(String(20), nullable=False, default="OUTRA", server_default="OUTRA")
     versao = Column(Integer, default=1, nullable=False) #começa no 1 mesmo como default de acordo co a documentação
 
 class Tema(Base):
@@ -115,6 +118,7 @@ class Tema(Base):
     imagem = Column(String(255), nullable=True)
     # assunto da questao (so exatas/gabarito): o professor escreve ou a IA identifica; alimenta a evolucao por subtopico
     subtopico = Column(String(150), nullable=True)
+    valor = Column(Numeric(6, 2), nullable=True)  # pontos desta questao (vazio = total dividido igual)
 
 class DocumentoBase(Base):
     __tablename__ = "documento_base"

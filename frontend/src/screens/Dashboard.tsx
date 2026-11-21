@@ -48,6 +48,7 @@ export function Dashboard({
   }, [real, currentUser?.id]);
   const atividades = real ? (reais ?? []) : state.activities;
   const pending = atividades.filter((a) => a.status === "pendente");
+  const corrigidasIA = atividades.filter((a) => a.status === "corrigida_ia");
   const approved = atividades.filter((a) => a.status === "aprovada");
   const paraFazer = atividades.filter((a) => a.status === "disponivel");
   // recentes: ultimo envio primeiro; as que ainda nao tem envio ficam por ultimo
@@ -236,20 +237,40 @@ export function Dashboard({
             <div style={{ flex: 1 }}>
               <strong>Nível {nivel.nivel} · {nivel.nome}</strong>
               <p className="tiny muted">
-                {nivel.pontos} pontos{nivel.pontos_proximo != null ? ` · faltam ${nivel.pontos_proximo - nivel.pontos} para o próximo nível` : ""}
+                {nivel.pontos} XP{nivel.pontos_proximo != null ? ` · faltam ${nivel.pontos_proximo - nivel.pontos} XP para o próximo nível` : ""}
               </p>
             </div>
             <Button variant="secondary" onPress={() => navigate("metas")}>Ver metas</Button>
           </div>
         </Card>
       )}
-      <div className="stats-grid">
+      <div className={`stats-grid ${student ? "stats-5" : ""}`}>
         <Stat
-          icon={Target}
-          value={real ? (mediaReal != null ? `${mediaReal}%` : "--") : "67%"}
-          label="Domínio médio"
-          foot={real ? "Baseado nas suas correções aprovadas" : "↑ 12 pontos neste mês"}
+          icon={ListTodo}
+          value={conta(paraFazer.length)}
+          label="Para fazer"
+          gray
+          foot="Esperando o seu envio"
+          onClick={() => navigate("atividades", "disponivel")}
         />
+        <Stat
+          icon={Clock3}
+          value={conta(pending.length)}
+          label={student ? "Enviadas" : "Aguardando revisão"}
+          foot={student ? "Você pode pedir a correção da IA" : "Você recebe o resultado aqui"}
+          amber
+          onClick={() => navigate("atividades", "pendente")}
+        />
+        {student && (
+          <Stat
+            icon={Sparkles}
+            value={conta(corrigidasIA.length)}
+            label="Corrigidas pela IA"
+            foot="Nota provisória, falta o professor"
+            blue
+            onClick={() => navigate("atividades", "corrigida_ia")}
+          />
+        )}
         <Stat
           icon={CheckCheck}
           value={conta(approved.length)}
@@ -258,19 +279,10 @@ export function Dashboard({
           onClick={() => navigate("atividades", "aprovada")}
         />
         <Stat
-          icon={Clock3}
-          value={conta(pending.length)}
-          label="Aguardando revisão"
-          foot="Você recebe o resultado aqui"
-          amber
-          onClick={() => navigate("atividades", "pendente")}
-        />
-        <Stat
-          icon={ListTodo}
-          value={conta(paraFazer.length)}
-          label="Para fazer"
-          foot="Esperando o seu envio"
-          onClick={() => navigate("atividades", "disponivel")}
+          icon={Target}
+          value={real ? (mediaReal != null ? `${mediaReal}%` : "--") : "67%"}
+          label="Domínio médio"
+          foot={real ? "Baseado nas suas correções aprovadas" : "↑ 12 pontos neste mês"}
         />
       </div>
       <div className="dashboard-middle">
@@ -445,6 +457,8 @@ function Stat({
   label,
   foot,
   amber = false,
+  blue = false,
+  gray = false,
   onClick,
 }: {
   icon: typeof Target;
@@ -452,12 +466,14 @@ function Stat({
   label: string;
   foot: string;
   amber?: boolean;
+  blue?: boolean;
+  gray?: boolean; // cinza = ainda sem fazer (mesma cor do selo "Para fazer")
   onClick?: () => void; // com onClick o cartao vira botao (leva para a lista ja filtrada)
 }) {
   const conteudo = (
     <>
       <div className="stat-top">
-        <span className={`stat-icon ${amber ? "stat-amber" : ""}`}>
+        <span className={`stat-icon ${amber ? "stat-amber" : ""} ${blue ? "stat-blue" : ""} ${gray ? "stat-gray" : ""}`}>
           <Icon size={18} />
         </span>
         <span className="stat-value">{value}</span>
@@ -498,16 +514,20 @@ export function ActivityRow({
         tone={
           a.status === "aprovada"
             ? "green"
-            : a.status === "pendente"
-              ? "amber"
-              : "neutral"
+            : a.status === "corrigida_ia"
+              ? "blue"
+              : a.status === "pendente"
+                ? "amber"
+                : "neutral"
         }
       >
         {a.status === "aprovada"
           ? "Corrigida"
-          : a.status === "pendente"
-            ? "Em revisão"
-            : "Para fazer"}
+          : a.status === "corrigida_ia"
+            ? "Corrigida pela IA"
+            : a.status === "pendente"
+              ? "Enviada"
+              : "Para fazer"}
       </Badge>
       {a.status === "aprovada" && (
         <span className="row-score">

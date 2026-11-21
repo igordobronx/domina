@@ -1,9 +1,9 @@
 import { Seletor, Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
-import { BookOpen, PenLine, Sparkles, Trash2, Upload } from "lucide-react";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { BookOpen, PenLine, Plus, Sparkles, Trash2, Upload } from "lucide-react";
+import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import {
-  baixarDocumento, usoDoDocumento, criarInstrucao, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
+  baixarDocumento, usoDoDocumento, criarInstrucao, criarMateria, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
   verMemoriaIA, type DocumentoAPI, type ErroDaIAAPI, type InstrucaoAPI, type ItemAprendidoAPI, type MateriaAPI, type MemoriaIAAPI, type SugestaoInstrucaoAPI,
 } from "../services/api";
 
@@ -57,9 +57,24 @@ function Evolucao({ pontos }: { pontos: MemoriaIAAPI["evolucao"] }) {
 const LIMITE_MB = 20;
 const erroDe = (e: unknown, padrao: string) => (e instanceof Error ? e.message : padrao);
 
+// area da materia e as sugestoes de cada uma; o professor pode sempre digitar a dele
+const AREAS_MATERIA: { value: MateriaAPI["area"]; label: string; sugestoes: string[] }[] = [
+  { value: "EXATAS", label: "Exatas", sugestoes: ["Matemática", "Física", "Química"] },
+  { value: "NATUREZA", label: "Natureza", sugestoes: ["Biologia", "Ciências"] },
+  { value: "HUMANAS", label: "Humanas", sugestoes: ["História", "Geografia", "Filosofia", "Sociologia"] },
+  { value: "LINGUAGENS", label: "Linguagens", sugestoes: ["Língua Portuguesa", "Literatura", "Redação", "Inglês", "Espanhol", "Artes", "Educação Física"] },
+  { value: "REDACAO", label: "Redação", sugestoes: ["ENEM", "FUVEST", "UFG", "UEG", "UFU", "PUC", "UNIEVA"] },
+  { value: "OUTRA", label: "Outra", sugestoes: [] },
+];
+const OUTRA_OPCAO = "__outra__";
+
 export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
   const [materiaId, setMateriaId] = useState("");
+  const [novaMateria, setNovaMateria] = useState(false);
+  const [novaNome, setNovaNome] = useState("");
+  const [novaArea, setNovaArea] = useState("");
+  const [novaEscolha, setNovaEscolha] = useState(""); // sugestao da area ou OUTRA_OPCAO (digitar)
   const [como, setComo] = useState<"arquivo" | "texto" | null>(null);
   const [tipo, setTipo] = useState<DocumentoAPI["tipo"] | "">("");
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -99,6 +114,18 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
       .catch(() => { setMaterias([]); notify("Não foi possível carregar as matérias."); });
   }, []);
   useEffect(() => carregarMateria(materiaId), [materiaId]);
+  const areaNova = AREAS_MATERIA.find((a) => a.value === novaArea);
+  const digitando = novaEscolha === OUTRA_OPCAO || (!!areaNova && !areaNova.sugestoes.length);
+  const criarNovaMateria = () => {
+    const nome = (digitando ? novaNome : novaEscolha).trim();
+    if (!areaNova || !nome) return notify("Escolha a área e a matéria.");
+    criarMateria({ nome, area: areaNova.value })
+      .then((nova) => listarMaterias().then((ms) => {
+        setMaterias(ms);
+        setNovaMateria(false); setNovaNome(""); setNovaArea(""); setNovaEscolha("");
+      }))
+      .catch((e) => notify(e instanceof Error ? e.message : "Não foi possível criar a matéria."));
+  };
   const mb = (b: number | null) => (b === null ? "" : b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
   const depois = (aviso: string) => {
@@ -180,17 +207,56 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
         </div>
       </div>
 
-      {!!materias?.length && (
+      {materias !== null && (
         <Card>
-          <SectionTitle title="Matéria" />
-          <p className="rotulo-escolha">Escolha a matéria para ver e ensinar a IA</p>
-          <Seletor rotulo="Matéria" placeholder="Escolha a matéria" opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))}
-            valor={materiaId} onChange={setMateriaId} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <SectionTitle title="Matéria" />
+            <Button variant="secondary" icon={Plus} onPress={() => setNovaMateria(true)}>Nova matéria</Button>
+          </div>
+          {materias.length ? (
+            <>
+              <p className="rotulo-escolha">Escolha a matéria para ver e ensinar a IA</p>
+              <Seletor rotulo="Matéria" placeholder="Escolha a matéria" opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))}
+                valor={materiaId} onChange={setMateriaId} />
+            </>
+          ) : (
+            <Empty title="Nenhuma matéria na escola" text="Crie a primeira com o botão acima. Depois você ensina a IA aqui." />
+          )}
         </Card>
       )}
 
-      {materias !== null && !materias.length && (
-        <Card><Empty title="Nenhuma matéria na escola" text="Peça ao gestor para criar a matéria. Depois você ensina a IA aqui." /></Card>
+      {novaMateria && (
+        <Modal title="Nova matéria" onClose={() => setNovaMateria(false)}>
+          <div className="form-grid">
+            <label>
+              Área
+              <Escolha value={novaArea} onChange={(e) => { setNovaArea(e.target.value); setNovaEscolha(""); }}>
+                <option value="">Escolha a área</option>
+                {AREAS_MATERIA.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+              </Escolha>
+            </label>
+            {!!areaNova?.sugestoes.length && (
+              <label>
+                {areaNova.value === "REDACAO" ? "Vestibular" : "Matéria"}
+                <Escolha value={novaEscolha} onChange={(e) => setNovaEscolha(e.target.value)}>
+                  <option value="">Escolha...</option>
+                  {areaNova.sugestoes.map((n) => <option key={n} value={n}>{n}</option>)}
+                  <option value={OUTRA_OPCAO}>{areaNova.value === "REDACAO" ? "Outro" : "Outra"}</option>
+                </Escolha>
+              </label>
+            )}
+            {!!areaNova && digitando && (
+              <label>
+                Nome
+                <input value={novaNome} onChange={(e) => setNovaNome(e.target.value)} placeholder="Ex.: Matemática" />
+              </label>
+            )}
+          </div>
+          <div className="form-actions">
+            <Button variant="secondary" onPress={() => setNovaMateria(false)}>Cancelar</Button>
+            <Button onPress={criarNovaMateria}>Criar matéria</Button>
+          </div>
+        </Modal>
       )}
 
       {!!materiaId && (

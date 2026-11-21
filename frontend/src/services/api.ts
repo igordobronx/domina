@@ -120,6 +120,7 @@ export interface QuestaoAtividadeAPI {
   tem_imagem?: boolean; // figura do enunciado anexada pelo professor
   alternativas?: string[] | null; // objetiva (estilo ENEM): textos de A, B, C...; o gabarito e so a letra
   subtopico?: string | null;
+  valor?: number | null; // pontos desta questao
   resposta_correta?: string | null; // so professor/gestor recebem o gabarito
 }
 
@@ -163,6 +164,7 @@ export interface CriterioAPI {
   nota_professor: number | null;
   justificativa: string;
   pontos: PontoAPI[];
+  valor?: number | null; // maximo de pontos do criterio (exatas)
 }
 
 export interface MinhaSubmissaoAPI {
@@ -266,6 +268,7 @@ export interface MateriaAPI {
   id: string;
   nome: string;
   tipo: "REDACAO_ENEM" | "REDACAO_OUTRO_VESTIBULAR" | "MATERIA_OBJETIVA" | "MATERIA_DISCURSIVA";
+  area: "EXATAS" | "NATUREZA" | "HUMANAS" | "LINGUAGENS" | "REDACAO" | "OUTRA";
 }
 
 export function listarMaterias(): Promise<MateriaAPI[]> {
@@ -274,7 +277,7 @@ export function listarMaterias(): Promise<MateriaAPI[]> {
 
 export function criarMateria(payload: {
   nome: string;
-  tipo: MateriaAPI["tipo"];
+  area: MateriaAPI["area"];
 }): Promise<MateriaAPI> {
   return request<MateriaAPI>("/materias", { method: "POST", body: JSON.stringify(payload) });
 }
@@ -285,7 +288,7 @@ export function criarAtividadesLote(payload: {
   turma_ids: string[];
   titulo: string;
   tipo: AtividadeAPI["tipo"];
-  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string; valor?: number }[];
   valor_total?: number;
   prazo?: string;
 }): Promise<AtividadeAPI[]> {
@@ -296,7 +299,7 @@ export function editarAtividade(id: string, payload: {
   titulo?: string;
   prazo?: string | null; // null limpa o prazo
   valor_total?: number;
-  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string; valor?: number }[];
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>(`/atividades/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 }
@@ -731,6 +734,11 @@ export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {
   return request<DominioAPI[]>(`/alunos/${alunoId}/dominio`);
 }
 
+// pratica (exercicios) do aluno por competencia; professor so ve as materias que leciona
+export function praticaDoAluno(alunoId: string): Promise<PraticaAPI[]> {
+  return request<PraticaAPI[]>(`/alunos/${alunoId}/pratica`);
+}
+
 export interface DocumentoAPI {
   id: string;
   materia_id: string;
@@ -1065,7 +1073,25 @@ export interface NivelAPI {
   pontos: number;
   pontos_nivel_atual: number;
   pontos_proximo: number | null;
+  nome_proximo?: string | null;
 }
+
+// XP, sequencia de dias e conquistas do proprio aluno ("pontos" do nivel = XP total)
+export interface ConquistaAPI {
+  codigo: string;
+  nome: string;
+  descricao: string;
+  alvo: number;
+  progresso: number;
+  conquistada_em: string | null;
+}
+export interface GamificacaoAPI {
+  nivel: NivelAPI;
+  sequencia: { atual: number; melhor: number; estudou_hoje: boolean };
+  conquistas: ConquistaAPI[];
+  historico: { data: string; xp: number; motivo: string }[];
+}
+export const minhaGamificacao = () => request<GamificacaoAPI>("/gamificacao/minha");
 
 export interface MetaAlunoAPI {
   id: string;

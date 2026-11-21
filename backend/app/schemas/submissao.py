@@ -45,6 +45,7 @@ class CriterioResponse(BaseModel):
     nota_professor: float | None
     justificativa: str
     pontos: list[PontoResponse] = []
+    valor: float | None = None  # maximo de pontos deste criterio (exatas); redacao: nulo
 
 
 class CorrecaoResponse(BaseModel):
@@ -97,11 +98,12 @@ class MateriaResponse(BaseModel):
     id: uuid.UUID
     nome: str
     tipo: str
+    area: str
 
 
 class CriarMateriaRequest(BaseModel):
     nome: str = Field(min_length=1, max_length=150)
-    tipo: Literal["REDACAO_ENEM", "REDACAO_OUTRO_VESTIBULAR", "MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"]
+    area: Literal["EXATAS", "NATUREZA", "HUMANAS", "LINGUAGENS", "REDACAO", "OUTRA"]
 
 
 class QuestaoInput(BaseModel):
@@ -110,6 +112,7 @@ class QuestaoInput(BaseModel):
     # objetiva: a letra do gabarito. Discursiva: a resposta exemplo. Os dois sao obrigatorios
     resposta_correta: str = Field(default="", max_length=5_000)
     subtopico: str | None = Field(default=None, max_length=150)  # em branco = a IA identifica
+    valor: float | None = Field(default=None, gt=0, le=10_000)  # pontos da questao; vazio = divide o que sobra
     # objetiva (estilo ENEM): textos das alternativas (A, B, C...); o gabarito vira so a letra
     alternativas: list[str] | None = Field(default=None, min_length=2, max_length=5)
 
@@ -140,6 +143,7 @@ class QuestaoAtividadeResponse(BaseModel):
     alternativas: list[str] | None = None  # objetiva: o aluno recebe as alternativas, nunca o gabarito
     tem_imagem: bool = False  # figura anexada pelo professor (GET /atividades/{id}/questoes/{codigo}/imagem)
     subtopico: str | None = None
+    valor: float | None = None  # pontos desta questao
     resposta_correta: str | None = None  # so professor/gestor (para editar); o aluno nunca recebe o gabarito
 
 

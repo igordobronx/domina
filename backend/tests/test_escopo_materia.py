@@ -75,5 +75,6 @@ def test_professor_so_lista_e_cria_com_as_materias_dele():
         "questoes": [{"enunciado": "q", "resposta_correta": "r"}]})
     assert r.status_code == 403 and "não leciona" in r.json()["detail"]
     # materia que o professor cria passa a ser dele
-    nova = client.post("/materias", headers=quim, json={"nome": "Quimica Nova", "tipo": "MATERIA_OBJETIVA"}).json()
+    nova = client.post("/materias", headers=quim, json={"nome": "Quimica Nova", "area": "EXATAS"}).json()
+    assert nova["area"] == "EXATAS"
     assert nova["id"] in [m["id"] for m in client.get("/materias", headers=quim).json()]

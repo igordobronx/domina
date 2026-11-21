@@ -35,7 +35,7 @@ def criar_turma_e_materia(prof):
     gestor = token("gestor@domina.com")
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
     materia = client.post("/materias", headers=gestor,
-                          json={"nome": "Matemática", "tipo": "MATERIA_OBJETIVA"}).json()
+                          json={"nome": "Matemática", "area": "EXATAS"}).json()
     vincular("professor@domina.com", turma_id, materia["id"])
     return turma_id, materia["id"]
 
@@ -53,8 +53,8 @@ def criar_atividade_com_gabarito(prof, turma_id, materia_id):
     atividade = r.json()
     # o aluno precisa ver o enunciado real de cada questao (nao um texto fixo de outra materia)
     assert atividade["questoes"] == [
-        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False, "alternativas": None, "subtopico": None, "resposta_correta": "x = 2"},
-        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False, "alternativas": None, "subtopico": None, "resposta_correta": "x = 3"},
+        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False, "alternativas": None, "subtopico": None, "valor": 500.0, "resposta_correta": "x = 2"},
+        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False, "alternativas": None, "subtopico": None, "valor": 500.0, "resposta_correta": "x = 3"},
     ]
     # sem valor_total explicito, assume 1000 (como a redacao) e divide pelas questoes
     assert atividade["valor_total"] == 1000.0
@@ -181,7 +181,7 @@ def test_valor_total_configuravel_e_dividido_pelas_questoes():
     gestor = token("gestor@domina.com")
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
     materia = client.post("/materias", headers=gestor,
-                          json={"nome": "Física II", "tipo": "MATERIA_OBJETIVA"}).json()
+                          json={"nome": "Física II", "area": "EXATAS"}).json()
     vincular("professor@domina.com", turma_id, materia["id"])
     atividade = client.post("/atividades", headers=prof, json={
         "materia_id": materia["id"], "turma_id": turma_id, "titulo": "Prova - 4 questões", "tipo": "PROVA_OBJETIVA",
@@ -222,7 +222,7 @@ def test_valor_total_configuravel_e_dividido_pelas_questoes():
 
 def test_so_professor_ou_gestor_criam_materia():
     aluno = token("aluno@domina.com")
-    r = client.post("/materias", headers=aluno, json={"nome": "Física", "tipo": "MATERIA_OBJETIVA"})
+    r = client.post("/materias", headers=aluno, json={"nome": "Física", "area": "EXATAS"})
     assert r.status_code == 403
 
 

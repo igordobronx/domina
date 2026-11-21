@@ -51,14 +51,14 @@ function MetasAluno({ notify, currentUser }: { notify: (m: string) => void; curr
   const outras = metas.filter((m) => m.status === "CONCLUIDA" || m.status === "ENCERRADA");
   return (
     <>
-      <div className="page-heading"><div><h1>Metas e níveis</h1><p>Cumpra metas, ganhe pontos e suba de nível.</p></div></div>
+      <div className="page-heading"><div><h1>Metas e níveis</h1><p>Cumpra metas e ganhe XP para subir de nível. Seus envios e exercícios também dão XP.</p></div></div>
       <Card>
         <div className="nivel-card">
           <div className="nivel-numero">{nivel.nivel}</div>
           <div>
             <strong>{nivel.nome}</strong>
             <p className="tiny muted">
-              {nivel.pontos} pontos{falta != null ? ` · faltam ${falta} para o próximo nível` : " · nível máximo!"}
+              {nivel.pontos} XP{falta != null ? ` · faltam ${falta} XP para o próximo nível` : " · nível máximo!"}
             </p>
           </div>
         </div>
@@ -88,7 +88,7 @@ function MetaLinha({ m }: { m: MetaAlunoAPI }) {
     <div className="meta-linha">
       <div className="meta-topo">
         <strong>{m.titulo}</strong>
-        <span><Badge tone={tom}>{rotulo}</Badge> <b>+{m.pontos} pts</b></span>
+        <span><Badge tone={tom}>{rotulo}</Badge> <b>+{m.pontos} XP</b></span>
       </div>
       {m.descricao && <p className="tiny muted">{m.descricao}</p>}
       <Progress value={Math.round((m.progresso / m.alvo) * 100)} label={m.titulo} />
@@ -114,14 +114,14 @@ function MetasEquipe({ role, notify }: { role: Role; notify: (m: string) => void
     listarMaterias().then(setMaterias).catch(() => {});
   }, []);
   const arquivar = async (m: MetaAPI) => {
-    if (!window.confirm(`Arquivar a meta "${m.titulo}"? Os pontos de quem já cumpriu continuam.`)) return;
+    if (!window.confirm(`Arquivar a meta "${m.titulo}"? O XP de quem já cumpriu continua.`)) return;
     try { await arquivarMeta(m.id); notify("Meta arquivada."); recarregar(); }
     catch (e) { notify(e instanceof Error ? e.message : "Não foi possível arquivar."); }
   };
   return (
     <>
       <div className="page-heading">
-        <div><h1>Metas e níveis</h1><p>Crie metas para os alunos cumprirem e acompanhe o ranking de pontos.</p></div>
+        <div><h1>Metas e níveis</h1><p>Crie metas para os alunos cumprirem e acompanhe o ranking de XP.</p></div>
         <Button icon={Plus} onPress={() => { setEditando(null); setCriando(true); }}>Nova meta</Button>
       </div>
       {editando && (
@@ -144,7 +144,7 @@ function MetasEquipe({ role, notify }: { role: Role; notify: (m: string) => void
           <div className="meta-linha" key={m.id}>
             <div className="meta-topo">
               <strong>{m.titulo}</strong>
-              <span><Badge tone="neutral">{m.escopo === "ESCOLA" ? "Escola toda" : m.escopo_nome}</Badge> <b>+{m.pontos} pts</b></span>
+              <span><Badge tone="neutral">{m.escopo === "ESCOLA" ? "Escola toda" : m.escopo_nome}</Badge> <b>+{m.pontos} XP</b></span>
             </div>
             <p className="tiny muted">
               {TIPOS.find((t) => t.value === m.tipo)?.label.replace("X", String(m.alvo)) ?? m.tipo}
@@ -211,7 +211,7 @@ function EditarMeta({ meta, notify, onFechar, onSalva }: {
             <label>{percentual ? "Percentual (X)" : "Quantidade"}
               <input type="number" min={1} max={percentual ? 100 : 1000} value={alvo} onChange={(e) => setAlvo(Number(e.target.value))} />
             </label>
-            <label>Pontos que a meta vale
+            <label>XP que a meta vale
               <Escolha value={pontos} onChange={(e) => setPontos(Number(e.target.value))}>
                 {[...new Set([10, 20, 30, 50, 100, meta.pontos])].sort((a, b) => a - b).map((p) => <option key={p} value={p}>{p}</option>)}
               </Escolha>
@@ -308,7 +308,7 @@ function NovaMeta({ role, turmas, materias, notify, onFechar, onCriada }: {
             </Escolha>
           </label>
         )}
-        <label>Pontos que a meta vale
+        <label>XP que a meta vale
           <Escolha value={pontosTxt} onChange={(e) => setPontosTxt(e.target.value)}>
             <option value="">Escolha...</option>
             {[10, 20, 30, 50, 100].map((p) => <option key={p} value={p}>{p}</option>)}
@@ -359,8 +359,8 @@ function Ranking({ role, turmas, notify }: { role: Role; turmas: TurmaAPI[]; not
   }, [turmaId]);
   return (
     <Card>
-      <SectionTitle title="Ranking de pontos" />
-      <p className="tiny muted">Só você e a equipe veem este ranking. Ele conta pontos de metas, nunca notas.</p>
+      <SectionTitle title="Ranking de XP" />
+      <p className="tiny muted">Só você e a equipe veem este ranking. Ele conta XP (metas, envios e exercícios), nunca notas.</p>
       <label>Turma
         <Escolha value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
           <option value="">{role === "gestor" ? "Escola toda" : "Todas as minhas turmas"}</option>
@@ -369,7 +369,7 @@ function Ranking({ role, turmas, notify }: { role: Role; turmas: TurmaAPI[]; not
       </label>
       {itens === null ? <p className="muted">Carregando...</p> : !itens.length ? <p className="muted">Nenhum aluno por aqui.</p> : (
         <table className="tabela-ranking">
-          <thead><tr><th>#</th><th>Aluno</th><th>Nível</th><th>Pontos</th><th>Metas</th></tr></thead>
+          <thead><tr><th>#</th><th>Aluno</th><th>Nível</th><th>XP</th><th>Metas</th></tr></thead>
           <tbody>
             {itens.map((a, i) => (
               <tr key={a.aluno_id}><td>{i + 1}</td><td>{a.nome}</td><td>{a.nivel} · {a.nome_nivel}</td><td>{a.pontos}</td><td>{a.metas_concluidas}</td></tr>

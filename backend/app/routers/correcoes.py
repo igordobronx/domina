@@ -22,7 +22,8 @@ from app.models.usuario import (
 )
 from app.competencias import garantir_competencias
 from app.metas import avaliar_seguro
-from app.routers.submissoes import MATERIAS_EXATAS, _gestor_da_escola, caminhos_da_submissao, _professor_da_turma, _submissao_visivel
+from app.pontos import valor_da_questao
+from app.routers.submissoes import tem_gabarito, _gestor_da_escola, caminhos_da_submissao, _professor_da_turma, _submissao_visivel
 from app.schemas.submissao import AprovarRequest, AvaliacaoIARequest, CorrecaoResponse, CorrigirRequest, CriterioResponse
 
 logger = logging.getLogger(__name__)
@@ -34,10 +35,11 @@ CONFIANCA_MINIMA = 0.6
 
 
 def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
-    criterios = (
+    criterios = list(
         db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
         .filter(CorrecaoCriterio.correcao_id == correcao.id).order_by(Tema.habilidade_codigo)
     )
+    atividade = db.get(Atividade, db.get(Submissao, correcao.submissao_id).atividade_id)
     return CorrecaoResponse(
         id=correcao.id, submissao_id=correcao.submissao_id, nota_ia=float(correcao.nota_ia),
         nota_professor=float(correcao.nota_professor) if correcao.nota_professor is not None else None,
@@ -50,6 +52,7 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
                 codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
                 nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
                 justificativa=c.justificativa, pontos=c.pontos or [],
+                valor=valor_da_questao(atividade, t, len(criterios)) if tem_gabarito(atividade) else None,
             )
             for c, t in criterios
         ],
@@ -86,7 +89,7 @@ def _pode_ver_correcao(db: Session, submissao: Submissao, usuario: Usuario):
 
 def _temas_da_atividade(db: Session, atividade: Atividade, materia: Materia) -> dict:
     """Criterios que valem para esta atividade: questoes do gabarito (exatas) ou as 5 competencias."""
-    if materia.tipo in MATERIAS_EXATAS:
+    if tem_gabarito(atividade):
         temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(atividade_id=atividade.id)}
         if not temas:
             raise HTTPException(status.HTTP_409_CONFLICT, "Esta atividade não tem gabarito cadastrado.")
@@ -117,7 +120,7 @@ def corrigir_submissao(
 
     temas = _temas_da_atividade(db, atividade, materia)
 
-    exatas = materia.tipo in MATERIAS_EXATAS
+    exatas = tem_gabarito(atividade)
     # exatas continua no Gemini; a nota da redacao agora vem do Claude (ver app/llm/claude.py)
     if not (settings.GEMINI_API_KEY if exatas else settings.ANTHROPIC_API_KEY):
         provedor = "do Gemini" if exatas else "do Claude"
@@ -150,7 +153,7 @@ def corrigir_submissao(
                     figuras[t.habilidade_codigo] = (Path(t.imagem).read_bytes(), mime_fig or "image/jpeg")
             resultado, modelo = ia_exatas.corrigir(
                 submissao.texto_confirmado, materia.nome, questoes, imagem=imagem, figuras=figuras,
-                contexto=contexto, teorica=materia.tipo == TipoMateriaEnum.MATERIA_DISCURSIVA,
+                contexto=contexto, teorica=materia.area != "EXATAS",
             )
             itens = resultado.questoes
             versao_prompt = ia_exatas.VERSAO_PROMPT
@@ -166,15 +169,14 @@ def corrigir_submissao(
         logger.exception("falha na correcao")
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, "Falha ao gerar a correção. Tente de novo.")
 
-    if materia.tipo in MATERIAS_EXATAS:
+    if tem_gabarito(atividade):
         # a IA sempre avalia numa escala relativa de 0..200 por questao (ver correcao_exatas.py);
         # aqui reescalamos para o valor real da atividade, dividido igualmente entre as questoes
         # (RF do professor definir o valor total, em vez de cada questao valer 200 fixo)
-        valor_por_questao = float(atividade.valor_total or 1000) / len(temas)
         cheias = sum(1 for i in itens if i.nota == 200)  # nota relativa 200 = questao toda certa
         parciais = sum(1 for i in itens if 0 < i.nota < 200)
         for i in itens:
-            i.nota = round(i.nota / 200 * valor_por_questao, 2)
+            i.nota = round(i.nota / 200 * valor_da_questao(atividade, temas[i.codigo], len(temas)), 2)
         feedback = (
             f"{round(sum(i.nota for i in itens), 2):g} de {float(atividade.valor_total or 1000):g} pontos: "
             f"{cheias} questão(ões) certa(s), {parciais} com acerto parcial, "
@@ -228,7 +230,8 @@ def modelo_correcao_manual(submissao_id: uuid.UUID, usuario: Usuario = Depends(g
     return CorrecaoResponse(
         id=submissao.id, submissao_id=submissao.id, nota_ia=0, nota_professor=None, revisado_por=None, confianca=1,
         status=StatusCorrecaoEnum.PENDENTE.value, modelo_usado=memoria.SEM_IA, feedback=None,
-        criterios=[CriterioResponse(codigo=c, nome=t.nome, nota=0, nota_professor=None, justificativa="", pontos=[])
+        criterios=[CriterioResponse(codigo=c, nome=t.nome, nota=0, nota_professor=None, justificativa="", pontos=[],
+                                    valor=valor_da_questao(atividade, t, len(temas)) if tem_gabarito(atividade) else None)
                    for c, t in sorted(temas.items())],
     )
 
@@ -334,11 +337,10 @@ def aprovar_correcao(
     if sorted(n.codigo for n in payload.notas) != sorted(criterios):
         raise HTTPException(422, "Informe a nota de cada critério desta correção, uma vez cada.")
 
-    if materia.tipo in MATERIAS_EXATAS:
-        # faixa valida depende do valor total da atividade (definido pelo professor), dividido
-        # igualmente entre as questoes -- nao e mais fixo em 0..200 como na redacao
-        valor_por_questao = float(atividade.valor_total or 1000) / len(criterios)
+    if tem_gabarito(atividade):
+        # faixa valida: os pontos que o professor deu a cada questao (nao e fixo em 0..200 como na redacao)
         for nota in payload.notas:
+            valor_por_questao = valor_da_questao(atividade, criterios[nota.codigo][1], len(criterios))
             if not (0 <= nota.nota <= valor_por_questao + 0.01):
                 raise HTTPException(422, f"a nota de {nota.codigo} deve estar entre 0 e {valor_por_questao:g}.")
     else:
@@ -365,9 +367,9 @@ def aprovar_correcao(
     # RF-25/dominio real: so para redacao. As temas de exatas sao especificas de UMA atividade
     # (nunca se repetem), entao nao ha "evolucao" a acumular -- e um unico ponto fora da curva
     # dominaria /dominio/meu e /estudos/meu para sempre. O aluno ainda ve a nota/feedback normal.
-    if materia.tipo not in MATERIAS_EXATAS:
+    if not tem_gabarito(atividade):
         _atualizar_dominio(db, submissao.aluno_id, {codigo: c for codigo, (c, _) in criterios.items()})
-    if materia.tipo in MATERIAS_EXATAS:
+    if tem_gabarito(atividade):
         registrar_erros(db, submissao.aluno_id)  # onde ele errou, para o plano de estudo
     registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
     db.flush()

@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session
 from app.auditoria import registrar
 from app.auth.dependencies import exigir_perfil
 from app.database import get_db
-from app.metas import avaliar_metas, metas_do_aluno, nivel_de, pontos_do_aluno, progresso
+from app.gamificacao import xp_do_aluno
+from app.metas import avaliar_metas, metas_do_aluno, nivel_de, progresso
 from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
 from app.lecionados import materias_do_professor
 from app.models.usuario import Materia, Meta, MetaConcluida, Turma, Usuario, UsuarioTurma
@@ -180,10 +181,10 @@ def minhas_metas(usuario: Usuario = Depends(APENAS_ALUNO), db: Session = Depends
             progresso=min(round(progresso(db, m, usuario.id), 1), float(m.alvo)) if st != "FUTURA" else 0,
             pontos=m.pontos, inicio=m.inicio, fim=m.fim, status=st, concluida_em=feitas.get(m.id),
         ))
-    return MinhasMetasResponse(nivel=NivelResponse(**nivel_de(pontos_do_aluno(db, usuario.id))), metas=metas)
+    return MinhasMetasResponse(nivel=NivelResponse(**nivel_de(xp_do_aluno(db, usuario.id)["xp"])), metas=metas)
 
 
-# ranking por PONTOS (nunca por nota), so para quem acompanha os alunos
+# ranking por XP (nunca por nota), so para quem acompanha os alunos
 @router.get("/metas/ranking", response_model=list[RankingItem])
 def ranking(turma_id: uuid.UUID | None = None, usuario: Usuario = Depends(EQUIPE), db: Session = Depends(get_db)):
     if usuario.perfil == PerfilEnum.PROFESSOR:
@@ -198,13 +199,11 @@ def ranking(turma_id: uuid.UUID | None = None, usuario: Usuario = Depends(EQUIPE
         alunos = _alunos_das_turmas(db, [turma_id])
     else:
         alunos = _alunos_da_escola(db, usuario.escola_id)
-    pontos = dict(db.query(MetaConcluida.aluno_id, func.sum(Meta.pontos)).join(Meta, Meta.id == MetaConcluida.meta_id)
-                  .filter(MetaConcluida.aluno_id.in_([a.id for a in alunos])).group_by(MetaConcluida.aluno_id).all())
     qtd = dict(db.query(MetaConcluida.aluno_id, func.count(MetaConcluida.meta_id))
                .filter(MetaConcluida.aluno_id.in_([a.id for a in alunos])).group_by(MetaConcluida.aluno_id).all())
     itens = []
     for a in alunos:
-        n = nivel_de(int(pontos.get(a.id, 0)))
+        n = nivel_de(xp_do_aluno(db, a.id)["xp"])  # XP (acoes + metas), nunca nota
         itens.append(RankingItem(aluno_id=a.id, nome=a.nome, pontos=n["pontos"], nivel=n["nivel"], nome_nivel=n["nome"],
                                  metas_concluidas=int(qtd.get(a.id, 0))))
     return sorted(itens, key=lambda i: (-i.pontos, i.nome))

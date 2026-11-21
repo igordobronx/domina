@@ -49,7 +49,7 @@ def test_evolucao_agrupa_por_materia_sem_tocar_dominio():
     gestor = token("gestor@domina.com")
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
     materia = client.post("/materias", headers=gestor,
-                          json={"nome": "Química", "tipo": "MATERIA_OBJETIVA"}).json()
+                          json={"nome": "Química", "area": "EXATAS"}).json()
     vincular("professor@domina.com", turma_id, materia["id"])
     atividade = client.post("/atividades", headers=prof, json={
         "materia_id": materia["id"], "turma_id": turma_id, "titulo": "Lista - Estequiometria", "tipo": "EXERCICIO",

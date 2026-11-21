@@ -10,13 +10,14 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.pontos import distribuir
 from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.usuario import Atividade, Materia, Submissao, Tema, Usuario
 from app import subtopicos
 from app.routers.questoes import _apagar_arquivo, _pode_editar
-from app.routers.submissoes import MATERIAS_EXATAS, _atividade_response
+from app.routers.submissoes import tem_gabarito, _atividade_response
 from app.schemas.submissao import AtividadeResponse, EditarAtividadeRequest, ExclusaoResponse
 
 router = APIRouter(tags=["atividades"])
@@ -50,11 +51,22 @@ def editar_atividade(atividade_id: uuid.UUID, payload: EditarAtividadeRequest,
                                 "Já há envios nesta atividade: só o título e o prazo podem mudar. "
                                 "Para mudar o gabarito, crie uma nova atividade.")
         materia = db.get(Materia, atividade.materia_id)
-        if materia.tipo not in MATERIAS_EXATAS:
+        if not tem_gabarito(atividade):
             raise HTTPException(422, "Redação não tem gabarito nem valor total para editar.")
         if payload.valor_total is not None:
             atividade.valor_total = Decimal(str(payload.valor_total))
+            if payload.questoes is None:  # total novo sem questoes novas: volta a dividir igual
+                for t in db.query(Tema).filter_by(atividade_id=atividade.id):
+                    t.valor = None
+        valores = None
         if payload.questoes is not None:
+            if any(q.valor is not None for q in payload.questoes):
+                try:
+                    valores = distribuir([q.valor for q in payload.questoes], float(atividade.valor_total or 1000))
+                except ValueError as e:
+                    raise HTTPException(422, str(e))
+            else:
+                valores = [None] * len(payload.questoes)
             subtopicos.completar(materia.nome, payload.questoes, atividade.titulo, subtopicos.usados(db, materia.id))
             existentes = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(atividade_id=atividade.id)}
             for i, q in enumerate(payload.questoes, start=1):
@@ -62,10 +74,11 @@ def editar_atividade(atividade_id: uuid.UUID, payload: EditarAtividadeRequest,
                 if tema is None:
                     db.add(Tema(materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
                                 nome=q.enunciado.strip(), resposta_correta=q.resposta_correta.strip() or None,
-                                alternativas=q.alternativas, subtopico=q.subtopico))
+                                alternativas=q.alternativas, subtopico=q.subtopico, valor=valores[i - 1]))
                 else:  # mesma posicao: edita no lugar e a figura da questao continua
                     tema.nome, tema.resposta_correta = q.enunciado.strip(), q.resposta_correta.strip() or None
                     tema.subtopico = q.subtopico
+                    tema.valor = valores[i - 1]
                     tema.alternativas = q.alternativas
             for sobra in existentes.values():  # a lista ficou menor: tira as ultimas (e as figuras delas)
                 _apagar_arquivo(sobra.imagem)

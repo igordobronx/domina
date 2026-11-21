@@ -32,7 +32,18 @@ from app.schemas.submissao import (
     SubmissaoRevisaoResponse,
 )
 
-MATERIAS_EXATAS = (TipoMateriaEnum.MATERIA_OBJETIVA, TipoMateriaEnum.MATERIA_DISCURSIVA)
+def tem_gabarito(atividade: Atividade) -> bool:
+    """Atividade com questoes e gabarito (tudo menos redacao): so ela tem valor_total."""
+    return atividade.valor_total is not None
+
+
+def _tipo_da_materia(area: str, nome: str) -> TipoMateriaEnum:
+    """O tipo antigo (so a correcao de redacao olha): so a redacao do ENEM usa as 5 competencias."""
+    if area == "REDACAO":
+        return TipoMateriaEnum.REDACAO_ENEM if nome.strip().upper() == "ENEM" else TipoMateriaEnum.REDACAO_OUTRO_VESTIBULAR
+    return TipoMateriaEnum.MATERIA_OBJETIVA if area == "EXATAS" else TipoMateriaEnum.MATERIA_DISCURSIVA
+
+from app.pontos import distribuir, valor_da_questao
 
 logger = logging.getLogger(__name__)
 
@@ -94,14 +105,15 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
 
     materia = db.get(Materia, atividade.materia_id)
     questoes = None
-    if materia.tipo in MATERIAS_EXATAS:
-        temas = (
+    if tem_gabarito(atividade):
+        temas = list(
             db.query(Tema).filter_by(atividade_id=atividade.id)
             .order_by(Tema.habilidade_codigo)
         )
         questoes = [QuestaoAtividadeResponse(
             codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem), alternativas=t.alternativas, subtopico=t.subtopico,
             resposta_correta=t.resposta_correta if usuario.perfil != PerfilEnum.ALUNO else None,
+            valor=valor_da_questao(atividade, t, len(temas)),
         ) for t in temas]
 
     return AtividadeResponse(
@@ -122,7 +134,7 @@ def listar_materias(usuario: Usuario = Depends(get_current_user), db: Session = 
     materias = db.query(Materia).filter_by(escola_id=usuario.escola_id)
     if usuario.perfil == PerfilEnum.PROFESSOR:  # so as que ele leciona (o gestor ve todas)
         materias = materias.filter(Materia.id.in_(materias_do_professor(db, usuario.id) or {uuid.uuid4()}))
-    return [MateriaResponse(id=m.id, nome=m.nome, tipo=m.tipo.value) for m in materias]
+    return [MateriaResponse(id=m.id, nome=m.nome, tipo=m.tipo.value, area=m.area) for m in materias]
 
 
 @router.post("/materias", response_model=MateriaResponse, status_code=status.HTTP_201_CREATED)
@@ -130,17 +142,17 @@ def criar_materia(payload: CriarMateriaRequest, usuario: Usuario = Depends(get_c
                    db: Session = Depends(get_db)):
     if usuario.perfil not in (PerfilEnum.PROFESSOR, PerfilEnum.GESTOR):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Só professores e gestores criam matérias.")
-    materia = Materia(escola_id=usuario.escola_id, nome=payload.nome.strip(), tipo=TipoMateriaEnum(payload.tipo))
+    materia = Materia(escola_id=usuario.escola_id, nome=payload.nome.strip(), tipo=_tipo_da_materia(payload.area, payload.nome), area=payload.area)
     db.add(materia)
     db.flush()
     if usuario.perfil == PerfilEnum.PROFESSOR:  # quem cria a materia passa a leciona-la nas turmas dele
         for (turma_id,) in db.query(UsuarioTurma.turma_id).filter_by(usuario_id=usuario.id, papel=UsuarioTurmaPapelEnum.PROFESSOR):
             db.add(ProfessorMateria(usuario_id=usuario.id, turma_id=turma_id, materia_id=materia.id))
-    if materia.tipo not in MATERIAS_EXATAS:
+    if materia.area == "REDACAO":
         garantir_competencias(db, materia)  # sem C1..C5 a redacao dessa materia nunca seria corrigida
     db.commit()
     db.refresh(materia)
-    return MateriaResponse(id=materia.id, nome=materia.nome, tipo=materia.tipo.value)
+    return MateriaResponse(id=materia.id, nome=materia.nome, tipo=materia.tipo.value, area=materia.area)
 
 
 @router.get("/atividades", response_model=list[AtividadeResponse])
@@ -166,26 +178,37 @@ def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID)
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Matéria não encontrada.")
     if not leciona(db, usuario, turma.id, materia.id):
         raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona {materia.nome} na turma {turma.nome}.")
-    if materia.tipo in MATERIAS_EXATAS and not payload.questoes:
+    gabarito = payload.tipo != "REDACAO"  # o formato vem do tipo da atividade, em qualquer materia
+    if gabarito and not payload.questoes:
         raise HTTPException(422, "Informe as questões e o gabarito desta atividade.")
-    if materia.tipo in MATERIAS_EXATAS:
+    if not gabarito:
+        garantir_competencias(db, materia)  # redacao: precisa de C1..C5 na materia
+    if gabarito:
         subtopicos.completar(materia.nome, payload.questoes, payload.titulo, subtopicos_da_materia(db, materia.id))  # em branco: a IA identifica (1 chamado)
+
+    valores = [None] * len(payload.questoes or [])
+    if gabarito:
+        try:
+            valores = distribuir([q.valor for q in payload.questoes], float(payload.valor_total or 1000)) \
+                if any(q.valor is not None for q in payload.questoes) else valores
+        except ValueError as e:
+            raise HTTPException(422, str(e))
 
     atividade = Atividade(
         materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
         tipo=TipoAtividadeEnum(payload.tipo), prazo=payload.prazo, criado_por=usuario.id,
-        valor_total=(payload.valor_total or 1000) if materia.tipo in MATERIAS_EXATAS else None,
+        valor_total=(payload.valor_total or 1000) if gabarito else None,
     )
     db.add(atividade)
     db.flush()
 
-    if materia.tipo in MATERIAS_EXATAS:
+    if gabarito:
         # um Tema por questao, especifico desta atividade (ver comentario em models/usuario.py::Tema)
         for i, questao in enumerate(payload.questoes, start=1):
             db.add(Tema(
                 materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
                 nome=questao.enunciado.strip(), resposta_correta=questao.resposta_correta.strip() or None,
-                subtopico=questao.subtopico,
+                subtopico=questao.subtopico, valor=valores[i - 1],
                 alternativas=questao.alternativas,
             ))
     return atividade
@@ -242,7 +265,7 @@ def enviar_imagem(
     if len(files) > MAX_FOLHAS:
         raise HTTPException(422, f"No máximo {MAX_FOLHAS} fotos por envio.")
     fotos = ler_folhas(files, MAX_FOLHAS)  # foto = 1 folha; PDF = 1 folha por pagina
-    exatas = db.get(Materia, atividade.materia_id).tipo in MATERIAS_EXATAS  # folha de exatas tem desenhos
+    exatas = tem_gabarito(atividade)  # folha de exatas tem desenhos
     # UMA chamada de OCR para todas as folhas (o texto sai unido, na ordem); se falhar, nada e gravado
     texto = ocr(fotos[0][0], fotos[0][1], exatas, extras=[(b, m) for b, m, _ in fotos[1:]])
     registrar_uso(db, usuario.escola_id, chamadas_ocr=1)
@@ -340,15 +363,17 @@ def minhas_submissoes(usuario: Usuario = Depends(get_current_user), db: Session 
         if correcao:
             # o aluno ve a propria correcao assim que ela existe (nota_professor nulo ate
             # aprovar): e provisoria, so o professor confirma depois (ver _pode_ver_correcao)
-            linhas = (
+            linhas = list(
                 db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
                 .filter(CorrecaoCriterio.correcao_id == correcao.id).order_by(Tema.habilidade_codigo)
             )
+            ativ_s = db.get(Atividade, s.atividade_id)
             criterios = [
                 CriterioResponse(
                     codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
                     nota_professor=float(c.nota_professor) if c.nota_professor is not None else None,
                     justificativa=c.justificativa, pontos=c.pontos or [],
+                    valor=valor_da_questao(ativ_s, t, len(linhas)) if tem_gabarito(ativ_s) else None,
                 )
                 for c, t in linhas
             ]
@@ -471,13 +496,12 @@ def enviar_objetiva(payload: EnviarObjetivaRequest, usuario: Usuario = Depends(g
         if m and m not in LETRAS[:len(t.alternativas)]:
             raise HTTPException(422, f"Alternativa inválida em {t.habilidade_codigo}.")
 
-    valor = float(atividade.valor_total or 1000) / len(temas)
     texto = "\n".join(f"{t.habilidade_codigo}: {marcadas.get(t.habilidade_codigo) or '-'}" for t in temas)
     submissao = Submissao(atividade_id=atividade.id, aluno_id=aluno.id, tipo_envio=TipoEnvioEnum.TEXTO,
                           conteudo_bruto=texto, texto_confirmado=texto)
     db.add(submissao)
     db.flush()
-    notas = {t.habilidade_codigo: (round(valor, 2) if marcadas.get(t.habilidade_codigo) == t.resposta_correta else 0.0)
+    notas = {t.habilidade_codigo: (round(valor_da_questao(atividade, t, len(temas)), 2) if marcadas.get(t.habilidade_codigo) == t.resposta_correta else 0.0)
              for t in temas}
     total = round(sum(notas.values()), 2)
     acertos = sum(1 for n in notas.values() if n)

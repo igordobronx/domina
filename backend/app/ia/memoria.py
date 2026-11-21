@@ -17,6 +17,7 @@ from pathlib import Path
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.pontos import valor_da_questao
 from app.config import settings
 from app.ia.embeddings import embutir
 from app.ia.extracao import ArquivoNaoLido, dividir, extrair_texto
@@ -159,10 +160,10 @@ def _exemplo(db: Session, correcao: Correcao, submissao: Submissao, atividade: A
         db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id)
         .filter(CorrecaoCriterio.correcao_id == correcao.id).order_by(Tema.habilidade_codigo).all()
     )
-    valor = float(atividade.valor_total or 1000) / max(len(criterios), 1)
     mudou = False
     for c, tema in criterios:
         nota_prof, nota_ia = float(c.nota_professor), float(c.nota)
+        valor = valor_da_questao(atividade, tema, len(criterios))
         linha = f"{tema.habilidade_codigo}) {tema.nome[:300]}"
         if tema.resposta_correta:
             linha += f" | Gabarito: {tema.resposta_correta[:200]}"

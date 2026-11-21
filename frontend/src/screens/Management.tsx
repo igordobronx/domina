@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import { BookOpen, Check, Plus, Users } from "lucide-react";
 import type { DemoState, Role } from "../types";
 import { Badge, Button, Card, Empty, Modal, Progress, SectionTitle } from "../components/ui";
+import { ResumoDominioAluno } from "./ResumoAluno";
 import {
   criarTurma,
   criarUsuario,
   definirMateriasDoProfessor,
-  dominioDoAluno,
-  evolucaoDoAluno,
   materiasDosProfessores,
-  type EvolucaoMateriaAPI,
   baixarDocumento,
   enviarDocumento,
   excluirDocumento,
@@ -22,7 +20,6 @@ import {
   matricular,
   membrosTurma,
   type DocumentoAPI,
-  type DominioAPI,
   type MateriaAPI,
   type MembroTurmaAPI,
   type TurmaAPI,
@@ -208,7 +205,7 @@ function TurmaCard({
           ) : (
             (membros ?? []).map((m) =>
               m.papel === "ALUNO" ? (
-                <AlunoRow key={m.id} aluno={m} notify={notify} />
+                <AlunoRow key={m.id} aluno={m} />
               ) : (
                 <div className="student-table" key={m.id}>
                   <div className="avatar">
@@ -308,28 +305,12 @@ function MateriasDoProfessor({
   );
 }
 
-function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string) => void }) {
+function AlunoRow({ aluno }: { aluno: MembroTurmaAPI }) {
   const [aberto, setAberto] = useState(false);
-  const [dominio, setDominio] = useState<DominioAPI[] | null>(null);
-  const [evolucao, setEvolucao] = useState<EvolucaoMateriaAPI[]>([]);
-  const [carregando, setCarregando] = useState(false);
-
-  const abrir = () => {
-    const vaiAbrir = !aberto;
-    setAberto(vaiAbrir);
-    if (vaiAbrir && !dominio) {
-      setCarregando(true);
-      evolucaoDoAluno(aluno.id).then(setEvolucao).catch(() => {});
-      dominioDoAluno(aluno.id)
-        .then(setDominio)
-        .catch(() => notify("Não foi possível carregar o domínio deste aluno."))
-        .finally(() => setCarregando(false));
-    }
-  };
 
   return (
     <div className="student-table-expandable">
-      <button className="student-table student-table-button" onClick={abrir} aria-expanded={aberto}>
+      <button className="student-table student-table-button" onClick={() => setAberto(!aberto)} aria-expanded={aberto}>
         <div className="avatar">
           {aluno.nome
             .split(" ")
@@ -346,30 +327,7 @@ function AlunoRow({ aluno, notify }: { aluno: MembroTurmaAPI; notify: (s: string
       </button>
       {aberto && (
         <div className="student-domain">
-          {carregando ? (
-            <p className="muted">Carregando...</p>
-          ) : !dominio?.length && !evolucao.length ? (
-            <p className="muted">Ainda sem correções aprovadas nas matérias que você leciona para este aluno.</p>
-          ) : (
-            <>
-              {evolucao.map((e) => (
-                <div key={e.materia_id}>
-                  <p className="tiny">
-                    <strong>{e.materia}</strong> · média {Math.round(e.media_percentual)}% · {e.num_atividades} atividade(s)
-                  </p>
-                  <Progress value={e.media_percentual} label={e.materia} />
-                </div>
-              ))}
-              {(dominio ?? []).map((d) => (
-                <div key={d.tema_id}>
-                  <p className="tiny">
-                    <strong>{d.materia} · {d.habilidade_codigo}</strong> · {d.tema} · {Math.round(d.percentual_dominio)}%
-                  </p>
-                  <Progress value={d.percentual_dominio} label={d.tema} />
-                </div>
-              ))}
-            </>
-          )}
+          <ResumoDominioAluno alunoId={aluno.id} />
         </div>
       )}
     </div>

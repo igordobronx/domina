@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { TextInput } from "react-native";
 import { CampoComSimbolos } from "../components/CampoComSimbolos";
+import { EditorQuestao, vazio, type Rascunho } from "../components/EditorQuestao";
+import { PontosSeletor } from "../components/PontosSeletor";
 import { ActivityRow } from "./Dashboard";
 import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import { Filtros } from "../components/Filtros";
@@ -35,13 +37,14 @@ import {
   editarAtividade,
   excluirAtividade,
   listarAtividades,
-  criarMateria,
   enviarImagem,
   enviarTexto,
   enviarObjetiva,
   listarMaterias,
   listarTurmasMinhas,
   rodarAgente,
+  sugerirExercicios,
+  type SugestaoExercicioAPI,
   urlFiguraQuestao,
   urlImagemSubmissao,
   verAgente,
@@ -179,7 +182,7 @@ type Props = {
   selected: string | null;
   select: (id: string | null) => void;
   reviewOnly?: boolean;
-  initialFilter?: string; // "todas" | "disponivel" | "pendente" | "aprovada"
+  initialFilter?: string; // "todas" | "disponivel" | "pendente" | "corrigida_ia" | "aprovada"
   currentUser?: UsuarioAtual | null;
 };
 export function Activities({
@@ -295,7 +298,8 @@ export function Activities({
       (!turmaAtiva || a.turmaId === turmaAtiva) &&
       (filter === "todas" || a.status === filter) &&
       `${a.title} ${a.subject} ${a.student}`.toLowerCase().includes(search.toLowerCase()),
-    ); // a ordem vem do servidor: mais recentes primeiro
+    ) // aluno: feitas do mais novo para o mais velho (as ainda não feitas ficam depois, na ordem do servidor)
+    .sort((x, y) => (role === "aluno" ? (y.enviadoEm ?? "").localeCompare(x.enviadoEm ?? "") : 0));
   return (
     <>
       {modalForm}
@@ -330,6 +334,7 @@ export function Activities({
               opcoes: [
                 ...(!reviewOnly ? [{ valor: "disponivel", rotulo: "Para fazer" }] : []),
                 { valor: "pendente", rotulo: "Em revisão" },
+                { valor: "corrigida_ia", rotulo: "Corrigidas pela IA" },
                 { valor: "aprovada", rotulo: "Corrigidas" },
               ],
             },
@@ -581,7 +586,8 @@ function ActivityDetail({
                   value={ocrTexto}
                   onChangeText={setOcrTexto}
                   style={{
-                    minHeight: 300,
+                    width: "100%",
+                    minHeight: 420,
                     fontFamily: "IBM Plex Sans",
                     fontSize: 16,
                     lineHeight: 27,
@@ -852,7 +858,7 @@ function ActivityDetail({
                     : "Revisão da atividade"
                 }
               />
-              <Badge tone={a.status === "aprovada" ? "green" : "amber"}>
+              <Badge tone={a.status === "aprovada" ? "green" : a.status === "corrigida_ia" ? "blue" : "amber"}>
                 {a.status === "aprovada"
                   ? "Revisada pelo professor"
                   : onCorrigidaReal
@@ -1074,12 +1080,13 @@ function RevisaoReal({
 
   const aprovar = () => {
     // exatas: nota livre de 0 ate o valor da questao; confere antes de mandar ao servidor
-    const maxQuestao = (a.valorTotal ?? 1000) / Math.max(correcao?.criterios.length ?? 1, 1);
+    const maxDe = (codigo: string) => correcao?.criterios.find((c) => c.codigo === codigo)?.valor
+      ?? (a.valorTotal ?? 1000) / Math.max(correcao?.criterios.length ?? 1, 1);
     const invalida = Object.entries(notas).find(
-      ([codigo, n]) => codigo.startsWith("Q") && !(Number.isFinite(n) && n >= 0 && n <= maxQuestao + 0.01),
+      ([codigo, n]) => codigo.startsWith("Q") && !(Number.isFinite(n) && n >= 0 && n <= maxDe(codigo) + 0.01),
     );
     if (invalida) {
-      setError(`A nota de ${invalida[0]} deve estar entre 0 e ${Math.round(maxQuestao * 100) / 100}.`);
+      setError(`A nota de ${invalida[0]} deve estar entre 0 e ${Math.round(maxDe(invalida[0]) * 100) / 100}.`);
       setConfirmApproval(false);
       return;
     }
@@ -1167,7 +1174,7 @@ function RevisaoReal({
                     // questoes (ver app/routers/submissoes.py::aprovar_correcao). Redacao
                     // (C1..C5): sempre a escala fixa de 0 a 200 do ENEM.
                     const exatas = c.codigo.startsWith("Q");
-                    const valorPorQuestao = (a.valorTotal ?? 1000) / correcao.criterios.length;
+                    const valorPorQuestao = c.valor ?? (a.valorTotal ?? 1000) / correcao.criterios.length;
                     const niveis = NOTAS_ENEM;
                     return (
                       <label key={c.codigo}>
@@ -1463,7 +1470,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
   const [titulo, setTitulo] = useState("");
   const [prazo, setPrazo] = useState("");
   const [valorTotal, setValorTotal] = useState(1000);
-  const [questoes, setQuestoes] = useState<{ enunciado: string; resposta_correta: string; alternativas: string[] | null; subtopico: string }[]>([]);
+  const [questoes, setQuestoes] = useState<{ enunciado: string; resposta_correta: string; alternativas: string[] | null; subtopico: string; valor?: number }[]>([]);
   const [salvando, setSalvando] = useState(false);
   useEffect(() => {
     listarAtividades().then((lista) => {
@@ -1473,7 +1480,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
       setTitulo(x.titulo);
       setPrazo(x.prazo ?? "");
       setValorTotal(x.valor_total);
-      setQuestoes((x.questoes ?? []).map((q) => ({ enunciado: q.enunciado, resposta_correta: q.resposta_correta ?? "", alternativas: q.alternativas ?? null, subtopico: q.subtopico ?? "" })));
+      setQuestoes((x.questoes ?? []).map((q) => ({ enunciado: q.enunciado, resposta_correta: q.resposta_correta ?? "", alternativas: q.alternativas ?? null, subtopico: q.subtopico ?? "", valor: q.valor ?? undefined })));
     }).catch(() => notify("Não foi possível carregar a atividade."));
   }, [atividadeId]);
   if (!a) return <Empty title="Carregando..." text="Buscando a atividade." />;
@@ -1485,6 +1492,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
       return notify("Preencha o enunciado e a resposta (alternativa correta ou resposta exemplo) de todas as questões.");
     const payloadQuestoes = questoes.map((q) => ({
       enunciado: q.enunciado, resposta_correta: q.resposta_correta, subtopico: q.subtopico.trim() || undefined,
+      valor: valorTotal === a.valor_total ? q.valor : undefined, // mudou o total: volta a dividir igual
       alternativas: q.alternativas ? alternativasDe(q.alternativas) ?? undefined : undefined,
     }));
     if (gabaritoLivre && questoes.some((q, i) => q.alternativas && !payloadQuestoes[i].alternativas))
@@ -1557,22 +1565,10 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
 }
 
 const TIPOS_ATIVIDADE: { value: string; label: string }[] = [
-  { value: "REDACAO", label: "Redação" },
-  { value: "PROVA_DISCURSIVA", label: "Prova discursiva" },
-  { value: "PROVA_OBJETIVA", label: "Prova objetiva" },
   { value: "EXERCICIO", label: "Exercício" },
+  { value: "PROVA", label: "Prova" },
+  { value: "REDACAO", label: "Redação" },
 ];
-
-const TIPOS_MATERIA: { value: MateriaAPI["tipo"]; label: string }[] = [
-  { value: "MATERIA_OBJETIVA", label: "Exatas (matemática, física, química...)" },
-  { value: "REDACAO_ENEM", label: "Redação ENEM" },
-  { value: "REDACAO_OUTRO_VESTIBULAR", label: "Redação (outro vestibular)" },
-  { value: "MATERIA_DISCURSIVA", label: "Outra matéria discursiva" },
-];
-
-// correcao por gabarito (nao e a rubrica de redacao): a atividade precisa das questoes e da
-// resposta correta de cada uma
-const MATERIAS_COM_GABARITO: MateriaAPI["tipo"][] = ["MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"];
 
 // figura do enunciado (anexada pelo professor); a imagem exige o token, entao vem como blob
 function FiguraQuestao({ atividadeId, codigo }: { atividadeId: string; codigo: string }) {
@@ -1587,18 +1583,6 @@ function FiguraQuestao({ atividadeId, codigo }: { atividadeId: string; codigo: s
     };
   }, [atividadeId, codigo]);
   return url ? <img src={url} alt={`Figura da questão ${codigo}`} style={{ maxWidth: "100%", display: "block", marginTop: 8 }} /> : null;
-}
-
-// uma questao pode ter itens (a, b, c...); o backend so guarda um enunciado de texto por
-// questao, entao os itens viram linhas "a) ...", "b) ..." dentro dele (ver compoeEnunciado)
-const LETRAS = "abcdefghijklmnopqrstuvwxyz";
-interface QuestaoForm {
-  enunciado: string;
-  itens: string[];
-  resposta_correta: string; // objetiva: a letra do gabarito
-  alternativas: string[]; // so usado no formato objetiva
-  subtopico?: string; // em branco: a IA identifica
-  figura?: File; // anexada depois que a atividade e criada
 }
 
 // alternativas preenchidas em ordem (A, B, C...); null se ha buraco no meio ou menos de 2
@@ -1646,11 +1630,9 @@ function CamposObjetiva({ alternativas, gabarito, onChange }: {
   );
 }
 
-function compoeEnunciado(q: { enunciado: string; itens: string[] }): string {
-  const itens = q.itens.map((it) => it.trim()).filter(Boolean);
-  const partes = itens.map((it, i) => `${LETRAS[i] ?? i + 1}) ${it}`);
-  return [q.enunciado.trim(), ...partes].filter(Boolean).join("\n");
-}
+type QuestaoNova = { r: Rascunho; pontos: string; subtopico: string; figura?: File };
+const questaoVazia = (): QuestaoNova => ({ r: { ...vazio, alternativas: ["", "", "", ""], respostasExemplo: [""] }, pontos: "", subtopico: "" });
+const PONTOS_QUESTAO = ["0,5", "1", "1,5", "2", "2,5", "3", "4", "5"].map((x) => x.replace(",", "."));
 
 function NovaAtividade({
   onBack,
@@ -1666,25 +1648,21 @@ function NovaAtividade({
   const [turmaIds, setTurmaIds] = useState<string[]>([]); // uma atividade independente por turma marcada
   const [materiaId, setMateriaId] = useState("");
   const [titulo, setTitulo] = useState("");
-  const [tipo, setTipo] = useState(""); // nada pre-selecionado
-  const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }]);
-  const [valorTotalTxt, setValorTotalTxt] = useState("");
-  const valorTotal = Number(valorTotalTxt) || 0;
-  const [formato, setFormato] = useState<"" | "discursiva" | "objetiva">("");
+  const [tipo, setTipo] = useState<"" | "EXERCICIO" | "PROVA" | "REDACAO">(""); // nada pre-selecionado
+  const [aba, setAba] = useState<"escrever" | "ia" | null>(null);
+  const [formato, setFormato] = useState<"" | "objetiva" | "discursiva">("");
+  const [totalTxt, setTotalTxt] = useState("10");
+  const [questoes, setQuestoes] = useState<QuestaoNova[]>([questaoVazia()]);
   const [prazo, setPrazo] = useState("");
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
-
-  const [criandoMateria, setCriandoMateria] = useState(false);
-  const [novaMateriaNome, setNovaMateriaNome] = useState("");
-  const [novaMateriaTipo, setNovaMateriaTipo] = useState("");
-  const [salvandoMateria, setSalvandoMateria] = useState(false);
-
-  const recarregarMaterias = () =>
-    listarMaterias().then((m) => {
-      setMaterias(m);
-      return m;
-    });
+  const [sugerindo, setSugerindo] = useState<number | null>(null);
+  // pedir para a IA
+  const [assunto, setAssunto] = useState("");
+  const [quantidade, setQuantidade] = useState(3);
+  const [instrucoes, setInstrucoes] = useState("");
+  const [gerando, setGerando] = useState(false);
+  const [sugestoes, setSugestoes] = useState<SugestaoExercicioAPI[]>([]);
 
   useEffect(() => {
     Promise.all([listarTurmasMinhas(), listarMaterias()]).then(([t, m]) => {
@@ -1694,73 +1672,80 @@ function NovaAtividade({
   }, []);
 
   const carregando = turmas === null || materias === null;
-  const materiaSelecionada = materias?.find((m) => m.id === materiaId);
-  const exigeGabarito = !!materiaSelecionada && MATERIAS_COM_GABARITO.includes(materiaSelecionada.tipo);
-  // "Redação" como tipo da atividade nao faz sentido numa materia de exatas; troca so se o
-  // professor ainda nao tiver escolhido outro tipo manualmente (evita rotular errado por engano)
-  useEffect(() => {
-    if (exigeGabarito && tipo === "REDACAO") setTipo("EXERCICIO");
-  }, [exigeGabarito]);
+  const exigeGabarito = !!tipo && tipo !== "REDACAO"; // o formato vem do tipo da atividade, não da matéria
+  const total = Number(totalTxt) || 0;
+  const setQ = (i: number, mudanca: Partial<QuestaoNova>) => setQuestoes((qs) => qs.map((x, j) => (j === i ? { ...x, ...mudanca } : x)));
+  const somaDadas = questoes.reduce((t, q) => t + (Number(q.pontos) || 0), 0);
 
-  const criarNovaMateria = () => {
-    if (!novaMateriaNome.trim() || !novaMateriaTipo) {
-      setError("Dê um nome e escolha o tipo da matéria.");
-      return;
-    }
-    setSalvandoMateria(true);
-    setError("");
-    criarMateria({ nome: novaMateriaNome.trim(), tipo: novaMateriaTipo as MateriaAPI["tipo"] })
-      .then((nova) => recarregarMaterias().then(() => {
-        setMateriaId(nova.id);
-        setCriandoMateria(false);
-        setNovaMateriaNome("");
-        setNovaMateriaTipo("");
-      }))
-      .catch((erro) => setError(erro instanceof Error ? erro.message : "Não foi possível criar a matéria."))
-      .finally(() => setSalvandoMateria(false));
+  const trocarFormato = (v: string) => {
+    const novo = (v || "") as typeof formato;
+    setFormato(novo);
+    setQuestoes((qs) => qs.map((q) => ({ ...q, r: { ...q.r, tipo: novo === "discursiva" ? "DISCURSIVO" : "OBJETIVO" } })));
+  };
+
+  const daSugestao = (s: SugestaoExercicioAPI): QuestaoNova => ({
+    r: {
+      tipo: s.alternativas.length ? "OBJETIVO" : "DISCURSIVO", enunciado: s.enunciado,
+      alternativas: s.alternativas.length ? s.alternativas : ["", "", "", ""], correta: s.resposta_correta,
+      respostasExemplo: [s.resposta_exemplo ?? ""], explicacao: s.explicacao, daIA: true, respostaIA: false,
+    },
+    pontos: "", subtopico: "",
+  });
+  const adicionar = (lista: SugestaoExercicioAPI[]) => {
+    setQuestoes((qs) => [...qs.filter((q) => q.r.enunciado.trim() || q.r.alternativas.some((a) => a.trim())), ...lista.map(daSugestao)]);
+    setSugestoes((x) => x.filter((s) => !lista.includes(s)));
+    setAba("escrever");
+    notify("Questões copiadas para “Escrever eu mesmo”. Revise, dê os pontos e salve.");
+  };
+
+  const gerar = async () => {
+    if (!materiaId) return setError("Escolha a matéria.");
+    if (!assunto.trim()) return setError("Escreva o tema para a IA.");
+    setGerando(true); setError(""); setSugestoes([]);
+    try {
+      setSugestoes(await sugerirExercicios({ materia_id: materiaId, assunto: assunto.trim(),
+        tipo: formato === "discursiva" ? "DISCURSIVO" : "OBJETIVO", quantidade, instrucoes: instrucoes.trim() || undefined }));
+    } catch (e) { setError(e instanceof Error ? e.message : "A IA não conseguiu gerar agora. Tente de novo."); }
+    finally { setGerando(false); }
+  };
+
+  const iaSugereResposta = async (i: number) => {
+    const q = questoes[i];
+    if (!materiaId) return setError("Escolha a matéria antes de pedir para a IA.");
+    if (!q.r.enunciado.trim()) return setError("Escreva o enunciado antes de pedir a resposta para a IA.");
+    setSugerindo(i); setError("");
+    try {
+      const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, enunciado: q.r.enunciado });
+      setQ(i, { r: { ...q.r, respostasExemplo: [resposta_exemplo], respostaIA: true } });
+    } catch (e) { setError(e instanceof Error ? e.message : "A IA não conseguiu sugerir agora."); }
+    finally { setSugerindo(null); }
   };
 
   const salvar = () => {
-    if (!titulo.trim()) {
-      setError("Dê um título para a atividade.");
-      return;
-    }
-    if (!turmaIds.length || !materiaId || !tipo) {
-      setError("Escolha ao menos uma turma, a matéria e o tipo.");
-      return;
-    }
-    if (exigeGabarito && !formato) {
-      setError("Escolha o formato das questões.");
-      return;
-    }
-    const objetivaForm = exigeGabarito && formato === "objetiva";
-    if (objetivaForm) {
-      for (const [i, q] of questoes.entries()) {
-        if (!q.enunciado.trim() && !q.alternativas.some((x) => x.trim())) continue; // questao em branco e ignorada
-        const alts = alternativasDe(q.alternativas);
-        if (!q.enunciado.trim() || !alts) {
-          setError(`Questão ${i + 1}: preencha o enunciado e ao menos 2 alternativas seguidas (A, B...).`);
-          return;
-        }
-        if (!"ABCDE".slice(0, alts.length).includes(q.resposta_correta)) {
-          setError(`Questão ${i + 1}: marque qual alternativa é a correta.`);
-          return;
-        }
+    if (!titulo.trim()) return setError("Dê um título para a atividade.");
+    if (!turmaIds.length || !materiaId || !tipo) return setError("Escolha ao menos uma turma, a matéria e o tipo.");
+    if (exigeGabarito && !formato) return setError("Escolha o tipo das questões (objetiva ou discursiva).");
+    let questoesValidas: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string; valor?: number }[] = [];
+    let figuras: (File | undefined)[] = [];
+    if (exigeGabarito) {
+      if (!(total > 0)) return setError("Informe o total de pontos da atividade.");
+      const feitas = questoes.filter((q) => q.r.enunciado.trim() || q.r.alternativas.some((a) => a.trim()) || q.r.respostasExemplo.some((x) => x.trim()));
+      if (!feitas.length) return setError("Adicione ao menos uma questão.");
+      for (const [i, q] of feitas.entries()) {
+        const n = `Questão ${i + 1}`;
+        if (!q.r.enunciado.trim()) return setError(`${n}: escreva o enunciado.`);
+        if (formato === "objetiva") {
+          const alts = q.r.alternativas.map((a) => a.trim());
+          if (alts.length < 2 || alts.some((a) => !a)) return setError(`${n}: preencha todas as alternativas (ou remova as vazias).`);
+          if (q.r.correta === null || q.r.correta >= alts.length) return setError(`${n}: marque qual alternativa é a correta.`);
+        } else if (!q.r.respostasExemplo[0]?.trim()) return setError(`${n}: escreva a resposta de exemplo ou clique em “IA sugere”.`);
       }
-    }
-    const preenchidas = questoes
-      .map((q) => objetivaForm
-        ? { enunciado: q.enunciado.trim(), resposta_correta: q.resposta_correta, alternativas: alternativasDe(q.alternativas) ?? undefined, figura: q.figura, subtopico: q.subtopico?.trim() || undefined }
-        : { enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim(), alternativas: undefined, figura: q.figura, subtopico: q.subtopico?.trim() || undefined })
-      .filter((q) => q.enunciado && q.resposta_correta);
-    const questoesValidas = preenchidas.map(({ enunciado, resposta_correta, alternativas, subtopico }) => ({ enunciado, resposta_correta, alternativas, subtopico }));
-    if (exigeGabarito && !questoesValidas.length) {
-      setError("Adicione ao menos uma questão com enunciado e resposta (a alternativa correta ou a resposta exemplo).");
-      return;
-    }
-    if (exigeGabarito && (!valorTotal || valorTotal <= 0)) {
-      setError("Informe o valor total da atividade.");
-      return;
+      questoesValidas = feitas.map((q) => formato === "objetiva"
+        ? { enunciado: q.r.enunciado.trim(), resposta_correta: "ABCDE"[q.r.correta!], alternativas: q.r.alternativas.map((a) => a.trim()),
+            subtopico: q.subtopico.trim() || undefined, valor: Number(q.pontos) || undefined }
+        : { enunciado: q.r.enunciado.trim(), resposta_correta: q.r.respostasExemplo[0].trim(),
+            subtopico: q.subtopico.trim() || undefined, valor: Number(q.pontos) || undefined });
+      figuras = feitas.map((q) => q.figura);
     }
     setSalvando(true);
     setError("");
@@ -1768,18 +1753,18 @@ function NovaAtividade({
       materia_id: materiaId,
       turma_ids: turmaIds,
       titulo: titulo.trim(),
-      tipo: tipo as AtividadeAPI["tipo"],
+      tipo: tipo === "PROVA" ? (formato === "objetiva" ? "PROVA_OBJETIVA" : "PROVA_DISCURSIVA") : (tipo as AtividadeAPI["tipo"]),
       questoes: exigeGabarito ? questoesValidas : undefined,
-      valor_total: exigeGabarito ? valorTotal : undefined,
+      valor_total: exigeGabarito ? total : undefined,
       prazo: prazo || undefined,
     })
       .then(async (criadas) => {
         // as questoes saem como Q1, Q2... na ordem em que foram enviadas; a figura sobe em cada atividade criada
         const falhas: string[] = [];
         for (const criada of criadas) {
-          for (const [i, q] of preenchidas.entries()) {
-            if (!q.figura) continue;
-            await anexarFiguraQuestao(criada.id, `Q${i + 1}`, q.figura).catch(() => falhas.push(`Q${i + 1} (${criada.turma})`));
+          for (const [i, figura] of figuras.entries()) {
+            if (!figura) continue;
+            await anexarFiguraQuestao(criada.id, `Q${i + 1}`, figura).catch(() => falhas.push(`Q${i + 1} (${criada.turma})`));
           }
         }
         const quantas = criadas.length === 1 ? "Atividade criada" : `${criadas.length} atividades criadas (uma por turma)`;
@@ -1847,7 +1832,7 @@ function NovaAtividade({
               </label>
               <label>
                 Tipo
-                <Escolha value={tipo} onChange={(e) => { setTipo(e.target.value); if (e.target.value === "PROVA_OBJETIVA") setFormato("objetiva"); }}>
+                <Escolha value={tipo} onChange={(e) => { setTipo(e.target.value as typeof tipo); setAba(null); }}>
                   <option value="">Escolha o tipo</option>
                   {TIPOS_ATIVIDADE.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -1858,213 +1843,131 @@ function NovaAtividade({
               </label>
             </div>
 
-            {!criandoMateria ? (
-              <Button variant="secondary" icon={Plus} onPress={() => setCriandoMateria(true)}>
-                Nova matéria
-              </Button>
-            ) : (
-              <Modal title="Nova matéria" onClose={() => setCriandoMateria(false)}>
-              <Card>
-                <SectionTitle title="Nova matéria" />
-                <div className="form-grid">
-                  <label>
-                    Nome
-                    <input
-                      value={novaMateriaNome}
-                      onChange={(e) => setNovaMateriaNome(e.target.value)}
-                      placeholder="Ex.: Matemática"
-                    />
-                  </label>
-                  <label>
-                    Tipo
-                    <Escolha
-                      value={novaMateriaTipo}
-                      onChange={(e) => setNovaMateriaTipo(e.target.value)}
-                    >
-                      <option value="">Escolha o tipo</option>
-                      {TIPOS_MATERIA.map((t) => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </Escolha>
-                  </label>
-                </div>
-                <div className="form-actions">
-                  <Button variant="secondary" onPress={() => setCriandoMateria(false)}>
-                    Cancelar
-                  </Button>
-                  <Button disabled={salvandoMateria} onPress={criarNovaMateria}>
-                    {salvandoMateria ? "Salvando..." : "Criar matéria"}
-                  </Button>
-                </div>
-              </Card>
-              </Modal>
-            )}
-
             {exigeGabarito && (
-              <Card>
-                <SectionTitle title="Questões e gabarito" />
-                <label>
-                  Formato das questões
-                  <Escolha value={formato} onChange={(e) => setFormato(e.target.value as typeof formato)}>
-                    <option value="">Escolha o formato</option>
-                    <option value="objetiva">Objetiva (A–E, como o ENEM)</option>
-                    <option value="discursiva">Discursiva</option>
-                  </Escolha>
-                </label>
-                <p className="tiny muted">
-                  {formato === "objetiva"
-                    ? "O aluno marca a alternativa na tela e a correção sai na hora, comparando com o gabarito (sem IA)."
-                    : "A IA corrige comparando a resposta do aluno com a resposta correta de cada questão — não é uma avaliação subjetiva, é uma conferência lógica."}
-                </p>
-                {formato && (<>
-                <label>
-                  Valor total da atividade (pontos)
-                  <input
-                    type="number"
-                    min={1}
-                    value={valorTotalTxt}
-                    placeholder="Ex.: 1000"
-                    onChange={(e) => setValorTotalTxt(e.target.value)}
-                  />
-                </label>
-                <p className="tiny muted">
-                  Dividido igualmente entre as {questoes.length} questão(ões): {" "}
-                  {(valorTotal / Math.max(questoes.length, 1)).toFixed(1)} pontos cada.
-                </p>
-                {questoes.map((q, i) => (
-                  <div className="form-grid" key={i}>
-                    <label>
-                      {`Questão ${i + 1}${q.itens.length > 1 ? " (enunciado comum, se houver)" : ""}`}
-                      <CampoComSimbolos
-                        value={q.enunciado}
-                        onChange={(e) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], enunciado: e.target.value };
-                          setQuestoes(copia);
-                        }}
-                        placeholder="Ex.: Resolva 2x + 3 = 7 (ou o contexto, se a questão tiver itens a, b, c...)"
-                        rows={3}
-                      />
-                    </label>
-                    {formato === "objetiva" ? (
-                      <CamposObjetiva
-                        alternativas={q.alternativas}
-                        gabarito={q.resposta_correta}
-                        onChange={(alternativas, resposta_correta) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], alternativas, resposta_correta };
-                          setQuestoes(copia);
-                        }}
-                      />
-                    ) : q.itens.map((item, j) => (
-                      <label key={j}>
-                        {`Item ${LETRAS[j] ?? j + 1})`}
-                        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                          <CampoComSimbolos
-                            value={item}
-                            onChange={(e) => {
-                              const copia = [...questoes];
-                              const itens = [...copia[i].itens];
-                              itens[j] = e.target.value;
-                              copia[i] = { ...copia[i], itens };
-                              setQuestoes(copia);
-                            }}
-                            placeholder={`Ex.: ${LETRAS[j] ?? j + 1}) determine o valor de x`}
-                            rows={2}
-                          />
-                          {q.itens.length > 1 && (
-                            <button
-                              className="back-link"
-                              onClick={() => {
-                                const copia = [...questoes];
-                                copia[i] = { ...copia[i], itens: copia[i].itens.filter((_, k) => k !== j) };
-                                setQuestoes(copia);
-                              }}
-                            >
-                              <Trash2 size={14} />
+              <>
+                <p className="rotulo-escolha">Como criar</p>
+                <Seletor rotulo="Como criar" placeholder="Escolha como criar"
+                  opcoes={[{ valor: "escrever", rotulo: "Escrever eu mesmo" }, { valor: "ia", rotulo: "Pedir para a IA" }]}
+                  valor={aba ?? ""} onChange={(v) => setAba((v || null) as typeof aba)} />
+                {aba !== null && (
+                  <>
+                    <p className="rotulo-escolha">Tipo das questões</p>
+                    <Seletor rotulo="Tipo das questões" placeholder="Escolha o tipo"
+                      opcoes={[{ valor: "objetiva", rotulo: "Objetivo (alternativas)" }, { valor: "discursiva", rotulo: "Discursivo (o aluno escreve)" }]}
+                      valor={formato} onChange={trocarFormato} />
+                    <p className="tiny muted">
+                      {formato === "objetiva"
+                        ? "O aluno marca a alternativa na tela e a correção sai na hora, comparando com o gabarito (sem IA)."
+                        : formato === "discursiva"
+                          ? "A IA corrige comparando a resposta do aluno com a resposta de exemplo de cada questão; você revisa e dá a nota final."
+                          : ""}
+                    </p>
+                  </>
+                )}
+                {aba !== null && formato && (
+                  <>
+                    <p className="rotulo-escolha">Total de pontos da atividade</p>
+                    <PontosSeletor rotulo="Total de pontos" valor={totalTxt} onChange={setTotalTxt} opcoes={["10"]} placeholder="Escolha o total" />
+                    <p className="tiny muted">
+                      Cada questão pode valer um valor diferente. As que ficarem sem pontos dividem igualmente o que sobrar.
+                      {somaDadas > 0 ? ` Já distribuídos: ${somaDadas} de ${total || "?"}.` : ""}
+                    </p>
+                  </>
+                )}
+                {aba === "escrever" && formato && (
+                  <>
+                    {questoes.map((q, i) => (
+                      <div className="meta-linha" key={i}>
+                        <div className="meta-topo">
+                          <strong>Questão {i + 1}</strong>
+                          {questoes.length > 1 && (
+                            <button type="button" className="botao-pequeno perigo" onClick={() => setQuestoes(questoes.filter((_, j) => j !== i))}>
+                              <Trash2 size={14} /> Remover questão
                             </button>
                           )}
                         </div>
-                      </label>
+                        <EditorQuestao r={q.r} setR={(r) => setQ(i, { r })} comExplicacao={false} umaResposta
+                          sugerindoResposta={sugerindo === i} onSugerirResposta={() => iaSugereResposta(i)} />
+                        <div className="form-grid ex-form">
+                          <div>
+                            <p className="rotulo-escolha">Pontos desta questão</p>
+                            <PontosSeletor rotulo={`Pontos da questão ${i + 1}`} valor={q.pontos} onChange={(v) => setQ(i, { pontos: v })}
+                              opcoes={PONTOS_QUESTAO} placeholder="Dividir o que sobrar" />
+                          </div>
+                          <label>
+                            Subtópico (opcional)
+                            <input value={q.subtopico} placeholder="Ex.: Equação do 1º grau. Em branco: a IA identifica."
+                              onChange={(e) => setQ(i, { subtopico: e.target.value })} />
+                          </label>
+                          <label className="span-2">
+                            Figura da questão (opcional)
+                            <input type="file" accept="image/*" onChange={(e) => setQ(i, { figura: e.target.files?.[0] })} />
+                            {q.figura && (
+                              <img src={URL.createObjectURL(q.figura)} alt="Pré-visualização da figura"
+                                style={{ maxWidth: "100%", maxHeight: 220, display: "block", marginTop: 8 }} />
+                            )}
+                          </label>
+                        </div>
+                      </div>
                     ))}
-                    {formato === "discursiva" && <button
-                      className="back-link"
-                      onClick={() => {
-                        const copia = [...questoes];
-                        copia[i] = { ...copia[i], itens: [...copia[i].itens, ""] };
-                        setQuestoes(copia);
-                      }}
-                    >
-                      <Plus size={14} />
-                      Adicionar item ({LETRAS[q.itens.length] ?? q.itens.length + 1})
-                    </button>}
-                    <label>
-                      Figura da questão (opcional)
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], figura: e.target.files?.[0] };
-                          setQuestoes(copia);
-                        }}
-                      />
-                      {q.figura && (
-                        <img
-                          src={URL.createObjectURL(q.figura)}
-                          alt="Pré-visualização da figura"
-                          style={{ maxWidth: "100%", maxHeight: 220, display: "block", marginTop: 8 }}
-                        />
+                    <div className="form-actions left">
+                      <Button variant="secondary" icon={Plus} onPress={() => setQuestoes([...questoes, questaoVazia()])}>
+                        Adicionar questão
+                      </Button>
+                    </div>
+                  </>
+                )}
+                {aba === "ia" && formato && (
+                  <>
+                    <div className="form-grid">
+                      <label>Tema para a IA
+                        <input value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex.: Função afim, Porcentagem, Coesão" />
+                      </label>
+                      <label>Quantas questões
+                        <Escolha value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))}>
+                          {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+                        </Escolha>
+                      </label>
+                      <label className="span-2">Pedido para a IA (opcional)
+                        <textarea rows={2} value={instrucoes} onChange={(e) => setInstrucoes(e.target.value)}
+                          placeholder="Ex.: nível fácil, usar situações do dia a dia, estilo ENEM" />
+                      </label>
+                    </div>
+                    <p className="tiny muted">A IA só cria rascunhos. Nada chega ao aluno até você salvar a atividade.</p>
+                    <div className="form-actions left">
+                      <Button icon={Sparkles} disabled={gerando} onPress={gerar}>
+                        {gerando ? "A IA está criando..." : sugestoes.length ? "Gerar de novo" : "Gerar sugestões"}
+                      </Button>
+                      {sugestoes.length > 1 && (
+                        <Button variant="secondary" icon={Check} onPress={() => adicionar(sugestoes)}>Adicionar todas</Button>
                       )}
-                    </label>
-                    {formato === "discursiva" && <label>
-                      Resposta exemplo (digite ou gere com a IA)
-                      <CampoComSimbolos
-                        value={q.resposta_correta}
-                        onChange={(e) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], resposta_correta: e.target.value };
-                          setQuestoes(copia);
-                        }}
-                        placeholder="Ex.: a) x = 2  b) y = 5"
-                        rows={2}
-                      />
-                      <Button variant="ghost" small icon={Sparkles} disabled={!materiaId || !compoeEnunciado(q).trim()}
-                        onPress={async () => {
-                          try {
-                            const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, enunciado: compoeEnunciado(q) });
-                            setQuestoes((atual) => atual.map((x, j) => j === i ? { ...x, resposta_correta: resposta_exemplo } : x));
-                          } catch (e) { setError(e instanceof Error ? e.message : "A IA não conseguiu sugerir agora."); }
-                        }}>Gerar com IA (você revisa antes de salvar)</Button>
-                    </label>}
-                    <label>
-                      Subtópico (opcional)
-                      <input value={q.subtopico ?? ""} placeholder="Ex.: Equação do 1º grau. Em branco: a IA identifica."
-                        onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, subtopico: e.target.value } : x))} />
-                      <span className="tiny muted">O assunto geral (ex.: Conjuntos). Em branco, a IA identifica e você pode corrigir depois, editando a atividade.</span>
-                    </label>
-                    {questoes.length > 1 && (
-                      <button
-                        className="back-link"
-                        onClick={() => setQuestoes(questoes.filter((_, j) => j !== i))}
-                      >
-                        <Trash2 size={14} />
-                        Remover questão
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  variant="secondary"
-                  icon={Plus}
-                  onPress={() => setQuestoes([...questoes, { enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }])}
-                >
-                  Adicionar questão
-                </Button>
-                </>)}
-              </Card>
+                    </div>
+                    {sugestoes.map((s, i) => (
+                      <div className="meta-linha" key={`${i}-${s.titulo}`}>
+                        <div className="meta-topo">
+                          <strong>{s.titulo}</strong>
+                          <Badge tone="neutral">{s.alternativas.length ? "Objetivo" : "Discursivo"}</Badge>
+                        </div>
+                        <p className="exercicio-preview">{s.enunciado}</p>
+                        {s.alternativas.length > 0 ? (
+                          <ol className="lista-alternativas">
+                            {s.alternativas.map((a, k) => (
+                              <li key={k} className={k === s.resposta_correta ? "certa" : ""}>
+                                <b>{"ABCDEF"[k]})</b> {a} {k === s.resposta_correta && <Badge>Correta</Badge>}
+                              </li>
+                            ))}
+                          </ol>
+                        ) : (
+                          <p className="tiny"><b>Resposta de exemplo:</b> {s.resposta_exemplo}</p>
+                        )}
+                        <div className="form-actions left">
+                          <Button icon={Check} onPress={() => adicionar([s])}>Adicionar à atividade</Button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </>
             )}
 
             {error && (

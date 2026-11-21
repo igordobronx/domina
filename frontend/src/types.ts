@@ -15,7 +15,8 @@ export type Page =
   | "escolas"
   | "configuracoes"
   | "ajuda";
-export type ActivityStatus = "disponivel" | "pendente" | "aprovada";
+// pendente = "Enviada" (sem correcao da IA); corrigida_ia = tem nota da IA, falta o professor
+export type ActivityStatus = "disponivel" | "pendente" | "corrigida_ia" | "aprovada";
 export interface Activity {
   id: string;
   // so quando ja existe submissao real (lado do aluno): id da submissao, distinto do id da

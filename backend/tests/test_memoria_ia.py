@@ -43,7 +43,7 @@ def token(email):
 
 
 def nova_materia(nome):
-    r = client.post("/materias", headers=token("professor@domina.com"), json={"nome": nome, "tipo": "MATERIA_OBJETIVA"})
+    r = client.post("/materias", headers=token("professor@domina.com"), json={"nome": nome, "area": "EXATAS"})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
@@ -144,7 +144,7 @@ def test_correcao_de_exatas_usa_material_e_correcoes_aprovadas_do_professor():
 
 def test_materia_teorica_compara_o_conteudo_e_nao_as_palavras():
     prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
-    r = client.post("/materias", headers=prof, json={"nome": "Teoria musical", "tipo": "MATERIA_DISCURSIVA"})
+    r = client.post("/materias", headers=prof, json={"nome": "Teoria musical", "area": "HUMANAS"})
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
     atividade = client.post("/atividades", headers=prof, json={
         "materia_id": r.json()["id"], "turma_id": turma_id, "titulo": "Escalas", "tipo": "EXERCICIO",

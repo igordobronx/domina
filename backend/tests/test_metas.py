@@ -19,7 +19,7 @@ def _setup():
         a1 = mk("Ana Meta", "ana.meta@x.com", "ALUNO", turma)
         a2 = mk("Beto Meta", "beto.meta@x.com", "ALUNO", turma)
         a3 = mk("Caio Alheio", "caio.meta@x.com", "ALUNO", outra)
-        materia = client.post("/materias", headers=g, json={"nome": "Mat Metas", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        materia = client.post("/materias", headers=g, json={"nome": "Mat Metas", "area": "EXATAS"}).json()["id"]
         vincular("prof.metas@x.com", turma, materia)
         _c.update(turma=turma, outra=outra, prof=prof, a1=a1, a2=a2, a3=a3, materia=materia)
     return g, token("prof.metas@x.com", "123456"), _c
@@ -63,7 +63,7 @@ def test_meta_conclui_sozinha_sobe_nivel_e_aparece_no_ranking():
     r = client.get("/metas/minhas", headers=antes).json()
     mine = next(x for x in r["metas"] if x["id"] == m["id"])
     assert mine["status"] == "CONCLUIDA" and mine["progresso"] == 1
-    assert r["nivel"]["pontos"] >= 25 and r["nivel"]["nivel"] >= 2    # 20+ pontos = Aprendiz
+    assert r["nivel"]["pontos"] >= 25 and r["nivel"]["nivel"] >= 2    # meta + envio + conquistas passam de 80 XP (Aprendiz)
     # meta individual: a colega nao enxerga a do Beto
     ana = client.get("/metas/minhas", headers=token("ana.meta@x.com", "123456")).json()
     assert m["id"] not in [x["id"] for x in ana["metas"]]

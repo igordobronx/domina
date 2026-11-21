@@ -15,7 +15,7 @@ def _setup():
         prof = client.post("/usuarios", headers=g, json={"nome": "Prof Lote", "email": "prof.lote@x.com",
                            "senha": "123456", "perfil": "PROFESSOR", "turma_id": t1}).json()
         client.post(f"/turmas/{t2}/matricular", headers=g, json={"usuario_id": prof["id"], "papel": "PROFESSOR"})
-        materia = client.post("/materias", headers=g, json={"nome": "Física", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        materia = client.post("/materias", headers=g, json={"nome": "Física", "area": "EXATAS"}).json()["id"]
         vincular("prof.lote@x.com", t1, materia)
         vincular("prof.lote@x.com", t2, materia)
         _cache.update(t1=t1, t2=t2, materia=materia)
@@ -225,7 +225,7 @@ def test_materia_de_redacao_nasce_com_as_5_competencias():
     from app.models.usuario import Tema
     import uuid
     g, *_ = _setup()
-    m = client.post("/materias", headers=g, json={"nome": "Redação nova", "tipo": "REDACAO_ENEM"}).json()
+    m = client.post("/materias", headers=g, json={"nome": "Redação nova", "area": "REDACAO"}).json()
     with SessionLocal() as db:
         codigos = sorted(c for (c,) in db.query(Tema.habilidade_codigo).filter_by(materia_id=uuid.UUID(m["id"]), atividade_id=None))
     assert codigos == ["C1", "C2", "C3", "C4", "C5"]
@@ -239,3 +239,21 @@ def test_simbolos_unicode_de_quimica_e_matematica_voltam_intactos():
     assert r.status_code == 201, r.text
     q = r.json()[0]["questoes"][0]
     assert (q["enunciado"], q["resposta_correta"]) == (enun, gab)
+
+
+def test_pontos_por_questao_diferentes_e_soma_confere():
+    g, p, t1, t2, materia = _setup()
+    def criar(valores, total=10):
+        qs = [{"enunciado": "2+2?", "alternativas": ["3", "4"], "resposta_correta": "B", "valor": valores[0]},
+              {"enunciado": "1+1?", "alternativas": ["2", "3"], "resposta_correta": "A", "valor": valores[1]}]
+        return client.post("/atividades/lote", headers=p, json={
+            "materia_id": materia, "turma_ids": [t1], "titulo": "Pesos", "tipo": "EXERCICIO", "valor_total": total, "questoes": qs})
+    assert criar([7, 4]).status_code == 422  # soma 11 != 10
+    r = criar([7, None])  # a sem valor leva o que sobra
+    assert r.status_code == 201, r.text
+    ativ = r.json()[0]
+    assert [q["valor"] for q in ativ["questoes"]] == [7, 3]
+    env = client.post("/submissoes/objetiva", headers=p, json={
+        "atividade_id": ativ["id"], "aluno_id": ativ["alunos"][0]["id"], "respostas": {"Q1": "B", "Q2": "B"}})
+    cor = client.get(f"/submissoes/{env.json()['id']}/correcao", headers=p).json()
+    assert float(cor["nota_professor"]) == 7.0 and [c["valor"] for c in cor["criterios"]] == [7, 3]

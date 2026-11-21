@@ -3,9 +3,9 @@ abaixo de 80% do valor dela. Idempotente (uma linha por questao); chamado na apr
 montar o plano de estudo (assim tambem pega correcoes antigas e as objetivas, aprovadas na hora)."""
 from sqlalchemy.orm import Session
 
+from app.pontos import valor_da_questao
 from app.models.enum import StatusCorrecaoEnum
 from app.models.usuario import Atividade, Correcao, CorrecaoCriterio, ErroAluno, Materia, Submissao, Tema
-from app.routers.submissoes import MATERIAS_EXATAS
 
 LIMITE_ERRO = 80  # % da questao: abaixo disso conta como erro
 
@@ -26,7 +26,7 @@ def registrar_erros(db: Session, aluno_id) -> int:
         .join(Materia, Materia.id == Atividade.materia_id)
         .join(Tema, Tema.id == CorrecaoCriterio.tema_id)
         .filter(Submissao.aluno_id == aluno_id, Correcao.status == StatusCorrecaoEnum.APROVADA,
-                Materia.tipo.in_(MATERIAS_EXATAS))
+                Atividade.valor_total.isnot(None))  # atividade com gabarito
         .all()
     )
     por_correcao: dict = {}
@@ -36,7 +36,7 @@ def registrar_erros(db: Session, aluno_id) -> int:
     for c, cor, ativ, mat, tema in linhas:
         if c.id in ja:
             continue
-        valor = float(ativ.valor_total or 1000) / por_correcao[cor.id]
+        valor = valor_da_questao(ativ, tema, por_correcao[cor.id])
         nota = float(c.nota_professor if c.nota_professor is not None else c.nota)
         pct = nota / valor * 100 if valor else 0
         if pct >= LIMITE_ERRO:
