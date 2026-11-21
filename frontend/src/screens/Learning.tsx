@@ -29,7 +29,7 @@ import {
   type UsuarioAtual,
 } from "../services/api";
 
-const HABILIDADE_NOME: Record<string, string> = {
+export const HABILIDADE_NOME: Record<string, string> = {
   C1: "Norma culta",
   C2: "Compreensão do tema",
   C3: "Argumentação",

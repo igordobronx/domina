@@ -2885,3 +2885,25 @@ button.top-avatar {
   .xp-historico li { grid-template-columns: 60px 1fr; }
   .xp-historico li .tiny { grid-column: 2; }
 }
+
+/* ---------- Turmas: resumo do dominio de um aluno (professor/gestor) ---------- */
+.resumo-aluno { display: flex; flex-direction: column; gap: 16px; padding-right: 8px; }
+.resumo-numeros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.resumo-numeros > div { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #f9f8f3; color: #2a7958; }
+.resumo-numeros strong { font-family: "IBM Plex Mono"; font-size: 20px; color: var(--ink); }
+.resumo-numeros span { grid-column: 1 / -1; font-size: 11px; color: #777d78; margin-top: 2px; }
+.resumo-destaques { display: flex; flex-wrap: wrap; gap: 8px; }
+.resumo-destaques p { display: flex; align-items: center; gap: 6px; margin: 0; padding: 7px 10px; border-radius: 8px; font-size: 12px; }
+.resumo-forte { background: #e2f0e6; color: #196d4e; }
+.resumo-fraco { background: #faedcf; color: #80500e; }
+.resumo-bloco h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 13px; }
+.resumo-materia { margin-bottom: 12px; }
+.resumo-linha { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
+.resumo-pct { font-family: "IBM Plex Mono"; font-weight: 600; }
+.resumo-grafico { max-width: 420px; margin-top: 6px; }
+.resumo-competencias { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
+.resumo-competencia.baixo .resumo-pct { color: #94611b; }
+@media (max-width: 760px) {
+  .resumo-numeros, .resumo-competencias { grid-template-columns: 1fr; }
+  .student-domain { padding-left: 0; }
+}

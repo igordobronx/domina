@@ -706,6 +706,11 @@ export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {
   return request<DominioAPI[]>(`/alunos/${alunoId}/dominio`);
 }
 
+// pratica (exercicios) do aluno por competencia; professor so ve as materias que leciona
+export function praticaDoAluno(alunoId: string): Promise<PraticaAPI[]> {
+  return request<PraticaAPI[]>(`/alunos/${alunoId}/pratica`);
+}
+
 export interface DocumentoAPI {
   id: string;
   materia_id: string;
