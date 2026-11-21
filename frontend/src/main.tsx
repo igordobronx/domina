@@ -9,6 +9,9 @@ import "@fontsource/ibm-plex-mono/latin-400.css";
 import "@fontsource/ibm-plex-mono/latin-500.css";
 import { App } from "./App";
 import "./styles.css";
+import { aplicarTema } from "./services/tema";
+
+aplicarTema(); // antes de desenhar a tela, para nao piscar claro
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -23,7 +23,7 @@ export function RealSparkline({ pontos }: { pontos: { percentual: number; ativid
         <path d={area} fill="url(#area-real)" />
         <path d={linha} fill="none" stroke="#2E9E73" strokeWidth="3" />
         {coords.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r="4" fill="#2E9E73" stroke="white" strokeWidth="2">
+          <circle key={i} cx={x} cy={y} r="4" fill="#2E9E73" stroke="var(--bg-fff)" strokeWidth="2">
             <title>{`${pontos[i].atividade_titulo}: ${pontos[i].percentual}%`}</title>
           </circle>
         ))}
@@ -53,10 +53,10 @@ export function EvolutionChart() {
               x2="625"
               y1={y}
               y2={y}
-              stroke="#E6E3DA"
+              stroke="var(--line)"
               strokeDasharray="4 5"
             />
-            <text x="0" y={y + 4} fill="#64697A" fontSize="11">
+            <text x="0" y={y + 4} fill="var(--muted)" fontSize="11">
               {80 - i * 20}%
             </text>
           </g>
@@ -76,7 +76,7 @@ export function EvolutionChart() {
           cy="67.5"
           r="5"
           fill="#2E9E73"
-          stroke="white"
+          stroke="var(--bg-fff)"
           strokeWidth="3"
         />
         {[
@@ -88,7 +88,7 @@ export function EvolutionChart() {
           "22 set",
           "06 out",
         ].map((x, i) => (
-          <text key={x} x={40 + i * 90} y="183" fill="#64697A" fontSize="11">
+          <text key={x} x={40 + i * 90} y="183" fill="var(--muted)" fontSize="11">
             {x}
           </text>
         ))}

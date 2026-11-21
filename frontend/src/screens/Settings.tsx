@@ -1,6 +1,6 @@
 import { Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
-import { Download, RotateCcw, Save, ShieldCheck } from "lucide-react";
+import { Check, Download, Monitor, Moon, RotateCcw, Save, ShieldCheck, Sun } from "lucide-react";
 import type { DemoState, Role } from "../types";
 import { Badge, Button, Card, SectionTitle } from "../components/ui";
 import { initialState } from "../data/demo";
@@ -13,6 +13,7 @@ import {
   type CustoUsoAPI,
   type UsuarioAtual,
 } from "../services/api";
+import { lerTema, salvarTema, type Tema } from "../services/tema";
 
 export function Settings({
   state,
@@ -56,6 +57,7 @@ export function Settings({
           <p>Ajuste seu espaço e seu ritmo de estudo.</p>
         </div>
       </div>
+      <Aparencia />
       <Card>
         <SectionTitle title="Seu perfil de demonstração" />
         <div className="form-grid">
@@ -149,6 +151,30 @@ export function Settings({
         )}
       </Card>
     </>
+  );
+}
+
+// vale para todos os perfis; fica guardado neste navegador
+function Aparencia() {
+  const [tema, setTema] = useState<Tema>(lerTema);
+  const opcoes: [Tema, string, typeof Sun][] = [
+    ["auto", "Automático", Monitor],
+    ["claro", "Claro", Sun],
+    ["escuro", "Escuro", Moon],
+  ];
+  return (
+    <Card>
+      <SectionTitle title="Aparência" />
+      <p className="muted">Automático segue o tema do seu celular ou computador.</p>
+      <div className="botoes-escolha" role="group" aria-label="Tema">
+        {opcoes.map(([valor, rotulo, Icone]) => (
+          <button type="button" key={valor} aria-pressed={tema === valor} className={tema === valor ? "active" : ""}
+            onClick={() => { setTema(valor); salvarTema(valor); }}>
+            {tema === valor ? <Check size={14} /> : <Icone size={14} />} {rotulo}
+          </button>
+        ))}
+      </div>
+    </Card>
   );
 }
 

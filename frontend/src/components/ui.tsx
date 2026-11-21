@@ -69,9 +69,9 @@ export function Button({
           variant === "primary"
             ? c.greenText
             : variant === "dark"
-              ? c.ink
+              ? c.inkFixo
               : variant === "secondary"
-                ? c.white
+                ? c.surface
                 : "transparent",
         borderWidth: variant === "secondary" ? 1 : 0,
         borderColor: c.line,
@@ -112,7 +112,7 @@ export function IconButton({
         borderRadius: 10,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: hovered ? "#EAE7DE" : "transparent",
+        backgroundColor: hovered ? c.hover : "transparent",
       })}
     >
       <Icon size={21} color={c.ink} strokeWidth={1.7} />
@@ -195,7 +195,7 @@ export function Logo({
       <svg width="37" height="43" viewBox="0 0 42 48" aria-hidden="true">
         <path
           d="M9 7h10a17 17 0 0 1 0 34H9"
-          stroke="#DCD8CC"
+          stroke="var(--ln-dcd8cc)"
           strokeWidth="7"
           fill="none"
         />
@@ -208,7 +208,7 @@ export function Logo({
         />
         <path
           d="M9 7v34"
-          stroke={light ? "#F5F3EC" : "#141A2E"}
+          stroke={light ? "#F5F3EC" : "var(--ink)"}
           strokeWidth="7"
           strokeLinecap="round"
         />
