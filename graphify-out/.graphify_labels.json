@@ -1,5 +1,4 @@
 {
-  "3": "Escopo do Protótipo",
   "4": "E3 Envio e OCR — Receber a produção do aluno, digitada ou manuscrita",
   "5": "0004_calendario.py",
   "6": "E2 Base da matéria — Ensinar ao sistema o conteúdo e os critérios de cada matéria",
@@ -49,8 +48,6 @@
   "55": "RNF: Usabilidade",
   "56": "RNF: Acessibilidade",
   "57": "RNF: Observabilidade",
-  "60": "E4 Correção por IA — Nota estimada, feedback e nível de confiança",
-  "68": "Documentação do frontend Domina",
   "70": "Banco compartilhado + escola_id + RLS (estratégia escolhida)",
   "74": "compilerOptions",
   "76": "E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor",
@@ -72,18 +69,12 @@
   "106": "roda_v12.sh",
   "107": "roda_v9.sh",
   "108": "llm/__init__.py",
-  "110": "Domina · Frontend",
   "111": "devDependencies",
-  "113": "5. Mapa de telas e funcionalidades",
   "119": "dev.sh",
   "124": "Logs do sistema",
   "127": "dependencies",
   "129": "scripts",
   "132": "@playwright/test",
-  "134": "usePwa.ts",
   "145": "3. Versão por versão",
-  "148": "6. Fluxos e estados",
-  "155": "0009_tema_alternativas.py",
-  "156": "0012_atividade_criado_por.py",
   "157": "0013_backfill_atividade_criado_por.py"
 }

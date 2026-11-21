@@ -1,3 +1,4 @@
+import { Seletor, Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
 import { BookOpen, PenLine, Sparkles, Trash2, Upload } from "lucide-react";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
@@ -60,7 +61,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
   const [materiaId, setMateriaId] = useState("");
   const [como, setComo] = useState<"arquivo" | "texto" | null>(null);
-  const [tipo, setTipo] = useState<DocumentoAPI["tipo"]>("APOSTILA");
+  const [tipo, setTipo] = useState<DocumentoAPI["tipo"] | "">("");
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
@@ -108,6 +109,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   };
   const enviarArquivo = async () => {
     if (!materiaId) return setErro("Escolha a matéria que a IA vai aprender.");
+    if (!tipo) return setErro("Escolha o tipo do material.");
     if (!arquivo) return setErro("Escolha o arquivo.");
     setSalvando(true);
     try {
@@ -182,12 +184,8 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
         <Card>
           <SectionTitle title="Matéria" />
           <p className="rotulo-escolha">Escolha a matéria para ver e ensinar a IA</p>
-          <div className="botoes-escolha" role="group" aria-label="Matéria">
-            {materias.map((m) => (
-              <button key={m.id} type="button" aria-pressed={materiaId === m.id}
-                className={materiaId === m.id ? "active" : ""} onClick={() => setMateriaId(materiaId === m.id ? "" : m.id)}>{m.nome}</button>
-            ))}
-          </div>
+          <Seletor rotulo="Matéria" placeholder="Escolha a matéria" opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))}
+            valor={materiaId} onChange={setMateriaId} />
         </Card>
       )}
 
@@ -235,19 +233,17 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
         {(
           <>
             <p className="rotulo-escolha">Como ensinar</p>
-            <div className="botoes-escolha" role="group" aria-label="Como ensinar">
-              <button aria-pressed={como === "arquivo"} className={como === "arquivo" ? "active" : ""}
-                onClick={() => { setComo("arquivo"); setErro(""); }}><Upload size={14} /> Enviar arquivo</button>
-              <button aria-pressed={como === "texto"} className={como === "texto" ? "active" : ""}
-                onClick={() => { setComo("texto"); setErro(""); }}><PenLine size={14} /> Escrever instruções</button>
-            </div>
+            <Seletor rotulo="Como ensinar" placeholder="Escolha como ensinar"
+              opcoes={[{ valor: "arquivo", rotulo: "Enviar arquivo" }, { valor: "texto", rotulo: "Escrever instruções" }]}
+              valor={como ?? ""} onChange={(v) => { setComo((v || null) as typeof como); setErro(""); }} />
 
             {como === "arquivo" && (
               <div className="form-grid">
                 <label>Tipo do material
-                  <select value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoAPI["tipo"])}>
+                  <Escolha value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoAPI["tipo"])}>
+                    <option value="">Escolha o tipo</option>
                     {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
+                  </Escolha>
                 </label>
                 <label className="span-2">Arquivo (PDF, foto, DOCX ou TXT, até {LIMITE_MB} MB)
                   <input type="file" accept=".pdf,.png,.jpg,.jpeg,.docx,.txt,.md"

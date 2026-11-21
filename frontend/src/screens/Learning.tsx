@@ -1,3 +1,4 @@
+import { Seletor } from "../components/Seletor";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -251,13 +252,9 @@ export function Studies(props: {
               <p>Práticas curtas para treinar. Não valem nota.</p>
             </div>
           </div>
-          <div className="botoes-escolha" role="group" aria-label="Origem dos exercícios">
-            <button aria-pressed={aba === "ia"} className={aba === "ia" ? "active" : ""} onClick={() => setAba("ia")}>
-              <Sparkles size={14} /> Para você (IA)
-            </button>
-            <button aria-pressed={aba === "professor"} className={aba === "professor" ? "active" : ""}
-              onClick={() => setAba("professor")}>Do professor</button>
-          </div>
+          <Seletor rotulo="Origem dos exercícios" obrigatorio
+            opcoes={[{ valor: "ia", rotulo: "Para você (IA)" }, { valor: "professor", rotulo: "Do professor" }]}
+            valor={aba} onChange={(v) => setAba(v as typeof aba)} />
         </>
       )}
       {aba === "ia" ? <PlanoIA {...props} /> : (

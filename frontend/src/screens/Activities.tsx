@@ -1,3 +1,4 @@
+import { Seletor, SeletorMultiplo, Escolha } from "../components/Seletor";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -15,7 +16,8 @@ import {
 import { TextInput } from "react-native";
 import { CampoComSimbolos } from "../components/CampoComSimbolos";
 import { ActivityRow } from "./Dashboard";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
+import { Filtros } from "../components/Filtros";
 import type { Activity, DemoState, Role } from "../types";
 import {
   approveActivity,
@@ -24,6 +26,7 @@ import {
 } from "../services/demoStore";
 import {
   aprovarCorrecao,
+  verCorrecaoManual,
   avaliarIA,
   confirmarTexto,
   anexarFiguraQuestao,
@@ -191,13 +194,7 @@ export function Activities({
 }: Props) {
   const [filter, setFilter] = useState(initialFilter);
   const [search, setSearch] = useState("");
-  const [turmaFiltro, setTurmaFiltro] = useState(() => {
-    try { return localStorage.getItem("domina.turmaRevisao") ?? ""; } catch { return ""; }
-  });
-  const escolherTurma = (id: string) => {
-    setTurmaFiltro(id);
-    try { localStorage.setItem("domina.turmaRevisao", id); } catch { /* sem storage */ }
-  };
+  const [turmaFiltro, setTurmaFiltro] = useState(""); // nada pre-selecionado
   const [criando, setCriando] = useState(false);
   const [editandoId, setEditandoId] = useState<string | null>(null); // atividade em edicao (professor/gestor)
   // modo real: aluno autenticado de verdade manda/ve suas proprias atividades;
@@ -229,25 +226,27 @@ export function Activities({
     return (
       <Empty title="Carregando..." text="Buscando dados no servidor." />
     );
-  if (realProfessor && criando)
-    return (
+  const modalForm = realProfessor && criando ? (
+    <Modal title="Nova atividade" largo onClose={() => setCriando(false)}>
       <NovaAtividade
         onBack={() => setCriando(false)}
         onCriada={() => { setCriando(false); recarregar(); }}
         notify={notify}
       />
-    );
-  if (editandoId)
-    return (
+    </Modal>
+  ) : editandoId ? (
+    <Modal title="Editar atividade" largo onClose={() => setEditandoId(null)}>
       <EditarAtividade
         atividadeId={editandoId}
         onBack={() => setEditandoId(null)}
         onSalvo={() => { setEditandoId(null); select(null); recarregar(); }}
         notify={notify}
       />
-    );
+    </Modal>
+  ) : null;
   if (activity && realReviewer)
     return (<>
+      {modalForm}
       {activity.atividadeId && (
         <BarraAtividade
           atividadeId={activity.atividadeId}
@@ -295,10 +294,10 @@ export function Activities({
       (!turmaAtiva || a.turmaId === turmaAtiva) &&
       (filter === "todas" || a.status === filter) &&
       `${a.title} ${a.subject} ${a.student}`.toLowerCase().includes(search.toLowerCase()),
-    )
-    .sort((x, y) => (reviewOnly ? (x.turmaNome ?? "").localeCompare(y.turmaNome ?? "") || x.student.localeCompare(y.student) : 0));
+    ); // a ordem vem do servidor: mais recentes primeiro
   return (
     <>
+      {modalForm}
       <div className="page-heading">
         <div>
           <div className="eyebrow">
@@ -319,35 +318,21 @@ export function Activities({
       </div>
       <Card>
         <div className="list-toolbar">
-          <div className="tabs" role="group" aria-label="Filtrar atividades">
-            {[
-              ["todas", "Todas"],
-              ...(!reviewOnly ? [["disponivel", "Para fazer"]] : []),
-              ["pendente", "Em revisão"],
-              ["aprovada", "Corrigidas"],
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                aria-pressed={filter === id}
-                className={filter === id ? "active" : ""}
-                onClick={() => setFilter(id)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          {turmasFila.length > 1 && (
-            <select
-              aria-label="Filtrar por turma"
-              value={turmaAtiva}
-              onChange={(e) => escolherTurma(e.target.value)}
-            >
-              <option value="">Todas as turmas</option>
-              {turmasFila.map(([id, nome]) => (
-                <option key={id} value={id}>{nome}</option>
-              ))}
-            </select>
-          )}
+          <Filtros grupos={[
+            ...(reviewOnly && turmasFila.length > 0 ? [{
+              id: "turma", titulo: "Turma", valor: turmaAtiva, onChange: setTurmaFiltro,
+              opcoes: turmasFila.map(([id, nome]) => ({ valor: id, rotulo: nome })),
+            }] : []),
+            {
+              id: "status", titulo: "Status", valor: filter === "todas" ? "" : filter,
+              onChange: (v: string) => setFilter(v || "todas"),
+              opcoes: [
+                ...(!reviewOnly ? [{ valor: "disponivel", rotulo: "Para fazer" }] : []),
+                { valor: "pendente", rotulo: "Em revisão" },
+                { valor: "aprovada", rotulo: "Corrigidas" },
+              ],
+            },
+          ]} />
           <label className="search-field">
             <Search size={17} />
             <input
@@ -882,7 +867,7 @@ function ActivityDetail({
                   <label key={i}>
                     <span>{a.kind === "redacao" ? `C${i + 1}` : `Q${i + 1}`}</span>
                     {teacher && a.status !== "aprovada" ? (
-                      <select
+                      <Escolha
                         aria-label={
                           a.kind === "redacao"
                             ? `Nota da competência ${i + 1}`
@@ -902,7 +887,7 @@ function ActivityDetail({
                         ).map((v) => (
                           <option key={v}>{v}</option>
                         ))}
-                      </select>
+                      </Escolha>
                     ) : (
                       <strong>{n}</strong>
                     )}
@@ -1038,7 +1023,7 @@ function RevisaoReal({
   const [notas, setNotas] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState("");
   const [motivoMudanca, setMotivoMudanca] = useState("");
-  const [avaliacao, setAvaliacao] = useState<"BOA" | "MA" | null>(null);
+  const [avaliacao, setAvaliacao] = useState<"BOA" | "MEDIA" | "MA" | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [corrigindo, setCorrigindo] = useState(false);
   const [aprovando, setAprovando] = useState(false);
@@ -1057,7 +1042,8 @@ function RevisaoReal({
     let ativo = true;
     Promise.all([
       verSubmissao(a.id),
-      verCorrecao(a.id).catch(() => null),
+      // sem correcao da IA: o professor, se for ele, ja ve a ficha em branco para corrigir direto
+      verCorrecao(a.id).catch(() => (readOnly ? null : verCorrecaoManual(a.id).catch(() => null))),
       verAgente(a.id).catch(() => null),
     ]).then(([s, c, ag]) => {
       if (!ativo) return;
@@ -1102,7 +1088,7 @@ function RevisaoReal({
       a.id,
       Object.entries(notas).map(([codigo, nota]) => ({ codigo, nota: Math.round(nota * 100) / 100 })),
       feedback,
-      mudouNota ? motivoMudanca : undefined,
+      motivoMudanca,
       avaliacao,
     )
       .then(() => onApproved())
@@ -1114,8 +1100,9 @@ function RevisaoReal({
   };
 
   const aprovada = a.status === "aprovada";
+  const semIA = correcao?.modelo_usado === "professor"; // o professor corrigiu direto, sem a IA
   // o professor mexeu em alguma nota que a IA deu? Então a IA errou ali e pode aprender o porquê
-  const mudouNota = !!correcao?.criterios.some(
+  const mudouNota = !semIA && !!correcao?.criterios.some(
     (c) => Number.isFinite(notas[c.codigo]) && Math.abs(notas[c.codigo] - c.nota) > 0.01,
   );
   const nota = Math.round(Object.values(notas).reduce((s, n) => s + (Number.isFinite(n) ? n : 0), 0) * 100) / 100;
@@ -1143,7 +1130,7 @@ function RevisaoReal({
             <SectionTitle title={aprovada ? "Correção aprovada" : "Revisão da atividade"} />
             {!correcao ? (
               <>
-                <p className="muted">Esta redação ainda não tem correção da IA.</p>
+                <p className="muted">Esta redação ainda não tem correção.</p>
                 {!readOnly && (
                   <Button icon={Sparkles} disabled={corrigindo} onPress={gerarCorrecao}>
                     {corrigindo ? "Agente trabalhando..." : "Corrigir com o agente de IA"}
@@ -1160,8 +1147,15 @@ function RevisaoReal({
                 <Badge tone={aprovada ? "green" : "amber"}>
                   {aprovada
                     ? "Revisada pelo professor"
-                    : `Sugestão da IA · confiança ${Math.round(correcao.confianca * 100)}%`}
+                    : semIA
+                      ? "Correção sua, sem IA"
+                      : `Sugestão da IA · confiança ${Math.round(correcao.confianca * 100)}%`}
                 </Badge>
+                {semIA && !aprovada && !readOnly && (
+                  <Button icon={Sparkles} variant="secondary" disabled={corrigindo} onPress={gerarCorrecao}>
+                    {corrigindo ? "Agente trabalhando..." : "Prefiro uma sugestão da IA"}
+                  </Button>
+                )}
                 <div className="score-total">
                   <strong>{nota}</strong>
                   <span>/ {a.valorTotal ?? 1000} pontos</span>
@@ -1197,7 +1191,7 @@ function RevisaoReal({
                             }
                           />
                         ) : !aprovada && !readOnly ? (
-                          <select
+                          <Escolha
                             aria-label={`Nota de ${c.codigo}`}
                             value={notas[c.codigo] ?? c.nota}
                             onChange={(e) =>
@@ -1209,7 +1203,7 @@ function RevisaoReal({
                                 {v}
                               </option>
                             ))}
-                          </select>
+                          </Escolha>
                         ) : (
                           <strong>{notas[c.codigo]}</strong>
                         )}
@@ -1231,37 +1225,38 @@ function RevisaoReal({
                 ) : (
                   <p className="feedback-text">{feedback || "Ainda sem orientação registrada."}</p>
                 )}
-                {!aprovada && !readOnly && mudouNota && (
+                {!readOnly && !semIA && (
                   <>
-                    <h3>Ensine a IA: por que você mudou a nota?</h3>
+                    <p className="tiny muted">Ensine a IA com 1 clique (não muda a nota; o aluno não vê):</p>
+                    <Seletor rotulo="Avaliar a correção da IA" placeholder="Avaliar a correção da IA"
+                      opcoes={[{ valor: "BOA", rotulo: "Correção/explicação boa" }, { valor: "MEDIA", rotulo: "Correção/explicação razoável" }, { valor: "MA", rotulo: "Correção/explicação ruim" }]}
+                      valor={avaliacao ?? ""}
+                      onChange={(v) => {
+                        const novo = (v || null) as "BOA" | "MEDIA" | "MA" | null;
+                        if (!aprovada) return setAvaliacao(novo);
+                        avaliarIA(a.id, novo).then((c) => setAvaliacao(c.avaliacao_ia))
+                          .catch((erro) => setError(erro instanceof Error ? erro.message : "Não foi possível salvar."));
+                      }} />
+                  </>
+                )}
+                {!aprovada && !readOnly && (mudouNota || !!avaliacao) && (
+                  <>
+                    <h3>Ensine a IA: por quê?</h3>
                     <p className="muted">
-                      Opcional. Só a IA lê (o aluno não vê). Ela usa isso para corrigir do seu jeito nas próximas vezes.
+                      {({
+                        BOA: "Opcional: explique por que a correção/explicação está boa, para a IA repetir esse jeito.",
+                        MEDIA: "Opcional: explique o que está bom e o que faltou, para a IA melhorar.",
+                        MA: "Opcional: explique por que a correção/explicação está ruim, para a IA não repetir o erro.",
+                      } as Record<string, string>)[avaliacao ?? ""] ?? "Opcional: explique por que mudou a nota, para a IA corrigir do seu jeito."} Só a IA lê (o aluno não vê).
                     </p>
                     <textarea
-                      aria-label="Por que você mudou a nota da IA"
+                      aria-label="Por que você avaliou assim a correção da IA"
                       className="text-area"
                       maxLength={1000}
-                      placeholder="Ex.: a IA deu nota cheia, mas eu exijo a verificação final da conta."
+                      placeholder="Ex.: a nota está certa, mas faltou explicar o conectivo; ou: a IA deu nota cheia, mas eu exijo a verificação final da conta."
                       value={motivoMudanca}
                       onChange={(e) => setMotivoMudanca(e.target.value)}
                     />
-                  </>
-                )}
-                {!readOnly && (
-                  <>
-                    <p className="tiny muted">Ensine a IA com 1 clique (não muda a nota; o aluno não vê):</p>
-                    <div className="botoes-escolha" role="group" aria-label="Avaliar a correção da IA">
-                      {([["BOA", "Boa correção (exemplo modelo)"], ["MA", "Explicação ruim"]] as const).map(([valor, texto]) => (
-                        <button type="button" key={valor} aria-pressed={avaliacao === valor}
-                          className={avaliacao === valor ? "active" : ""}
-                          onClick={() => {
-                            const novo = avaliacao === valor ? null : valor;
-                            if (!aprovada) return setAvaliacao(novo);
-                            avaliarIA(a.id, novo).then((c) => setAvaliacao(c.avaliacao_ia))
-                              .catch((erro) => setError(erro instanceof Error ? erro.message : "Não foi possível salvar."));
-                          }}>{texto}</button>
-                      ))}
-                    </div>
                   </>
                 )}
                 {error && (
@@ -1303,7 +1298,7 @@ function RevisaoReal({
           </Card>
           <div className="agente-coluna">
           {agente && <PassoAPassoAgente agente={agente} />}
-          {correcao && <FontesDaIA submissaoId={a.id} />}
+          {correcao && !semIA && <FontesDaIA submissaoId={a.id} />}
           <Card>
             <SectionTitle title="Texto enviado" />
             <div className="essay">
@@ -1510,8 +1505,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
   };
   return (
     <>
-      <button className="back-link" onClick={onBack}><ArrowLeft size={16} />Cancelar edição</button>
-      <div className="page-heading"><div><h1>Editar atividade</h1><p>{a.turma} · {a.materia}</p></div></div>
+      <p className="muted">{a.turma} · {a.materia}</p>
       <Card>
         <div className="form-grid">
           <label>Título<input value={titulo} onChange={(e) => setTitulo(e.target.value)} /></label>
@@ -1550,6 +1544,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
           <Button variant="ghost" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "", alternativas: questoes[0]?.alternativas ? ["", ""] : null }])}>Adicionar questão</Button>
         )}
         <div className="form-actions left">
+          <Button variant="secondary" onPress={onBack}>Cancelar</Button>
           <Button onPress={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar alterações"}</Button>
         </div>
       </Card>
@@ -1666,17 +1661,18 @@ function NovaAtividade({
   const [turmaIds, setTurmaIds] = useState<string[]>([]); // uma atividade independente por turma marcada
   const [materiaId, setMateriaId] = useState("");
   const [titulo, setTitulo] = useState("");
-  const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
+  const [tipo, setTipo] = useState(""); // nada pre-selecionado
   const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }]);
-  const [valorTotal, setValorTotal] = useState(1000);
-  const [formato, setFormato] = useState<"discursiva" | "objetiva">("discursiva");
+  const [valorTotalTxt, setValorTotalTxt] = useState("");
+  const valorTotal = Number(valorTotalTxt) || 0;
+  const [formato, setFormato] = useState<"" | "discursiva" | "objetiva">("");
   const [prazo, setPrazo] = useState("");
   const [error, setError] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   const [criandoMateria, setCriandoMateria] = useState(false);
   const [novaMateriaNome, setNovaMateriaNome] = useState("");
-  const [novaMateriaTipo, setNovaMateriaTipo] = useState(TIPOS_MATERIA[0].value);
+  const [novaMateriaTipo, setNovaMateriaTipo] = useState("");
   const [salvandoMateria, setSalvandoMateria] = useState(false);
 
   const recarregarMaterias = () =>
@@ -1689,8 +1685,6 @@ function NovaAtividade({
     Promise.all([listarTurmasMinhas(), listarMaterias()]).then(([t, m]) => {
       setTurmas(t);
       setMaterias(m);
-      setTurmaIds(t.length === 1 ? [t[0].id] : []); // so uma turma: ja vem marcada
-      setMateriaId(m[0]?.id ?? "");
     });
   }, []);
 
@@ -1704,17 +1698,18 @@ function NovaAtividade({
   }, [exigeGabarito]);
 
   const criarNovaMateria = () => {
-    if (!novaMateriaNome.trim()) {
-      setError("Dê um nome para a matéria.");
+    if (!novaMateriaNome.trim() || !novaMateriaTipo) {
+      setError("Dê um nome e escolha o tipo da matéria.");
       return;
     }
     setSalvandoMateria(true);
     setError("");
-    criarMateria({ nome: novaMateriaNome.trim(), tipo: novaMateriaTipo })
+    criarMateria({ nome: novaMateriaNome.trim(), tipo: novaMateriaTipo as MateriaAPI["tipo"] })
       .then((nova) => recarregarMaterias().then(() => {
         setMateriaId(nova.id);
         setCriandoMateria(false);
         setNovaMateriaNome("");
+        setNovaMateriaTipo("");
       }))
       .catch((erro) => setError(erro instanceof Error ? erro.message : "Não foi possível criar a matéria."))
       .finally(() => setSalvandoMateria(false));
@@ -1725,8 +1720,12 @@ function NovaAtividade({
       setError("Dê um título para a atividade.");
       return;
     }
-    if (!turmaIds.length || !materiaId) {
-      setError("Marque ao menos uma turma e escolha a matéria.");
+    if (!turmaIds.length || !materiaId || !tipo) {
+      setError("Escolha ao menos uma turma, a matéria e o tipo.");
+      return;
+    }
+    if (exigeGabarito && !formato) {
+      setError("Escolha o formato das questões.");
       return;
     }
     const objetivaForm = exigeGabarito && formato === "objetiva";
@@ -1794,17 +1793,6 @@ function NovaAtividade({
 
   return (
     <>
-      <button className="back-link" onClick={onBack}>
-        <ArrowLeft size={16} />
-        Voltar às revisões
-      </button>
-      <div className="page-heading">
-        <div>
-          <div className="eyebrow">PROPONHA O PRÓXIMO PASSO</div>
-          <h1>Nova atividade</h1>
-          <p>Crie uma atividade para a turma enviar.</p>
-        </div>
-      </div>
       <Card>
         {carregando ? (
           <p className="muted">Carregando turmas e matérias...</p>
@@ -1828,48 +1816,40 @@ function NovaAtividade({
                 Prazo de entrega (opcional, aparece no calendário)
                 <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
               </label>
-              <fieldset className="turmas-check">
-                <legend>Turmas (uma atividade para cada marcada)</legend>
-                {turmas!.length > 1 && (
-                  <label className="check">
-                    <input
-                      type="checkbox"
-                      checked={turmaIds.length === turmas!.length}
-                      onChange={(e) => setTurmaIds(e.target.checked ? turmas!.map((t) => t.id) : [])}
-                    />
-                    Todas as minhas turmas
-                  </label>
-                )}
-                {turmas!.map((t) => (
-                  <label className="check" key={t.id}>
-                    <input
-                      type="checkbox"
-                      checked={turmaIds.includes(t.id)}
-                      onChange={(e) => setTurmaIds(e.target.checked ? [...turmaIds, t.id] : turmaIds.filter((x) => x !== t.id))}
-                    />
-                    {t.nome}
-                  </label>
-                ))}
-              </fieldset>
+              <label>
+                Turmas (uma atividade para cada escolhida)
+                <SeletorMultiplo rotulo="Turmas" placeholder="Escolha as turmas"
+                  opcoes={[...(turmas!.length > 1 ? [{ valor: "__todas__", rotulo: "Todas as minhas turmas" }] : []),
+                           ...turmas!.map((t) => ({ valor: t.id, rotulo: t.nome }))]}
+                  valores={turmaIds.length === turmas!.length && turmas!.length > 1 ? ["__todas__", ...turmaIds] : turmaIds}
+                  onChange={(v) => {
+                    const todas = turmaIds.length === turmas!.length;
+                    if (v.includes("__todas__") && !todas) return setTurmaIds(turmas!.map((t) => t.id));
+                    if (!v.includes("__todas__") && todas && turmas!.length > 1) return setTurmaIds([]);
+                    setTurmaIds(v.filter((x) => x !== "__todas__"));
+                  }} />
+              </label>
               <label>
                 Matéria
-                <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+                <Escolha value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+                  <option value="">Escolha a matéria</option>
                   {materias!.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.nome}
                     </option>
                   ))}
-                </select>
+                </Escolha>
               </label>
               <label>
                 Tipo
-                <select value={tipo} onChange={(e) => { setTipo(e.target.value); if (e.target.value === "PROVA_OBJETIVA") setFormato("objetiva"); }}>
+                <Escolha value={tipo} onChange={(e) => { setTipo(e.target.value); if (e.target.value === "PROVA_OBJETIVA") setFormato("objetiva"); }}>
+                  <option value="">Escolha o tipo</option>
                   {TIPOS_ATIVIDADE.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}
                     </option>
                   ))}
-                </select>
+                </Escolha>
               </label>
             </div>
 
@@ -1878,6 +1858,7 @@ function NovaAtividade({
                 Nova matéria
               </Button>
             ) : (
+              <Modal title="Nova matéria" onClose={() => setCriandoMateria(false)}>
               <Card>
                 <SectionTitle title="Nova matéria" />
                 <div className="form-grid">
@@ -1891,16 +1872,17 @@ function NovaAtividade({
                   </label>
                   <label>
                     Tipo
-                    <select
+                    <Escolha
                       value={novaMateriaTipo}
-                      onChange={(e) => setNovaMateriaTipo(e.target.value as MateriaAPI["tipo"])}
+                      onChange={(e) => setNovaMateriaTipo(e.target.value)}
                     >
+                      <option value="">Escolha o tipo</option>
                       {TIPOS_MATERIA.map((t) => (
                         <option key={t.value} value={t.value}>
                           {t.label}
                         </option>
                       ))}
-                    </select>
+                    </Escolha>
                   </label>
                 </div>
                 <div className="form-actions">
@@ -1912,29 +1894,34 @@ function NovaAtividade({
                   </Button>
                 </div>
               </Card>
+              </Modal>
             )}
 
             {exigeGabarito && (
               <Card>
                 <SectionTitle title="Questões e gabarito" />
-                <div className="tabs" role="group" aria-label="Formato das questões">
-                  <button aria-pressed={formato === "objetiva"} className={formato === "objetiva" ? "active" : ""}
-                    onClick={() => setFormato("objetiva")}>Objetiva (A–E, como o ENEM)</button>
-                  <button aria-pressed={formato === "discursiva"} className={formato === "discursiva" ? "active" : ""}
-                    onClick={() => setFormato("discursiva")}>Discursiva</button>
-                </div>
+                <label>
+                  Formato das questões
+                  <Escolha value={formato} onChange={(e) => setFormato(e.target.value as typeof formato)}>
+                    <option value="">Escolha o formato</option>
+                    <option value="objetiva">Objetiva (A–E, como o ENEM)</option>
+                    <option value="discursiva">Discursiva</option>
+                  </Escolha>
+                </label>
                 <p className="tiny muted">
                   {formato === "objetiva"
                     ? "O aluno marca a alternativa na tela e a correção sai na hora, comparando com o gabarito (sem IA)."
                     : "A IA corrige comparando a resposta do aluno com a resposta correta de cada questão — não é uma avaliação subjetiva, é uma conferência lógica."}
                 </p>
+                {formato && (<>
                 <label>
                   Valor total da atividade (pontos)
                   <input
                     type="number"
                     min={1}
-                    value={valorTotal}
-                    onChange={(e) => setValorTotal(Number(e.target.value))}
+                    value={valorTotalTxt}
+                    placeholder="Ex.: 1000"
+                    onChange={(e) => setValorTotalTxt(e.target.value)}
                   />
                 </label>
                 <p className="tiny muted">
@@ -2058,6 +2045,7 @@ function NovaAtividade({
                 >
                   Adicionar questão
                 </Button>
+                </>)}
               </Card>
             )}
 
@@ -2066,9 +2054,12 @@ function NovaAtividade({
                 {error}
               </p>
             )}
-            <Button disabled={salvando} onPress={salvar}>
-              {salvando ? "Criando..." : "Criar atividade"}
-            </Button>
+            <div className="form-actions">
+              <Button variant="secondary" onPress={onBack}>Cancelar</Button>
+              <Button disabled={salvando} onPress={salvar}>
+                {salvando ? "Criando..." : "Criar atividade"}
+              </Button>
+            </div>
           </>
         )}
       </Card>

@@ -1,5 +1,6 @@
+import { SeletorMultiplo, Escolha } from "../components/Seletor";
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import { iso, useCalendario } from "../hooks/useCalendario";
 import {
@@ -65,9 +66,9 @@ export function Calendar({ role, notify }: { role: Role; notify: (m: string) => 
       </p>
       {precisaEscola && (
         <label>Instituição
-          <select value={escolaId ?? ""} onChange={(e) => setEscolaId(e.target.value)}>
+          <Escolha value={escolaId ?? ""} onChange={(e) => setEscolaId(e.target.value)}>
             {escolas.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-          </select>
+          </Escolha>
         </label>
       )}
       <Card>
@@ -124,22 +125,21 @@ function NovoEvento({ turmas, role, escolaId, dia, fechar, notify, recarregar }:
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
   const aluno = role === "aluno";
-  const [tipo, setTipo] = useState<EventoPayload["tipo"]>(aluno ? "ENTREGA" : "AVISO");
+  const [tipo, setTipo] = useState<EventoPayload["tipo"] | "">("");
   const [inicio, setInicio] = useState(dia);
   const [fim, setFim] = useState("");
   // professor so cria para as proprias turmas (uma ou varias); gestor/admin: nenhuma marcada = escola toda
   const [turmaIds, setTurmaIds] = useState<string[]>([]);
-  const alternarTurma = (id: string) =>
-    setTurmaIds((v) => (v.includes(id) ? v.filter((x) => x !== id) : [...v, id]));
   const [salvando, setSalvando] = useState(false);
 
   async function salvar() {
     if (!titulo.trim()) return notify(aluno ? "Escreva o que você precisa fazer." : "Dê um título ao evento.");
+    if (!tipo) return notify("Escolha o tipo.");
     if (role === "professor" && !turmaIds.length) return notify("Escolha pelo menos uma turma.");
     setSalvando(true);
     try {
       // varias turmas: cada turma recebe o seu evento (igual aos exercicios); nenhuma = escola toda / pessoal
-      const base = { titulo: titulo.trim(), descricao: descricao.trim() || undefined, tipo, inicio, fim: fim || null };
+      const base = { titulo: titulo.trim(), descricao: descricao.trim() || undefined, tipo: tipo as EventoPayload["tipo"], inicio, fim: fim || null };
       await Promise.all((turmaIds.length ? turmaIds : [null]).map((t) => criarEvento({ ...base, turma_id: t }, escolaId)));
       notify(aluno ? "Adicionado ao seu calendário."
         : turmaIds.length > 1 ? `Adicionado ao calendário de ${turmaIds.length} turmas.`
@@ -155,9 +155,10 @@ function NovoEvento({ turmas, role, escolaId, dia, fechar, notify, recarregar }:
       <div className="form-grid">
       <label>{aluno ? "O que você precisa fazer" : "Título"}<input value={titulo} maxLength={200} onChange={(e) => setTitulo(e.target.value)} /></label>
       <label>Tipo
-        <select value={tipo} onChange={(e) => setTipo(e.target.value as EventoPayload["tipo"])}>
+        <Escolha value={tipo} onChange={(e) => setTipo(e.target.value as EventoPayload["tipo"])}>
+          <option value="">Escolha o tipo</option>
           {(aluno ? TIPOS_ALUNO : TIPOS).map((t) => <option key={t} value={t}>{aluno && t === "AVISO" ? "Lembrete" : ROTULO[t]}</option>)}
-        </select>
+        </Escolha>
       </label>
       <label>Início<input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} /></label>
       <label>Fim (opcional)<input type="date" value={fim} min={inicio} onChange={(e) => setFim(e.target.value)} /></label>
@@ -167,14 +168,8 @@ function NovoEvento({ turmas, role, escolaId, dia, fechar, notify, recarregar }:
           <p className="rotulo-escolha">
             {role === "professor" ? "Turmas que vão ver (pode marcar mais de uma)" : "Turmas (nenhuma marcada = escola toda)"}
           </p>
-          <div className="botoes-escolha" role="group" aria-label="Turmas">
-            {turmas.map((t) => (
-              <button type="button" key={t.id} aria-pressed={turmaIds.includes(t.id)}
-                className={turmaIds.includes(t.id) ? "active" : ""} onClick={() => alternarTurma(t.id)}>
-                {turmaIds.includes(t.id) && <Check size={14} />} {t.nome}
-              </button>
-            ))}
-          </div>
+          <SeletorMultiplo rotulo="Turmas" placeholder={role === "professor" ? "Escolha as turmas" : "Escola toda"}
+            opcoes={turmas.map((t) => ({ valor: t.id, rotulo: t.nome }))} valores={turmaIds} onChange={setTurmaIds} />
           {!turmas.length && <p className="tiny muted">Você ainda não tem turmas.</p>}
         </>
       )}

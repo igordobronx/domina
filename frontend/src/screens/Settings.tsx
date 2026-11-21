@@ -1,3 +1,4 @@
+import { Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
 import { Download, RotateCcw, Save, ShieldCheck } from "lucide-react";
 import type { DemoState, Role } from "../types";
@@ -68,7 +69,7 @@ export function Settings({
           </label>
           <label>
             Meta semanal de práticas
-            <select
+            <Escolha
               value={goal}
               onChange={(e) => setGoal(Number(e.target.value))}
             >
@@ -77,7 +78,7 @@ export function Settings({
                   {n} práticas por semana
                 </option>
               ))}
-            </select>
+            </Escolha>
           </label>
         </div>
         {error && (

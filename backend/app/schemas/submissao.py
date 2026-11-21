@@ -58,7 +58,7 @@ class CorrecaoResponse(BaseModel):
     modelo_usado: str
     feedback: str | None
     criterios: list[CriterioResponse]
-    avaliacao_ia: str | None = None  # BOA (exemplo modelo) | MA (explicacao ruim) | nulo
+    avaliacao_ia: str | None = None  # BOA (exemplo modelo) | MEDIA (razoavel) | MA (explicacao ruim) | nulo
 
 
 class NotaCriterioInput(BaseModel):
@@ -81,6 +81,7 @@ class AprovarRequest(BaseModel):
     motivo_mudanca: str | None = Field(default=None, max_length=1000)
     # 1 clique: "a explicacao da IA estava ruim" (mesmo com a nota certa). So a IA usa.
     explicacao_ruim: bool = False
+    correcao_razoavel: bool = False  # 1 clique: nem modelo, nem ruim
     boa_correcao: bool = False  # 1 clique: esta correcao e um exemplo modelo para a IA
 
     @field_validator("notas")
@@ -231,4 +232,4 @@ class MinhaSubmissaoResponse(BaseModel):
 
 
 class AvaliacaoIARequest(BaseModel):
-    avaliacao: Literal["BOA", "MA"] | None = None
+    avaliacao: Literal["BOA", "MEDIA", "MA"] | None = None

@@ -145,7 +145,7 @@ def criar_materia(payload: CriarMateriaRequest, usuario: Usuario = Depends(get_c
 def listar_atividades(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     # atividades das turmas do usuario, com os alunos de cada turma (o professor escolhe em nome de quem envia)
     turma_ids = [ut.turma_id for ut in db.query(UsuarioTurma).filter_by(usuario_id=usuario.id)]
-    atividades = db.query(Atividade).filter(Atividade.turma_id.in_(turma_ids), Atividade.arquivada.is_(False))
+    atividades = db.query(Atividade).filter(Atividade.turma_id.in_(turma_ids), Atividade.arquivada.is_(False)).order_by(Atividade.criado_em.desc())
     return [_atividade_response(db, atividade, usuario) for atividade in atividades]
 
 

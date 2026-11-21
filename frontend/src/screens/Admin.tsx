@@ -1,6 +1,7 @@
+import { SeletorMultiplo, Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
 import { Building2, Plus, Power, Save } from "lucide-react";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { Badge, BotaoCriar, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import {
   criarEscola,
   ativarUsuario,
@@ -189,7 +190,7 @@ function NovaConta({
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [perfil, setPerfil] = useState<PerfilConta>(perfis[0]);
+  const [perfil, setPerfil] = useState<PerfilConta | "">("");
   const [turmas, setTurmas] = useState<TurmaAPI[]>([]);
   const [vinculos, setVinculos] = useState<VinculoTurmaAPI[]>([]);
   const [materias, setMaterias] = useState<MateriaAPI[]>([]);
@@ -204,8 +205,8 @@ function NovaConta({
     if (!escolaId) listarMaterias().then(setMaterias).catch(() => setMaterias([]));
   }, [escolaId]);
   const salvar = async () => {
-    if (!nome.trim() || !email.trim() || senha.length < 6) {
-      setErro("Preencha nome, email e uma senha provisória de pelo menos 6 caracteres.");
+    if (!nome.trim() || !email.trim() || senha.length < 6 || !perfil) {
+      setErro("Preencha nome, email, perfil e uma senha provisória de pelo menos 6 caracteres.");
       return;
     }
     setSalvando(true);
@@ -246,13 +247,14 @@ function NovaConta({
         </label>
         <label>
           Perfil
-          <select value={perfil} onChange={(e) => setPerfil(e.target.value as PerfilConta)}>
+          <Escolha value={perfil} onChange={(e) => setPerfil(e.target.value as PerfilConta)}>
+            <option value="">Escolha o perfil</option>
             {perfis.map((p) => (
               <option key={p} value={p}>
                 {ROTULO[p]}
               </option>
             ))}
-          </select>
+          </Escolha>
         </label>
         {perfil === "GESTOR" && (
           <label>
@@ -261,7 +263,7 @@ function NovaConta({
           </label>
         )}
       </div>
-      {perfil !== "GESTOR" && (
+      {perfil && perfil !== "GESTOR" && (
         <TurmasEMaterias perfil={perfil} turmas={turmas} materias={materias} valor={vinculos} onChange={setVinculos} />
       )}
       {erro && (
@@ -284,33 +286,29 @@ function TurmasEMaterias({
   valor: VinculoTurmaAPI[]; onChange: (v: VinculoTurmaAPI[]) => void;
 }) {
   const da = (id: string) => valor.find((v) => v.turma_id === id);
-  const alternaTurma = (id: string) =>
-    onChange(da(id) ? valor.filter((v) => v.turma_id !== id) : [...valor, { turma_id: id, materia_ids: [] }]);
-  const alternaMateria = (turmaId: string, materiaId: string) =>
-    onChange(valor.map((v) => v.turma_id !== turmaId ? v : {
-      ...v, materia_ids: v.materia_ids.includes(materiaId) ? v.materia_ids.filter((m) => m !== materiaId) : [...v.materia_ids, materiaId],
-    }));
   if (!turmas.length) return <p className="muted">Nenhuma turma cadastrada ainda.</p>;
   return (
     <div>
       <p className="tiny muted">
         {perfil === "PROFESSOR" ? "Turmas e, em cada uma, as matérias que ele leciona" : "Turmas do aluno"}
       </p>
-      {turmas.map((t) => (
-        <div key={t.id} className="botoes-escolha" role="group" aria-label={`Turma ${t.nome}`}>
-          <button aria-pressed={!!da(t.id)} className={da(t.id) ? "active" : ""} onClick={() => alternaTurma(t.id)}>
-            {t.nome} ({t.ano})
-          </button>
-          {perfil === "PROFESSOR" && da(t.id) && (
-            materias.length ? materias.map((m) => (
-              <button key={m.id} aria-pressed={da(t.id)!.materia_ids.includes(m.id)}
-                className={da(t.id)!.materia_ids.includes(m.id) ? "active" : ""} onClick={() => alternaMateria(t.id, m.id)}>
-                {m.nome}
-              </button>
-            )) : <span className="tiny muted">Nenhuma matéria cadastrada.</span>
-          )}
-        </div>
-      ))}
+      <SeletorMultiplo rotulo="Turmas" placeholder="Escolha as turmas"
+        opcoes={turmas.map((t) => ({ valor: t.id, rotulo: `${t.nome} (${t.ano})` }))}
+        valores={valor.map((v) => v.turma_id)}
+        onChange={(ids) => onChange(ids.map((id) => da(id) ?? { turma_id: id, materia_ids: [] }))} />
+      {perfil === "PROFESSOR" && valor.map((v) => {
+        const t = turmas.find((x) => x.id === v.turma_id);
+        return (
+          <div key={v.turma_id}>
+            <p className="rotulo-escolha">Matérias em {t?.nome}</p>
+            {materias.length ? (
+              <SeletorMultiplo rotulo={`Matérias em ${t?.nome}`} placeholder="Escolha as matérias"
+                opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))} valores={v.materia_ids}
+                onChange={(ids) => onChange(valor.map((x) => x.turma_id === v.turma_id ? { ...x, materia_ids: ids } : x))} />
+            ) : <span className="tiny muted">Nenhuma matéria cadastrada.</span>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -443,8 +441,10 @@ export function Equipe({ notify }: { notify: (s: string) => void }) {
           <h1>Equipe e alunos</h1>
           <p>Cadastre, edite e desative professores e alunos, e defina as turmas e matérias de cada um.</p>
         </div>
+        <BotaoCriar rotulo="Nova conta" titulo="Nova conta">
+          {(fechar) => <NovaConta perfis={["PROFESSOR", "ALUNO"]} onCriada={() => { fechar(); setVersao((v) => v + 1); }} notify={notify} />}
+        </BotaoCriar>
       </div>
-      <NovaConta perfis={["PROFESSOR", "ALUNO"]} onCriada={() => setVersao((v) => v + 1)} notify={notify} />
       <ListaContas versao={versao} notify={notify} />
     </>
   );
@@ -452,6 +452,7 @@ export function Equipe({ notify }: { notify: (s: string) => void }) {
 
 // Admin: instituicoes (criar, editar, desativar) + contas e painel de cada uma
 export function Escolas({ notify }: { notify: (s: string) => void }) {
+  const [novaAberta, setNovaAberta] = useState(false);
   const [escolas, setEscolas] = useState<EscolaAPI[] | null>(null);
   const [aberta, setAberta] = useState<string | null>(null);
   const [versao, setVersao] = useState(0);
@@ -478,6 +479,7 @@ export function Escolas({ notify }: { notify: (s: string) => void }) {
       notify(`${e.nome} cadastrada.`);
       setNovo({ nome: "", cnpj: "", plano_fixo: "1000", valor_por_aluno: "8" });
       setAberta(e.id);
+      setNovaAberta(false);
       recarregar();
     } catch (e) {
       setErro(e instanceof Error ? e.message : "Não foi possível cadastrar a instituição.");
@@ -493,7 +495,10 @@ export function Escolas({ notify }: { notify: (s: string) => void }) {
           <h1>Instituições</h1>
           <p>Cadastre escolas, crie gestores e acompanhe o consumo de cada uma.</p>
         </div>
+        <Button icon={Plus} onPress={() => setNovaAberta(true)}>Nova instituição</Button>
       </div>
+      {novaAberta && (
+      <Modal title="Nova instituição" onClose={() => setNovaAberta(false)}>
       <Card>
         <SectionTitle title="Nova instituição" />
         <div className="form-grid">
@@ -521,10 +526,15 @@ export function Escolas({ notify }: { notify: (s: string) => void }) {
             {erro}
           </p>
         )}
-        <Button icon={Plus} onPress={criar}>
-          Cadastrar instituição
-        </Button>
+        <div className="form-actions">
+          <Button variant="secondary" onPress={() => setNovaAberta(false)}>Cancelar</Button>
+          <Button icon={Plus} onPress={criar}>
+            Cadastrar instituição
+          </Button>
+        </div>
       </Card>
+      </Modal>
+      )}
       <Card>
         <SectionTitle title="Instituições" />
         {!escolas ? (
@@ -557,12 +567,16 @@ export function Escolas({ notify }: { notify: (s: string) => void }) {
             notify={notify}
           />
           {escola.ativa && (
-            <NovaConta
-              perfis={["GESTOR", "PROFESSOR", "ALUNO"]}
-              escolaId={escola.id}
-              onCriada={() => setVersao((v) => v + 1)}
-              notify={notify}
-            />
+            <BotaoCriar rotulo="Nova conta" titulo={`Nova conta em ${escola.nome}`}>
+              {(fechar) => (
+                <NovaConta
+                  perfis={["GESTOR", "PROFESSOR", "ALUNO"]}
+                  escolaId={escola.id}
+                  onCriada={() => { fechar(); setVersao((v) => v + 1); }}
+                  notify={notify}
+                />
+              )}
+            </BotaoCriar>
           )}
           <ListaContas escolaId={escola.id} versao={versao} notify={notify} />
           <PainelEscola escolaId={escola.id} notify={notify} />

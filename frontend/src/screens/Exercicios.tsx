@@ -1,6 +1,8 @@
+import { Seletor, SeletorMultiplo, Escolha } from "../components/Seletor";
+import { Filtros } from "../components/Filtros";
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, ChevronUp, CircleCheck, MessageSquare, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import { CampoComSimbolos } from "../components/CampoComSimbolos";
 import {
   avaliarRespostaExercicio, criarExerciciosLote, editarExercicio, excluirExercicio, listarExerciciosProfessor,
@@ -43,9 +45,10 @@ export function ExerciciosProfessor({ notify }: { notify: (m: string) => void })
           <h1>Exercícios</h1>
           <p>Crie exercícios de prática para suas turmas, escrevendo você mesmo ou com ajuda da IA. Não valem nota.</p>
         </div>
-        {!aberto && <Button icon={Plus} onPress={() => setAberto("novo")}>Novo exercício</Button>}
+        <Button icon={Plus} onPress={() => setAberto("novo")}>Novo exercício</Button>
       </div>
       {aberto && (
+        <Modal title={aberto === "novo" ? "Novo exercício" : "Editar exercício"} largo onClose={() => setAberto(null)}>
         <FormExercicio
           key={aberto === "novo" ? "novo" : aberto.id}
           inicial={aberto === "novo" ? null : aberto}
@@ -55,6 +58,7 @@ export function ExerciciosProfessor({ notify }: { notify: (m: string) => void })
           onFechar={() => setAberto(null)}
           onSalvo={(fechar) => { if (fechar) setAberto(null); recarregar(); }}
         />
+        </Modal>
       )}
       {lista === null ? <Card><p className="muted">Carregando...</p></Card> : (
         <ListaPorTurma lista={lista} turmas={turmas} notify={notify}
@@ -119,7 +123,6 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
   const [gerando, setGerando] = useState(false);
   const [sugestoes, setSugestoes] = useState<SugestaoExercicioAPI[]>([]);
 
-  useEffect(() => { if (!materiaId && materias.length === 1) setMateriaId(materias[0].id); }, [materias]);
   useEffect(() => {
     turmaIds.filter((id) => !alunosPorTurma[id]).forEach((id) =>
       membrosTurma(id)
@@ -130,8 +133,6 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
   // so conta escolhido que e de uma turma marcada (desmarcar a turma tira os alunos dela)
   const escolhidosValidos = escolhidos.filter((a) => turmaIds.some((t) => alunosPorTurma[t]?.some((m) => m.id === a)));
   const trocarTurma = (id: string) => { setTurmaIds([id]); setEscolhidos([]); };
-  const alternarTurma = (id: string) =>
-    setTurmaIds(turmaIds.includes(id) ? turmaIds.filter((x) => x !== id) : [...turmaIds, id]);
   const alternarAluno = (id: string) =>
     setEscolhidos(escolhidos.includes(id) ? escolhidos.filter((x) => x !== id) : [...escolhidos, id]);
 
@@ -237,54 +238,43 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
   });
 
   return (
-    <Card>
-      <SectionTitle title={inicial ? "Editar exercício" : "Novo exercício"} />
+    <div>
       <div className="form-grid">
         <label>Nome do exercício
           <input value={titulo} onChange={(e) => setTitulo(e.target.value)}
             placeholder={aba === "ia" ? "Opcional: se vazio, a IA sugere" : "Ex.: Conectivos entre parágrafos"} />
         </label>
         <label>Matéria
-          <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+          <Escolha value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
             <option value="">Escolha...</option>
             {materias.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
-          </select>
+          </Escolha>
         </label>
         <label>Tema
           <input value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex.: Coesão, Função afim, Porcentagem" />
         </label>
         {inicial ? (
           <label>Turma
-            <select value={turmaId} onChange={(e) => trocarTurma(e.target.value)}>
+            <Escolha value={turmaId} onChange={(e) => trocarTurma(e.target.value)}>
               {turmas.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-            </select>
+            </Escolha>
           </label>
         ) : (
-          <fieldset className="span-2 para-quem">
+          <fieldset className="para-quem">
             <legend>Turmas</legend>
             {turmas.length ? (
-              <div className="botoes-escolha" role="group" aria-label="Turmas">
-                {turmas.map((t) => (
-                  <button type="button" key={t.id} aria-pressed={turmaIds.includes(t.id)}
-                    className={turmaIds.includes(t.id) ? "active" : ""} onClick={() => alternarTurma(t.id)}>
-                    {turmaIds.includes(t.id) && <Check size={14} />} {t.nome}
-                  </button>
-                ))}
-              </div>
+              <SeletorMultiplo rotulo="Turmas" placeholder="Escolha as turmas"
+                opcoes={turmas.map((t) => ({ valor: t.id, rotulo: t.nome }))} valores={turmaIds} onChange={setTurmaIds} />
             ) : <p className="tiny muted">Você ainda não está em nenhuma turma.</p>}
           </fieldset>
         )}
         {turmaIds.length > 0 && (
-          <fieldset className="span-2 para-quem">
+          <fieldset className="para-quem">
             <legend>Para quem</legend>
-            <div className="botoes-escolha" role="group" aria-label="Para quem">
-              <button type="button" aria-pressed={paraAlguns === false} className={paraAlguns === false ? "active" : ""}
-                onClick={() => setParaAlguns(false)}>
-                {turmaIds.length > 1 ? "Todos os alunos dessas turmas" : "Todos os alunos da turma"}
-              </button>
-              <button type="button" aria-pressed={paraAlguns === true} className={paraAlguns === true ? "active" : ""}
-                onClick={() => setParaAlguns(true)}>Escolher alunos</button>
-            </div>
+            <Seletor rotulo="Para quem" placeholder="Escolha para quem" obrigatorio
+              opcoes={[{ valor: "todos", rotulo: turmaIds.length > 1 ? "Todos os alunos dessas turmas" : "Todos os alunos da turma" },
+                       { valor: "alguns", rotulo: "Escolher alunos" }]}
+              valor={paraAlguns === null ? "" : paraAlguns ? "alguns" : "todos"} onChange={(v) => setParaAlguns(v === "alguns")} />
             {paraAlguns && (
               <div className="lista-alunos">
                 {turmaIds.map((t) => (
@@ -312,23 +302,17 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
 
       {!inicial && <p className="rotulo-escolha">Como criar</p>}
       {!inicial && (
-        <div className="botoes-escolha" role="group" aria-label="Como criar">
-          <button aria-pressed={aba === "escrever"} className={aba === "escrever" ? "active" : ""}
-            onClick={() => setAba("escrever")}>Escrever eu mesmo</button>
-          <button aria-pressed={aba === "ia"} className={aba === "ia" ? "active" : ""}
-            onClick={() => setAba("ia")}><Sparkles size={14} /> Pedir para a IA</button>
-        </div>
+        <Seletor rotulo="Como criar" placeholder="Escolha como criar"
+          opcoes={[{ valor: "escrever", rotulo: "Escrever eu mesmo" }, { valor: "ia", rotulo: "Pedir para a IA" }]}
+          valor={aba ?? ""} onChange={(v) => setAba((v || null) as typeof aba)} />
       )}
 
       {aba !== null && (
         <>
           <p className="rotulo-escolha">Tipo do exercício</p>
-          <div className="botoes-escolha" role="group" aria-label="Tipo do exercício">
-            {([["OBJETIVO", "Objetivo (alternativas)"], ["DISCURSIVO", "Discursivo (o aluno escreve)"]] as const).map(([t, rotulo]) => (
-              <button key={t} aria-pressed={tipoSel === t} className={tipoSel === t ? "active" : ""}
-                onClick={() => { setTipoSel(t); setR({ ...r, tipo: t }); }}>{rotulo}</button>
-            ))}
-          </div>
+          <Seletor rotulo="Tipo do exercício" placeholder="Escolha o tipo"
+            opcoes={[{ valor: "OBJETIVO", rotulo: "Objetivo (alternativas)" }, { valor: "DISCURSIVO", rotulo: "Discursivo (o aluno escreve)" }]}
+            valor={tipoSel ?? ""} onChange={(v) => { setTipoSel((v || null) as typeof tipoSel); if (v) setR({ ...r, tipo: v as TipoExercicioAPI }); }} />
         </>
       )}
 
@@ -426,9 +410,9 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
         <>
           <div className="form-grid">
             <label>Quantos exercícios
-              <select value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))}>
+              <Escolha value={quantidade} onChange={(e) => setQuantidade(Number(e.target.value))}>
                 {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+              </Escolha>
             </label>
             <label className="span-2">Pedido para a IA (opcional)
               <textarea rows={2} value={instrucoes} onChange={(e) => setInstrucoes(e.target.value)}
@@ -470,7 +454,12 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
           ))}
         </>
       )}
-    </Card>
+      {aba === null && (
+        <div className="form-actions left">
+          <Button variant="secondary" onPress={onFechar}>Cancelar</Button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -489,23 +478,17 @@ function ListaPorTurma({ lista, turmas, notify, onEditar, onExcluir }: {
   const nome = (id: string) => turmas.find((t) => t.id === id)?.nome ?? lista.find((e) => e.turma_id === id)?.turma_nome ?? "Turma";
   const [turma, setTurma] = useState("");
   const atual = unicas.includes(turma) ? turma : ""; // nada pré-marcado; clicar de novo desmarca
-  const daTurma = lista.filter((e) => e.turma_id === atual);
+  const daTurma = lista.filter((e) => !atual || e.turma_id === atual);
   const [verResumo, setVerResumo] = useState(false);
   const [abertoId, setAbertoId] = useState<string | null>(null);
   if (!unicas.length)
     return <Card><Empty title="Nenhuma turma" text="Quando você estiver em uma turma, os exercícios dela aparecem aqui." /></Card>;
   return (
     <Card>
-      <SectionTitle title="Meus exercícios por turma" />
-      <p className="rotulo-escolha">Escolha a turma para ver os exercícios dela</p>
-      <div className="botoes-escolha" role="group" aria-label="Turma">
-        {unicas.map((id) => (
-          <button type="button" key={id} aria-pressed={id === atual} className={id === atual ? "active" : ""}
-            onClick={() => { setTurma(id === atual ? "" : id); setAbertoId(null); }}>
-            {nome(id)} ({lista.filter((e) => e.turma_id === id).length})
-          </button>
-        ))}
-      </div>
+      <Filtros grupos={[{
+        id: "turma", titulo: "Turma", valor: atual, onChange: (v) => { setTurma(v); setAbertoId(null); },
+        opcoes: unicas.map((id) => ({ valor: id, rotulo: `${nome(id)} (${lista.filter((e) => e.turma_id === id).length})` })),
+      }]} />
       {atual && turmas.some((t) => t.id === atual) && (
         <div className="form-actions left">
           <Button variant="secondary" icon={verResumo ? ChevronUp : ChevronDown} onPress={() => setVerResumo(!verResumo)}>
@@ -514,8 +497,8 @@ function ListaPorTurma({ lista, turmas, notify, onEditar, onExcluir }: {
         </div>
       )}
       {verResumo && atual && <ResumoTurma key={atual} turmaId={atual} notify={notify} />}
-      {!atual ? null : !daTurma.length ? (
-        <Empty title="Nenhum exercício nesta turma" text="Crie um em “Novo exercício” e marque esta turma." />
+      {!daTurma.length ? (
+        <Empty title="Nenhum exercício aqui" text="Crie um em “Novo exercício” ou mude os filtros." />
       ) : daTurma.map((ex) => (
         <div className="meta-linha" key={ex.id}>
           <div className="meta-topo">
@@ -599,13 +582,10 @@ function RespostasExercicio({ ex, notify }: { ex: ExercicioProfessorAPI; notify:
           ))}
         </details>
       )}
-      <div className="botoes-escolha" role="group" aria-label="Filtrar alunos">
-        {([["todos", `Todos (${linhas.length})`], ["fizeram", `Fizeram (${fizeram.length})`],
-          ["faltam", `Não fizeram (${linhas.length - fizeram.length})`]] as const).map(([v, rotulo]) => (
-          <button type="button" key={v} aria-pressed={filtro === v} className={filtro === v ? "active" : ""}
-            onClick={() => setFiltro(v)}>{rotulo}</button>
-        ))}
-      </div>
+      <Filtros grupos={[{
+        id: "situacao", titulo: "Situação", valor: filtro === "todos" ? "" : filtro, onChange: (v) => setFiltro((v || "todos") as typeof filtro),
+        opcoes: [{ valor: "fizeram", rotulo: `Fizeram (${fizeram.length})` }, { valor: "faltam", rotulo: `Não fizeram (${linhas.length - fizeram.length})` }],
+      }]} />
       {!visiveis.length && <p className="tiny muted">Ninguém aqui.</p>}
       {visiveis.map((l) => <LinhaResposta key={l.aluno_id} ex={ex} linha={l} onSalva={atualizar} notify={notify} />)}
     </div>

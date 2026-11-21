@@ -198,7 +198,7 @@ def _ferramentas(
         ),
         Ferramenta(
             "pedir_nova_foto",
-            "Pede ao aluno uma nova foto quando o texto lido está ilegível, vazio ou cortado.",
+            "Pede ao aluno uma nova foto SÓ quando não dá para ler a imagem (ilegível ou cortada). Texto legível, mesmo ruim, deve ser corrigido.",
             {"mensagem": {"type": "string", "description": "O que o aluno deve fazer."}},
             pedir_foto, ["mensagem"],
         ),

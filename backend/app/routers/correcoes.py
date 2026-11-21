@@ -44,7 +44,7 @@ def _correcao_response(db: Session, correcao: Correcao) -> CorrecaoResponse:
         revisado_por=correcao.revisado_por,
         confianca=float(correcao.confianca), status=correcao.status.value, modelo_usado=correcao.modelo_usado,
         feedback=correcao.feedback,
-        avaliacao_ia="BOA" if correcao.boa_correcao else "MA" if correcao.explicacao_ruim else None,
+        avaliacao_ia="BOA" if correcao.boa_correcao else "MA" if correcao.explicacao_ruim else "MEDIA" if correcao.correcao_razoavel else None,
         criterios=[
             CriterioResponse(
                 codigo=t.habilidade_codigo, nome=t.nome, nota=float(c.nota),
@@ -84,6 +84,20 @@ def _pode_ver_correcao(db: Session, submissao: Submissao, usuario: Usuario):
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Você não tem acesso a esta correção.")
 
 
+def _temas_da_atividade(db: Session, atividade: Atividade, materia: Materia) -> dict:
+    """Criterios que valem para esta atividade: questoes do gabarito (exatas) ou as 5 competencias."""
+    if materia.tipo in MATERIAS_EXATAS:
+        temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(atividade_id=atividade.id)}
+        if not temas:
+            raise HTTPException(status.HTTP_409_CONFLICT, "Esta atividade não tem gabarito cadastrado.")
+    else:
+        garantir_competencias(db, materia)  # materia criada sem as 5 competencias: completa em vez de falhar
+        temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(materia_id=materia.id, atividade_id=None)}
+        if sorted(temas) != ["C1", "C2", "C3", "C4", "C5"]:
+            raise HTTPException(status.HTTP_409_CONFLICT, "A matéria desta atividade não tem as 5 competências do ENEM.")
+    return temas
+
+
 @router.post("/submissoes/{submissao_id}/corrigir", response_model=CorrecaoResponse, status_code=status.HTTP_201_CREATED)
 def corrigir_submissao(
     submissao_id: uuid.UUID,
@@ -101,15 +115,7 @@ def corrigir_submissao(
     atividade = db.get(Atividade, submissao.atividade_id)
     materia = db.get(Materia, atividade.materia_id)
 
-    if materia.tipo in MATERIAS_EXATAS:
-        temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(atividade_id=atividade.id)}
-        if not temas:
-            raise HTTPException(status.HTTP_409_CONFLICT, "Esta atividade não tem gabarito cadastrado.")
-    else:
-        garantir_competencias(db, materia)  # materia criada sem as 5 competencias: completa em vez de falhar
-        temas = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(materia_id=materia.id, atividade_id=None)}
-        if sorted(temas) != ["C1", "C2", "C3", "C4", "C5"]:
-            raise HTTPException(status.HTTP_409_CONFLICT, "A matéria desta atividade não tem as 5 competências do ENEM.")
+    temas = _temas_da_atividade(db, atividade, materia)
 
     exatas = materia.tipo in MATERIAS_EXATAS
     # exatas continua no Gemini; a nota da redacao agora vem do Claude (ver app/llm/claude.py)
@@ -209,6 +215,24 @@ def corrigir_submissao(
     return _correcao_response(db, correcao)
 
 
+@router.get("/submissoes/{submissao_id}/correcao-manual", response_model=CorrecaoResponse)
+def modelo_correcao_manual(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user),
+                           db: Session = Depends(get_db)):
+    """Ficha em branco para o professor corrigir direto, sem a IA. Nao grava nada: so ao aprovar."""
+    submissao = _submissao_visivel(db, submissao_id, usuario)
+    _so_professor(db, submissao, usuario)
+    if db.query(Correcao).filter_by(submissao_id=submissao.id).first():
+        raise HTTPException(status.HTTP_409_CONFLICT, "Esta redação já foi corrigida.")
+    atividade = db.get(Atividade, submissao.atividade_id)
+    temas = _temas_da_atividade(db, atividade, db.get(Materia, atividade.materia_id))
+    return CorrecaoResponse(
+        id=submissao.id, submissao_id=submissao.id, nota_ia=0, nota_professor=None, revisado_por=None, confianca=1,
+        status=StatusCorrecaoEnum.PENDENTE.value, modelo_usado=memoria.SEM_IA, feedback=None,
+        criterios=[CriterioResponse(codigo=c, nome=t.nome, nota=0, nota_professor=None, justificativa="", pontos=[])
+                   for c, t in sorted(temas.items())],
+    )
+
+
 @router.get("/submissoes/{submissao_id}/correcao", response_model=CorrecaoResponse)
 def ver_correcao(submissao_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     submissao = _submissao_visivel(db, submissao_id, usuario)
@@ -266,6 +290,7 @@ def avaliar_ia(submissao_id: uuid.UUID, payload: AvaliacaoIARequest,
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
     correcao.boa_correcao = payload.avaliacao == "BOA"
     correcao.explicacao_ruim = payload.avaliacao == "MA"
+    correcao.correcao_razoavel = payload.avaliacao == "MEDIA"
     if correcao.status == StatusCorrecaoEnum.APROVADA:
         memoria.indexar_correcao(db, correcao)
     db.commit()
@@ -283,10 +308,23 @@ def aprovar_correcao(
     _so_professor(db, submissao, usuario)
 
     correcao = db.query(Correcao).filter_by(submissao_id=submissao.id).first()
-    if not correcao:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Ainda não corrigida.")
-    if correcao.status == StatusCorrecaoEnum.APROVADA:
+    if correcao and correcao.status == StatusCorrecaoEnum.APROVADA:
         raise HTTPException(status.HTTP_409_CONFLICT, "Esta correção já foi aprovada.")
+    atividade = db.get(Atividade, submissao.atividade_id)
+    materia = db.get(Materia, atividade.materia_id)
+    if not correcao:
+        # o professor corrige direto, sem a IA ter corrigido antes: guarda so a nota dele
+        # (modelo_usado = SEM_IA; a nota/justificativa da IA ficam como a dele e nao entram na comparacao)
+        correcao = Correcao(
+            submissao_id=submissao.id, nota_ia=0, confianca=1, status=StatusCorrecaoEnum.PENDENTE,
+            modelo_usado=memoria.SEM_IA, versao_prompt=memoria.SEM_IA,
+        )
+        db.add(correcao)
+        db.flush()
+        for codigo, tema in _temas_da_atividade(db, atividade, materia).items():
+            db.add(CorrecaoCriterio(correcao_id=correcao.id, tema_id=tema.id, nota=0,
+                                    justificativa="Corrigido direto pelo professor, sem correção da IA."))
+        db.flush()
 
     criterios = {
         t.habilidade_codigo: (c, t)
@@ -296,8 +334,6 @@ def aprovar_correcao(
     if sorted(n.codigo for n in payload.notas) != sorted(criterios):
         raise HTTPException(422, "Informe a nota de cada critério desta correção, uma vez cada.")
 
-    atividade = db.get(Atividade, submissao.atividade_id)
-    materia = db.get(Materia, atividade.materia_id)
     if materia.tipo in MATERIAS_EXATAS:
         # faixa valida depende do valor total da atividade (definido pelo professor), dividido
         # igualmente entre as questoes -- nao e mais fixo em 0..200 como na redacao
@@ -314,6 +350,10 @@ def aprovar_correcao(
         criterios[nota.codigo][0].nota_professor = nota.nota
 
     correcao.nota_professor = sum(n.nota for n in payload.notas)
+    if correcao.modelo_usado == memoria.SEM_IA:
+        correcao.nota_ia = correcao.nota_professor  # sem IA: neutro (nao conta na comparacao, ver memoria.py)
+        for codigo, (c, _) in criterios.items():
+            c.nota = c.nota_professor
     correcao.revisado_por = usuario.id
     correcao.status = StatusCorrecaoEnum.APROVADA
     if payload.feedback is not None:
@@ -321,6 +361,7 @@ def aprovar_correcao(
     correcao.motivo_mudanca = (payload.motivo_mudanca or "").strip() or None
     correcao.explicacao_ruim = payload.explicacao_ruim and not payload.boa_correcao
     correcao.boa_correcao = payload.boa_correcao
+    correcao.correcao_razoavel = payload.correcao_razoavel and not (payload.boa_correcao or payload.explicacao_ruim)
     # RF-25/dominio real: so para redacao. As temas de exatas sao especificas de UMA atividade
     # (nunca se repetem), entao nao ha "evolucao" a acumular -- e um unico ponto fora da curva
     # dominaria /dominio/meu e /estudos/meu para sempre. O aluno ainda ve a nota/feedback normal.

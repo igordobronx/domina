@@ -1,6 +1,6 @@
 # CLAUDE.md: Domina
 
-Atualizado em 18/11/2026 (enxugado; histórico detalhado em `docs/historico_domina.md`). Responda sempre em português, de forma curta e simples, sem números difíceis.
+Atualizado em 20/11/2026 (enxugado; histórico detalhado em `docs/historico_domina.md`). Responda sempre em português, de forma curta e simples, sem números difíceis.
 Versão anterior (só calibração do prompt da redação, 20/10): `docs/handoff_CLAUDE_2026-10-20c.md`.
 
 Este arquivo diz **o que o projeto é e o que já foi feito**, para uma thread nova continuar de onde a
@@ -21,7 +21,7 @@ provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção
 - **Repo:** `igordobronx/domina` (GitHub). **Pasta no Mac:** `/Users/joaopedro/Documentos/Faculdade/Projetos GitHub/projeto hackathon/domina` (mudou em 15/11; antes ficava em `Documentos/Coding/projeto hackathon/domina`). Pastas de dados: `essays/` (planilhas), fotos das redações em `.../projeto hackathon/fotos redacoes do enem`.
 - **Branch de trabalho: `domina-ciclo-3`** (antes `domina-ciclo-2`). Só fazer merge na `main` quando o usuário mandar. A `main` tem a correção da redação pelo Claude Sonnet.
 - **Backend:** `backend/` (FastAPI + SQLAlchemy + Alembic, Python). **Frontend:** `frontend/` (React + Vite + TypeScript, PWA, deploy no Vercel com Root Directory `frontend`). Docs do frontend: `frontend/docs/FRONTEND.md`.
-- **Banco:** Postgres no docker (porta **5433**) por padrão; SQLite é o fallback (testes usam SQLite temporário). Migrations em `backend/migrations/versions/` (0001 a 0030).
+- **Banco:** Postgres no docker (porta **5433**) por padrão; SQLite é o fallback (testes usam SQLite temporário). Migrations em `backend/migrations/versions/` (0001 a 0032).
 - **Subir tudo:** `./dev.sh` na raiz (banco + API na 8000 + site na 5173; já roda `migrar.py`; `./dev.sh --seed` roda o seed antes). A API e o site recarregam sozinhos quando o código muda; **só mudança de banco exige parar (Ctrl+C) e rodar `./dev.sh` de novo** (ou `cd backend && ../venv/bin/python migrar.py` em outro terminal).
 - **Logins do seed** (senha `senha123`): `professor@domina.com` (Beto Andrade, turma "3º Ano A"), `gestor@domina.com`, `admin@domina.com`, `gestor2@domina.com` (outra escola), alunos `aluno@domina.com` (Ana Beatriz), `aluno2@domina.com` (Bruno), `aluno3@domina.com` (Carla).
 - **Chaves** em `backend/.env` (fora do git; nunca imprimir nem commitar): `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, `GROQ_API_KEY`. No cloud environment do projeto a `GEMINI_API_KEY` já existe.
@@ -33,6 +33,9 @@ provisória). O aluno envia a resposta (texto ou foto) e pode pedir a correção
 
 - Português, respostas curtas e simples.
 - **Mudar o código direto no Mac** (pasta acima), via `device_bash` / `device_commit_files`. **Não fazer commit nem push a cada mudança: só quando o usuário pedir.** Nada de merge na `main` sem ele mandar. O push do container e do VM do Mac costuma falhar; se pedir push, ele roda `git push` no terminal dele.
+- **Filtros (20/11): padrão único do sistema.** A lista aparece inteira e um botão "Filtros" abre o painel com um grupo por assunto (turma, status, matéria...), nada pré-selecionado, clicar de novo desmarca. Sempre usar `frontend/src/components/Filtros.tsx` (já em Atividades/Revisões, Exercícios e Materiais).
+- **Criar/editar/adicionar (20/11): sempre em pop-up** (`Modal` de `components/ui.tsx`, fundo borrado, com Cancelar e X), nunca embaixo ou no lugar da tela. `BotaoCriar` abre um pop-up para formulários simples; `Modal largo` para os compridos. Já em Calendário, Atividades, Exercícios, Metas, Turmas, Materiais, Equipe e Instituições.
+- **Escolhas (20/11): sempre em lista que abre ao clicar**, nunca botões lado a lado: `Seletor` (uma opção) e `SeletorMultiplo` (várias, ex.: turmas) em `frontend/src/components/Seletor.tsx`; nada pré-selecionado e clicar de novo desmarca. Os `Filtros` usam `Seletor`. **Nada vem pré-selecionado** em formulário de criar (matéria, tipo, perfil, turma, pontos, quantidade...): começa vazio e a validação pede a escolha. **Nunca usar `<select>` nativo:** use `Escolha` (mesma forma do `<select>`, com `<option>`, mas no visual do `Seletor`). Os testes e2e (Playwright) antigos do modo demonstração usam `selectOption` e já estavam desatualizados. Exceção: chips que inserem texto (exemplos de instrução na Treinar IA).
 - **Não gerar prints/imagens da tela a cada mudança.**
 - Ao gravar planilha no Mac, pedir que esteja fechada no Excel. `device_commit_files` pode gravar versão antiga logo após `cp` em `/mnt/project-files` (cache): copiar com nome novo e conferir o `md5sum` dos dois lados.
 - Nunca copiar nome/CPF de redação (planilhas só têm "Participante X - ano").
@@ -47,6 +50,9 @@ Detalhe, em ordem, de tudo: `docs/historico_domina.md`. Em uma linha por área:
 - **Backend:** cadastro, turmas, atividades (várias turmas, objetivas, várias fotos), domínio por competência, evolução, metas e níveis, calendário, RBAC com isolamento por escola, Alembic, logs com auditoria em cadeia de hash.
 - **Frontend:** telas reais para aluno, professor, gestor e admin (login real, sem modo demonstração).
 - **Exercícios (15/11):** professor cria (escrever ou pedir para a IA, por turma/aluno), aluno responde uma vez; prática, não vale nota.
+- **20/11:** o professor corrige direto, sem a IA ter corrigido antes (`GET /submissoes/{id}/correcao-manual` dá a ficha em branco; `aprovar` cria a correção com `modelo_usado="professor"`; a memória guarda só a nota dele e essa correção não entra na concordância com a IA). Listas de atividades com as mais recentes primeiro (migration 0031 `atividade.criado_em`; **banco mudou: parar e rodar `./dev.sh` de novo**).
+- **20/11 (depois):** o agente de IA **sempre corrige quando entende o envio** (sem sentido, fora do tema, em branco: dá a nota que couber, inclusive 0, com feedback); `pedir_nova_foto` só quando a foto é impossível de ler (só mudou o prompt do agente, não o v14 da redação). Texto do aluno quebra linha longa sem espaços (`overflow-wrap: anywhere` em `.essay` e similares).
+- **21/11:** avaliação da correção da IA agora tem 3 opções (Boa/Razoável/Ruim) e o "por quê" opcional vale para qualquer uma (usa `correcao.motivo_mudanca`, vai para a memória da IA); migration 0032 `correcao_razoavel` (**banco mudou: parar e rodar `./dev.sh` de novo**). O agente escreve a confiança em % (ex.: 95%).
 - **IA própria (16 a 18/11):** memória do professor (RAG), tela Treinar IA, material de treino. Resumo abaixo.
 
 ## 5. Correção da redação: estado do prompt

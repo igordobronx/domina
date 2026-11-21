@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
@@ -189,6 +190,7 @@ class Atividade(Base):
     arquivada = Column(Boolean, nullable=False, default=False, server_default=false())
     # quem propos a atividade; nulo = anterior a este campo (visivel a todos os professores da turma)
     criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    criado_em = Column(DateTime, default=datetime.now, nullable=True)  # lista: mais recentes primeiro
 
 
 class Evento(Base):
@@ -289,6 +291,8 @@ class Correcao(Base):
     explicacao_ruim = Column(Boolean, nullable=False, default=False, server_default=false())
     # o professor marcou esta correcao como exemplo modelo: entra primeiro na busca de exemplos
     boa_correcao = Column(Boolean, nullable=False, default=False, server_default=false())
+    # avaliacao intermediaria: correcao razoavel (nem modelo, nem ruim)
+    correcao_razoavel = Column(Boolean, nullable=False, default=False, server_default=false())
 
 
 class CorrecaoCriterio(Base):

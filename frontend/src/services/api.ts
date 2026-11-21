@@ -422,8 +422,9 @@ export interface CorrecaoAPI {
   confianca: number;
   status: string;
   feedback: string | null;
+  modelo_usado: string; // "professor" = o professor corrigiu direto, sem a IA
   criterios: CriterioAPI[];
-  avaliacao_ia: "BOA" | "MA" | null; // BOA = exemplo modelo; MA = explicação ruim (só a IA usa)
+  avaliacao_ia: "BOA" | "MEDIA" | "MA" | null; // BOA = exemplo modelo; MA = explicação ruim (só a IA usa)
 }
 
 // o que da memória do professor a IA usou numa correção (só professor/gestor veem)
@@ -477,20 +478,25 @@ export function verCorrecao(id: string): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/correcao`);
 }
 
+// ficha em branco para o professor corrigir sem a IA (nada e gravado ate aprovar)
+export function verCorrecaoManual(id: string): Promise<CorrecaoAPI> {
+  return request<CorrecaoAPI>(`/submissoes/${id}/correcao-manual`);
+}
+
 export function aprovarCorrecao(
   id: string,
   notas: { codigo: string; nota: number }[],
   feedback: string,
   motivoMudanca?: string, // por que o professor mudou a nota da IA (só a IA usa, para aprender)
-  avaliacaoIA: "BOA" | "MA" | null = null, // 1 clique: boa correção (modelo) ou explicação ruim, sem mudar a nota
+  avaliacaoIA: "BOA" | "MEDIA" | "MA" | null = null, // 1 clique: boa correção (modelo) ou explicação ruim, sem mudar a nota
 ): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/aprovar`, {
     method: "PUT",
-    body: JSON.stringify({ notas, feedback, motivo_mudanca: motivoMudanca?.trim() || null, explicacao_ruim: avaliacaoIA === "MA", boa_correcao: avaliacaoIA === "BOA" }),
+    body: JSON.stringify({ notas, feedback, motivo_mudanca: motivoMudanca?.trim() || null, explicacao_ruim: avaliacaoIA === "MA", correcao_razoavel: avaliacaoIA === "MEDIA", boa_correcao: avaliacaoIA === "BOA" }),
   });
 }
 
-export function avaliarIA(id: string, avaliacao: "BOA" | "MA" | null): Promise<CorrecaoAPI> {
+export function avaliarIA(id: string, avaliacao: "BOA" | "MEDIA" | "MA" | null): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/avaliacao-ia`, { method: "PUT", body: JSON.stringify({ avaliacao }) });
 }
 

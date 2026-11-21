@@ -1,6 +1,7 @@
+import { Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
-import { Badge, Button, Card, Empty, Progress, SectionTitle } from "../components/ui";
+import { Badge, Button, Card, Empty, Modal, Progress, SectionTitle } from "../components/ui";
 import {
   arquivarMeta, criarMeta, editarMeta, listarMaterias, listarMetas, listarTurmasMinhas, minhasMetas, rankingMetas,
   type MateriaAPI, type MetaAlunoAPI, type MetaAPI, type NivelAPI, type RankingItemAPI, type TipoMetaAPI,
@@ -121,15 +122,19 @@ function MetasEquipe({ role, notify }: { role: Role; notify: (m: string) => void
     <>
       <div className="page-heading">
         <div><h1>Metas e níveis</h1><p>Crie metas para os alunos cumprirem e acompanhe o ranking de pontos.</p></div>
-        {!criando && <Button icon={Plus} onPress={() => setCriando(true)}>Nova meta</Button>}
+        <Button icon={Plus} onPress={() => { setEditando(null); setCriando(true); }}>Nova meta</Button>
       </div>
       {editando && (
-        <EditarMeta meta={editando} notify={notify} onFechar={() => setEditando(null)}
-          onSalva={() => { setEditando(null); recarregar(); }} />
+        <Modal title="Editar meta" largo onClose={() => setEditando(null)}>
+          <EditarMeta meta={editando} notify={notify} onFechar={() => setEditando(null)}
+            onSalva={() => { setEditando(null); recarregar(); }} />
+        </Modal>
       )}
       {criando && (
-        <NovaMeta role={role} turmas={turmas} materias={materias} notify={notify}
-          onFechar={() => setCriando(false)} onCriada={() => { setCriando(false); recarregar(); }} />
+        <Modal title="Nova meta" largo onClose={() => setCriando(false)}>
+          <NovaMeta role={role} turmas={turmas} materias={materias} notify={notify}
+            onFechar={() => setCriando(false)} onCriada={() => { setCriando(false); recarregar(); }} />
+        </Modal>
       )}
       <Card>
         <SectionTitle title="Metas ativas" />
@@ -150,7 +155,7 @@ function MetasEquipe({ role, notify }: { role: Role; notify: (m: string) => void
             <p className="tiny muted">{m.concluidos} de {m.alunos_alvo} aluno(s) concluíram</p>
             {m.pode_editar && (
               <div className="form-actions left">
-                <Button variant="secondary" icon={Pencil} onPress={() => { setCriando(false); setEditando(m); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Editar</Button>
+                <Button variant="secondary" icon={Pencil} onPress={() => { setCriando(false); setEditando(m); }}>Editar</Button>
                 <Button variant="ghost" icon={Trash2} onPress={() => arquivar(m)}>Arquivar</Button>
               </div>
             )}
@@ -207,9 +212,9 @@ function EditarMeta({ meta, notify, onFechar, onSalva }: {
               <input type="number" min={1} max={percentual ? 100 : 1000} value={alvo} onChange={(e) => setAlvo(Number(e.target.value))} />
             </label>
             <label>Pontos que a meta vale
-              <select value={pontos} onChange={(e) => setPontos(Number(e.target.value))}>
+              <Escolha value={pontos} onChange={(e) => setPontos(Number(e.target.value))}>
                 {[...new Set([10, 20, 30, 50, 100, meta.pontos])].sort((a, b) => a - b).map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              </Escolha>
             </label>
           </>
         )}
@@ -228,28 +233,34 @@ function NovaMeta({ role, turmas, materias, notify, onFechar, onCriada }: {
 }) {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [tipo, setTipo] = useState<TipoMetaAPI>("ENTREGAS");
-  const [alvo, setAlvo] = useState(3);
+  const [tipo, setTipo] = useState<TipoMetaAPI | "">(""); // nada vem pre-selecionado
+  const [alvoTxt, setAlvoTxt] = useState("");
+  const alvo = Number(alvoTxt);
   const [materiaId, setMateriaId] = useState("");
-  const [competencia, setCompetencia] = useState("C1");
-  const [pontos, setPontos] = useState(20);
+  const [competencia, setCompetencia] = useState("");
+  const [pontosTxt, setPontosTxt] = useState("");
+  const pontos = Number(pontosTxt);
   const [inicio, setInicio] = useState(new Date().toISOString().slice(0, 10));
   const [fim, setFim] = useState("");
-  const [escopo, setEscopo] = useState<"TURMA" | "ALUNO" | "ESCOLA">("TURMA");
-  const [turmaId, setTurmaId] = useState(turmas[0]?.id ?? "");
+  const [escopo, setEscopo] = useState<"" | "TURMA" | "ALUNO" | "ESCOLA">("");
+  const [turmaId, setTurmaId] = useState("");
   const [alunoId, setAlunoId] = useState("");
   const [alunos, setAlunos] = useState<RankingItemAPI[]>([]);
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
-  useEffect(() => { if (!turmaId && turmas[0]) setTurmaId(turmas[0].id); }, [turmas]);
   useEffect(() => { rankingMetas().then(setAlunos).catch(() => {}); }, []); // alunos que a pessoa enxerga
-  const percentual = TIPOS.find((t) => t.value === tipo)!.unidade === "%";
+  const percentual = TIPOS.find((t) => t.value === tipo)?.unidade === "%";
   const redacoes = materias.filter((m) => m.tipo.startsWith("REDACAO"));
   const precisaMateria = tipo === "MEDIA_MATERIA" || tipo === "DOMINIO_COMPETENCIA";
   const opcoesMateria = tipo === "DOMINIO_COMPETENCIA" ? redacoes : materias;
 
   const salvar = async () => {
     if (!titulo.trim()) return setErro("Dê um título para a meta.");
+    if (!tipo) return setErro("Escolha o que o aluno precisa fazer.");
+    if (!(alvo >= 1)) return setErro("Informe a quantidade.");
+    if (!pontos) return setErro("Escolha quantos pontos a meta vale.");
+    if (!escopo) return setErro("Escolha para quem é a meta.");
+    if (tipo === "DOMINIO_COMPETENCIA" && !competencia) return setErro("Escolha a competência.");
     if (escopo === "TURMA" && !turmaId) return setErro("Escolha a turma.");
     if (escopo === "ALUNO" && !alunoId) return setErro("Escolha o aluno.");
     if (precisaMateria && !materiaId) return setErro("Escolha a matéria.");
@@ -273,55 +284,60 @@ function NovaMeta({ role, turmas, materias, notify, onFechar, onCriada }: {
         <label>Título<input value={titulo} onChange={(e) => setTitulo(e.target.value)} placeholder="Ex.: Entregar 3 atividades em novembro" /></label>
         <label>Descrição (opcional)<textarea rows={2} value={descricao} onChange={(e) => setDescricao(e.target.value)} /></label>
         <label>O aluno precisa…
-          <select value={tipo} onChange={(e) => { setTipo(e.target.value as TipoMetaAPI); setAlvo(TIPOS.find((t) => t.value === e.target.value)!.unidade === "%" ? 80 : 3); }}>
+          <Escolha value={tipo} onChange={(e) => { setTipo(e.target.value as TipoMetaAPI); setAlvoTxt(""); }}>
+            <option value="">Escolha...</option>
             {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+          </Escolha>
         </label>
         <label>{percentual ? "Percentual (X)" : "Quantidade"}
-          <input type="number" min={1} max={percentual ? 100 : 1000} value={alvo} onChange={(e) => setAlvo(Number(e.target.value))} />
+          <input type="number" min={1} max={percentual ? 100 : 1000} value={alvoTxt} placeholder={percentual ? "Ex.: 80" : "Ex.: 3"} onChange={(e) => setAlvoTxt(e.target.value)} />
         </label>
         {(precisaMateria || tipo === "ENTREGAS" || tipo === "NOTA_ATIVIDADE") && (
           <label>Matéria {precisaMateria ? "" : "(opcional: vazio = todas)"}
-            <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+            <Escolha value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
               <option value="">{precisaMateria ? "Escolha..." : "Todas"}</option>
               {opcoesMateria.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
-            </select>
+            </Escolha>
           </label>
         )}
         {tipo === "DOMINIO_COMPETENCIA" && (
           <label>Competência
-            <select value={competencia} onChange={(e) => setCompetencia(e.target.value)}>
+            <Escolha value={competencia} onChange={(e) => setCompetencia(e.target.value)}>
+              <option value="">Escolha...</option>
               {["C1", "C2", "C3", "C4", "C5"].map((c) => <option key={c}>{c}</option>)}
-            </select>
+            </Escolha>
           </label>
         )}
         <label>Pontos que a meta vale
-          <select value={pontos} onChange={(e) => setPontos(Number(e.target.value))}>
+          <Escolha value={pontosTxt} onChange={(e) => setPontosTxt(e.target.value)}>
+            <option value="">Escolha...</option>
             {[10, 20, 30, 50, 100].map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
+          </Escolha>
         </label>
         <label>Começa em<input type="date" value={inicio} onChange={(e) => setInicio(e.target.value)} /></label>
         <label>Termina em (opcional)<input type="date" value={fim} onChange={(e) => setFim(e.target.value)} /></label>
         <label>Para quem
-          <select value={escopo} onChange={(e) => setEscopo(e.target.value as typeof escopo)}>
+          <Escolha value={escopo} onChange={(e) => setEscopo(e.target.value as typeof escopo)}>
+            <option value="">Escolha...</option>
             <option value="TURMA">Uma turma</option>
             <option value="ALUNO">Um aluno</option>
             {role === "gestor" && <option value="ESCOLA">A escola toda</option>}
-          </select>
+          </Escolha>
         </label>
         {escopo === "TURMA" && (
           <label>Turma
-            <select value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
+            <Escolha value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
+              <option value="">Escolha...</option>
               {turmas.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-            </select>
+            </Escolha>
           </label>
         )}
         {escopo === "ALUNO" && (
           <label>Aluno
-            <select value={alunoId} onChange={(e) => setAlunoId(e.target.value)}>
+            <Escolha value={alunoId} onChange={(e) => setAlunoId(e.target.value)}>
               <option value="">Escolha...</option>
               {alunos.map((a) => <option key={a.aluno_id} value={a.aluno_id}>{a.nome}</option>)}
-            </select>
+            </Escolha>
           </label>
         )}
       </div>
@@ -346,10 +362,10 @@ function Ranking({ role, turmas, notify }: { role: Role; turmas: TurmaAPI[]; not
       <SectionTitle title="Ranking de pontos" />
       <p className="tiny muted">Só você e a equipe veem este ranking. Ele conta pontos de metas, nunca notas.</p>
       <label>Turma
-        <select value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
+        <Escolha value={turmaId} onChange={(e) => setTurmaId(e.target.value)}>
           <option value="">{role === "gestor" ? "Escola toda" : "Todas as minhas turmas"}</option>
           {turmas.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-        </select>
+        </Escolha>
       </label>
       {itens === null ? <p className="muted">Carregando...</p> : !itens.length ? <p className="muted">Nenhum aluno por aqui.</p> : (
         <table className="tabela-ranking">

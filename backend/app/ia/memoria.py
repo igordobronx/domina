@@ -149,6 +149,9 @@ def indexar_documento(db: Session, documento: DocumentoBase) -> None:
         documento.detalhe = "Erro ao ler o arquivo. Tente enviar de novo."
 
 
+SEM_IA = "professor"  # Correcao.modelo_usado quando o professor corrigiu direto, sem correcao da IA
+
+
 def _exemplo(db: Session, correcao: Correcao, submissao: Submissao, atividade: Atividade) -> str:
     linhas = [f"Atividade: {atividade.titulo}",
               f'Resposta do aluno: """{(submissao.texto_confirmado or "").strip()[:1500]}"""']
@@ -164,7 +167,9 @@ def _exemplo(db: Session, correcao: Correcao, submissao: Submissao, atividade: A
         if tema.resposta_correta:
             linha += f" | Gabarito: {tema.resposta_correta[:200]}"
         linha += f" | Nota do professor: {nota_prof:g} de {valor:g}"
-        if abs(nota_prof - nota_ia) > 0.01:
+        if correcao.modelo_usado == SEM_IA:
+            linha += " (o professor corrigiu direto, sem correção da IA)"
+        elif abs(nota_prof - nota_ia) > 0.01:
             mudou = True
             linha += (f" (a IA tinha dado {nota_ia:g} e o professor CORRIGIU a nota: a IA ERROU aqui, foi "
                       f"{'rigorosa' if nota_ia < nota_prof else 'generosa'} demais. O que a IA tinha "
@@ -174,11 +179,14 @@ def _exemplo(db: Session, correcao: Correcao, submissao: Submissao, atividade: A
         linhas.append(linha)
     if correcao.boa_correcao:
         linhas.append("O professor marcou esta correção como EXEMPLO MODELO: imite o rigor, a explicação e o tom.")
+    if correcao.correcao_razoavel:
+        linhas.append("O professor marcou esta correção como RAZOÁVEL (nem modelo, nem ruim): serve de guia, mas melhore.")
     if correcao.explicacao_ruim:
         linhas.append("O professor marcou que a EXPLICAÇÃO da IA estava ruim (mesmo onde a nota estava certa): "
                       "explique de forma mais clara e útil para o aluno.")
-    if mudou and correcao.motivo_mudanca:
-        linhas.append(f"POR QUE o professor mudou a nota (explicação dele para a IA): {correcao.motivo_mudanca[:1000]}")
+    if correcao.motivo_mudanca:
+        quem = "mudou a nota" if mudou else "avaliou assim a correção"
+        linhas.append(f"POR QUE o professor {quem} (explicação dele para a IA): {correcao.motivo_mudanca[:1000]}")
     if correcao.feedback:
         linhas.append(f"Feedback final aprovado pelo professor: {correcao.feedback[:600]}")
     return "\n".join(linhas)
@@ -348,7 +356,7 @@ def concordancia(db: Session, materia_id, professor_id, recentes: int = 20) -> d
         .join(Submissao, Submissao.id == Correcao.submissao_id)
         .join(Atividade, Atividade.id == Submissao.atividade_id)
         .filter(Atividade.materia_id == materia_id, Correcao.revisado_por == professor_id,
-                Correcao.nota_professor.isnot(None))
+                Correcao.nota_professor.isnot(None), Correcao.modelo_usado != SEM_IA)
         .order_by(Submissao.criado_em.desc())
         .all()
     )
@@ -437,7 +445,7 @@ def erros_da_ia(db: Session, materia_id, professor_id, limite: int = 5) -> list[
         .join(Submissao, Submissao.id == Correcao.submissao_id)
         .join(Atividade, Atividade.id == Submissao.atividade_id)
         .filter(Atividade.materia_id == materia_id, Correcao.revisado_por == professor_id,
-                Correcao.nota_professor.isnot(None))
+                Correcao.nota_professor.isnot(None), Correcao.modelo_usado != SEM_IA)
         .all()
     )
 
@@ -461,7 +469,7 @@ def aprendido(db: Session, materia_id, professor_id) -> list[dict]:
                  .filter(IaTrecho.materia_id == materia_id, IaTrecho.professor_id == professor_id,
                          IaTrecho.origem.in_([CORRECAO, EXERCICIO])).all()):
         erro = 0.0
-        if c is not None and c.nota_professor is not None:
+        if c is not None and c.nota_professor is not None and c.modelo_usado != SEM_IA:
             ia, prof = float(c.nota_ia), float(c.nota_professor)
             erro = abs(ia - prof) / max(ia, prof, 1.0) + (0.05 if c.explicacao_ruim else 0)
         itens.append({"tipo": t.origem, "id": t.id, "titulo": t.titulo, "trecho": " ".join(t.texto.split())[:160],
