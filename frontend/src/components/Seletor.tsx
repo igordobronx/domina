@@ -7,6 +7,7 @@ export interface OpcaoSeletor {
 }
 
 interface Base {
+  todos?: string; // multiplo: texto de uma linha extra que marca/desmarca todas as opcoes
   opcoes: OpcaoSeletor[];
   placeholder?: string;
   rotulo?: string; // aria-label
@@ -15,8 +16,8 @@ interface Base {
 // Padrao de escolha do sistema: uma lista que abre ao clicar (no lugar de botoes lado a lado).
 // Nada vem pre-selecionado; no modo simples, clicar de novo na opcao marcada desmarca
 // (a menos que `obrigatorio`). No modo multiplo a lista fica aberta enquanto se marca.
-function Lista({ opcoes, placeholder = "Escolha...", rotulo, marcados, aoClicar, multiplo }: Base & {
-  marcados: string[]; aoClicar: (valor: string) => void; multiplo: boolean;
+function Lista({ opcoes, todos, placeholder = "Escolha...", rotulo, marcados, aoClicar, multiplo, aoClicarTodos }: Base & {
+  marcados: string[]; aoClicar: (valor: string) => void; multiplo: boolean; aoClicarTodos?: () => void;
 }) {
   const [aberto, setAberto] = useState(false);
   const raiz = useRef<HTMLDivElement>(null);
@@ -29,6 +30,19 @@ function Lista({ opcoes, placeholder = "Escolha...", rotulo, marcados, aoClicar,
     document.addEventListener("keydown", esc2, true);
     return () => { document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", esc2, true); };
   }, [aberto]);
+  const lista = useRef<HTMLUListElement>(null);
+  // lista que passa do fim da tela/pop-up: abre uma folga so do tamanho que falta e rola ate ela; se cabe, nada muda
+  useEffect(() => {
+    const el = raiz.current, ul = lista.current;
+    if (!aberto || !el || !ul) return;
+    const limite = el.closest(".modal")?.getBoundingClientRect().bottom ?? window.innerHeight;
+    const falta = ul.getBoundingClientRect().bottom + 24 - Math.min(limite, window.innerHeight);
+    if (falta > 0) {
+      el.style.paddingBottom = `${falta}px`;
+      ul.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    return () => { el.style.paddingBottom = ""; };
+  }, [aberto]);
   const nomes = opcoes.filter((o) => marcados.includes(o.valor)).map((o) => o.rotulo);
   return (
     <div className="seletor" ref={raiz}>
@@ -38,7 +52,13 @@ function Lista({ opcoes, placeholder = "Escolha...", rotulo, marcados, aoClicar,
         <ChevronDown size={16} />
       </button>
       {aberto && (
-        <ul className="seletor-lista" role="listbox" aria-multiselectable={multiplo}>
+        <ul className="seletor-lista" ref={lista} role="listbox" aria-multiselectable={multiplo}>
+          {todos && aoClicarTodos && (
+            <li role="option" aria-selected={marcados.length === opcoes.length}
+              className={marcados.length === opcoes.length ? "on" : ""} onClick={aoClicarTodos}>
+              <span className="seletor-check">{marcados.length === opcoes.length && <Check size={14} />}</span>{todos}
+            </li>
+          )}
           {opcoes.map((o) => {
             const on = marcados.includes(o.valor);
             return (
@@ -69,6 +89,7 @@ export function SeletorMultiplo({ valores, onChange, ...base }: Base & {
 }) {
   return (
     <Lista {...base} multiplo marcados={valores}
+      aoClicarTodos={() => onChange(valores.length === base.opcoes.length ? [] : base.opcoes.map((o) => o.valor))}
       aoClicar={(v) => onChange(valores.includes(v) ? valores.filter((x) => x !== v) : [...valores, v])} />
   );
 }
@@ -96,7 +117,7 @@ export function Escolha({ value, onChange, children, disabled, ...resto }: {
   const vazia = todas.find((o) => o.valor === "");
   return (
     <div className={disabled ? "seletor-desativado" : undefined}>
-      <Seletor rotulo={resto["aria-label"]} placeholder={vazia?.rotulo ?? "Escolha..."} obrigatorio
+      <Seletor rotulo={resto["aria-label"]} placeholder={vazia?.rotulo ?? "Escolha..."} obrigatorio={!vazia}
         opcoes={todas.filter((o) => o.valor !== "")} valor={String(value ?? "")}
         onChange={(v) => onChange({ target: { value: v } } as ChangeEvent<HTMLSelectElement>)} />
     </div>

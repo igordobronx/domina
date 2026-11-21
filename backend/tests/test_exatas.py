@@ -53,8 +53,8 @@ def criar_atividade_com_gabarito(prof, turma_id, materia_id):
     atividade = r.json()
     # o aluno precisa ver o enunciado real de cada questao (nao um texto fixo de outra materia)
     assert atividade["questoes"] == [
-        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False, "alternativas": None, "resposta_correta": "x = 2"},
-        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False, "alternativas": None, "resposta_correta": "x = 3"},
+        {"codigo": "Q1", "enunciado": "Resolva 2x + 3 = 7", "tem_imagem": False, "alternativas": None, "subtopico": None, "resposta_correta": "x = 2"},
+        {"codigo": "Q2", "enunciado": "Resolva 3x = 9", "tem_imagem": False, "alternativas": None, "subtopico": None, "resposta_correta": "x = 3"},
     ]
     # sem valor_total explicito, assume 1000 (como a redacao) e divide pelas questoes
     assert atividade["valor_total"] == 1000.0
@@ -414,3 +414,37 @@ def test_exatas_varias_folhas_vao_todas_ao_gemini_e_caixa_aceita_pagina():
     assert "Prova do aluno (folha 1):" in partes and "Prova do aluno (folha 2):" in partes
     assert "2 fotos" in partes[-1]
     assert res.questoes[0].pontos[0].caixa.pagina == 1
+
+
+def test_subtopico_ia_preenche_o_que_ficou_em_branco_e_entra_na_evolucao(monkeypatch):
+    # professor escreveu o da Q1; o da Q2 (em branco) a IA identifica
+    monkeypatch.setattr("app.subtopicos.identificar", lambda *a, **k: ["Equação do 1º grau"] * len(a[1]))
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    turma_id, materia_id = criar_turma_e_materia(prof)
+    r = client.post("/atividades", headers=prof, json={
+        "materia_id": materia_id, "turma_id": turma_id, "titulo": "Subtópicos", "tipo": "EXERCICIO",
+        "questoes": [{"enunciado": "Resolva 2x = 4", "resposta_correta": "x = 2", "subtopico": "Álgebra"},
+                     {"enunciado": "Resolva 3x = 9", "resposta_correta": "x = 3"}],
+    })
+    assert r.status_code == 201, r.text
+    atividade = r.json()
+    assert [q["subtopico"] for q in atividade["questoes"]] == ["Álgebra", "Equação do 1º grau"]
+    # discursiva sem resposta exemplo e recusada
+    r = client.post("/atividades", headers=prof, json={
+        "materia_id": materia_id, "turma_id": turma_id, "titulo": "Sem exemplo", "tipo": "EXERCICIO",
+        "questoes": [{"enunciado": "Resolva 2x = 4"}]})
+    assert r.status_code == 422
+
+    sub = client.post("/submissoes/texto", headers=aluno,
+                      json={"atividade_id": atividade["id"], "texto": "Q1: x = 2\nQ2: x = 3"}).json()
+    original, exatas_mod.gerar = exatas_mod.gerar, _gemini_falso([200, 0])
+    try:
+        assert client.post(f"/submissoes/{sub['id']}/corrigir", headers=prof, json={}).status_code == 201
+        assert client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
+            "notas": [{"codigo": "Q1", "nota": 500}, {"codigo": "Q2", "nota": 0}], "feedback": "ok",
+        }).status_code == 200
+    finally:
+        exatas_mod.gerar = original
+    evo = client.get("/evolucao/minha", headers=aluno).json()
+    mat = next(m for m in evo if m["materia_id"] == materia_id)
+    assert {s["nome"]: s["percentual"] for s in mat["subtopicos"]} == {"Álgebra": 100.0, "Equação do 1º grau": 0.0}

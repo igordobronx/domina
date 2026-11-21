@@ -18,6 +18,8 @@ from app.models.enum import (
 from app.models.usuario import (
     Atividade, Correcao, CorrecaoCriterio, Materia, ProfessorMateria, Submissao, SubmissaoPagina, Tema, Turma, Usuario, UsuarioTurma,
 )
+from app import subtopicos
+from app.subtopicos import usados as subtopicos_da_materia
 from app.competencias import garantir_competencias
 from app.lecionados import leciona, materias_do_professor
 from app.metas import avaliar_seguro
@@ -98,7 +100,7 @@ def _atividade_response(db: Session, atividade: Atividade, usuario: Usuario) -> 
             .order_by(Tema.habilidade_codigo)
         )
         questoes = [QuestaoAtividadeResponse(
-            codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem), alternativas=t.alternativas,
+            codigo=t.habilidade_codigo, enunciado=t.nome, tem_imagem=bool(t.imagem), alternativas=t.alternativas, subtopico=t.subtopico,
             resposta_correta=t.resposta_correta if usuario.perfil != PerfilEnum.ALUNO else None,
         ) for t in temas]
 
@@ -166,6 +168,8 @@ def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID)
         raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona {materia.nome} na turma {turma.nome}.")
     if materia.tipo in MATERIAS_EXATAS and not payload.questoes:
         raise HTTPException(422, "Informe as questões e o gabarito desta atividade.")
+    if materia.tipo in MATERIAS_EXATAS:
+        subtopicos.completar(materia.nome, payload.questoes, payload.titulo, subtopicos_da_materia(db, materia.id))  # em branco: a IA identifica (1 chamado)
 
     atividade = Atividade(
         materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
@@ -180,7 +184,8 @@ def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID)
         for i, questao in enumerate(payload.questoes, start=1):
             db.add(Tema(
                 materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
-                nome=questao.enunciado.strip(), resposta_correta=questao.resposta_correta.strip(),
+                nome=questao.enunciado.strip(), resposta_correta=questao.resposta_correta.strip() or None,
+                subtopico=questao.subtopico,
                 alternativas=questao.alternativas,
             ))
     return atividade

@@ -119,6 +119,7 @@ export interface QuestaoAtividadeAPI {
   enunciado: string;
   tem_imagem?: boolean; // figura do enunciado anexada pelo professor
   alternativas?: string[] | null; // objetiva (estilo ENEM): textos de A, B, C...; o gabarito e so a letra
+  subtopico?: string | null;
   resposta_correta?: string | null; // so professor/gestor recebem o gabarito
 }
 
@@ -284,7 +285,7 @@ export function criarAtividadesLote(payload: {
   turma_ids: string[];
   titulo: string;
   tipo: AtividadeAPI["tipo"];
-  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[] }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string }[];
   valor_total?: number;
   prazo?: string;
 }): Promise<AtividadeAPI[]> {
@@ -295,7 +296,7 @@ export function editarAtividade(id: string, payload: {
   titulo?: string;
   prazo?: string | null; // null limpa o prazo
   valor_total?: number;
-  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[] }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string }[];
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>(`/atividades/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 }
@@ -310,7 +311,7 @@ export function criarAtividade(payload: {
   turma_id: string;
   titulo: string;
   tipo: AtividadeAPI["tipo"];
-  questoes?: { enunciado: string; resposta_correta: string }[];
+  questoes?: { enunciado: string; resposta_correta: string; subtopico?: string }[];
   valor_total?: number;
   prazo?: string;
 }): Promise<AtividadeAPI> {
@@ -525,6 +526,7 @@ export interface EvolucaoMateriaAPI {
   media_percentual: number;
   num_atividades: number;
   historico: EvolucaoPontoAPI[];
+  subtopicos?: { nome: string; percentual: number; num_questoes: number }[]; // exatas
 }
 
 export function evolucaoMinha(): Promise<EvolucaoMateriaAPI[]> {

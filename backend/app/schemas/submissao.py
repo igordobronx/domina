@@ -107,13 +107,18 @@ class CriarMateriaRequest(BaseModel):
 class QuestaoInput(BaseModel):
     # discursiva de quimica/fisica tem enunciado e gabarito longos (mecanismo, nomes); colunas sao Text
     enunciado: str = Field(min_length=1, max_length=10_000)
-    resposta_correta: str = Field(min_length=1, max_length=5_000)
+    # objetiva: a letra do gabarito. Discursiva: a resposta exemplo. Os dois sao obrigatorios
+    resposta_correta: str = Field(default="", max_length=5_000)
+    subtopico: str | None = Field(default=None, max_length=150)  # em branco = a IA identifica
     # objetiva (estilo ENEM): textos das alternativas (A, B, C...); o gabarito vira so a letra
     alternativas: list[str] | None = Field(default=None, min_length=2, max_length=5)
 
     @model_validator(mode="after")
     def _objetiva(self):
-        if self.alternativas is None:
+        if self.alternativas is None:  # discursiva: resposta exemplo obrigatoria (digitada ou gerada pela IA e aprovada)
+            self.resposta_correta = self.resposta_correta.strip()
+            if not self.resposta_correta:
+                raise ValueError("Informe a resposta exemplo (ou gere com a IA e revise).")
             return self
         self.alternativas = [a.strip() for a in self.alternativas]
         if not all(self.alternativas):
@@ -134,6 +139,7 @@ class QuestaoAtividadeResponse(BaseModel):
     enunciado: str
     alternativas: list[str] | None = None  # objetiva: o aluno recebe as alternativas, nunca o gabarito
     tem_imagem: bool = False  # figura anexada pelo professor (GET /atividades/{id}/questoes/{codigo}/imagem)
+    subtopico: str | None = None
     resposta_correta: str | None = None  # so professor/gestor (para editar); o aluno nunca recebe o gabarito
 
 

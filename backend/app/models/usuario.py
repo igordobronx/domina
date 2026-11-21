@@ -113,6 +113,8 @@ class Tema(Base):
     alternativas = Column(JSON, nullable=True)
     # figura do enunciado (ex.: estruturas quimicas), anexada pelo professor; caminho em UPLOAD_DIR
     imagem = Column(String(255), nullable=True)
+    # assunto da questao (so exatas/gabarito): o professor escreve ou a IA identifica; alimenta a evolucao por subtopico
+    subtopico = Column(String(150), nullable=True)
 
 class DocumentoBase(Base):
     __tablename__ = "documento_base"

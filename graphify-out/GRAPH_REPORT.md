@@ -1,17 +1,17 @@
 # Graph Report - domina  (2026-11-20)
 
 ## Corpus Check
-- 221 files · ~206,363 words
+- 225 files · ~208,120 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 57 file(s) not represented in the graph (top: .jsonl 37, (none) 7, .xlsm 3)
 
 ## Summary
-- 2241 nodes · 6594 edges · 174 communities (106 shown, 68 thin omitted)
-- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 843 edges (avg confidence: 0.94)
+- 2265 nodes · 6647 edges · 171 communities (99 shown, 72 thin omitted)
+- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 846 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4af68dea`
+- Built from commit: `2a00807b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -28,7 +28,7 @@
 - E7 Recomendação e exercícios — Dizer o que estudar e oferecer exercícios
 - Diagnóstico de Domínio
 - Tendências do ENEM
-- Usuario
+- Correcao
 - routers/documento.py
 - Fases e Riscos do Projeto
 - Ciclo do Produto
@@ -38,7 +38,7 @@
 - Dependência: Hash de Senha
 - Dependência: Pydantic
 - Cautela sobre Estimativas
-- app/estudos.py
+- main.py
 - Dependência: FastAPI
 - Dependência: Google Cloud Vision
 - Dependência: psycopg2
@@ -70,39 +70,39 @@
 - RNF: Usabilidade
 - RNF: Acessibilidade
 - RNF: Observabilidade
-- Usuario
+- exercicios.py
 - routers/estudos.py
 - E4 Correção por IA — Nota estimada, feedback e nível de confiança
 - test_agente.py
 - extracao.py
 - correcoes.py
-- test_estudos.py
+- registrar
 - Learning.tsx
 - Button
 - routers/metas.py
 - test_exatas.py
-- App.tsx
+- Dashboard.tsx
 - Banco compartilhado + escola_id + RLS (estratégia escolhida)
 - package.json
 - questoes.py
 - api.ts
 - compilerOptions
-- _ferramentas
+- IA própria: memória do professor (RAG) — 2026-11-16
 - E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor
 - Calendar.tsx
-- correcao.py
+- registro.py
 - E10 Privacidade e operação — LGPD, auditoria e custo
 - PerfilEnum
 - vercel.json
-- routers/painel.py
-- dependencies.py
+- escolas.py
+- App.tsx
 - main.tsx
 - Turma
 - E5 Revisão do professor — Garantir que a decisão final é humana e medir a IA
 - Exercicios.tsx
 - vite-env.d.ts
-- monta_base_externa.py
-- test_atividades.py
+- test_documentos.py
+- 2. Lógica (o que o agente faz)
 - CLAUDE.md: domina, correção de redação do ENEM por IA
 - Domina
 - LGPD (Lei Geral de Proteção de Dados)
@@ -120,54 +120,53 @@
 - roda_v11.sh
 - roda_v12.sh
 - roda_v9.sh
-- exercicios.py
+- 2026-11-21-espac-o-no-card-da-turma-joa.md
 - Domina · Frontend
 - devDependencies
-- vincular
+- test_estudos.py
 - memoria.py
-- submissoes.py
+- Usuario
 - test_memoria_ia.py
-- Card
+- Metas.tsx
 - 2026-11-20-conferir-se-a-main-tem-commits-joa.md
 - routers/compliance.py
 - dev.sh
-- test_rbac.py
+- 0003_figura_da_questao.py
 - Logs.tsx
 - token
-- Materia
+- models/usuario.py
 - Logs do sistema
 - pathlib
 - sqlalchemy_dialects
 - dependencies
-- registrar
+- auditoria.py
 - scripts
-- registro.py
-- test_metas.py
+- config.py
+- app/logs.py
 - @playwright/test
-- submissao.py
 - Documentação do frontend Domina
-- 0006_hash_seguranca.py
+- 2026-11-21-evoluc-a-o-do-aluno-e-joa.md
 - typing
-- extract_text_from_image
+- routers/ocr.py
 - sqlalchemy
-- models/usuario.py
+- routers/painel.py
 - Professor e matéria (quem leciona o quê)
 - usePwa.ts
-- exercicios_ia.py
+- gravar
 - alembic
 - json
 - 3. Versão por versão
-- Exercicio
+- 0008_atividade_arquivada.py
 - 2026-11-16-verificac-a-o-po-s-ia-joa.md
 - frontend/README.md
 - 2026-11-17-verificac-a-o-17-11-graphify-joa.md
-- test_calendario.py
+- 0015_exercicio_alunos.py
 - test_logs.py
-- RF-17 (Correção): Registrar nível de confiança em cada correção e sinalizar quando a IA está incerta
+- 0018_exercicio_respostas_exemplo.py
 - analisa_externa.py
 - 0012_atividade_criado_por.py
-- concordancia
-- Validação do frontend
+- 2026-11-20-professor-corrige-sem-ia-e-listas-joa.md
+- 0020_erro_aluno.py
 - 0013_backfill_atividade_criado_por.py
 - 0031_atividade_criado_em.py
 - 5. Mapa de telas e funcionalidades
@@ -175,15 +174,12 @@
 - 2026-11-21-agente-sempre-corrige-e-texto-longo-joa.md
 - 2026-11-18-treinar-ia-por-mate-ria-18-joa.md
 - 6. Fluxos e estados
-- 0008_atividade_arquivada.py
+- 0021_documento_caminho_ativo.py
 - 0017_exercicio_resposta_resultado.py
-- 0015_exercicio_alunos.py
-- 0023_usuario_ativo.py
-- 0026_fontes_da_correcao.py
-- 0020_erro_aluno.py
-- 0027_motivo_dispensado.py
+- 0025_material_de_treino_da_ia.py
+- 0028_ia_aprende_exercicios_e_explicacao.py
+- 0033_subtopico_da_questao.py
 - 0024_memoria_da_ia.py
-- 0029_boa_correcao_e_tirar_de_uso.py
 - 0032_correcao_razoavel.py
 
 ## God Nodes (most connected - your core abstractions)
@@ -192,21 +188,21 @@
 3. `PerfilEnum` - 93 edges
 4. `token()` - 58 edges
 5. `Atividade` - 56 edges
-6. `Materia` - 54 edges
-7. `Button()` - 54 edges
+6. `Button()` - 55 edges
+7. `Materia` - 54 edges
 8. `Card()` - 51 edges
-9. `Tema` - 45 edges
+9. `Tema` - 47 edges
 10. `Correcao` - 45 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `2.1 Redação: o prompt (versão v14)` --references--> `ResultadoIA`  [INFERRED]
   README.md → backend/app/correcao.py
-- `Parte 1: memória do professor (RAG) — FEITA` --references--> `contexto_do_professor()`  [INFERRED]
-  docs/decisoes/ia-propria.md → backend/app/ia/memoria.py
 - `Visão geral do fluxo` --references--> `TipoMateriaEnum`  [INFERRED]
   README.md → backend/app/models/enum.py
 - `2.4 Nota total e status` --references--> `corrigir_submissao()`  [INFERRED]
   README.md → backend/app/routers/correcoes.py
+- `Ainda não feito (próximos passos)` --references--> `ler_folhas()`  [INFERRED]
+  docs/decisoes/ia-propria.md → backend/app/routers/ocr.py
 - `3.2 O que a API devolve` --references--> `CorrecaoResponse`  [INFERRED]
   README.md → backend/app/schemas/submissao.py
 
@@ -222,15 +218,15 @@
 - **Conformidade LGPD e privacidade de dados de menores no Domina** — docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_19, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_20, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_21, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rn_22, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rnf_10, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_rnf_11, docs_domina_visao_ers_backlog_e_regras_de_negocio_v0_1_2_risco_dados_menores [INFERRED 0.85]
 - **Fluxo de Correção, Revisão e Diagnóstico de Domínio** — docs_plano_prototipo_motor_de_correcao, docs_plano_prototipo_revisao_do_professor, docs_plano_prototipo_motor_de_diagnostico_de_dominio, docs_plano_prototipo_painel_de_dominio_do_aluno [INFERRED 0.85]
 
-## Communities (174 total, 68 thin omitted)
+## Communities (171 total, 72 thin omitted)
 
 ### Community 0 - "Domina (plataforma de IA de correção e diagnóstico)"
-Cohesion: 0.13
-Nodes (12): AKCIT / CEIA-UFG / Hub Goiás (possível fonte de fomento, mentoria e infraestrutura), COPE (piloto institucional desejado), Escola do Professor Beto (candidata a piloto adicional, foco em redação), Eu En Wong (ren., contato mantido por e-mail e LinkedIn), Gustavo (Co-fundador; desenvolvimento backend), Igor Ferreira Magalhães Silva (Fundador; backend, infraestrutura, DevOps e segurança), IPE (piloto institucional desejado), João Pedro (Co-fundador; estatística, matemática e IA; ponte de entrada no CEIA via UFG) (+4 more)
+Cohesion: 0.11
+Nodes (19): Exercicio, ExercicioResposta, Usuario, AKCIT / CEIA-UFG / Hub Goiás (possível fonte de fomento, mentoria e infraestrutura), COPE (piloto institucional desejado), Escola do Professor Beto (candidata a piloto adicional, foco em redação), Eu En Wong (ren., contato mantido por e-mail e LinkedIn), Gustavo (Co-fundador; desenvolvimento backend) (+11 more)
 
 ### Community 1 - "Activities.tsx"
 Cohesion: 0.07
-Nodes (50): CampoComSimbolos(), GRUPOS, inserirNoCursor(), Props, ActivityDetail(), alternativasDe(), BarraAtividade(), CamposObjetiva() (+42 more)
+Nodes (55): CampoComSimbolos(), GRUPOS, inserirNoCursor(), Props, Empty(), Activities(), ActivityDetail(), alternativasDe() (+47 more)
 
 ### Community 2 - "hook.cjs"
 Cohesion: 0.12
@@ -238,7 +234,7 @@ Nodes (16): best(), entry(), { execFileSync }, fromPkg(), fs, globalRoot(), newe
 
 ### Community 3 - "Escopo do Protótipo"
 Cohesion: 0.10
-Nodes (16): Esqueleto do Backend (FastAPI) + Auth + Deploy Inicial, Correção de Redação do ENEM (5 competências INEP), Diagnóstico de Domínio por Competência + Recomendação, Divisão por Pessoa (cronograma de 2 semanas), Documentação do AKCIT, Gustavo, Igor, João Pedro (+8 more)
+Nodes (15): Esqueleto do Backend (FastAPI) + Auth + Deploy Inicial, Diagnóstico de Domínio por Competência + Recomendação, Divisão por Pessoa (cronograma de 2 semanas), Documentação do AKCIT, Gustavo, Igor, João Pedro, Lucas (+7 more)
 
 ### Community 4 - "E3 Envio e OCR — Receber a produção do aluno, digitada ou manuscrita"
 Cohesion: 0.18
@@ -253,8 +249,8 @@ Cohesion: 0.13
 Nodes (15): ENEM (Exame Nacional do Ensino Médio) — mercado inicial, E2 Base da matéria — Ensinar ao sistema o conteúdo e os critérios de cada matéria, Matriz de referência do INEP (habilidades/competências), RF-05 (Matéria e base): Criar uma matéria e enviar documentos-base (apostila, rubrica, plano de aula, gabarito), RF-06 (Matéria e base): Extrair dos documentos os temas, habilidades e critérios de correção, RF-07 (Matéria e base): Professor edita, aprova ou rejeita a taxonomia e os critérios antes do uso, RF-08 (Matéria e base): Trazer pré-carregadas a matriz de referência do ENEM e as 5 competências da redação (INEP), RF-09 (Matéria e base): Versionar a base de uma matéria, registrando quem mudou o quê e quando (+7 more)
 
 ### Community 7 - "Relatório: teste de calibração da correção (14/10/2026)"
-Cohesion: 0.14
-Nodes (11): Calibração com 30–50 redações de nota conhecida (erro médio e viés por competência), Decisão em aberto: prompt × RAG × fine-tuning (conversar com o Igor), Correção por IA: calibração e decisão RAG/fine-tuning (13/10/2026), Corpus Essay-BR (redações estilo ENEM com nota por competência; licença a conferir), Laboratório /laboratorio/ (foto → texto → nota), Teste: redação ENEM 2023 do Igor (oficial 880; IA 600 → 680), Base de redações (essays/base_redacoes_enem_domina_ai.xlsm, 2.327 redações), Relatório: teste de calibração da correção (14/10/2026) (+3 more)
+Cohesion: 0.15
+Nodes (10): Calibração com 30–50 redações de nota conhecida (erro médio e viés por competência), Decisão em aberto: prompt × RAG × fine-tuning (conversar com o Igor), Correção por IA: calibração e decisão RAG/fine-tuning (13/10/2026), Corpus Essay-BR (redações estilo ENEM com nota por competência; licença a conferir), Teste: redação ENEM 2023 do Igor (oficial 880; IA 600 → 680), Base de redações (essays/base_redacoes_enem_domina_ai.xlsm, 2.327 redações), Relatório: teste de calibração da correção (14/10/2026), Ferramenta de calibração (backend/calibracao) (+2 more)
 
 ### Community 8 - "api"
 Cohesion: 0.07
@@ -272,13 +268,13 @@ Nodes (10): E6 Diagnóstico de domínio — Estimar o domínio por tema e mostra
 Cohesion: 0.20
 Nodes (9): E9 Tendências — Recorrência histórica de assuntos do ENEM, RF-31 (Recomendação): Cruzar a lacuna do aluno com a recorrência do tema em provas passadas para priorizar, RF-36 (Tendências): Ingerir provas públicas do ENEM e de outros vestibulares (UFG, UFU, FUVEST, UEG) e classificar as questões por assunto e gênero textual, RF-37 (Tendências): Calcular o índice de recorrência (frequência, nº de provas, recência, consistência) e classificar em 4 categorias, RF-38 (Tendências): Exibir por assunto o nível de atenção, as evidências históricas e o grau de confiança, nunca como probabilidade de cair, RF-39 (Tendências): Indicar alta ou queda de frequência só com amostra suficiente; senão, avisar que não há tendência confiável, US-30 (Piloto): Como estudante, quero ver os assuntos do ENEM classificados por recorrência histórica, para priorizar meu tempo, US-31 (Piloto): Como estudante, quero saber se um assunto está em alta ou queda, para entender a tendência (+1 more)
 
-### Community 12 - "Usuario"
-Cohesion: 0.10
-Nodes (29): Atividade, AuditLog, Correcao, CorrecaoCriterio, CustoUso, DocumentoBase, DominioAluno, Escola (+21 more)
+### Community 12 - "Correcao"
+Cohesion: 0.11
+Nodes (23): Atividade, AuditLog, Correcao, CorrecaoCriterio, CustoUso, DocumentoBase, DominioAluno, Escola (+15 more)
 
 ### Community 13 - "routers/documento.py"
-Cohesion: 0.14
-Nodes (34): materias_do_professor(), StatusProcessamentoEnum, TipoDocumentoEnum, DocumentoBase, apagar_instrucao(), baixar_documento(), criar_instrucao(), dispensar_sugestao() (+26 more)
+Cohesion: 0.15
+Nodes (32): TipoDocumentoEnum, DocumentoBase, apagar_instrucao(), baixar_documento(), criar_instrucao(), dispensar_sugestao(), enviar_documento(), erros_da_ia() (+24 more)
 
 ### Community 14 - "Fases e Riscos do Projeto"
 Cohesion: 0.33
@@ -290,59 +286,59 @@ Nodes (4): Ciclo do produto: Corrigir, Ciclo do produto: Diagnosticar, Ciclo do 
 
 ### Community 17 - "test_fluxo_envio.py"
 Cohesion: 0.15
-Nodes (17): TextoPublicado, atividade_id(), test_aluno_gera_propria_correcao_e_professor_aprova_depois(), test_falha_do_gemini_nao_vaza_detalhe(), test_fluxo_completo(), test_gemini_usa_modelo_reserva_quando_cota_estoura(), test_imagem_sem_texto_responde_422(), test_nota_da_ia_vira_nivel_valido_do_enem() (+9 more)
+Nodes (17): atividade_id(), test_aluno_gera_propria_correcao_e_professor_aprova_depois(), test_corrigir_faz_uma_correcao_so(), test_falha_do_gemini_nao_vaza_detalhe(), test_fluxo_completo(), test_gemini_usa_modelo_reserva_quando_cota_estoura(), test_imagem_sem_texto_responde_422(), test_nota_da_ia_vira_nivel_valido_do_enem() (+9 more)
 
-### Community 23 - "app/estudos.py"
-Cohesion: 0.26
-Nodes (7): ExercicioExatasGerado, ExercicioGerado, gerar_exercicios(), gerar_exercicios_exatas(), _RespostaExatasIA, _RespostaIA, salvar_exercicios()
+### Community 23 - "main.py"
+Cohesion: 0.12
+Nodes (6): ip_do_cliente(), novo_request_id(), access_log(), erro_nao_tratado(), _usuario_do_token(), health_check()
 
-### Community 58 - "Usuario"
-Cohesion: 0.16
-Nodes (22): leciona(), Usuario, _alunos_da_turma(), _alvo(), _aplicar(), avaliar_resposta(), _conferir(), criar() (+14 more)
+### Community 58 - "exercicios.py"
+Cohesion: 0.10
+Nodes (40): Exercicio, ExercicioResposta, _alunos_da_turma(), _alvo(), _aplicar(), avaliar_resposta(), _conferir(), criar() (+32 more)
 
 ### Community 59 - "routers/estudos.py"
-Cohesion: 0.16
-Nodes (17): salvar_exercicios_exatas(), ErroAluno, _apresentar(), _base(), _erros_sem_exercicio(), ExercicioAluno, gerar_meus_exercicios(), _lote() (+9 more)
+Cohesion: 0.06
+Nodes (46): ErroFerramenta, ExercicioExatasGerado, ExercicioGerado, gerar_exercicios(), gerar_exercicios_exatas(), _RespostaExatasIA, _RespostaIA, salvar_exercicios() (+38 more)
 
 ### Community 60 - "E4 Correção por IA — Nota estimada, feedback e nível de confiança"
-Cohesion: 0.18
-Nodes (10): E4 Correção por IA — Nota estimada, feedback e nível de confiança, RF-15 (Correção): Corrigir questão ou prova discursiva de qualquer matéria segundo a rubrica da base da matéria, RF-16 (Correção): Gerar feedback textual por critério, apontando trechos do texto do aluno, RF-18 (Correção): Corrigir questões objetivas por comparação com gabarito, RF-19 (Correção): Registrar modelo, versão de prompt e base usados em cada correção, US-10 (MVP): Como professor, quero a nota estimada da redação ENEM por competência e total, com justificativa, para revisar mais rápido, US-11 (MVP): Como professor, quero corrigir prova discursiva de qualquer matéria pela minha rubrica, para ter o mesmo apoio fora do ENEM, US-13 (MVP): Como aluno, quero feedback que aponte trechos do meu texto, para entender exatamente o que melhorar (+2 more)
+Cohesion: 0.12
+Nodes (15): E4 Correção por IA — Nota estimada, feedback e nível de confiança, RF-15 (Correção): Corrigir questão ou prova discursiva de qualquer matéria segundo a rubrica da base da matéria, RF-16 (Correção): Gerar feedback textual por critério, apontando trechos do texto do aluno, RF-17 (Correção): Registrar nível de confiança em cada correção e sinalizar quando a IA está incerta, RF-18 (Correção): Corrigir questões objetivas por comparação com gabarito, RF-19 (Correção): Registrar modelo, versão de prompt e base usados em cada correção, RF-23 (Revisão): Fila de revisão que mostra primeiro as correções de menor confiança, RN-06 (Correção): Quando a confiança da IA fica abaixo do limiar definido, a correção é marcada como "requer atenção" e sobe na fila de revisão (+7 more)
 
 ### Community 61 - "test_agente.py"
-Cohesion: 0.34
+Cohesion: 0.28
 Nodes (10): ResultadoIA, atividade_id(), _chamada(), _cliente_roteirizado(), test_agente_decide_os_passos_e_grava_o_passo_a_passo(), test_agente_nao_roda_de_novo_sem_refazer(), test_agente_que_cai_ainda_entrega_a_correcao(), test_agente_que_parou_sem_correcao_tenta_de_novo_ao_clicar() (+2 more)
 
 ### Community 62 - "extracao.py"
-Cohesion: 0.20
-Nodes (8): ArquivoNaoLido, dividir(), _docx(), extrair_texto(), _ler_imagens(), paginas_do_pdf(), _pdf(), test_dividir_corta_em_trechos_sem_perder_texto()
+Cohesion: 0.26
+Nodes (7): ArquivoNaoLido, _docx(), extrair_texto(), _ler_imagens(), paginas_do_pdf(), _pdf(), reduzir()
 
 ### Community 63 - "correcoes.py"
-Cohesion: 0.21
-Nodes (19): indexar_correcao(), Atividade, DominioAluno, aprovar_correcao(), _atualizar_dominio(), avaliar_ia(), _correcao_response(), corrigir_submissao() (+11 more)
+Cohesion: 0.13
+Nodes (25): registrar_uso(), AgenteExecucao, CustoUso, _resposta(), rodar_agente(), ver_agente(), aprovar_correcao(), _atualizar_dominio() (+17 more)
 
-### Community 64 - "test_estudos.py"
-Cohesion: 0.24
-Nodes (12): _claude_falso(), _com_claude_falso(), gerar_contado(), _limpar_pratica(), test_gera_salva_e_nao_regera_enquanto_ha_pendentes_sem_vazar_gabarito(), test_meta_de_pratica_conclui_ao_responder(), test_professor_nao_usa_a_rota(), test_responder_o_servidor_confere_salva_e_nao_mexe_no_dominio() (+4 more)
+### Community 64 - "registrar"
+Cohesion: 0.29
+Nodes (8): registrar(), integridade(), logs_auditoria(), logs_seguranca(), _periodo(), AuditoriaResponse, EventoSegurancaResponse, IntegridadeResponse
 
 ### Community 65 - "Learning.tsx"
-Cohesion: 0.12
-Nodes (32): RealSparkline(), Badge(), Empty(), Progress(), Activities(), AtividadeSemEnvio(), ActivityRow(), EducatorDashboard() (+24 more)
+Cohesion: 0.16
+Nodes (23): RealSparkline(), Badge(), doBackend(), doDemo(), DoProfessor(), Evolution(), ExercicioComum, ExercicioDoProfessor() (+15 more)
 
 ### Community 66 - "Button"
-Cohesion: 0.09
-Nodes (44): App(), iniciais(), InstallBanner(), BotaoCriar(), Button(), IconButton(), Logo(), Modal() (+36 more)
+Cohesion: 0.12
+Nodes (42): Button(), Card(), SectionTitle(), PassoAPassoAgente(), BlocosResumo(), brl(), EditarConta(), EditarEscola() (+34 more)
 
 ### Community 67 - "routers/metas.py"
 Cohesion: 0.05
 Nodes (58): feriados(), _pascoa(), avaliar_metas(), metas_do_aluno(), nivel_de(), pontos_do_aluno(), progresso(), Evento (+50 more)
 
 ### Community 68 - "test_exatas.py"
-Cohesion: 0.23
-Nodes (17): criar_atividade_com_gabarito(), criar_turma_e_materia(), _gemini_falso(), test_aluno_gera_propria_correcao_exatas_e_professor_aprova_depois(), test_aprovar_exige_todos_os_criterios(), test_atividade_de_exatas_exige_gabarito(), test_enunciado_longo_nao_quebra_a_criacao(), test_exatas_varias_folhas_vao_todas_ao_gemini_e_caixa_aceita_pagina() (+9 more)
-
-### Community 69 - "App.tsx"
 Cohesion: 0.10
-Nodes (39): navItems, EvolutionChart(), initialActivities, initialState, studyTasks, topics, Dashboard(), Stat() (+31 more)
+Nodes (25): gerar(), criar_atividade_com_gabarito(), criar_turma_e_materia(), _gemini_falso(), gerar(), test_aluno_gera_propria_correcao_exatas_e_professor_aprova_depois(), test_aprovar_exige_todos_os_criterios(), test_atividade_de_exatas_exige_gabarito() (+17 more)
+
+### Community 69 - "Dashboard.tsx"
+Cohesion: 0.11
+Nodes (35): EvolutionChart(), initialActivities, initialState, studyTasks, topics, ActivityRow(), Dashboard(), Stat() (+27 more)
 
 ### Community 70 - "Banco compartilhado + escola_id + RLS (estratégia escolhida)"
 Cohesion: 0.15
@@ -358,15 +354,15 @@ Nodes (10): editar_atividade(), excluir_atividade(), _minha(), _tem_submissoes()
 
 ### Community 73 - "api.ts"
 Cohesion: 0.07
-Nodes (72): AdicionarMembro(), AlunoRow(), Classes(), Materials(), MateriasDoProfessor(), TIPOS_DOCUMENTO, TurmaCard(), erroDe() (+64 more)
+Nodes (67): AdicionarMembro(), AlunoRow(), Materials(), MateriasDoProfessor(), TIPOS_DOCUMENTO, TurmaCard(), erroDe(), Evolucao() (+59 more)
 
 ### Community 74 - "compilerOptions"
 Cohesion: 0.15
 Nodes (12): compilerOptions, allowImportingTsExtensions, esModuleInterop, jsx, lib, module, moduleResolution, noEmit (+4 more)
 
-### Community 75 - "_ferramentas"
-Cohesion: 0.13
-Nodes (20): ErroFerramenta, _ferramentas(), correcao_atual(), _corrigir(), corrigir_mat(), corrigir_redacao(), finalizar(), gerar_reforco() (+12 more)
+### Community 75 - "IA própria: memória do professor (RAG) — 2026-11-16"
+Cohesion: 0.22
+Nodes (6): _prontidao(), resumo(), conta(), exportar_materiais(), Histórico detalhado do Domina (tirado do CLAUDE.md em 18/11/2026), IA própria: memória do professor (RAG) — 2026-11-16
 
 ### Community 76 - "E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor"
 Cohesion: 0.22
@@ -376,9 +372,9 @@ Nodes (9): E8 Painéis e gamificação — Tornar o progresso visível para alun
 Cohesion: 0.15
 Nodes (21): iso(), useCalendario(), br(), Calendar(), apagar(), cobre(), MESES, NovoEvento() (+13 more)
 
-### Community 78 - "correcao.py"
-Cohesion: 0.19
-Nodes (5): CaixaIA, CompetenciaIA, corrigir(), PontoIA, test_corrigir_faz_uma_correcao_so()
+### Community 78 - "registro.py"
+Cohesion: 0.09
+Nodes (16): CaixaIA, CompetenciaIA, corrigir(), PontoIA, _RespostaExemplo, _RespostaSugestao, sugerir_exercicios(), sugerir_resposta_exemplo() (+8 more)
 
 ### Community 79 - "E10 Privacidade e operação — LGPD, auditoria e custo"
 Cohesion: 0.17
@@ -386,19 +382,19 @@ Nodes (12): ConsentimentoLGPD, E10 Privacidade e operação — LGPD, auditoria 
 
 ### Community 80 - "PerfilEnum"
 Cohesion: 0.11
-Nodes (17): materias_visiveis_do_aluno(), PerfilEnum, UsuarioTurmaPapelEnum, UsuarioTurma, consultar_historico(), _compartilha_turma(), _dominio_de(), dominio_do_aluno() (+9 more)
+Nodes (20): escola_inativa(), get_current_user(), create_access_token(), decode_access_token(), verify_password(), get_db(), leciona(), materias_do_professor() (+12 more)
 
 ### Community 81 - "vercel.json"
 Cohesion: 0.29
 Nodes (6): buildCommand, framework, headers, installCommand, outputDirectory, $schema
 
-### Community 82 - "routers/painel.py"
-Cohesion: 0.12
-Nodes (14): exigir_perfil(), Escola, criar_escola(), editar_escola(), listar_escolas(), _periodo(), _resumo(), resumo_da_escola() (+6 more)
+### Community 82 - "escolas.py"
+Cohesion: 0.18
+Nodes (7): exigir_perfil(), criar_escola(), editar_escola(), listar_escolas(), CriarEscolaRequest, EditarEscolaRequest, EscolaResponse
 
-### Community 83 - "dependencies.py"
-Cohesion: 0.17
-Nodes (10): confirmar_senha(), escola_do_escopo(), escola_inativa(), get_current_user(), create_access_token(), decode_access_token(), verify_password(), login() (+2 more)
+### Community 83 - "App.tsx"
+Cohesion: 0.11
+Nodes (25): 3. Regras de trabalho (preferências do usuário), App(), iniciais(), navItems, InstallBanner(), BotaoCriar(), IconButton(), Logo() (+17 more)
 
 ### Community 84 - "main.tsx"
 Cohesion: 0.33
@@ -409,36 +405,36 @@ Cohesion: 0.23
 Nodes (15): ProfessorMateria, Turma, criar_turma(), definir_materias_do_professor(), materias_dos_professores(), matricular(), membros_turma(), minhas_turmas() (+7 more)
 
 ### Community 86 - "E5 Revisão do professor — Garantir que a decisão final é humana e medir a IA"
-Cohesion: 0.15
-Nodes (11): E5 Revisão do professor — Garantir que a decisão final é humana e medir a IA, RF-20 (Revisão): Nenhuma correção é liberada ao aluno sem aprovação do professor, RF-21 (Revisão): Professor edita nota e feedback e aceita ou rejeita a sugestão por critério, RF-22 (Revisão): Guardar a nota da IA e a nota final do professor, para medir concordância, RN-01 (Revisão humana): Nenhuma nota ou feedback gerado pela IA é exibido ao aluno sem aprovação do professor responsável, RN-02 (Revisão humana): A nota final é sempre a do professor; a nota da IA é uma sugestão e fica guardada para medir qualidade, RN-27 (IA / Infraestrutura): O Domina usa API comercial de LLM para correção e geração de conteúdo, em vez de treinar um modelo próprio do zero; modelos são comparados por custo, qualidade e confiabilidade em benchmark interno, RNF-18 (Manutenibilidade): Provedores de LLM e de OCR acessados por camada de abstração, para trocar sem reescrever o sistema (+3 more)
+Cohesion: 0.14
+Nodes (12): Laboratório /laboratorio/ (foto → texto → nota), E5 Revisão do professor — Garantir que a decisão final é humana e medir a IA, RF-20 (Revisão): Nenhuma correção é liberada ao aluno sem aprovação do professor, RF-21 (Revisão): Professor edita nota e feedback e aceita ou rejeita a sugestão por critério, RF-22 (Revisão): Guardar a nota da IA e a nota final do professor, para medir concordância, RN-01 (Revisão humana): Nenhuma nota ou feedback gerado pela IA é exibido ao aluno sem aprovação do professor responsável, RN-02 (Revisão humana): A nota final é sempre a do professor; a nota da IA é uma sugestão e fica guardada para medir qualidade, RN-27 (IA / Infraestrutura): O Domina usa API comercial de LLM para correção e geração de conteúdo, em vez de treinar um modelo próprio do zero; modelos são comparados por custo, qualidade e confiabilidade em benchmark interno (+4 more)
 
 ### Community 87 - "Exercicios.tsx"
-Cohesion: 0.10
-Nodes (37): 3. Regras de trabalho (preferências do usuário), Filtros(), GrupoFiltro, Base, Escolha(), Lista(), OpcaoSeletor, opcoesDe() (+29 more)
+Cohesion: 0.09
+Nodes (37): 4. O que já foi feito (resumo), Filtros(), GrupoFiltro, Base, Lista(), OpcaoSeletor, opcoesDe(), Seletor() (+29 more)
 
-### Community 89 - "monta_base_externa.py"
-Cohesion: 0.13
-Nodes (8): gerar(), gerar(), norm(), notas(), palavras(), titulo(), valido(), 1.1 A atividade (o professor prepara)
+### Community 89 - "test_documentos.py"
+Cohesion: 0.15
+Nodes (9): _sem_ia_de_subtopico(), _enviar(), _segundo_professor(), test_envio_vincula_materia_valida_arquivo_baixa_e_arquiva(), token(), _gemini_falso(), test_evolucao_agrupa_por_materia_sem_tocar_dominio(), test_evolucao_so_para_aluno() (+1 more)
 
-### Community 90 - "test_atividades.py"
-Cohesion: 0.24
-Nodes (17): _lote(), _objetiva(), _setup(), test_atividade_sem_autor_nao_aparece_para_professor_so_para_gestor(), test_depois_do_primeiro_envio_so_titulo_e_prazo_mudam(), test_editar_titulo_prazo_e_gabarito_enquanto_ninguem_enviou(), test_excluir_apaga_se_vazia_e_arquiva_se_tem_envio(), test_fila_traz_turma_e_filtra_por_turma() (+9 more)
+### Community 90 - "2. Lógica (o que o agente faz)"
+Cohesion: 0.33
+Nodes (6): 2.1 Redação: o prompt (versão v14), 2.2 Matemática: conferir com o gabarito, 2.3 Validação, 2.4 Nota total e status, 2.5 Aprovação do professor, 2. Lógica (o que o agente faz)
 
 ### Community 91 - "CLAUDE.md: domina, correção de redação do ENEM por IA"
 Cohesion: 0.18
 Nodes (10): 0. Estado em 20/10/2026 à noite (leia primeiro), 1. Objetivo do prompt, 2. Onde as coisas estão, 3. Bases de teste (planilhas em `essays/`), 4. Histórico: o que funcionou e o que falhou, 5. Próximos passos antigos (19/10; vale o que está na seção 0), 6. Prompt antigo (v9; o atual é o v14, ver seção 0), 7. Commit e push (usuário cola no terminal do Mac, na pasta do projeto) (+2 more)
 
 ### Community 92 - "Domina"
-Cohesion: 0.12
-Nodes (17): 1.2 A resposta do aluno, 1.3 O que mais vai para a IA, 1. Entrada (inputs), 2.1 Redação: o prompt (versão v14), 2.2 Matemática: conferir com o gabarito, 2.3 Validação, 2.4 Nota total e status, 2.5 Aprovação do professor (+9 more)
+Cohesion: 0.17
+Nodes (12): 1.1 A atividade (o professor prepara), 1.2 A resposta do aluno, 1.3 O que mais vai para a IA, 1. Entrada (inputs), 3.1 O que a IA devolve, 3.2 O que a API devolve, 3. Saída (outputs), 4. Como rodar (+4 more)
 
 ### Community 93 - "LGPD (Lei Geral de Proteção de Dados)"
 Cohesion: 0.32
 Nodes (5): LGPD (Lei Geral de Proteção de Dados), RN-19 (Privacidade): Aluno menor de 18 anos só usa o sistema com consentimento dos responsáveis registrado, RN-21 (Privacidade): Dados de alunos não são usados para treinar modelos de terceiros nem compartilhados fora da finalidade do serviço, RNF-10 (Privacidade): Material de alunos não usado para treinar modelos de terceiros, RNF-11 (Privacidade): Minimização de dados e prazo de retenção definido; anonimização em conjuntos de validação
 
 ### Community 94 - "routers/usuario.py"
-Cohesion: 0.25
-Nodes (16): ativar_ou_desativar(), definir_vinculos(), editar_usuario(), _gerido(), listar_usuarios(), meu_usuario(), _resposta(), trocar_senha() (+8 more)
+Cohesion: 0.19
+Nodes (19): confirmar_senha(), _aplicar_vinculos(), ativar_ou_desativar(), criar_usuario(), definir_vinculos(), editar_usuario(), _gerido(), listar_usuarios() (+11 more)
 
 ### Community 95 - "CLAUDE.md: domina, correção de redação do ENEM por IA"
 Cohesion: 0.18
@@ -461,16 +457,16 @@ Cohesion: 0.22
 Nodes (8): 1. Objetivo do prompt, 2. Onde as coisas estão, 3. Bases de teste (planilhas em `essays/`), 4. Histórico: o que funcionou e o que falhou, 5. Próximos passos, 6. Prompts, CLAUDE.md: domina, correção de redação do ENEM por IA, graphify
 
 ### Community 100 - "Histórico das versões do prompt de correção (v1 a v21)"
-Cohesion: 0.33
+Cohesion: 0.25
 Nodes (6): 1. Como ler os números, 2. Tabela resumo, 4. O que aprendemos, 5. Conclusão, Histórico das versões do prompt de correção (v1 a v21), Onde estão os arquivos
 
 ### Community 101 - "CLAUDE.md: Domina"
-Cohesion: 0.25
-Nodes (7): 1. O que é o Domina, 2. Onde as coisas estão, 4. O que já foi feito (resumo), 5. Correção da redação: estado do prompt, 6. Mapa rápido do código, CLAUDE.md: Domina, IA própria: resumo (detalhe da memória, tela e migrations 0024 a 0030 em `docs/historico_domina.md` e `docs/decisoes/ia-propria.md`)
+Cohesion: 0.29
+Nodes (6): 1. O que é o Domina, 2. Onde as coisas estão, 5. Correção da redação: estado do prompt, 6. Mapa rápido do código, CLAUDE.md: Domina, IA própria: resumo (detalhe da memória, tela e migrations 0024 a 0030 em `docs/historico_domina.md` e `docs/decisoes/ia-propria.md`)
 
-### Community 109 - "exercicios.py"
-Cohesion: 0.18
-Nodes (11): AvaliarRespostaRequest, ExercicioAlunoResponse, ExercicioLoteRequest, ExercicioProfessorResponse, ExercicioRequest, ResponderRequest, RespostaAlunoResponse, ResumoAlunoResponse (+3 more)
+### Community 109 - "2026-11-21-espac-o-no-card-da-turma-joa.md"
+Cohesion: 0.50
+Nodes (3): Decided, Tried and ruled out, Watch out
 
 ### Community 110 - "Domina · Frontend"
 Cohesion: 0.18
@@ -480,25 +476,25 @@ Nodes (11): Comandos, Conexão com o backend, Documentação, Domina · Frontend
 Cohesion: 0.18
 Nodes (11): devDependencies, @playwright/test, prettier, @types/react, @types/react-dom, @types/react-native-web, typescript, vite (+3 more)
 
-### Community 112 - "vincular"
-Cohesion: 0.17
-Nodes (9): _enviar(), _segundo_professor(), test_envio_vincula_materia_valida_arquivo_baixa_e_arquiva(), token(), _gemini_falso(), test_evolucao_agrupa_por_materia_sem_tocar_dominio(), test_evolucao_so_para_aluno(), token() (+1 more)
+### Community 112 - "test_estudos.py"
+Cohesion: 0.24
+Nodes (12): _claude_falso(), _com_claude_falso(), gerar_contado(), _limpar_pratica(), test_gera_salva_e_nao_regera_enquanto_ha_pendentes_sem_vazar_gabarito(), test_meta_de_pratica_conclui_ao_responder(), test_professor_nao_usa_a_rota(), test_responder_o_servidor_confere_salva_e_nao_mexe_no_dominio() (+4 more)
 
 ### Community 113 - "memoria.py"
 Cohesion: 0.11
-Nodes (20): aprendido(), buscar(), _chave(), contexto_do_professor(), _cosseno(), _do_professor(), _fonte(), _guardar() (+12 more)
+Nodes (21): embutir(), dividir(), aprendido(), buscar(), _chave(), contexto_do_professor(), _cosseno(), _do_professor() (+13 more)
 
-### Community 114 - "submissoes.py"
-Cohesion: 0.14
-Nodes (22): garantir_competencias(), avaliar_seguro(), SubmissaoPagina, ocr(), _atividade_response(), caminhos_da_submissao(), confirmar_texto(), criar_atividade() (+14 more)
+### Community 114 - "Usuario"
+Cohesion: 0.09
+Nodes (41): garantir_competencias(), avaliar_seguro(), Usuario, _atividade_response(), confirmar_texto(), criar_atividade(), criar_atividades_em_lote(), _criar_em_turma() (+33 more)
 
 ### Community 115 - "test_memoria_ia.py"
-Cohesion: 0.16
-Nodes (25): concorda_pouco(), espia_gemini(), gerar(), nova_materia(), _pdf_escaneado(), subir(), test_aluno_envia_a_prova_em_pdf_e_cada_pagina_vira_uma_folha(), test_aviso_so_quando_ha_revisoes_suficientes_e_a_concordancia_e_baixa() (+17 more)
+Cohesion: 0.14
+Nodes (27): concorda_pouco(), IaChamada, apagar_treinados(), espia_gemini(), gerar(), nova_materia(), _pdf_escaneado(), subir() (+19 more)
 
-### Community 116 - "Card"
-Cohesion: 0.12
-Nodes (32): Card(), SectionTitle(), PassoAPassoAgente(), br(), EditarMeta(), Metas(), MetasEquipe(), NovaMeta() (+24 more)
+### Community 116 - "Metas.tsx"
+Cohesion: 0.17
+Nodes (23): Escolha(), Progress(), br(), EditarMeta(), MetaLinha(), Metas(), MetasAluno(), MetasEquipe() (+15 more)
 
 ### Community 117 - "2026-11-20-conferir-se-a-main-tem-commits-joa.md"
 Cohesion: 0.50
@@ -508,21 +504,17 @@ Nodes (3): Decided, Tried and ruled out, Watch out
 Cohesion: 0.25
 Nodes (10): ConsentimentoLGPD, custo_uso_do_mes(), listar_auditoria(), meu_consentimento(), registrar_consentimento(), _so_gestor(), AuditLogResponse, ConsentimentoRequest (+2 more)
 
-### Community 120 - "test_rbac.py"
-Cohesion: 0.23
-Nodes (14): test_admin_precisa_da_escola_e_feriados_calculados(), test_telas_de_log_so_para_quem_pode_e_gestor_so_ve_a_propria_escola(), escola_id(), novo(), test_admin_cria_escola_gestor_e_professor(), test_admin_lista_turmas_da_escola_e_cria_conta_nela(), test_admin_ve_cada_escola_e_o_total(), test_conta_ja_nasce_na_turma_escolhida() (+6 more)
-
 ### Community 121 - "Logs.tsx"
 Cohesion: 0.22
 Nodes (13): Aba, hora(), Logs(), verificar(), TIPOS, TOM(), AuditoriaAPI, consulta() (+5 more)
 
 ### Community 122 - "token"
-Cohesion: 0.24
-Nodes (16): _objetivo(), _setup(), test_aluno_ve_so_da_turma_e_gabarito_depois_de_responder(), test_criar_validacoes_e_permissoes(), test_discursivo_com_varias_respostas_de_exemplo(), test_editar_e_excluir_somem_para_o_aluno(), test_exercicio_so_para_alguns_alunos(), test_ia_aprende_com_o_que_o_professor_marcou_no_discursivo() (+8 more)
+Cohesion: 0.07
+Nodes (64): _lote(), _objetiva(), _setup(), test_atividade_sem_autor_nao_aparece_para_professor_so_para_gestor(), test_depois_do_primeiro_envio_so_titulo_e_prazo_mudam(), test_editar_titulo_prazo_e_gabarito_enquanto_ninguem_enviou(), test_excluir_apaga_se_vazia_e_arquiva_se_tem_envio(), test_fila_traz_turma_e_filtra_por_turma() (+56 more)
 
-### Community 123 - "Materia"
-Cohesion: 0.15
-Nodes (28): hash_password(), _detalhe(), registrar_erros(), _exemplo(), StatusCorrecaoEnum, TipoAtividadeEnum, TipoEnvioEnum, TipoMateriaEnum (+20 more)
+### Community 123 - "models/usuario.py"
+Cohesion: 0.10
+Nodes (38): hash_password(), _detalhe(), registrar_erros(), concordancia(), erros_da_ia(), _exemplo(), indexar_correcao(), StatusCorrecaoEnum (+30 more)
 
 ### Community 124 - "Logs do sistema"
 Cohesion: 0.29
@@ -540,41 +532,37 @@ Nodes (5): upgrade(), upgrade(), upgrade(), upgrade(), upgrade()
 Cohesion: 0.25
 Nodes (8): dependencies, @fontsource/bricolage-grotesque, @fontsource/ibm-plex-mono, @fontsource/ibm-plex-sans, lucide-react, react, react-dom, react-native-web
 
-### Community 128 - "registrar"
-Cohesion: 0.11
-Nodes (22): _campos(), registrar(), verificar_auditoria(), hash_de(), proximo_elo(), verificar(), AuditLog, EventoSeguranca (+14 more)
+### Community 128 - "auditoria.py"
+Cohesion: 0.18
+Nodes (7): _campos(), verificar_auditoria(), hash_de(), proximo_elo(), verificar(), _campos(), registrar_seguranca()
 
 ### Community 129 - "scripts"
 Cohesion: 0.29
 Nodes (7): scripts, build, dev, format, preview, test, test:e2e
 
-### Community 130 - "registro.py"
-Cohesion: 0.11
-Nodes (11): corrigir(), QuestaoCorrigida, ResultadoExatasIA, embutir(), anotar(), tarefa(), _client(), extract_text() (+3 more)
-
-### Community 131 - "test_metas.py"
-Cohesion: 0.36
-Nodes (8): _entregar_objetiva(), _meta(), _setup(), test_editar_arquivar_e_pontos_ficam(), test_escopo_e_permissoes_de_criacao(), test_fim_da_meta_aparece_no_calendario_so_para_quem_enxerga(), test_meta_conclui_sozinha_sobe_nivel_e_aparece_no_ranking(), test_meta_nova_nao_conta_o_passado_e_nota_percentual()
-
-### Community 133 - "submissao.py"
-Cohesion: 0.14
-Nodes (20): AlunoResumo, AprovarRequest, _AtividadeBase, AtividadeResponse, AvaliacaoIARequest, ConfirmarTextoRequest, CriarAtividadeLoteRequest, CriarAtividadeRequest (+12 more)
+### Community 130 - "config.py"
+Cohesion: 0.13
+Nodes (6): Settings, corrigir(), QuestaoCorrigida, ResultadoExatasIA, _client(), gerar()
 
 ### Community 134 - "Documentação do frontend Domina"
 Cohesion: 0.22
 Nodes (9): 10. Responsividade, 11. Limitações e próximos incrementos, 1. Objetivo e decisões, 2. Linguagens, bibliotecas e ferramentas, 3. Organização de pastas, 4. Identidade visual, 7. Persistência e contratos, 9. Usabilidade e acessibilidade (+1 more)
 
-### Community 137 - "extract_text_from_image"
-Cohesion: 0.14
-Nodes (10): erros_da_ia(), peso(), extract_text_from_image(), ler_folhas(), ler_imagem(), Ainda não feito (próximos passos), IA própria do Domina (16/11/2026), Material de treino da nossa IA — FEITO (16/11) (+2 more)
+### Community 135 - "2026-11-21-evoluc-a-o-do-aluno-e-joa.md"
+Cohesion: 0.50
+Nodes (3): Decided, Tried and ruled out, Watch out
+
+### Community 137 - "routers/ocr.py"
+Cohesion: 0.21
+Nodes (7): extract_text(), TextoPublicado, extract_text_from_image(), ler_folhas(), ler_imagem(), ocr(), OCRResponse
 
 ### Community 138 - "sqlalchemy"
 Cohesion: 0.17
 Nodes (6): downgrade(), upgrade(), upgrade(), upgrade(), upgrade(), upgrade()
 
-### Community 139 - "models/usuario.py"
-Cohesion: 0.07
-Nodes (13): Settings, registrar_uso(), get_db(), configurar_logging(), ip_do_cliente(), JsonFormatter, novo_request_id(), access_log() (+5 more)
+### Community 139 - "routers/painel.py"
+Cohesion: 0.18
+Nodes (10): escola_do_escopo(), Escola, SubmissaoPagina, _periodo(), _resumo(), resumo_da_escola(), resumo_da_plataforma(), caminhos_da_submissao() (+2 more)
 
 ### Community 140 - "Professor e matéria (quem leciona o quê)"
 Cohesion: 0.25
@@ -584,53 +572,33 @@ Nodes (7): Cadastro de pessoas pelo gestor (tela "Equipe e alunos"), Como o gest
 Cohesion: 0.36
 Nodes (6): 8. PWA, Instalação, InstallEvent, isStandalone(), usePwa(), wasDismissed()
 
-### Community 142 - "exercicios_ia.py"
-Cohesion: 0.27
-Nodes (5): _RespostaExemplo, _RespostaSugestao, sugerir_exercicios(), sugerir_resposta_exemplo(), SugestaoExercicio
-
 ### Community 144 - "json"
-Cohesion: 0.10
-Nodes (12): Ferramenta, _resumo(), rodar(), gravar(), _client(), gerar_json(), IaChamada, apagar_treinados() (+4 more)
+Cohesion: 0.23
+Nodes (4): Ferramenta, _resumo(), rodar(), _client()
 
 ### Community 145 - "3. Versão por versão"
 Cohesion: 0.33
 Nodes (6): 3. Versão por versão, Fase 1: primeiras versões (13 e 14/10), Fase 2: regras mais justas e a base externa (15 e 16/10), Fase 3: base INEP de 50 redações (18/10), Fase 4: base INEP de 53 redações, foco na C3 (19/10), Fase 5: dia da entrega (20/10)
 
-### Community 146 - "Exercicio"
-Cohesion: 0.40
-Nodes (9): Exercicio, ExercicioResposta, da_minha_turma(), _e_para_mim(), _exemplos(), responder(), _resposta_aluno(), _resultado() (+1 more)
-
 ### Community 147 - "2026-11-16-verificac-a-o-po-s-ia-joa.md"
 Cohesion: 0.50
 Nodes (3): Decided, Tried and ruled out, Watch out
+
+### Community 148 - "frontend/README.md"
+Cohesion: 0.20
+Nodes (6): Publicar o Domina na Vercel, Verificação no celular, Limites da validação, Roteiro manual, Validação do frontend, Verificação automatizada
 
 ### Community 149 - "2026-11-17-verificac-a-o-17-11-graphify-joa.md"
 Cohesion: 0.50
 Nodes (3): Decided, Tried and ruled out, Watch out
 
-### Community 150 - "test_calendario.py"
-Cohesion: 0.44
-Nodes (8): _evento(), test_aluno_nao_ve_evento_de_turma_alheia_e_feriado_vem_pronto(), test_evento_da_escola_toda_aparece_para_todos_e_nao_vaza_para_outra_escola(), test_lembrete_do_aluno_e_so_dele(), test_professor_nao_apaga_evento_do_gestor_mas_gestor_apaga_o_dele(), test_professor_so_cria_para_a_propria_turma(), _titulos(), _turma_da_escola()
-
 ### Community 151 - "test_logs.py"
-Cohesion: 0.31
-Nodes (8): _eventos(), test_403_vira_acesso_negado_com_usuario_e_request_id(), test_acao_sensivel_pede_a_senha_de_novo(), test_access_log_json_sem_query_string_nem_token(), test_ip_so_vem_do_proxy_quando_configurado(), ip_da_falha(), test_login_falho_e_ok_viram_evento_sem_senha(), test_sem_token_vira_nao_autenticado()
-
-### Community 152 - "RF-17 (Correção): Registrar nível de confiança em cada correção e sinalizar quando a IA está incerta"
-Cohesion: 0.33
-Nodes (5): RF-17 (Correção): Registrar nível de confiança em cada correção e sinalizar quando a IA está incerta, RF-23 (Revisão): Fila de revisão que mostra primeiro as correções de menor confiança, RN-06 (Correção): Quando a confiança da IA fica abaixo do limiar definido, a correção é marcada como "requer atenção" e sobe na fila de revisão, US-12 (MVP): Como professor, quero ver o nível de confiança e alertas de incerteza da IA, para focar minha revisão onde há mais risco, US-19 (Piloto): Como professor, quero uma fila de revisão que priorize as correções de baixa confiança, para revisar primeiro o que é mais preciso
+Cohesion: 0.18
+Nodes (15): AuditLog, EventoSeguranca, verificar_cadeia(), aplicar(), _eventos(), test_403_vira_acesso_negado_com_usuario_e_request_id(), test_acao_sensivel_pede_a_senha_de_novo(), test_access_log_json_sem_query_string_nem_token() (+7 more)
 
 ### Community 153 - "analisa_externa.py"
 Cohesion: 0.22
 Nodes (6): pearson(), ranks(), score(), pearson(), ranks(), spearman()
-
-### Community 155 - "concordancia"
-Cohesion: 0.25
-Nodes (4): concordancia(), Decided, Tried and ruled out, Watch out
-
-### Community 156 - "Validação do frontend"
-Cohesion: 0.40
-Nodes (4): Limites da validação, Roteiro manual, Validação do frontend, Verificação automatizada
 
 ### Community 159 - "5. Mapa de telas e funcionalidades"
 Cohesion: 0.33
@@ -650,23 +618,23 @@ Nodes (5): 6. Fluxos e estados, Envio e aprovação, Navegação, Prática, Text
 
 ## Knowledge Gaps
 - **94 isolated node(s):** `react-native-web`, `@types/react`, `@types/react-dom`, `@types/react-native-web`, `prettier` (+89 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 709 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **68 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 721 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **72 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `IA própria: memória do professor (RAG) — 2026-11-16` connect `json` to `api.ts`, `memoria.py`, `concordancia`, `Activities.tsx`?**
-  _High betweenness centrality (0.221) - this node is a cross-community bridge._
+- **Why does `IA própria: memória do professor (RAG) — 2026-11-16` connect `IA própria: memória do professor (RAG) — 2026-11-16` to `api.ts`, `memoria.py`, `models/usuario.py`, `Activities.tsx`?**
+  _High betweenness centrality (0.172) - this node is a cross-community bridge._
 - **Are the 168 inferred relationships involving `Usuario` (e.g. with `registrar()` and `confirmar_senha()`) actually correct?**
   _`Usuario` has 168 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `react-native-web`, `@types/react`, `@types/react-dom` to the rest of the system?**
   _94 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Domina (plataforma de IA de correção e diagnóstico)` be split into smaller, more focused modules?**
-  _Cohesion score 0.1323529411764706 - nodes in this community are weakly interconnected._
-- **Why does `Materials()` connect `api.ts` to `Learning.tsx`, `Button`, `App.tsx`, `json`, `Card`, `Exercicios.tsx`?**
-  _High betweenness centrality (0.147) - this node is a cross-community bridge._
+  _Cohesion score 0.10507246376811594 - nodes in this community are weakly interconnected._
+- **Why does `Materials()` connect `api.ts` to `Learning.tsx`, `Button`, `IA própria: memória do professor (RAG) — 2026-11-16`, `App.tsx`, `Metas.tsx`, `Exercicios.tsx`?**
+  _High betweenness centrality (0.126) - this node is a cross-community bridge._
 - **Are the 64 inferred relationships involving `PerfilEnum` (e.g. with `escola_do_escopo()` and `exigir_perfil()`) actually correct?**
   _`PerfilEnum` has 64 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Activities.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.06821480406386067 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0677555958862674 - nodes in this community are weakly interconnected._

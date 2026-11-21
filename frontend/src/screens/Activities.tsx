@@ -26,6 +26,7 @@ import {
 } from "../services/demoStore";
 import {
   aprovarCorrecao,
+  sugerirRespostaExemplo,
   verCorrecaoManual,
   avaliarIA,
   confirmarTexto,
@@ -1462,7 +1463,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
   const [titulo, setTitulo] = useState("");
   const [prazo, setPrazo] = useState("");
   const [valorTotal, setValorTotal] = useState(1000);
-  const [questoes, setQuestoes] = useState<{ enunciado: string; resposta_correta: string; alternativas: string[] | null }[]>([]);
+  const [questoes, setQuestoes] = useState<{ enunciado: string; resposta_correta: string; alternativas: string[] | null; subtopico: string }[]>([]);
   const [salvando, setSalvando] = useState(false);
   useEffect(() => {
     listarAtividades().then((lista) => {
@@ -1472,7 +1473,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
       setTitulo(x.titulo);
       setPrazo(x.prazo ?? "");
       setValorTotal(x.valor_total);
-      setQuestoes((x.questoes ?? []).map((q) => ({ enunciado: q.enunciado, resposta_correta: q.resposta_correta ?? "", alternativas: q.alternativas ?? null })));
+      setQuestoes((x.questoes ?? []).map((q) => ({ enunciado: q.enunciado, resposta_correta: q.resposta_correta ?? "", alternativas: q.alternativas ?? null, subtopico: q.subtopico ?? "" })));
     }).catch(() => notify("Não foi possível carregar a atividade."));
   }, [atividadeId]);
   if (!a) return <Empty title="Carregando..." text="Buscando a atividade." />;
@@ -1481,9 +1482,9 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
   const salvar = async () => {
     if (!titulo.trim()) return notify("Dê um título para a atividade.");
     if (gabaritoLivre && questoes.some((q) => !q.enunciado.trim() || !q.resposta_correta.trim()))
-      return notify("Preencha o enunciado e a resposta correta de todas as questões.");
+      return notify("Preencha o enunciado e a resposta (alternativa correta ou resposta exemplo) de todas as questões.");
     const payloadQuestoes = questoes.map((q) => ({
-      enunciado: q.enunciado, resposta_correta: q.resposta_correta,
+      enunciado: q.enunciado, resposta_correta: q.resposta_correta, subtopico: q.subtopico.trim() || undefined,
       alternativas: q.alternativas ? alternativasDe(q.alternativas) ?? undefined : undefined,
     }));
     if (gabaritoLivre && questoes.some((q, i) => q.alternativas && !payloadQuestoes[i].alternativas))
@@ -1531,17 +1532,20 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
                 onChange={(alternativas, resposta_correta) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, alternativas, resposta_correta } : x))}
               />
             ) : (
-              <label>Resposta correta
+              <label>Resposta exemplo
                 <CampoComSimbolos value={q.resposta_correta} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, resposta_correta: e.target.value } : x))} />
               </label>
             )}
+            <label>Subtópico (em branco: a IA identifica)
+              <input value={q.subtopico} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, subtopico: e.target.value } : x))} />
+            </label>
             {questoes.length > 1 && i === questoes.length - 1 && (
               <Button variant="ghost" icon={Trash2} onPress={() => setQuestoes(questoes.slice(0, -1))}>Remover a última questão</Button>
             )}
           </div>
         ))}
         {gabaritoLivre && (
-          <Button variant="ghost" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "", alternativas: questoes[0]?.alternativas ? ["", ""] : null }])}>Adicionar questão</Button>
+          <Button variant="ghost" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "", subtopico: "", alternativas: questoes[0]?.alternativas ? ["", ""] : null }])}>Adicionar questão</Button>
         )}
         <div className="form-actions left">
           <Button variant="secondary" onPress={onBack}>Cancelar</Button>
@@ -1593,6 +1597,7 @@ interface QuestaoForm {
   itens: string[];
   resposta_correta: string; // objetiva: a letra do gabarito
   alternativas: string[]; // so usado no formato objetiva
+  subtopico?: string; // em branco: a IA identifica
   figura?: File; // anexada depois que a atividade e criada
 }
 
@@ -1745,12 +1750,12 @@ function NovaAtividade({
     }
     const preenchidas = questoes
       .map((q) => objetivaForm
-        ? { enunciado: q.enunciado.trim(), resposta_correta: q.resposta_correta, alternativas: alternativasDe(q.alternativas) ?? undefined, figura: q.figura }
-        : { enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim(), alternativas: undefined, figura: q.figura })
+        ? { enunciado: q.enunciado.trim(), resposta_correta: q.resposta_correta, alternativas: alternativasDe(q.alternativas) ?? undefined, figura: q.figura, subtopico: q.subtopico?.trim() || undefined }
+        : { enunciado: compoeEnunciado(q), resposta_correta: q.resposta_correta.trim(), alternativas: undefined, figura: q.figura, subtopico: q.subtopico?.trim() || undefined })
       .filter((q) => q.enunciado && q.resposta_correta);
-    const questoesValidas = preenchidas.map(({ enunciado, resposta_correta, alternativas }) => ({ enunciado, resposta_correta, alternativas }));
+    const questoesValidas = preenchidas.map(({ enunciado, resposta_correta, alternativas, subtopico }) => ({ enunciado, resposta_correta, alternativas, subtopico }));
     if (exigeGabarito && !questoesValidas.length) {
-      setError("Adicione ao menos uma questão com enunciado e resposta correta.");
+      setError("Adicione ao menos uma questão com enunciado e resposta (a alternativa correta ou a resposta exemplo).");
       return;
     }
     if (exigeGabarito && (!valorTotal || valorTotal <= 0)) {
@@ -2015,7 +2020,7 @@ function NovaAtividade({
                       )}
                     </label>
                     {formato === "discursiva" && <label>
-                      Resposta correta (de cada item, se houver)
+                      Resposta exemplo (digite ou gere com a IA)
                       <CampoComSimbolos
                         value={q.resposta_correta}
                         onChange={(e) => {
@@ -2026,7 +2031,20 @@ function NovaAtividade({
                         placeholder="Ex.: a) x = 2  b) y = 5"
                         rows={2}
                       />
+                      <Button variant="ghost" small icon={Sparkles} disabled={!materiaId || !compoeEnunciado(q).trim()}
+                        onPress={async () => {
+                          try {
+                            const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, enunciado: compoeEnunciado(q) });
+                            setQuestoes((atual) => atual.map((x, j) => j === i ? { ...x, resposta_correta: resposta_exemplo } : x));
+                          } catch (e) { setError(e instanceof Error ? e.message : "A IA não conseguiu sugerir agora."); }
+                        }}>Gerar com IA (você revisa antes de salvar)</Button>
                     </label>}
+                    <label>
+                      Subtópico (opcional)
+                      <input value={q.subtopico ?? ""} placeholder="Ex.: Equação do 1º grau. Em branco: a IA identifica."
+                        onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, subtopico: e.target.value } : x))} />
+                      <span className="tiny muted">O assunto geral (ex.: Conjuntos). Em branco, a IA identifica e você pode corrigir depois, editando a atividade.</span>
+                    </label>
                     {questoes.length > 1 && (
                       <button
                         className="back-link"

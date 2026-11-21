@@ -14,6 +14,7 @@ from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.usuario import Atividade, Materia, Submissao, Tema, Usuario
+from app import subtopicos
 from app.routers.questoes import _apagar_arquivo, _pode_editar
 from app.routers.submissoes import MATERIAS_EXATAS, _atividade_response
 from app.schemas.submissao import AtividadeResponse, EditarAtividadeRequest, ExclusaoResponse
@@ -54,15 +55,17 @@ def editar_atividade(atividade_id: uuid.UUID, payload: EditarAtividadeRequest,
         if payload.valor_total is not None:
             atividade.valor_total = Decimal(str(payload.valor_total))
         if payload.questoes is not None:
+            subtopicos.completar(materia.nome, payload.questoes, atividade.titulo, subtopicos.usados(db, materia.id))
             existentes = {t.habilidade_codigo: t for t in db.query(Tema).filter_by(atividade_id=atividade.id)}
             for i, q in enumerate(payload.questoes, start=1):
                 tema = existentes.pop(f"Q{i}", None)
                 if tema is None:
                     db.add(Tema(materia_id=materia.id, atividade_id=atividade.id, habilidade_codigo=f"Q{i}",
-                                nome=q.enunciado.strip(), resposta_correta=q.resposta_correta.strip(),
-                                alternativas=q.alternativas))
+                                nome=q.enunciado.strip(), resposta_correta=q.resposta_correta.strip() or None,
+                                alternativas=q.alternativas, subtopico=q.subtopico))
                 else:  # mesma posicao: edita no lugar e a figura da questao continua
-                    tema.nome, tema.resposta_correta = q.enunciado.strip(), q.resposta_correta.strip()
+                    tema.nome, tema.resposta_correta = q.enunciado.strip(), q.resposta_correta.strip() or None
+                    tema.subtopico = q.subtopico
                     tema.alternativas = q.alternativas
             for sobra in existentes.values():  # a lista ficou menor: tira as ultimas (e as figuras delas)
                 _apagar_arquivo(sobra.imagem)
