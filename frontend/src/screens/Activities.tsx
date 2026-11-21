@@ -601,10 +601,10 @@ function ActivityDetail({
                     lineHeight: 27,
                     padding: 18,
                     borderWidth: 1,
-                    borderColor: "#DCD8CC",
+                    borderColor: "var(--ln-dcd8cc)",
                     borderRadius: 10,
                     textAlignVertical: "top",
-                    color: "#141A2E",
+                    color: "var(--ink)",
                   }}
                 />
                 {error && (
@@ -728,10 +728,10 @@ function ActivityDetail({
                     lineHeight: 27,
                     padding: 18,
                     borderWidth: 1,
-                    borderColor: "#DCD8CC",
+                    borderColor: "var(--ln-dcd8cc)",
                     borderRadius: 10,
                     textAlignVertical: "top",
-                    color: "#141A2E",
+                    color: "var(--ink)",
                   }}
                 />
                 )}
@@ -808,7 +808,7 @@ function ActivityDetail({
             )}
           </Card>
           <Card className="aside-card">
-            <ShieldCheck size={29} color="#197451" />
+            <ShieldCheck size={29} color="var(--tx-197451)" />
             <h3>Seu professor está com você.</h3>
             <p>
               A IA auxilia na correção. Seu professor revisa cada resultado
