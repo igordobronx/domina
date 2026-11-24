@@ -383,6 +383,10 @@ class Exercicio(Base):
     # discursivo com mais de uma resposta de exemplo (todas, inclusive a 1a); nulo = so a resposta_exemplo
     respostas_exemplo = Column(JSON, nullable=True)
     explicacao = Column(Text, nullable=True)
+    # varias questoes no mesmo exercicio: cada questao e uma linha, e as do mesmo exercicio (por turma)
+    # dividem o grupo_id; `ordem` e a posicao dela. Sem grupo = exercicio de uma questao so
+    grupo_id = Column(UUID(as_uuid=True), nullable=True)
+    ordem = Column(Integer, nullable=False, default=0, server_default="0")
     # excluir = desativar (as respostas dos alunos ficam)
     ativo = Column(Boolean, nullable=False, default=True, server_default=true())
     criado_em = Column(DateTime, server_default=func.now(), nullable=True)

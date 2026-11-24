@@ -536,11 +536,17 @@ function DoProfessor({ real, aberto, setAberto }: { real: boolean; aberto: boole
     exerciciosDaTurma().then(setLista).catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível carregar."));
   }, [real]);
   const abrir = (ex: ExercicioAlunoAPI | null) => { setAtual(ex); setAberto(!!ex); window.scrollTo(0, 0); };
+  // exercicio com varias questoes: as linhas do mesmo grupo, na ordem
+  const questoesDe = (ex: ExercicioAlunoAPI) =>
+    (ex.grupo_id ? (lista ?? []).filter((x) => x.grupo_id === ex.grupo_id) : [ex]).sort((a, b) => a.ordem - b.ordem);
   if (aberto && atual)
     return (
       <ExercicioDoProfessor
         key={atual.id}
         ex={atual}
+        posicao={questoesDe(atual).length > 1 ? `Questão ${questoesDe(atual).findIndex((x) => x.id === atual.id) + 1} de ${questoesDe(atual).length}` : ""}
+        proxima={questoesDe(atual)[questoesDe(atual).findIndex((x) => x.id === atual.id) + 1] ?? null}
+        onProxima={abrir}
         onBack={() => abrir(null)}
         onRespondido={(novo) => { setAtual(novo); setLista((l) => l?.map((x) => (x.id === novo.id ? novo : x)) ?? l); }}
       />
@@ -554,31 +560,39 @@ function DoProfessor({ real, aberto, setAberto }: { real: boolean; aberto: boole
     <>
       <p className="tiny muted">{feitos} de {lista.length} feito(s)</p>
       <div className="study-grid">
-        {lista.map((ex) => (
-          <Card key={ex.id} className="study-task ex-prof">
+        {lista.filter((ex) => !ex.grupo_id || questoesDe(ex)[0].id === ex.id).map((principal) => {
+          const todas = questoesDe(principal);
+          const feitas = todas.filter((x) => x.minha_resposta !== null).length;
+          // abre na primeira questao que ainda nao foi respondida
+          const ex = todas.find((x) => x.minha_resposta === null) ?? todas[0];
+          return (
+          <Card key={principal.id} className="study-task ex-prof">
             <div className="section-title">
               <Badge tone="neutral">{ex.tipo === "OBJETIVO" ? "Objetivo" : "Discursivo"}</Badge>
               {ex.minha_resposta !== null ? (
                 <Badge tone="neutral">Feito</Badge>
               ) : ex.gerado_por_ia ? <Badge tone="neutral"><Sparkles size={13} /> Com ajuda da IA</Badge> : null}
             </div>
-            {ex.minha_resposta !== null && <ResultadoMini resultado={ex.tipo === "OBJETIVO" && !ex.resultado ? (ex.correta ? "CERTA" : "ERRADA") : (ex.resultado as "CERTA" | "ERRADA" | "PARCIAL" | null)} />}
+            {todas.length > 1 ? <Badge tone="neutral">{feitas} de {todas.length} questões feitas</Badge>
+              : ex.minha_resposta !== null && <ResultadoMini resultado={ex.tipo === "OBJETIVO" && !ex.resultado ? (ex.correta ? "CERTA" : "ERRADA") : (ex.resultado as "CERTA" | "ERRADA" | "PARCIAL" | null)} />}
             {ex.comentario && <Badge tone="amber">O professor comentou</Badge>}
             <span className="eyebrow">{ex.materia_nome} · {ex.assunto}</span>
             <h2>{ex.titulo}</h2>
             <p className="tiny muted">Prof. {ex.professor_nome}</p>
-            <Button variant={ex.minha_resposta === null ? "primary" : "secondary"} icon={ArrowRight} onPress={() => abrir(ex)}>
-              {ex.minha_resposta === null ? "Começar" : "Ver de novo"}
+            <Button variant={feitas < todas.length ? "primary" : "secondary"} icon={ArrowRight} onPress={() => abrir(ex)}>
+              {feitas === todas.length ? "Ver de novo" : feitas ? "Continuar" : "Começar"}
             </Button>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </>
   );
 }
 
-function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
+function ExercicioDoProfessor({ ex, onBack, onRespondido, posicao, proxima, onProxima }: {
   ex: ExercicioAlunoAPI; onBack: () => void; onRespondido: (ex: ExercicioAlunoAPI) => void;
+  posicao: string; proxima: ExercicioAlunoAPI | null; onProxima: (ex: ExercicioAlunoAPI) => void;
 }) {
   const objetivo = ex.tipo === "OBJETIVO";
   const [escolha, setEscolha] = useState<number | null>(null);
@@ -603,7 +617,7 @@ function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
       </button>
       <Card className="exercise-card">
         <Badge tone="neutral">{ex.materia_nome} · {ex.assunto} · {objetivo ? "Objetivo" : "Discursivo"}</Badge>
-        <div className="exercise-step">{ex.titulo.toUpperCase()} · PROF. {ex.professor_nome.toUpperCase()}</div>
+        <div className="exercise-step">{ex.titulo.toUpperCase()} · PROF. {ex.professor_nome.toUpperCase()}{posicao ? ` · ${posicao.toUpperCase()}` : ""}</div>
         <h1 className="enunciado-ex">{ex.enunciado}</h1>
         {objetivo ? (
           <fieldset className="options">
@@ -649,7 +663,7 @@ function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
               {ex.comentario && <p className="comentario-prof"><b>Comentário do professor:</b> {ex.comentario}</p>}
             </div>
             <div className="form-actions left">
-              <Button onPress={onBack}>Concluir</Button>
+              {proxima ? <Button icon={ArrowRight} onPress={() => onProxima(proxima)}>Próxima questão</Button> : <Button onPress={onBack}>Concluir</Button>}
             </div>
           </>
         ) : (

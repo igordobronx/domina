@@ -78,17 +78,17 @@ const navItems: {
   },
   {
     id: "revisoes",
-    label: "Revisões",
+    label: "Atividades",
     icon: ClipboardCheck,
     roles: ["professor", "gestor"],
   },
+  { id: "estudos", label: "Exercícios", icon: NotebookPen, roles: ["aluno", "professor"] },
   {
     id: "turmas",
     label: "Turmas",
     icon: Users,
     roles: ["professor", "gestor"],
   },
-  { id: "estudos", label: "Exercícios", icon: NotebookPen, roles: ["aluno", "professor"] },
   {
     id: "materiais",
     label: "Treinar IA",

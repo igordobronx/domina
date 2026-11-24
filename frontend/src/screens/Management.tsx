@@ -297,7 +297,7 @@ function MateriasDoProfessor({
     );
   return (
     <div className="botoes-escolha" role="group" aria-label="Matérias que o professor leciona nesta turma">
-      <SeletorMultiplo rotulo="Matérias que o professor leciona nesta turma" placeholder="Escolha as matérias"
+      <SeletorMultiplo todos="Selecionar todos" rotulo="Matérias que o professor leciona nesta turma" placeholder="Escolha as matérias"
         opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))} valores={marcadas} onChange={setMarcadas} />
       <Button disabled={salvando} onPress={salvar}>{salvando ? "Salvando..." : "Salvar"}</Button>
       <Button variant="secondary" onPress={() => setAberto(false)}>Cancelar</Button>

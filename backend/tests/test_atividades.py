@@ -249,7 +249,10 @@ def test_pontos_por_questao_diferentes_e_soma_confere():
         return client.post("/atividades/lote", headers=p, json={
             "materia_id": materia, "turma_ids": [t1], "titulo": "Pesos", "tipo": "EXERCICIO", "valor_total": total, "questoes": qs})
     assert criar([7, 4]).status_code == 422  # soma 11 != 10
-    r = criar([7, None])  # a sem valor leva o que sobra
+    assert criar([7, None]).status_code == 422  # misturar com e sem valor não vale
+    r0 = criar([None, None])  # todas sem valor: divide igual
+    assert r0.status_code == 201 and [q["valor"] for q in r0.json()[0]["questoes"]] == [5, 5]
+    r = criar([7, 3])
     assert r.status_code == 201, r.text
     ativ = r.json()[0]
     assert [q["valor"] for q in ativ["questoes"]] == [7, 3]

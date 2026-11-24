@@ -53,7 +53,6 @@
   "76": "E8 Painéis e gamificação — Tornar o progresso visível para aluno, professor e gestor",
   "79": "E10 Privacidade e operação — LGPD, auditoria e custo",
   "81": "vercel.json",
-  "84": "main.tsx",
   "88": "vite-env.d.ts",
   "91": "CLAUDE.md: domina, correção de redação do ENEM por IA",
   "93": "LGPD (Lei Geral de Proteção de Dados)",
@@ -74,6 +73,5 @@
   "124": "Logs do sistema",
   "127": "dependencies",
   "129": "scripts",
-  "132": "@playwright/test",
-  "145": "3. Versão por versão"
+  "132": "@playwright/test"
 }

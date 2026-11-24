@@ -622,6 +622,10 @@ export interface ExercicioPayload {
   gerado_por_ia: boolean;
 }
 
+// uma questao do exercicio (enunciado + gabarito); o exercicio pode ter varias
+export type QuestaoExercicioPayload = Pick<ExercicioPayload, "tipo" | "enunciado" | "alternativas" | "resposta_correta"
+  | "resposta_exemplo" | "respostas_exemplo" | "explicacao" | "gerado_por_ia">;
+
 export interface ExercicioProfessorAPI extends Required<Omit<ExercicioPayload, "alternativas" | "resposta_correta" | "resposta_exemplo" | "respostas_exemplo" | "explicacao" | "aluno_ids">> {
   respostas_exemplo: string[];
   aluno_ids: string[] | null;
@@ -637,6 +641,8 @@ export interface ExercicioProfessorAPI extends Required<Omit<ExercicioPayload, "
   respostas: number;
   acertos: number;
   alunos_alvo: number;
+  grupo_id: string | null; // questoes do mesmo exercicio dividem o grupo
+  ordem: number;
 }
 
 export interface ExercicioAlunoAPI {
@@ -658,6 +664,8 @@ export interface ExercicioAlunoAPI {
   resposta_exemplo: string | null;
   respostas_exemplo: string[];
   explicacao: string | null;
+  grupo_id: string | null;
+  ordem: number;
 }
 
 export interface SugestaoExercicioAPI {
@@ -675,7 +683,7 @@ export function listarExerciciosProfessor(): Promise<ExercicioProfessorAPI[]> {
 export function criarExercicio(p: ExercicioPayload): Promise<ExercicioProfessorAPI> {
   return request<ExercicioProfessorAPI>("/exercicios", { method: "POST", body: JSON.stringify(p) });
 }
-export function criarExerciciosLote(p: ExercicioPayload & { turma_ids: string[] }): Promise<ExercicioProfessorAPI[]> {
+export function criarExerciciosLote(p: ExercicioPayload & { turma_ids: string[]; mais_questoes?: QuestaoExercicioPayload[] }): Promise<ExercicioProfessorAPI[]> {
   return request<ExercicioProfessorAPI[]>("/exercicios/lote", { method: "POST", body: JSON.stringify(p) });
 }
 export type ResultadoAPI = "CERTA" | "PARCIAL" | "ERRADA";

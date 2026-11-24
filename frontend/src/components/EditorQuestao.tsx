@@ -23,13 +23,12 @@ export const vazio: Rascunho = {
   respostasExemplo: [""], explicacao: "", daIA: false, respostaIA: false,
 };
 
-export function EditorQuestao({ r, setR, sugerindoResposta, onSugerirResposta, comExplicacao = true, umaResposta = false }: {
+export function EditorQuestao({ r, setR, sugerindoResposta, onSugerirResposta, comExplicacao = true }: {
   r: Rascunho;
   setR: (r: Rascunho) => void;
   sugerindoResposta: boolean;
   onSugerirResposta: () => void;
   comExplicacao?: boolean; // exercicio tem explicacao; atividade nao
-  umaResposta?: boolean; // atividade guarda uma resposta de exemplo por questao
 }) {
   const alts = r.alternativas;
   const setAlt = (k: number, v: string) => setR({ ...r, alternativas: alts.map((x, j) => (j === k ? v : x)) });
@@ -103,7 +102,7 @@ export function EditorQuestao({ r, setR, sugerindoResposta, onSugerirResposta, c
           </div>
         ))}
         <div className="form-actions left">
-          {!umaResposta && r.respostasExemplo.length < MAX_EXEMPLOS && (
+          {r.respostasExemplo.length < MAX_EXEMPLOS && (
             <Button variant="ghost" icon={Plus} onPress={() => setR({ ...r, respostasExemplo: [...r.respostasExemplo, ""] })}>
               Adicionar outra resposta de exemplo
             </Button>

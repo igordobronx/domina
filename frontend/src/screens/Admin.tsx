@@ -292,7 +292,7 @@ function TurmasEMaterias({
       <p className="tiny muted">
         {perfil === "PROFESSOR" ? "Turmas e, em cada uma, as matérias que ele leciona" : "Turmas do aluno"}
       </p>
-      <SeletorMultiplo rotulo="Turmas" placeholder="Escolha as turmas"
+      <SeletorMultiplo todos="Selecionar todos" rotulo="Turmas" placeholder="Escolha as turmas"
         opcoes={turmas.map((t) => ({ valor: t.id, rotulo: `${t.nome} (${t.ano})` }))}
         valores={valor.map((v) => v.turma_id)}
         onChange={(ids) => onChange(ids.map((id) => da(id) ?? { turma_id: id, materia_ids: [] }))} />
@@ -302,7 +302,7 @@ function TurmasEMaterias({
           <div key={v.turma_id}>
             <p className="rotulo-escolha">Matérias em {t?.nome}</p>
             {materias.length ? (
-              <SeletorMultiplo rotulo={`Matérias em ${t?.nome}`} placeholder="Escolha as matérias"
+              <SeletorMultiplo todos="Selecionar todos" rotulo={`Matérias em ${t?.nome}`} placeholder="Escolha as matérias"
                 opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))} valores={v.materia_ids}
                 onChange={(ids) => onChange(valor.map((x) => x.turma_id === v.turma_id ? { ...x, materia_ids: ids } : x))} />
             ) : <span className="tiny muted">Nenhuma matéria cadastrada.</span>}

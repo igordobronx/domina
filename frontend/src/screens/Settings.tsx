@@ -327,7 +327,7 @@ export function Help() {
           ],
           [
             "Como testar o fluxo completo?",
-            "Abra Atividades no perfil Aluno, envie uma resposta e troque para Professor no seletor da barra superior. Em Revisões, abra a atividade, ajuste as notas, escreva um feedback e aprove. Volte ao perfil Aluno para ver o resultado.",
+            "Abra Atividades no perfil Aluno, envie uma resposta e troque para Professor no seletor da barra superior. Em Atividades, abra a atividade, ajuste as notas, escreva um feedback e aprove. Volte ao perfil Aluno para ver o resultado.",
           ],
           [
             "O que significa meu percentual de domínio?",

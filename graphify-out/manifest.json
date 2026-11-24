@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "backend/app/models/usuario.py": {
-    "mtime": 1795281799.8216615,
-    "seen": 1795282146.774567,
-    "ast_hash": "340c108020ca0973eb34f8bf8b9c798f",
+    "mtime": 1795552358.5385842,
+    "seen": 1795553305.6492002,
+    "ast_hash": "0466278ff3ffca5b8f2bd9429680a535",
     "semantic_hash": ""
   },
   "backend/app/ocr/__init__.py": {
@@ -168,9 +168,9 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1795282139.9068289,
-    "seen": 1795282146.774844,
-    "ast_hash": "83ec12be292e1848d294e83d128bcb3a",
+    "mtime": 1795286248.0235431,
+    "seen": 1795553305.649596,
+    "ast_hash": "402c458fb1dbfce1e90e932f266f6bb6",
     "semantic_hash": ""
   },
   "backend/app/ocr/gemini.py": {
@@ -234,15 +234,15 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1794963435.9668703,
-    "seen": 1794963450.2679732,
-    "ast_hash": "8bd494e4f3dd79e0673a5fd3c44f8a2b",
+    "mtime": 1795552075.9842203,
+    "seen": 1795553305.649479,
+    "ast_hash": "70e4558627c0a2eb8c61210edc5bb003",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
-    "mtime": 1792709022.738707,
-    "seen": 1794961100.821523,
-    "ast_hash": "49f1ff39d1c8f9c2aefc0793599f123c",
+    "mtime": 1795286050.919695,
+    "seen": 1795286080.367316,
+    "ast_hash": "41e14d12205864dda5fcb59a1d3f4695",
     "semantic_hash": ""
   },
   "frontend/src/components/InstallBanner.tsx": {
@@ -252,9 +252,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/ui.tsx": {
-    "mtime": 1795274766.4689462,
-    "seen": 1795275111.932267,
-    "ast_hash": "a0ba17884d6648b5020b79f6ec1486f1",
+    "mtime": 1795286050.9201257,
+    "seen": 1795286080.367326,
+    "ast_hash": "420cdb7307f9e9993c86a42eab384cbe",
     "semantic_hash": ""
   },
   "frontend/src/data/demo.ts": {
@@ -270,15 +270,15 @@
     "semantic_hash": ""
   },
   "frontend/src/main.tsx": {
-    "mtime": 1792098441.4065068,
-    "seen": 1794961100.821532,
-    "ast_hash": "9ce5e132747199f9bf83c91240b59461",
+    "mtime": 1795286050.9205496,
+    "seen": 1795286080.367332,
+    "ast_hash": "55f32071739d103493bbf9b3ac77ba54",
     "semantic_hash": ""
   },
   "frontend/src/screens/Activities.tsx": {
-    "mtime": 1795282096.029561,
-    "seen": 1795282146.774782,
-    "ast_hash": "54ae65a145a159915021f915050f328e",
+    "mtime": 1795553223.3758013,
+    "seen": 1795553305.649508,
+    "ast_hash": "f1c31f50938a178352beeea8218e9da3",
     "semantic_hash": ""
   },
   "frontend/src/screens/Dashboard.tsx": {
@@ -294,21 +294,21 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Learning.tsx": {
-    "mtime": 1795274766.4704313,
-    "seen": 1795275111.9322891,
-    "ast_hash": "2304462daf5a7f11837f4b09cdf24c4d",
+    "mtime": 1795552496.0639117,
+    "seen": 1795553305.6495209,
+    "ast_hash": "9a94bad7c57a088419ed5f9add4d0767",
     "semantic_hash": ""
   },
   "frontend/src/screens/Management.tsx": {
-    "mtime": 1795274784.142279,
-    "seen": 1795275111.9322932,
-    "ast_hash": "e5fc27c209cd3e0901071042aa8de0df",
+    "mtime": 1795551565.6888456,
+    "seen": 1795553305.649525,
+    "ast_hash": "72b575a26cf5e2c75978a9755c3be7e7",
     "semantic_hash": ""
   },
   "frontend/src/screens/Settings.tsx": {
-    "mtime": 1795205140.0408053,
-    "seen": 1795205158.0032508,
-    "ast_hash": "53abf6f852662ffed5060dbfef2527ef",
+    "mtime": 1795550924.5217006,
+    "seen": 1795553305.6495318,
+    "ast_hash": "447190acb1accca4ee331873d71798e0",
     "semantic_hash": ""
   },
   "frontend/src/services/demoStore.test.ts": {
@@ -330,9 +330,9 @@
     "semantic_hash": ""
   },
   "frontend/src/theme.ts": {
-    "mtime": 1792098441.4088094,
-    "seen": 1794961100.8215628,
-    "ast_hash": "f8797994197247096efdac3646768cdc",
+    "mtime": 1795286050.9228523,
+    "seen": 1795286080.367368,
+    "ast_hash": "dadd0db7e185cc62c8fad65f70406732",
     "semantic_hash": ""
   },
   "frontend/src/types.ts": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1795282076.2164407,
-    "seen": 1795282146.774803,
-    "ast_hash": "282fdb9fd62f3138651d8b93ec272eb7",
+    "mtime": 1795552449.277794,
+    "seen": 1795553305.649536,
+    "ast_hash": "a082d72a82d7ad69bdfd55a862354138",
     "semantic_hash": ""
   },
   "frontend/src/services/atividades.ts": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Admin.tsx": {
-    "mtime": 1795205566.0583007,
-    "seen": 1795221198.342077,
-    "ast_hash": "0ded3aaf509dba4cdc8c00c4768ad491",
+    "mtime": 1795551565.689936,
+    "seen": 1795553305.6495092,
+    "ast_hash": "88f57141084072aa961d7b0062adae1f",
     "semantic_hash": ""
   },
   "backend/app/routers/questoes.py": {
@@ -1182,9 +1182,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Calendar.tsx": {
-    "mtime": 1795205530.8775594,
-    "seen": 1795205563.639651,
-    "ast_hash": "7fa2b3c8b2ffdf2b333eb80574276230",
+    "mtime": 1795551565.6895406,
+    "seen": 1795553305.6495109,
+    "ast_hash": "72b9bbe298d3403b5580e8f01c2fc7fd",
     "semantic_hash": ""
   },
   "frontend/src/screens/Logs.tsx": {
@@ -1224,9 +1224,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/exercicios.py": {
-    "mtime": 1795281218.4257245,
-    "seen": 1795282146.774592,
-    "ast_hash": "025835a75a07d078f33aaa25a7077626",
+    "mtime": 1795552358.5390701,
+    "seen": 1795553305.6492329,
+    "ast_hash": "b5eef56677b1216fa5542315e3b52046",
     "semantic_hash": ""
   },
   "backend/app/routers/metas.py": {
@@ -1236,9 +1236,9 @@
     "semantic_hash": ""
   },
   "backend/app/schemas/exercicio.py": {
-    "mtime": 1794776340.8058565,
-    "seen": 1794961100.821384,
-    "ast_hash": "cad0cc8ca6ad1670b36e62c979db93c9",
+    "mtime": 1795552358.5379796,
+    "seen": 1795553305.6492748,
+    "ast_hash": "f48d0bd659efe14d303d7ae2eec2f042",
     "semantic_hash": ""
   },
   "backend/app/schemas/metas.py": {
@@ -1290,15 +1290,15 @@
     "semantic_hash": ""
   },
   "backend/tests/test_atividades.py": {
-    "mtime": 1795281846.1315942,
-    "seen": 1795282146.77471,
-    "ast_hash": "e0f3edc4d0ec60c922c27a05c94524fb",
+    "mtime": 1795551572.7139115,
+    "seen": 1795553305.6494038,
+    "ast_hash": "92dd5aa49f4f981f644e41a38c5d30b8",
     "semantic_hash": ""
   },
   "backend/tests/test_exercicios.py": {
-    "mtime": 1795278651.1014764,
-    "seen": 1795278956.0338109,
-    "ast_hash": "3371873a03c0b50f4f69b51f85d8d97e",
+    "mtime": 1795552370.3897629,
+    "seen": 1795553305.649421,
+    "ast_hash": "426d27a8b507a5514b746d8196d35be1",
     "semantic_hash": ""
   },
   "backend/tests/test_metas.py": {
@@ -1320,9 +1320,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Exercicios.tsx": {
-    "mtime": 1795282001.2397254,
-    "seen": 1795282146.774789,
-    "ast_hash": "9bfca5149e14745928bacc1bbfc28b95",
+    "mtime": 1795552991.5782468,
+    "seen": 1795553305.649517,
+    "ast_hash": "779efd5cd1c8c34dc6362f38e1712bb5",
     "semantic_hash": ""
   },
   "frontend/src/screens/Metas.tsx": {
@@ -1608,9 +1608,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/Filtros.tsx": {
-    "mtime": 1795204906.092854,
-    "seen": 1795204953.403977,
-    "ast_hash": "a79d9a073f44f64662c82fbc221588e9",
+    "mtime": 1795551565.6902895,
+    "seen": 1795553305.649489,
+    "ast_hash": "7102a0aac007f281a4432e4d011838ba",
     "semantic_hash": ""
   },
   "frontend/src/components/Seletor.tsx": {
@@ -1740,9 +1740,9 @@
     "semantic_hash": ""
   },
   "backend/app/pontos.py": {
-    "mtime": 1795282085.3503373,
-    "seen": 1795282146.7745721,
-    "ast_hash": "bf1e61171839d7959503a497f02fbd64",
+    "mtime": 1795551565.6912081,
+    "seen": 1795553305.649206,
+    "ast_hash": "7b659986a2d18a176a841c9de08d0810",
     "semantic_hash": ""
   },
   "backend/migrations/versions/0035_pontos_da_questao.py": {
@@ -1752,15 +1752,33 @@
     "semantic_hash": ""
   },
   "frontend/src/components/EditorQuestao.tsx": {
-    "mtime": 1795282005.5996015,
-    "seen": 1795282146.7747672,
-    "ast_hash": "9fb84b0835e631be4da8840787a77cd7",
+    "mtime": 1795550941.3721225,
+    "seen": 1795553305.649487,
+    "ast_hash": "f343d21750af731fbdb1fbd964251e5e",
     "semantic_hash": ""
   },
   "frontend/src/components/PontosSeletor.tsx": {
     "mtime": 1795282065.441686,
     "seen": 1795282146.774772,
     "ast_hash": "61998cb58a5e7e977cb77a229b2eac67",
+    "semantic_hash": ""
+  },
+  "frontend/src/services/tema.ts": {
+    "mtime": 1795286050.9220297,
+    "seen": 1795286080.367367,
+    "ast_hash": "d12d48308de440a8b4a29dec44c8dae5",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0036_exercicio_com_varias_questoes.py": {
+    "mtime": 1795552363.7971582,
+    "seen": 1795553305.6493912,
+    "ast_hash": "594262da02113e7a6f820118e7baa2bd",
+    "semantic_hash": ""
+  },
+  ".trail/learnings/2026-11-24-pr-da-domina-ciclo-3-cancelado-joa.md": {
+    "mtime": 1795547260.9128542,
+    "seen": 1795553305.649594,
+    "ast_hash": "63cacb6ede45abf0af25f2997a4a4e1e",
     "semantic_hash": ""
   }
 }

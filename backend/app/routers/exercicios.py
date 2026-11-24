@@ -118,7 +118,7 @@ def _resposta_professor(db: Session, ex: Exercicio) -> ExercicioProfessorRespons
         alternativas=ex.alternativas, resposta_correta=ex.resposta_correta, resposta_exemplo=ex.resposta_exemplo,
         respostas_exemplo=_exemplos(ex),
         explicacao=ex.explicacao, gerado_por_ia=ex.gerado_por_ia, criado_em=ex.criado_em,
-        respostas=total, acertos=acertos, alunos_alvo=len(_alvo(db, ex)),
+        respostas=total, acertos=acertos, alunos_alvo=len(_alvo(db, ex)), grupo_id=ex.grupo_id, ordem=ex.ordem or 0,
     )
 
 
@@ -128,6 +128,7 @@ def _resposta_aluno(db: Session, ex: Exercicio, minha: ExercicioResposta | None)
         id=ex.id, titulo=ex.titulo or "", assunto=ex.assunto or "", materia_nome=db.get(Materia, ex.materia_id).nome,
         professor_nome=professor.nome if professor else "", tipo=ex.tipo, enunciado=ex.enunciado,
         alternativas=ex.alternativas, gerado_por_ia=ex.gerado_por_ia, criado_em=ex.criado_em,
+        grupo_id=ex.grupo_id, ordem=ex.ordem or 0,
     )
     if minha:  # gabarito so depois de responder
         r.minha_resposta, r.correta, r.comentario = minha.resposta, minha.correta, minha.comentario
@@ -157,7 +158,7 @@ def _precisa_da_ia() -> None:
 def listar_meus(usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     _so_professor(usuario)
     exercicios = (db.query(Exercicio).filter_by(criado_por=usuario.id, ativo=True)
-                  .order_by(Exercicio.criado_em.desc()).all())
+                  .order_by(Exercicio.criado_em.desc(), Exercicio.ordem).all())
     return [_resposta_professor(db, ex) for ex in exercicios]
 
 
@@ -182,8 +183,9 @@ def criar_em_turmas(payload: ExercicioLoteRequest, usuario: Usuario = Depends(ge
     _so_professor(usuario)
     escolhidos = set(payload.aluno_ids or [])
     criados, usados = [], set()
+    extras = [q.model_dump() for q in payload.mais_questoes]
     for turma_id in dict.fromkeys(payload.turma_ids):  # sem repetir, na ordem
-        dados = payload.model_dump(exclude={"turma_ids", "turma_id", "aluno_ids"})
+        dados = payload.model_dump(exclude={"turma_ids", "turma_id", "aluno_ids", "mais_questoes"})
         if escolhidos:  # so os escolhidos que sao desta turma; nenhum = esta turma nao recebe
             da_turma = {a.id for a in _alunos_da_turma(db, turma_id)}
             daqui = escolhidos & da_turma
@@ -191,14 +193,18 @@ def criar_em_turmas(payload: ExercicioLoteRequest, usuario: Usuario = Depends(ge
                 continue
             usados |= daqui
             dados["aluno_ids"] = list(daqui)
-        um = ExercicioRequest(**dados, turma_id=turma_id)
-        _conferir(db, usuario, um)
-        ex = Exercicio(criado_por=usuario.id, aprovado_por=usuario.id)
-        _aplicar(ex, um)
-        db.add(ex)
-        db.flush()
-        registrar(db, usuario.id, "CRIAR", "Exercicio", ex.id)
-        criados.append(ex)
+        grupo = uuid.uuid4() if extras else None  # um grupo por turma: as respostas nao se misturam
+        meta = {k: v for k, v in dados.items() if k in ("titulo", "assunto", "materia_id", "aluno_ids")}
+        for ordem, questao in enumerate([None, *extras]):
+            um = ExercicioRequest(**(dados if questao is None else {**meta, **questao}), turma_id=turma_id)
+            if questao is None:
+                _conferir(db, usuario, um)
+            ex = Exercicio(criado_por=usuario.id, aprovado_por=usuario.id, grupo_id=grupo, ordem=ordem)
+            _aplicar(ex, um)
+            db.add(ex)
+            db.flush()
+            registrar(db, usuario.id, "CRIAR", "Exercicio", ex.id)
+            criados.append(ex)
     if escolhidos - usados:
         db.rollback()
         raise HTTPException(422, "Algum aluno escolhido não é das turmas marcadas.")
@@ -288,8 +294,11 @@ def editar(exercicio_id: uuid.UUID, payload: ExercicioRequest,
 @router.delete("/{exercicio_id}", status_code=status.HTTP_204_NO_CONTENT)
 def excluir(exercicio_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     ex = _meu(db, usuario, exercicio_id)
-    ex.ativo = False  # some para os alunos; as respostas ficam
-    registrar(db, usuario.id, "EXCLUIR", "Exercicio", ex.id)
+    # excluir um exercicio com varias questoes tira o exercicio inteiro (todas as questoes do grupo)
+    grupo = [ex] if not ex.grupo_id else db.query(Exercicio).filter_by(grupo_id=ex.grupo_id, criado_por=usuario.id).all()
+    for x in grupo:
+        x.ativo = False  # some para os alunos; as respostas ficam
+        registrar(db, usuario.id, "EXCLUIR", "Exercicio", x.id)
     db.commit()
 
 
@@ -343,7 +352,7 @@ def da_minha_turma(usuario: Usuario = Depends(get_current_user), db: Session = D
     if not turmas:
         return []
     exercicios = (db.query(Exercicio).filter(Exercicio.turma_id.in_(turmas), Exercicio.ativo.is_(True))
-                  .order_by(Exercicio.criado_em.desc()).all())
+                  .order_by(Exercicio.criado_em.desc(), Exercicio.ordem).all())
     minhas = {r.exercicio_id: r for r in db.query(ExercicioResposta).filter(
         ExercicioResposta.aluno_id == usuario.id,
         ExercicioResposta.exercicio_id.in_([e.id for e in exercicios]))} if exercicios else {}

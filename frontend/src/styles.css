@@ -128,6 +128,8 @@
   --sh-rgba-20-30-20-0-12: rgba(20, 30, 20, 0.12);
   --tx-141a2e: #141a2e;
   --tx-196d4e: #196d4e;
+  --tx-6b7a70: #6b7a70;
+  --tx-1d2a22: #1d2a22;
   --tx-197451: #197451;
   --tx-1f2a24: #1f2a24;
   --tx-22558c: #22558c;
@@ -279,6 +281,8 @@
   --sh-e4eee1: #37624d;
   --tx-141a2e: #d9ddeb;
   --tx-196d4e: #74dcb6;
+  --tx-6b7a70: #a3a8b5;
+  --tx-1d2a22: #f2efe6;
   --tx-197451: #74dcb4;
   --tx-1f2a24: #dbe5e0;
   --tx-22558c: #74a6dc;
@@ -3195,27 +3199,27 @@ button.top-avatar {
   color: var(--tx-a23b32);
 }
 /* Filtros: botao unico + painel (components/Filtros.tsx) */
-.filtros { display: grid; gap: 6px; }
-.filtros-botao { border: 1.5px solid #b9c9bd; background: #fff; color: #196d4e; font-size: 13px; font-weight: 500; padding: 10px 16px;
+.filtros { display: grid; gap: 6px; width: min(100%, 360px); }  /* painel com largura de filtro, nao da tela toda */
+.filtros-botao { border: 1.5px solid var(--ln-b9c9bd); background: var(--bg-fff); color: var(--tx-196d4e); font-size: 13px; font-weight: 500; padding: 10px 16px;
   border-radius: 999px; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; justify-self: start; }
-.filtros-botao.ativo { background: #eef5ec; border-color: #197451; }
-.filtros-painel { border: 1px solid #dcd8cc; border-radius: 10px; padding: 4px 14px 14px; background: #fcfbf8; display: grid; gap: 4px; }
+.filtros-botao.ativo { background: var(--bg-eef5ec); border-color: var(--ln-197451); }
+.filtros-painel { border: 1px solid var(--ln-dcd8cc); border-radius: 10px; padding: 4px 14px 14px; background: var(--bg-fcfbf8); display: grid; gap: 4px; }
 .modal.largo { width: 860px; }
 /* formulario de criar dentro do pop-up: o pop-up ja e o cartao e ja tem titulo */
 .modal > .card { border: 0; padding: 0; background: transparent; }
 .modal > .card > .section-title:first-child { display: none; }
 /* Seletor (components/Seletor.tsx): lista que abre ao clicar, simples ou multipla */
 .seletor { position: relative; display: inline-block; min-width: 240px; max-width: 100%; margin: 8px 0 4px; }
-.seletor-botao { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1.5px solid #b9c9bd;
-  background: #fff; color: #6b7a70; font-size: 14px; padding: 10px 14px; border-radius: 10px; min-height: 44px; text-align: left; }
-.seletor-botao.cheio { color: #1d2a22; }
+.seletor-botao { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1.5px solid var(--ln-b9c9bd);
+  background: var(--bg-fff); color: var(--tx-6b7a70); font-size: 14px; padding: 10px 14px; border-radius: 10px; min-height: 44px; text-align: left; }
+.seletor-botao.cheio { color: var(--tx-1d2a22); }
 .seletor-botao span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.seletor .seletor-lista { text-align: left; line-height: 1.4; color: #1d2a22; position: absolute; z-index: 30; left: 0; width: max-content; min-width: 100%; max-width: 90vw; margin: 4px 0 0; padding: 6px; list-style: none; font-size: 14px; box-sizing: border-box;
-  background: #fff; border: 1px solid #dcd8cc; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.14); max-height: 190px; overflow-y: auto; overflow-x: hidden; scroll-margin-bottom: 32px; }
+.seletor .seletor-lista { text-align: left; line-height: 1.4; color: var(--tx-1d2a22); position: absolute; z-index: 30; left: 0; width: max-content; min-width: 100%; max-width: 90vw; margin: 4px 0 0; padding: 6px; list-style: none; font-size: 14px; box-sizing: border-box;
+  background: var(--bg-fff); border: 1px solid var(--ln-dcd8cc); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.14); max-height: 190px; overflow-y: auto; overflow-x: hidden; scroll-margin-bottom: 32px; }
 .seletor-lista li { display: flex; align-items: center; justify-content: flex-start; text-align: left; gap: 8px; padding: 10px 12px; border-radius: 8px; font-size: 14px; cursor: pointer; white-space: nowrap; }
-.seletor-lista li:hover { background: #eef5ec; }
-.seletor-lista li.on { font-weight: 600; color: #196d4e; }
-.seletor-lista li.vazio { cursor: default; color: #6b7a70; }
+.seletor-lista li:hover { background: var(--bg-eef5ec); }
+.seletor-lista li.on { font-weight: 600; color: var(--tx-196d4e); }
+.seletor-lista li.vazio { cursor: default; color: var(--tx-6b7a70); }
 .seletor-check { width: 16px; display: inline-flex; }
 .seletor-desativado { opacity: .55; pointer-events: none; }
 .form-grid .seletor, .criteria-grid .seletor { display: block; min-width: 0; margin: 0; }

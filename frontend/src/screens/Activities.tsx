@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { TextInput } from "react-native";
 import { CampoComSimbolos } from "../components/CampoComSimbolos";
-import { EditorQuestao, vazio, type Rascunho } from "../components/EditorQuestao";
+import { EditorQuestao, MAX_EXEMPLOS, vazio, type Rascunho } from "../components/EditorQuestao";
 import { PontosSeletor } from "../components/PontosSeletor";
 import { ActivityRow } from "./Dashboard";
 import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
@@ -196,7 +196,7 @@ export function Activities({
   initialFilter = "todas",
   currentUser,
 }: Props) {
-  const [filter, setFilter] = useState(initialFilter);
+  const [filtros, setFiltros] = useState<string[]>(initialFilter === "todas" ? [] : [initialFilter]); // status marcados; vazio = todos
   const [search, setSearch] = useState("");
   const [turmaFiltro, setTurmaFiltro] = useState(""); // nada pre-selecionado
   const [criando, setCriando] = useState(false);
@@ -296,7 +296,7 @@ export function Activities({
     .filter(
     (a) =>
       (!turmaAtiva || a.turmaId === turmaAtiva) &&
-      (filter === "todas" || a.status === filter) &&
+      (!filtros.length || filtros.includes(a.status)) &&
       `${a.title} ${a.subject} ${a.student}`.toLowerCase().includes(search.toLowerCase()),
     ) // aluno: feitas do mais novo para o mais velho (as ainda não feitas ficam depois, na ordem do servidor)
     .sort((x, y) => (role === "aluno" ? (y.enviadoEm ?? "").localeCompare(x.enviadoEm ?? "") : 0));
@@ -308,7 +308,7 @@ export function Activities({
           <div className="eyebrow">
             {reviewOnly ? "O SEU OLHAR IMPORTA" : "PRATICAR PARA EVOLUIR"}
           </div>
-          <h1>{reviewOnly ? "Revisões" : "Minhas atividades"}</h1>
+          <h1>{reviewOnly ? "Atividades" : "Minhas atividades"}</h1>
           <p>
             {reviewOnly
               ? "Confira as sugestões, ajuste os critérios e libere o resultado."
@@ -329,8 +329,8 @@ export function Activities({
               opcoes: turmasFila.map(([id, nome]) => ({ valor: id, rotulo: nome })),
             }] : []),
             {
-              id: "status", titulo: "Status", valor: filter === "todas" ? "" : filter,
-              onChange: (v: string) => setFilter(v || "todas"),
+              id: "status", titulo: "Status", multiplo: true as const, valor: filtros,
+              onChange: setFiltros,
               opcoes: [
                 ...(!reviewOnly ? [{ valor: "disponivel", rotulo: "Para fazer" }] : []),
                 { valor: "pendente", rotulo: "Em revisão" },
@@ -362,7 +362,7 @@ export function Activities({
               variant="secondary"
               onPress={() => {
                 setSearch("");
-                setFilter("todas");
+                setFiltros([]);
               }}
             >
               Limpar filtros
@@ -1544,7 +1544,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
                 <CampoComSimbolos value={q.resposta_correta} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, resposta_correta: e.target.value } : x))} />
               </label>
             )}
-            <label>Subtópico (em branco: a IA identifica)
+            <label>Submatéria (em branco: a IA identifica)
               <input value={q.subtopico} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, subtopico: e.target.value } : x))} />
             </label>
             {questoes.length > 1 && i === questoes.length - 1 && (
@@ -1565,7 +1565,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
 }
 
 const TIPOS_ATIVIDADE: { value: string; label: string }[] = [
-  { value: "EXERCICIO", label: "Exercício" },
+  { value: "EXERCICIO", label: "Exercício avaliativo" },
   { value: "PROVA", label: "Prova" },
   { value: "REDACAO", label: "Redação" },
 ];
@@ -1651,7 +1651,10 @@ function NovaAtividade({
   const [tipo, setTipo] = useState<"" | "EXERCICIO" | "PROVA" | "REDACAO">(""); // nada pre-selecionado
   const [aba, setAba] = useState<"escrever" | "ia" | null>(null);
   const [formato, setFormato] = useState<"" | "objetiva" | "discursiva">("");
-  const [totalTxt, setTotalTxt] = useState("10");
+  // o PontosSeletor guarda o "Outro" por dentro: trocar a key o faz recomecar junto com o valor
+  const [chaveTotal, setChaveTotal] = useState(0);
+  const [chaveQuestoes, setChaveQuestoes] = useState(0);
+  const [totalTxt, setTotalTxt] = useState(""); // nada pre-selecionado: as questoes so aparecem depois do total
   const [questoes, setQuestoes] = useState<QuestaoNova[]>([questaoVazia()]);
   const [prazo, setPrazo] = useState("");
   const [error, setError] = useState("");
@@ -1674,13 +1677,27 @@ function NovaAtividade({
   const carregando = turmas === null || materias === null;
   const exigeGabarito = !!tipo && tipo !== "REDACAO"; // o formato vem do tipo da atividade, não da matéria
   const total = Number(totalTxt) || 0;
+  // a questao guarda um texto so de gabarito: varias respostas de exemplo viram um texto com as alternativas
+  const respostaDe = (q: QuestaoNova) =>
+    q.r.respostasExemplo.map((x) => x.trim()).filter(Boolean).join("\n\nOutra resposta possível: ");
   const setQ = (i: number, mudanca: Partial<QuestaoNova>) => setQuestoes((qs) => qs.map((x, j) => (j === i ? { ...x, ...mudanca } : x)));
   const somaDadas = questoes.reduce((t, q) => t + (Number(q.pontos) || 0), 0);
 
+  // mudou qualquer escolha: as outras escolhas ficam, mas as questoes (e as sugestoes da IA) sao apagadas;
+  // trocar e voltar para a mesma opcao tambem apaga
+  const zerarQuestoes = (f: string = formato) => {
+    setChaveQuestoes((k) => k + 1);
+    const q = questaoVazia();
+    setQuestoes([{ ...q, r: { ...q.r, tipo: f === "discursiva" ? "DISCURSIVO" : "OBJETIVO" } }]);
+    setSugestoes([]);
+  };
+  const zerarIA = () => { setAssunto(""); setQuantidade(3); setInstrucoes(""); };
   const trocarFormato = (v: string) => {
     const novo = (v || "") as typeof formato;
     setFormato(novo);
-    setQuestoes((qs) => qs.map((q) => ({ ...q, r: { ...q.r, tipo: novo === "discursiva" ? "DISCURSIVO" : "OBJETIVO" } })));
+    setTotalTxt(""); setChaveTotal((k) => k + 1);
+    zerarQuestoes(novo);
+    zerarIA();
   };
 
   const daSugestao = (s: SugestaoExercicioAPI): QuestaoNova => ({
@@ -1716,7 +1733,11 @@ function NovaAtividade({
     setSugerindo(i); setError("");
     try {
       const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, enunciado: q.r.enunciado });
-      setQ(i, { r: { ...q.r, respostasExemplo: [resposta_exemplo], respostaIA: true } });
+      // preenche a primeira vazia; se todas estao preenchidas, entra como mais uma
+      const vazia = q.r.respostasExemplo.findIndex((x) => !x.trim());
+      const lista = vazia >= 0 ? q.r.respostasExemplo.map((x, k) => (k === vazia ? resposta_exemplo : x))
+        : [...q.r.respostasExemplo, resposta_exemplo].slice(0, MAX_EXEMPLOS);
+      setQ(i, { r: { ...q.r, respostasExemplo: lista, respostaIA: true } });
     } catch (e) { setError(e instanceof Error ? e.message : "A IA não conseguiu sugerir agora."); }
     finally { setSugerindo(null); }
   };
@@ -1729,8 +1750,14 @@ function NovaAtividade({
     let figuras: (File | undefined)[] = [];
     if (exigeGabarito) {
       if (!(total > 0)) return setError("Informe o total de pontos da atividade.");
-      const feitas = questoes.filter((q) => q.r.enunciado.trim() || q.r.alternativas.some((a) => a.trim()) || q.r.respostasExemplo.some((x) => x.trim()));
+      const feitas = questoes; // nenhuma questão pode ficar vazia
       if (!feitas.length) return setError("Adicione ao menos uma questão.");
+      const comPontos = feitas.filter((q) => Number(q.pontos) > 0);
+      if (comPontos.length && comPontos.length < feitas.length)
+        return setError("Dê pontos a todas as questões, ou deixe todas em branco para dividir o total igualmente.");
+      const soma = comPontos.reduce((t, q) => t + Number(q.pontos), 0);
+      if (comPontos.length && Math.abs(soma - total) > 0.05)
+        return setError(`A soma dos pontos das questões (${soma}) precisa ser igual ao total da atividade (${total}).`);
       for (const [i, q] of feitas.entries()) {
         const n = `Questão ${i + 1}`;
         if (!q.r.enunciado.trim()) return setError(`${n}: escreva o enunciado.`);
@@ -1738,12 +1765,12 @@ function NovaAtividade({
           const alts = q.r.alternativas.map((a) => a.trim());
           if (alts.length < 2 || alts.some((a) => !a)) return setError(`${n}: preencha todas as alternativas (ou remova as vazias).`);
           if (q.r.correta === null || q.r.correta >= alts.length) return setError(`${n}: marque qual alternativa é a correta.`);
-        } else if (!q.r.respostasExemplo[0]?.trim()) return setError(`${n}: escreva a resposta de exemplo ou clique em “IA sugere”.`);
+        } else if (!respostaDe(q)) return setError(`${n}: escreva a resposta de exemplo ou clique em “IA sugere”.`);
       }
       questoesValidas = feitas.map((q) => formato === "objetiva"
         ? { enunciado: q.r.enunciado.trim(), resposta_correta: "ABCDE"[q.r.correta!], alternativas: q.r.alternativas.map((a) => a.trim()),
             subtopico: q.subtopico.trim() || undefined, valor: Number(q.pontos) || undefined }
-        : { enunciado: q.r.enunciado.trim(), resposta_correta: q.r.respostasExemplo[0].trim(),
+        : { enunciado: q.r.enunciado.trim(), resposta_correta: respostaDe(q),
             subtopico: q.subtopico.trim() || undefined, valor: Number(q.pontos) || undefined });
       figuras = feitas.map((q) => q.figura);
     }
@@ -1808,16 +1835,8 @@ function NovaAtividade({
               </label>
               <label>
                 Turmas (uma atividade para cada escolhida)
-                <SeletorMultiplo rotulo="Turmas" placeholder="Escolha as turmas"
-                  opcoes={[...(turmas!.length > 1 ? [{ valor: "__todas__", rotulo: "Todas as minhas turmas" }] : []),
-                           ...turmas!.map((t) => ({ valor: t.id, rotulo: t.nome }))]}
-                  valores={turmaIds.length === turmas!.length && turmas!.length > 1 ? ["__todas__", ...turmaIds] : turmaIds}
-                  onChange={(v) => {
-                    const todas = turmaIds.length === turmas!.length;
-                    if (v.includes("__todas__") && !todas) return setTurmaIds(turmas!.map((t) => t.id));
-                    if (!v.includes("__todas__") && todas && turmas!.length > 1) return setTurmaIds([]);
-                    setTurmaIds(v.filter((x) => x !== "__todas__"));
-                  }} />
+                <SeletorMultiplo todos="Selecionar todos" rotulo="Turmas" placeholder="Escolha as turmas"
+                  opcoes={turmas!.map((t) => ({ valor: t.id, rotulo: t.nome }))} valores={turmaIds} onChange={setTurmaIds} />
               </label>
               <label>
                 Matéria
@@ -1832,7 +1851,7 @@ function NovaAtividade({
               </label>
               <label>
                 Tipo
-                <Escolha value={tipo} onChange={(e) => { setTipo(e.target.value as typeof tipo); setAba(null); }}>
+                <Escolha value={tipo} onChange={(e) => { setTipo(e.target.value as typeof tipo); zerarQuestoes(); }}>
                   <option value="">Escolha o tipo</option>
                   {TIPOS_ATIVIDADE.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -1845,16 +1864,24 @@ function NovaAtividade({
 
             {exigeGabarito && (
               <>
-                <p className="rotulo-escolha">Como criar</p>
-                <Seletor rotulo="Como criar" placeholder="Escolha como criar"
-                  opcoes={[{ valor: "escrever", rotulo: "Escrever eu mesmo" }, { valor: "ia", rotulo: "Pedir para a IA" }]}
-                  valor={aba ?? ""} onChange={(v) => setAba((v || null) as typeof aba)} />
+                <div className="form-grid">
+                  <div>
+                    <p className="rotulo-escolha">Como criar</p>
+                    <Seletor rotulo="Como criar" placeholder="Escolha como criar"
+                      opcoes={[{ valor: "escrever", rotulo: "Escrever eu mesmo" }, { valor: "ia", rotulo: "Pedir para a IA" }]}
+                      valor={aba ?? ""} onChange={(v) => { setAba((v || null) as typeof aba); setFormato(""); setTotalTxt(""); setChaveTotal((k) => k + 1); zerarQuestoes(""); zerarIA(); }} />
+                  </div>
+                  {aba !== null && (
+                    <div>
+                      <p className="rotulo-escolha">Tipo das questões</p>
+                      <Seletor rotulo="Tipo das questões" placeholder="Escolha o tipo"
+                        opcoes={[{ valor: "objetiva", rotulo: "Objetivo (alternativas)" }, { valor: "discursiva", rotulo: "Discursivo (o aluno escreve)" }]}
+                        valor={formato} onChange={trocarFormato} />
+                    </div>
+                  )}
+                </div>
                 {aba !== null && (
                   <>
-                    <p className="rotulo-escolha">Tipo das questões</p>
-                    <Seletor rotulo="Tipo das questões" placeholder="Escolha o tipo"
-                      opcoes={[{ valor: "objetiva", rotulo: "Objetivo (alternativas)" }, { valor: "discursiva", rotulo: "Discursivo (o aluno escreve)" }]}
-                      valor={formato} onChange={trocarFormato} />
                     <p className="tiny muted">
                       {formato === "objetiva"
                         ? "O aluno marca a alternativa na tela e a correção sai na hora, comparando com o gabarito (sem IA)."
@@ -1867,17 +1894,17 @@ function NovaAtividade({
                 {aba !== null && formato && (
                   <>
                     <p className="rotulo-escolha">Total de pontos da atividade</p>
-                    <PontosSeletor rotulo="Total de pontos" valor={totalTxt} onChange={setTotalTxt} opcoes={["10"]} placeholder="Escolha o total" />
+                    <PontosSeletor key={chaveTotal} rotulo="Total de pontos" valor={totalTxt} onChange={setTotalTxt} opcoes={["10"]} placeholder="Escolha o total" />
                     <p className="tiny muted">
-                      Cada questão pode valer um valor diferente. As que ficarem sem pontos dividem igualmente o que sobrar.
+                      Preencha os pontos de todas as questões (a soma tem que fechar o total) ou deixe todas em branco para dividir igualmente.
                       {somaDadas > 0 ? ` Já distribuídos: ${somaDadas} de ${total || "?"}.` : ""}
                     </p>
                   </>
                 )}
-                {aba === "escrever" && formato && (
+                {aba === "escrever" && formato && total > 0 && (
                   <>
                     {questoes.map((q, i) => (
-                      <div className="meta-linha" key={i}>
+                      <div className="meta-linha" key={`${chaveQuestoes}-${i}`}>
                         <div className="meta-topo">
                           <strong>Questão {i + 1}</strong>
                           {questoes.length > 1 && (
@@ -1886,8 +1913,6 @@ function NovaAtividade({
                             </button>
                           )}
                         </div>
-                        <EditorQuestao r={q.r} setR={(r) => setQ(i, { r })} comExplicacao={false} umaResposta
-                          sugerindoResposta={sugerindo === i} onSugerirResposta={() => iaSugereResposta(i)} />
                         <div className="form-grid ex-form">
                           <div>
                             <p className="rotulo-escolha">Pontos desta questão</p>
@@ -1895,7 +1920,7 @@ function NovaAtividade({
                               opcoes={PONTOS_QUESTAO} placeholder="Dividir o que sobrar" />
                           </div>
                           <label>
-                            Subtópico (opcional)
+                            Submatéria (opcional)
                             <input value={q.subtopico} placeholder="Ex.: Equação do 1º grau. Em branco: a IA identifica."
                               onChange={(e) => setQ(i, { subtopico: e.target.value })} />
                           </label>
@@ -1908,6 +1933,8 @@ function NovaAtividade({
                             )}
                           </label>
                         </div>
+                        <EditorQuestao r={q.r} setR={(r) => setQ(i, { r })} comExplicacao={false}
+                          sugerindoResposta={sugerindo === i} onSugerirResposta={() => iaSugereResposta(i)} />
                       </div>
                     ))}
                     <div className="form-actions left">
@@ -1917,7 +1944,7 @@ function NovaAtividade({
                     </div>
                   </>
                 )}
-                {aba === "ia" && formato && (
+                {aba === "ia" && formato && total > 0 && (
                   <>
                     <div className="form-grid">
                       <label>Tema para a IA

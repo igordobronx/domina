@@ -9,7 +9,7 @@ import {
   listarMaterias, listarTurmasMinhas, membrosTurma, respostasDoExercicio, resumoExerciciosTurma,
   sugerirExercicios, sugerirRespostaExemplo, type RespostaAlunoAPI, type ResultadoAPI, type ResumoAlunoAPI,
   type ExercicioPayload, type MembroTurmaAPI, type ExercicioProfessorAPI, type MateriaAPI, type SugestaoExercicioAPI,
-  type TipoExercicioAPI, type TurmaAPI,
+  type QuestaoExercicioPayload, type TipoExercicioAPI, type TurmaAPI,
 } from "../services/api";
 
 // Exercicios de PRATICA do professor (nao valem nota; provas continuam em Atividades).
@@ -32,7 +32,8 @@ export function ExerciciosProfessor({ notify }: { notify: (m: string) => void })
     listarMaterias().then(setMaterias).catch(() => {});
   }, []);
   const excluir = async (ex: ExercicioProfessorAPI) => {
-    if (!window.confirm(`Excluir o exercício "${ex.titulo}"? Ele some para os alunos.`)) return;
+    const todas = ex.grupo_id ? " (todas as questões dele)" : "";
+    if (!window.confirm(`Excluir o exercício "${ex.titulo}"${todas}? Ele some para os alunos.`)) return;
     try { await excluirExercicio(ex.id); notify("Exercício excluído."); recarregar(); }
     catch (e) { notify(erroDe(e, "Não foi possível excluir.")); }
   };
@@ -88,16 +89,21 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
   // criando: "Como criar" e "Tipo do exercício" começam sem nada marcado; o resto do formulário aparece conforme a escolha
   const [aba, setAba] = useState<"escrever" | "ia" | null>(inicial ? "escrever" : null);
   const [tipoSel, setTipoSel] = useState<TipoExercicioAPI | null>(inicial ? inicial.tipo : null);
-  const [r, setR] = useState<Rascunho>(inicial ? {
+  // as questoes do exercicio (ao editar, so a que esta sendo editada); r = a primeira
+  const [questoes, setQuestoes] = useState<Rascunho[]>([inicial ? {
     tipo: inicial.tipo, enunciado: inicial.enunciado,
     alternativas: inicial.alternativas ?? ["", "", "", ""], correta: inicial.resposta_correta,
     respostasExemplo: inicial.respostas_exemplo.length ? inicial.respostas_exemplo : [inicial.resposta_exemplo ?? ""],
     explicacao: inicial.explicacao ?? "",
     daIA: inicial.gerado_por_ia, respostaIA: false,
-  } : vazio);
+  } : vazio]);
+  const r = questoes[0];
+  const setR = (x: Rascunho) => setQuestoes((q) => [x, ...q.slice(1)]);
+  const setQ = (i: number, x: Rascunho) => setQuestoes((q) => q.map((y, j) => (j === i ? x : y)));
+  const novaQuestao = (tipo: TipoExercicioAPI): Rascunho => ({ ...vazio, tipo, alternativas: ["", "", "", ""], respostasExemplo: [""] });
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
-  const [sugerindoResposta, setSugerindoResposta] = useState(false);
+  const [sugerindoResposta, setSugerindoResposta] = useState<number | null>(null); // indice da questao
   // pedir para a IA
   const tipoIA: TipoExercicioAPI = tipoSel ?? "OBJETIVO";
   const [quantidade, setQuantidade] = useState(3);
@@ -145,35 +151,44 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
     return { ...base, resposta_exemplo: exemplos[0], respostas_exemplo: exemplos };
   };
 
-  const salvar = async (x: Rascunho, nome: string, fechar: boolean): Promise<boolean> => {
+  const salvar = async (x: Rascunho, nome: string, fechar: boolean, extras: Rascunho[] = []): Promise<boolean> => {
     const p = comuns() ?? payloadDe(x, nome);
     if (typeof p === "string") { setErro(p); return false; }
+    // as questoes de baixo entram no mesmo exercicio
+    const mais: QuestaoExercicioPayload[] = [];
+    for (const [k, e] of extras.entries()) {
+      const pe = payloadDe(e, nome);
+      if (typeof pe === "string") { setErro(`Questão ${k + 2}: ${pe}`); return false; }
+      const { tipo, enunciado, alternativas, resposta_correta, resposta_exemplo, respostas_exemplo, explicacao, gerado_por_ia } = pe;
+      mais.push({ tipo, enunciado, alternativas, resposta_correta, resposta_exemplo, respostas_exemplo, explicacao, gerado_por_ia });
+    }
     setSalvando(true); setErro("");
     try {
       if (inicial) await editarExercicio(inicial.id, p);
-      else await criarExerciciosLote({ ...p, turma_ids: turmaIds });
+      else await criarExerciciosLote({ ...p, turma_ids: turmaIds, mais_questoes: mais.length ? mais : undefined });
       const quem = p.aluno_ids?.length ? "Os alunos escolhidos já veem"
         : turmaIds.length > 1 ? `As ${turmaIds.length} turmas já veem` : "A turma já vê";
-      notify(inicial ? "Exercício atualizado." : `Exercício salvo. ${quem} em Exercícios › Do professor.`);
+      notify(inicial ? "Exercício atualizado." : `Exercício${mais.length ? ` com ${mais.length + 1} questões` : ""} salvo. ${quem} em Exercícios › Do professor.`);
       onSalvo(fechar);
       return true;
     } catch (e) { setErro(erroDe(e, "Não foi possível salvar.")); return false; }
     finally { setSalvando(false); }
   };
 
-  const iaSugereResposta = async () => {
+  const iaSugereResposta = async (k: number) => {
+    const q = questoes[k];
     if (!materiaId) return setErro("Escolha a matéria antes de pedir para a IA.");
-    if (!r.enunciado.trim()) return setErro("Escreva o enunciado antes de pedir a resposta para a IA.");
-    setSugerindoResposta(true); setErro("");
+    if (!q.enunciado.trim()) return setErro("Escreva o enunciado antes de pedir a resposta para a IA.");
+    setSugerindoResposta(k); setErro("");
     try {
-      const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, assunto: assunto.trim() || undefined, enunciado: r.enunciado });
+      const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, assunto: assunto.trim() || undefined, enunciado: q.enunciado });
       // preenche a primeira vazia; se todas estao preenchidas, entra como mais uma
-      const vazia = r.respostasExemplo.findIndex((e) => !e.trim());
-      const lista = vazia >= 0 ? r.respostasExemplo.map((e, i) => (i === vazia ? resposta_exemplo : e))
-        : [...r.respostasExemplo, resposta_exemplo].slice(0, MAX_EXEMPLOS);
-      setR({ ...r, respostasExemplo: lista, respostaIA: true });
+      const vazia = q.respostasExemplo.findIndex((e) => !e.trim());
+      const lista = vazia >= 0 ? q.respostasExemplo.map((e, i) => (i === vazia ? resposta_exemplo : e))
+        : [...q.respostasExemplo, resposta_exemplo].slice(0, MAX_EXEMPLOS);
+      setQ(k, { ...q, respostasExemplo: lista, respostaIA: true });
     } catch (e) { setErro(erroDe(e, "A IA não conseguiu sugerir agora.")); }
-    finally { setSugerindoResposta(false); }
+    finally { setSugerindoResposta(null); }
   };
 
   const gerar = async () => {
@@ -194,12 +209,22 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
   });
 
   const revisar = (s: SugestaoExercicioAPI, i: number) => {
-    setR(daSugestao(s));
+    setQuestoes([daSugestao(s)]);
     setTipoSel(daSugestao(s).tipo);
     if (!titulo.trim()) setTitulo(s.titulo);
     setSugestoes(sugestoes.filter((_, j) => j !== i));
     setAba("escrever");
     notify("Sugestão copiada para “Escrever eu mesmo”. Revise e salve.");
+  };
+
+  // varias sugestoes viram as questoes de UM exercicio (como em Atividades)
+  const juntar = () => {
+    setQuestoes(sugestoes.map(daSugestao));
+    setTipoSel(daSugestao(sugestoes[0]).tipo);
+    if (!titulo.trim()) setTitulo(sugestoes[0].titulo);
+    setSugestoes([]);
+    setAba("escrever");
+    notify("Sugestões juntas num só exercício. Revise e salve.");
   };
 
   const salvarSugestao = async (s: SugestaoExercicioAPI, i: number) => {
@@ -237,7 +262,7 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
           <fieldset className="para-quem">
             <legend>Turmas</legend>
             {turmas.length ? (
-              <SeletorMultiplo rotulo="Turmas" placeholder="Escolha as turmas"
+              <SeletorMultiplo todos="Selecionar todos" rotulo="Turmas" placeholder="Escolha as turmas"
                 opcoes={turmas.map((t) => ({ valor: t.id, rotulo: t.nome }))} valores={turmaIds} onChange={setTurmaIds} />
             ) : <p className="tiny muted">Você ainda não está em nenhuma turma.</p>}
           </fieldset>
@@ -278,7 +303,7 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
       {!inicial && (
         <Seletor rotulo="Como criar" placeholder="Escolha como criar"
           opcoes={[{ valor: "escrever", rotulo: "Escrever eu mesmo" }, { valor: "ia", rotulo: "Pedir para a IA" }]}
-          valor={aba ?? ""} onChange={(v) => setAba((v || null) as typeof aba)} />
+          valor={aba ?? ""} onChange={(v) => { setAba((v || null) as typeof aba); setTipoSel(null); setQuestoes([novaQuestao("OBJETIVO")]); setSugestoes([]); setQuantidade(3); setInstrucoes(""); }} />
       )}
 
       {aba !== null && (
@@ -286,20 +311,41 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
           <p className="rotulo-escolha">Tipo do exercício</p>
           <Seletor rotulo="Tipo do exercício" placeholder="Escolha o tipo"
             opcoes={[{ valor: "OBJETIVO", rotulo: "Objetivo (alternativas)" }, { valor: "DISCURSIVO", rotulo: "Discursivo (o aluno escreve)" }]}
-            valor={tipoSel ?? ""} onChange={(v) => { setTipoSel((v || null) as typeof tipoSel); if (v) setR({ ...r, tipo: v as TipoExercicioAPI }); }} />
+            valor={tipoSel ?? ""} onChange={(v) => { setTipoSel((v || null) as typeof tipoSel); setSugestoes([]); setQuantidade(3); setInstrucoes(""); setQuestoes([novaQuestao((v || "OBJETIVO") as TipoExercicioAPI)]); }} />
         </>
       )}
 
       {aba === null || tipoSel === null ? null : aba === "escrever" ? (
         <>
-          <EditorQuestao r={r} setR={setR} sugerindoResposta={sugerindoResposta} onSugerirResposta={iaSugereResposta} />
+          {questoes.map((q, i) => (
+            <div className={questoes.length > 1 ? "meta-linha" : undefined} key={i}>
+              {questoes.length > 1 && (
+                <div className="meta-topo">
+                  <strong>Questão {i + 1}</strong>
+                  <button type="button" className="botao-pequeno perigo" onClick={() => setQuestoes(questoes.filter((_, j) => j !== i))}>
+                    <Trash2 size={14} /> Remover questão
+                  </button>
+                </div>
+              )}
+              <EditorQuestao r={q} setR={(x) => setQ(i, x)} sugerindoResposta={sugerindoResposta === i} onSugerirResposta={() => iaSugereResposta(i)} />
+            </div>
+          ))}
+          {!inicial && (
+            <div className="form-actions left">
+              <Button variant="secondary" icon={Plus} onPress={() => setQuestoes([...questoes, novaQuestao(tipoSel ?? "OBJETIVO")])}>
+                Adicionar questão
+              </Button>
+            </div>
+          )}
           {erro && <p className="error" role="alert">{erro}</p>}
-          {r.tipo === "OBJETIVO" && r.correta === null && <p className="tiny muted">Marque qual alternativa é a correta para poder salvar.</p>}
+          {questoes.some((q) => q.tipo === "OBJETIVO" && q.correta === null) && <p className="tiny muted">Marque qual alternativa é a correta em cada questão para poder salvar.</p>}
           <div className="form-actions left">
             <Button variant="secondary" onPress={onFechar}>Cancelar</Button>
-            <Button icon={Check} disabled={salvando || (r.tipo === "OBJETIVO" && r.correta === null)} onPress={() => salvar(r, titulo, true)}>
+            <Button icon={Check} disabled={salvando || questoes.some((q) => q.tipo === "OBJETIVO" && q.correta === null)}
+              onPress={() => salvar(r, titulo, true, questoes.slice(1))}>
               {salvando ? "Salvando..." : inicial ? "Salvar alterações" : "Salvar e publicar para a turma"}
             </Button>
+
           </div>
         </>
       ) : (
@@ -322,6 +368,9 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
             <Button icon={Sparkles} disabled={gerando} onPress={gerar}>
               {gerando ? "A IA está criando..." : sugestoes.length ? "Gerar de novo" : "Gerar sugestões"}
             </Button>
+            {sugestoes.length > 1 && (
+              <Button variant="secondary" icon={Plus} onPress={juntar}>Juntar todas num exercício</Button>
+            )}
           </div>
           {sugestoes.map((s, i) => (
             <div className="meta-linha" key={`${i}-${s.titulo}`}>
@@ -400,6 +449,7 @@ function ListaPorTurma({ lista, turmas, notify, onEditar, onExcluir }: {
           <div className="meta-topo">
             <strong>{ex.titulo}</strong>
             <span>
+              {ex.grupo_id && <><Badge tone="neutral">Questão {ex.ordem + 1} de {lista.filter((x) => x.grupo_id === ex.grupo_id).length}</Badge>{" "}</>}
               <Badge tone="neutral">{ex.tipo === "OBJETIVO" ? "Objetivo" : "Discursivo"}</Badge>{" "}
               {ex.gerado_por_ia && <Badge tone="amber">Com ajuda da IA</Badge>}
             </span>
@@ -419,7 +469,7 @@ function ListaPorTurma({ lista, turmas, notify, onEditar, onExcluir }: {
               {abertoId === ex.id ? "Esconder respostas" : "Ver respostas"}
             </Button>
             <Button variant="ghost" icon={Pencil} onPress={() => onEditar(ex)}>Editar</Button>
-            <Button variant="ghost" icon={Trash2} onPress={() => onExcluir(ex)}>Excluir</Button>
+            <Button variant="ghost" icon={Trash2} onPress={() => onExcluir(ex)}>{ex.grupo_id ? "Excluir exercício inteiro" : "Excluir"}</Button>
           </div>
           {abertoId === ex.id && <RespostasExercicio ex={ex} notify={notify} />}
         </div>

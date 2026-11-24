@@ -168,7 +168,7 @@ function NovoEvento({ turmas, role, escolaId, dia, fechar, notify, recarregar }:
           <p className="rotulo-escolha">
             {role === "professor" ? "Turmas que vão ver (pode marcar mais de uma)" : "Turmas (nenhuma marcada = escola toda)"}
           </p>
-          <SeletorMultiplo rotulo="Turmas" placeholder={role === "professor" ? "Escolha as turmas" : "Escola toda"}
+          <SeletorMultiplo todos="Selecionar todos" rotulo="Turmas" placeholder={role === "professor" ? "Escolha as turmas" : "Escola toda"}
             opcoes={turmas.map((t) => ({ valor: t.id, rotulo: t.nome }))} valores={turmaIds} onChange={setTurmaIds} />
           {!turmas.length && <p className="tiny muted">Você ainda não tem turmas.</p>}
         </>

@@ -12,6 +12,8 @@ def distribuir(valores: list[float | None], total: float) -> list[float]:
     A soma tem que fechar o total (ValueError com a mensagem para o professor)."""
     dados = sum(v for v in valores if v is not None)
     vazias = sum(1 for v in valores if v is None)
+    if vazias and dados:
+        raise ValueError("Dê pontos a todas as questões, ou deixe todas em branco para dividir o total igualmente.")
     if vazias:
         resto = total - dados
         if resto <= 0.001:
