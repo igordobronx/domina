@@ -5,7 +5,7 @@ Escopo combinado: tela do professor, formulário de questões em **Nova atividad
 
 ## Atalhos (símbolos da matéria)
 - Hoje: um botão "Ω Símbolos" embaixo de **cada** campo, e o painel abre sempre em Química.
-- Novo: **uma barra de símbolos só**, fixa no topo do bloco de questões, sempre à mostra. O clique põe o símbolo no campo onde o cursor está.
+- Novo: **um botão "Ω Símbolos" só**, ao lado do título "Questões e gabarito". A barra fica fechada; clicou, ela abre (e acompanha a rolagem). O clique num símbolo põe no campo onde o cursor está. (Primeira versão deixava a barra sempre aberta; o usuário achou poluído.)
 - A barra já abre nos símbolos da matéria escolhida: Matemática → Matemática; Física → **grupo novo de Física** (Δ, μ, λ, ω, →, °, ·, ², ³, √, ≈, ±...); Química → Química. Os outros grupos ficam a um clique.
 - Nas telas do aluno nada muda (o botão por campo continua lá).
 
@@ -13,7 +13,7 @@ Escopo combinado: tela do professor, formulário de questões em **Nova atividad
 - Rótulos curtos: "Prazo (opcional)", "Turmas", "Questão 1", "Resposta correta".
 - Explicação do formato vira uma linha curta: "Corrige na hora pelo gabarito" (objetiva) e "A IA confere com a resposta correta" (discursiva).
 - Valor total e "pontos por questão" numa linha só: "Valor total [1000] pontos · 500 por questão".
-- Cada questão num bloco com borda; "Remover" vira um ícone no canto do bloco.
+- Cada questão num bloco com borda e bom espaço entre os campos; "Remover" vira um ícone no canto do bloco. "+ Alternativa", "+ Item" e "+ Figura" são links discretos.
 - Itens a), b)... só aparecem quando o professor clica em "+ Item" (hoje o "Item a)" já vem aberto).
 - Figura: botão pequeno "+ Figura" em vez do campo de arquivo sempre à mostra.
 - Os textos de exemplo dentro dos campos (placeholder) ficam mais curtos.

@@ -63,17 +63,26 @@ function PainelSimbolos({ grupoInicial, onSimbolo }: { grupoInicial: string; onS
   );
 }
 
-// Barra de simbolos unica, sempre a mostra, para varios CampoComSimbolos dentro dela: o clique
-// insere no campo onde o cursor esta (o ultimo focado). Os campos de dentro escondem o proprio botao.
-export function ComBarraSimbolos({ materia, children }: { materia?: string; children: ReactNode }) {
+// Barra de simbolos unica para varios CampoComSimbolos dentro dela: fica FECHADA atras de um botao
+// "Ω Símbolos" (ao lado do cabecalho); aberta, o clique insere no campo onde o cursor esta (o ultimo
+// focado) e ela acompanha a rolagem. Os campos de dentro nao tem botao proprio.
+export function ComBarraSimbolos({ materia, cabecalho, children }: { materia?: string; cabecalho?: ReactNode; children: ReactNode }) {
   const ultimo = useRef<Inserir | null>(null);
+  const [aberto, setAberto] = useState(false);
   return (
     <BarraContexto.Provider value={ultimo}>
-      <div className="barra-simbolos" role="toolbar" aria-label="Símbolos">
-        <span className="tiny muted">Símbolos: clique para inserir onde está o cursor</span>
-        {/* key: trocar a materia reabre a barra no grupo dela */}
-        <PainelSimbolos key={grupoDaMateria(materia)} grupoInicial={grupoDaMateria(materia)} onSimbolo={(s) => ultimo.current?.(s)} />
+      <div className="barra-simbolos-topo">
+        {cabecalho}
+        <button type="button" className="simbolos-toggle" aria-expanded={aberto} onClick={() => setAberto(!aberto)}>
+          Ω Símbolos
+        </button>
       </div>
+      {aberto && (
+        <div className="barra-simbolos" role="toolbar" aria-label="Símbolos">
+          {/* key: trocar a materia reabre a barra no grupo dela */}
+          <PainelSimbolos key={grupoDaMateria(materia)} grupoInicial={grupoDaMateria(materia)} onSimbolo={(s) => ultimo.current?.(s)} />
+        </div>
+      )}
       {children}
     </BarraContexto.Provider>
   );

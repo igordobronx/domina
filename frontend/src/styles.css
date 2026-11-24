@@ -2006,7 +2006,10 @@ mark.ponto {
 }
 .form-grid input,
 .form-grid select,
-.form-grid textarea {
+.form-grid textarea,
+.questao-bloco input:not([type="radio"]):not([type="file"]),
+.questao-bloco textarea,
+.valor-total input {
   border: 1px solid var(--ln-dcd8cc);
   background: var(--bg-fcfbf8);
   border-radius: 8px;
@@ -2015,7 +2018,8 @@ mark.ponto {
   width: 100%;
   color: var(--tx-141a2e);
 }
-.form-grid textarea {
+.form-grid textarea,
+.questao-bloco textarea {
   resize: vertical;
   font-family: inherit;
 }
@@ -3288,19 +3292,27 @@ button.top-avatar {
   .student-domain { padding-left: 0; }
 }
 
-/* criar/editar atividade de exatas: barra unica de simbolos e uma questao por bloco */
+/* criar/editar atividade de exatas: simbolos atras de um botao e uma questao por bloco */
+.barra-simbolos-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.barra-simbolos-topo .section-title {
+  margin-bottom: 0;
+}
+.barra-simbolos-topo .simbolos-toggle {
+  padding: 7px 14px;
+}
 .barra-simbolos {
   position: sticky;
   top: 0;
   z-index: 2;
-  display: grid;
-  gap: 6px;
   padding: 10px 0;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   background: var(--bg-fcfbf8);
-}
-.barra-simbolos .simbolos-painel {
-  padding: 6px 8px;
 }
 .barra-simbolos .simbolos-lista button {
   min-width: 32px;
@@ -3323,17 +3335,34 @@ button.top-avatar {
   flex-wrap: wrap;
 }
 .valor-total input {
-  width: 96px;
+  width: 110px;
+  padding: 9px 12px;
+}
+.questoes-topo {
+  margin-top: 18px;
+}
+.questoes-exatas > p.tiny {
+  margin: 8px 0 22px;
 }
 .questao-bloco {
   position: relative;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 12px 14px 10px;
-  margin: 0 0 14px;
+  border-radius: 12px;
+  padding: 18px 20px 16px;
+  margin: 0 0 22px;
   display: grid;
-  gap: 10px;
+  gap: 18px;
   min-width: 0;
+}
+.questao-bloco .alternativas-form {
+  margin: 0;
+  gap: 14px;
+}
+.questao-bloco .alternativas-form legend {
+  margin-bottom: 10px;
+}
+.questao-bloco .alternativa {
+  align-items: center;
 }
 .questao-bloco > legend {
   font-size: 13px;
@@ -3364,8 +3393,11 @@ button.top-avatar {
 }
 .questao-acoes {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   flex-wrap: wrap;
+}
+.questao-bloco .alternativas-form .questao-acoes {
+  margin-top: 2px;
 }
 .questao-bloco label:not(.alternativa) {
   display: flex;
@@ -3400,4 +3432,8 @@ button.top-avatar {
   .barra-simbolos > .tiny {
     display: none;
   }
+}
+/* respiro entre o bloco de questoes e o botao "Criar atividade" */
+.questoes-exatas {
+  margin-bottom: 28px;
 }

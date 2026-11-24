@@ -1554,7 +1554,7 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
           <p className="tiny muted">Já há envios: só o título e o prazo mudam.</p>
         )}
         {gabaritoLivre && (
-          <ComBarraSimbolos materia={a.materia}>
+          <ComBarraSimbolos materia={a.materia} cabecalho={<SectionTitle title="Questões" />}>
             {questoes.map((q, i) => (
               <fieldset key={i} className="questao-bloco">
                 <legend>Questão {i + 1}</legend>
@@ -1658,17 +1658,17 @@ function CamposObjetiva({ alternativas, gabarito, onChange }: {
           </label>
         );
       })}
-      <div className="form-actions left">
+      <div className="questao-acoes">
         {alts.length < 5 && (
-          <Button variant="ghost" small icon={Plus} onPress={() => onChange([...alts, ""], gabarito)}>
-            Alternativa {"ABCDE"[alts.length]}
-          </Button>
+          <button type="button" className="back-link" onClick={() => onChange([...alts, ""], gabarito)}>
+            <Plus size={14} /> Alternativa {"ABCDE"[alts.length]}
+          </button>
         )}
         {alts.length > 2 && (
-          <Button variant="ghost" small icon={Trash2}
-            onPress={() => onChange(alts.slice(0, -1), gabarito === "ABCDE"[alts.length - 1] ? "" : gabarito)}>
-            Tirar {"ABCDE"[alts.length - 1]}
-          </Button>
+          <button type="button" className="back-link"
+            onClick={() => onChange(alts.slice(0, -1), gabarito === "ABCDE"[alts.length - 1] ? "" : gabarito)}>
+            <Trash2 size={14} /> Tirar {"ABCDE"[alts.length - 1]}
+          </button>
         )}
       </div>
     </fieldset>
@@ -1879,7 +1879,7 @@ function NovaAtividade({
 
             {exigeGabarito && (
               <Card className="questoes-exatas">
-                <SectionTitle title="Questões e gabarito" />
+                <ComBarraSimbolos materia={materiaSelecionada?.nome} cabecalho={<SectionTitle title="Questões e gabarito" />}>
                 <div className="questoes-topo">
                   <div className="tabs" role="group" aria-label="Formato das questões">
                     <button aria-pressed={formato === "objetiva"} className={formato === "objetiva" ? "active" : ""}
@@ -1898,7 +1898,6 @@ function NovaAtividade({
                 <p className="tiny muted">
                   {formato === "objetiva" ? "Corrige na hora pelo gabarito." : "A IA confere com a resposta correta."}
                 </p>
-                <ComBarraSimbolos materia={materiaSelecionada?.nome}>
                   {questoes.map((q, i) => {
                     const mudar = (parte: Partial<QuestaoForm>) =>
                       setQuestoes(questoes.map((x, j) => (j === i ? { ...x, ...parte } : x)));
@@ -1978,7 +1977,6 @@ function NovaAtividade({
                       </fieldset>
                     );
                   })}
-                </ComBarraSimbolos>
                 <Button
                   variant="secondary"
                   icon={Plus}
@@ -1986,6 +1984,7 @@ function NovaAtividade({
                 >
                   Adicionar questão
                 </Button>
+                </ComBarraSimbolos>
               </Card>
             )}
 
