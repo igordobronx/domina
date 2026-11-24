@@ -20,6 +20,7 @@ class DocumentoBaseResponse(BaseModel):
     detalhe: str | None = None  # motivo quando a IA nao conseguiu ler o arquivo
     tamanho_bytes: int | None = None
     enviado_por_nome: str = ""
+    assunto_id: uuid.UUID | None = None  # nulo = Geral da materia
     pode_baixar: bool = False  # false nos enviados antes de o arquivo ser guardado com caminho
     criado_em: datetime
 
@@ -53,12 +54,14 @@ class ErroDaIA(BaseModel):
 
 class InstrucaoRequest(BaseModel):
     texto: str = Field(min_length=5, max_length=2000)
+    assunto_id: uuid.UUID | None = None  # so vale nos pedidos desse assunto; nulo = vale para a materia toda
 
 
 class InstrucaoResponse(BaseModel):
     id: uuid.UUID
     materia_id: uuid.UUID
     texto: str
+    assunto_id: uuid.UUID | None = None
     criado_em: datetime
 
 

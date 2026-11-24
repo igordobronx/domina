@@ -1124,6 +1124,10 @@ a {
   background: var(--bg-f5ebd5);
   color: var(--tx-94611b);
 }
+.stat-gray {
+  background: #ecebe3;
+  color: #666b65;
+}
 .stat-blue {
   background: var(--bg-dde8f5);
   color: var(--tx-22558c);
@@ -3269,6 +3273,35 @@ button.top-avatar {
   .xp-historico li { grid-template-columns: 60px 1fr; }
   .xp-historico li .tiny { grid-column: 2; }
 }
+
+/* marcas do professor sobre a foto (components/FotoComMarcas.tsx) */
+.imagem-com-caixas.marcavel { cursor: crosshair; touch-action: none; user-select: none; }
+.imagem-com-caixas .caixa.marca-prof { border-color: #2a62c9; background: rgba(42, 98, 201, 0.14); }
+.imagem-com-caixas .caixa.marca-erro { border-color: #d64545; background: rgba(214, 69, 69, 0.12); border-style: dashed; }
+.imagem-com-caixas .caixa.marca-acerto { border-color: #2f8f4e; background: rgba(47, 143, 78, 0.12); border-style: dashed; }
+.imagem-com-caixas .caixa.marca-nova { border-style: dotted; background: rgba(42, 98, 201, 0.22); pointer-events: none; }
+.marca-form { margin-top: 10px; display: grid; gap: 8px; }
+.marca-form textarea, .marca-lista textarea { width: 100%; }
+.marca-lista { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.marca-lista li { border-left: 4px solid #2a62c9; background: rgba(42, 98, 201, 0.07); padding: 8px 10px; border-radius: 6px; }
+.marca-lista li.marca-erro { border-left-color: #d64545; }
+.marca-lista li.marca-acerto { border-left-color: #2f8f4e; }
+.marca-lista p { margin: 4px 0 0; }
+.marca-acoes { display: inline-flex; gap: 10px; margin-top: 4px; }
+
+.grupo-contagem { color: var(--muted, #6b7280); font-size: 13px; white-space: nowrap; }
+
+.comentarios-ia { margin-top: 18px; }
+.comentarios-ia ul { margin: 6px 0 12px; padding-left: 0; list-style: none; display: grid; gap: 8px; }
+.comentarios-ia li { font-size: 14px; line-height: 1.5; }
+
+.aviso-lista h4 { margin: 14px 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, #6b7280); }
+.aviso-item { display: flex; gap: 12px; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.aviso-item:hover { background: rgba(127, 127, 127, .12); }
+.aviso-item.novo { background: rgba(47, 143, 78, .14); }
+.aviso-icone { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(127, 127, 127, .16); }
+.aviso-texto { display: grid; gap: 2px; font-size: 14px; line-height: 1.4; }
+.aviso-texto small { color: var(--muted, #6b7280); }
 
 /* ---------- Turmas: resumo do dominio de um aluno (professor/gestor) ---------- */
 .resumo-aluno { display: flex; flex-direction: column; gap: 16px; padding-right: 8px; }

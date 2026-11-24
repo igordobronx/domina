@@ -22,9 +22,11 @@ from app import subtopicos
 from app.subtopicos import usados as subtopicos_da_materia
 from app.competencias import garantir_competencias
 from app.lecionados import leciona, materias_do_professor
+from app import avisos
 from app.metas import avaliar_seguro
 from app.ia import registro
 from app.routers.ocr import ler_folhas, ler_imagem, ocr
+from app.routers.assuntos import assunto_do_usuario
 from app.schemas.submissao import (
     AlunoResumo, AtividadeResponse, ConfirmarTextoRequest,
     CriarAtividadeLoteRequest, CriarAtividadeRequest, CriarMateriaRequest, CriterioResponse, EnviarObjetivaRequest, EnviarTextoRequest, LETRAS,
@@ -194,8 +196,10 @@ def _criar_em_turma(db: Session, usuario: Usuario, payload, turma_id: uuid.UUID)
         except ValueError as e:
             raise HTTPException(422, str(e))
 
+    if payload.assunto_id:
+        assunto_do_usuario(db, usuario, payload.assunto_id, materia.id)
     atividade = Atividade(
-        materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(),
+        materia_id=materia.id, turma_id=turma.id, titulo=payload.titulo.strip(), assunto_id=payload.assunto_id,
         tipo=TipoAtividadeEnum(payload.tipo), prazo=payload.prazo, criado_por=usuario.id,
         valor_total=(payload.valor_total or 1000) if gabarito else None,
     )
@@ -221,6 +225,7 @@ def criar_atividade(payload: CriarAtividadeRequest, usuario: Usuario = Depends(g
     atividade = _criar_em_turma(db, usuario, payload, payload.turma_id)
     db.commit()
     db.refresh(atividade)
+    avisos.tentar(db, avisos.atividade_nova, atividade)  # avisa os alunos da turma
     return _atividade_response(db, atividade, usuario)
 
 
@@ -232,6 +237,8 @@ def criar_atividades_em_lote(payload: CriarAtividadeLoteRequest, usuario: Usuari
     turmas = list(dict.fromkeys(payload.turma_ids))  # tira repetidas, mantem a ordem
     criadas = [_criar_em_turma(db, usuario, payload, t) for t in turmas]
     db.commit()
+    for a in criadas:
+        avisos.tentar(db, avisos.atividade_nova, a)  # avisa os alunos de cada turma
     return [_atividade_response(db, a, usuario) for a in criadas]
 
 
@@ -433,6 +440,7 @@ def confirmar_texto(
     db.commit()
     db.refresh(submissao)
     avaliar_seguro(submissao.aluno_id)  # metas (entregas/notas)
+    avisos.tentar(db, avisos.envio_novo, submissao, usuario.id)  # avisa o professor
     return submissao
 
 
@@ -473,6 +481,7 @@ def enviar_texto(payload: EnviarTextoRequest, usuario: Usuario = Depends(get_cur
     db.commit()
     db.refresh(submissao)
     avaliar_seguro(submissao.aluno_id)  # metas (entregas/notas)
+    avisos.tentar(db, avisos.envio_novo, submissao, usuario.id)  # avisa o professor
     return submissao
 
 
@@ -525,4 +534,5 @@ def enviar_objetiva(payload: EnviarObjetivaRequest, usuario: Usuario = Depends(g
     db.commit()
     db.refresh(submissao)
     avaliar_seguro(submissao.aluno_id)  # metas (entregas/notas)
+    avisos.tentar(db, avisos.envio_novo, submissao, usuario.id)  # avisa o professor
     return submissao

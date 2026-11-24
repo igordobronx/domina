@@ -8,6 +8,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Enum as SQLEnum,
+    Float,
     ForeignKey,
     Integer,
     JSON,
@@ -120,6 +121,20 @@ class Tema(Base):
     subtopico = Column(String(150), nullable=True)
     valor = Column(Numeric(6, 2), nullable=True)  # pontos desta questao (vazio = total dividido igual)
 
+class Assunto(Base):
+    """Assunto dentro de uma materia (ex.: "Funcao afim"). A memoria da IA, os materiais, as
+    atividades e os exercicios podem apontar para um; sem assunto = "Geral" da materia.
+    professor_id nulo = assunto da escola (criado pelo gestor, vale para todos os professores)."""
+    __tablename__ = "assunto"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=False, index=True)
+    professor_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    nome = Column(String(120), nullable=False)
+    ativo = Column(Boolean, nullable=False, default=True, server_default=true())  # nunca apaga: so tira de uso
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+
+
 class DocumentoBase(Base):
     __tablename__ = "documento_base"
 
@@ -131,6 +146,7 @@ class DocumentoBase(Base):
     tamanho_bytes = Column(BigInteger, nullable=True)  # para medir o armazenamento da escola
     caminho = Column(String(255), nullable=True)  # nome do arquivo em UPLOAD_DIR (nulo nos antigos, que nao dao para baixar)
     ativo = Column(Boolean, nullable=False, default=True, server_default=true())  # excluir = arquivar
+    assunto_id = Column(UUID(as_uuid=True), ForeignKey("assunto.id"), nullable=True)  # nulo = Geral
     status_processamento = Column(
         SQLEnum(StatusProcessamentoEnum), default=StatusProcessamentoEnum.PENDENTE, nullable=False
     )
@@ -156,6 +172,7 @@ class IaTrecho(Base):
     # "tirado de uso": a memoria nao usa mais, mas o dado fica guardado (base de treino da IA propria)
     ignorado = Column(Boolean, nullable=False, default=False, server_default=false())
     embedding = Column(JSON, nullable=True)  # vetor do texto; nulo = busca por palavras
+    assunto_id = Column(UUID(as_uuid=True), ForeignKey("assunto.id"), nullable=True)  # nulo = Geral
     criado_em = Column(DateTime, server_default=func.now(), nullable=False)
 
 
@@ -197,6 +214,7 @@ class Atividade(Base):
     # quem propos a atividade; nulo = anterior a este campo (visivel a todos os professores da turma)
     criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
     criado_em = Column(DateTime, default=datetime.now, nullable=True)  # lista: mais recentes primeiro
+    assunto_id = Column(UUID(as_uuid=True), ForeignKey("assunto.id"), nullable=True)  # opcional; nulo = Geral
 
 
 class Evento(Base):
@@ -269,6 +287,42 @@ class SubmissaoPagina(Base):
     submissao_id = Column(UUID(as_uuid=True), ForeignKey("submissao.id"), primary_key=True)
     ordem = Column(Integer, primary_key=True)
     caminho = Column(String(500), nullable=False)
+
+
+class Anotacao(Base):
+    """Marca do PROFESSOR sobre a foto do envio (retangulo + comentario). As marcas da IA ficam em
+    CorrecaoCriterio.pontos. x/y/largura/altura sao fracoes (0 a 1) da folha, valem em qualquer zoom."""
+    __tablename__ = "anotacao"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    submissao_id = Column(UUID(as_uuid=True), ForeignKey("submissao.id"), nullable=False, index=True)
+    pagina = Column(Integer, nullable=False, default=0)
+    x = Column(Float, nullable=False)
+    y = Column(Float, nullable=False)
+    largura = Column(Float, nullable=False)
+    altura = Column(Float, nullable=False)
+    tipo = Column(String(10), nullable=False)  # acerto | erro | nota
+    comentario = Column(Text, nullable=False)
+    criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False)
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+
+
+class Aviso(Base):
+    """Notificacao para um usuario (ex.: "sua atividade foi corrigida")."""
+    __tablename__ = "aviso"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    usuario_id = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=False, index=True)
+    texto = Column(String(255), nullable=False)
+    submissao_id = Column(UUID(as_uuid=True), ForeignKey("submissao.id"), nullable=True)
+    lido = Column(Boolean, nullable=False, default=False, server_default=false())
+    criado_em = Column(DateTime, server_default=func.now(), nullable=False)
+    # tipo: ATIVIDADE_NOVA | CORRIGIDA | EXERCICIO_NOVO | NIVEL | CONQUISTA | META | PRAZO | FERIADO | EVENTO |
+    # SEQUENCIA | ENVIO | IA_CORRIGIU | SEM_ENVIO | PARADOS | MARCADOR (so guarda estado, nunca aparece no sino)
+    tipo = Column(String(20), nullable=False, default="GERAL", server_default="GERAL")
+    destino = Column(String(20), nullable=True)  # tela que o clique abre (nome da pagina do app)
+    chave = Column(String(80), nullable=True, index=True)  # evita repetir o mesmo alerta (ex.: "prazo:<id>:2")
+    qtd = Column(Integer, nullable=False, default=1, server_default="1")  # avisos agrupados ("5 novos envios")
 
 
 class Correcao(Base):
@@ -371,6 +425,7 @@ class Exercicio(Base):
     erro_id = Column(UUID(as_uuid=True), ForeignKey("erro_aluno.id"), nullable=True)
     titulo = Column(String(200), nullable=True)
     assunto = Column(String(200), nullable=True)  # tema digitado pelo professor (ex.: "Coesão", "Função afim")
+    assunto_id = Column(UUID(as_uuid=True), ForeignKey("assunto.id"), nullable=True)  # assunto da IA (Treinar IA); opcional
     materia_id = Column(UUID(as_uuid=True), ForeignKey("materia.id"), nullable=True)
     turma_id = Column(UUID(as_uuid=True), ForeignKey("turma.id"), nullable=True)
     # so alguns alunos da turma: lista de ids (texto). Nulo = a turma toda

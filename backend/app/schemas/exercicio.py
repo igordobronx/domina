@@ -44,6 +44,7 @@ class QuestaoExercicio(BaseModel):
 class ExercicioRequest(QuestaoExercicio):
     titulo: str = Field(min_length=1, max_length=200)
     assunto: str = Field(min_length=1, max_length=200)  # o "tema" da tela
+    assunto_id: uuid.UUID | None = None  # assunto da IA (Treinar IA), opcional
     materia_id: uuid.UUID
     turma_id: uuid.UUID
     # so para estes alunos da turma; vazio/nulo = a turma toda
@@ -94,6 +95,7 @@ class ExercicioProfessorResponse(BaseModel):
     id: uuid.UUID
     titulo: str
     assunto: str
+    assunto_id: uuid.UUID | None = None
     materia_id: uuid.UUID
     materia_nome: str
     turma_id: uuid.UUID
@@ -147,6 +149,7 @@ class ResponderRequest(BaseModel):
 class SugerirRequest(BaseModel):
     materia_id: uuid.UUID
     assunto: str = Field(min_length=1, max_length=200)
+    assunto_id: uuid.UUID | None = None
     tipo: TipoExercicio
     quantidade: int = Field(default=3, ge=1, le=5)
     instrucoes: str | None = Field(default=None, max_length=1_000)  # ex.: "nível fácil", "com gráfico"
@@ -155,6 +158,7 @@ class SugerirRequest(BaseModel):
 class SugerirRespostaRequest(BaseModel):
     materia_id: uuid.UUID
     assunto: str | None = Field(default=None, max_length=200)
+    assunto_id: uuid.UUID | None = None
     enunciado: str = Field(min_length=1, max_length=10_000)
 
 

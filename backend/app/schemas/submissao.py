@@ -177,6 +177,7 @@ class _AtividadeBase(BaseModel):
     # (ex.: 4 questoes, 1000 pontos -> 250 cada). Sem isso, assume 1000.
     valor_total: float | None = Field(default=None, gt=0, le=10_000)
     prazo: date | None = None  # data de entrega, aparece no calendario
+    assunto_id: uuid.UUID | None = None  # opcional: a IA busca primeiro neste assunto (Treinar IA)
 
 
 class CriarAtividadeRequest(_AtividadeBase):

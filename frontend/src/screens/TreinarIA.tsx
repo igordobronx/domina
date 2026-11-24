@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { BookOpen, PenLine, Plus, Sparkles, Trash2, Upload } from "lucide-react";
 import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import {
-  baixarDocumento, usoDoDocumento, criarInstrucao, criarMateria, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
-  verMemoriaIA, type DocumentoAPI, type ErroDaIAAPI, type InstrucaoAPI, type ItemAprendidoAPI, type MateriaAPI, type MemoriaIAAPI, type SugestaoInstrucaoAPI,
+  baixarDocumento, criarAssunto, listarAssuntos, usoDoDocumento, criarInstrucao, criarMateria, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
+  verMemoriaIA, type AssuntoAPI, type DocumentoAPI, type ErroDaIAAPI, type InstrucaoAPI, type ItemAprendidoAPI, type MateriaAPI, type MemoriaIAAPI, type SugestaoInstrucaoAPI,
 } from "../services/api";
 
 // "Treinar IA": o professor ensina a IA a corrigir e criar exercicios do jeito dele.
@@ -81,6 +81,11 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [assuntos, setAssuntos] = useState<AssuntoAPI[]>([]);
+  const [assuntoId, setAssuntoId] = useState(""); // "" = Geral (sem assunto)
+  const [criandoAssunto, setCriandoAssunto] = useState(false);
+  const [assuntoNovo, setAssuntoNovo] = useState("");
+  const [erroAssunto, setErroAssunto] = useState("");
   const [memoria, setMemoria] = useState<Record<string, MemoriaIAAPI>>({});
   const [documentos, setDocumentos] = useState<DocumentoAPI[]>([]);
   const [instrucoes, setInstrucoes] = useState<InstrucaoAPI[]>([]);
@@ -101,7 +106,8 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const carregarMateria = (id: string) => {
     carregarDocumentos();
     carregarInstrucoes(id);
-    if (!id) return;
+    if (!id) { setAssuntos([]); return; }
+    listarAssuntos(id).then(setAssuntos).catch(() => setAssuntos([]));
     listarErrosDaIA(id).then(setErros).catch(() => setErros([]));
     listarAprendido(id).then(setAprendido).catch(() => setAprendido([]));
   };
@@ -113,6 +119,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
       })
       .catch(() => { setMaterias([]); notify("Não foi possível carregar as matérias."); });
   }, []);
+  useEffect(() => { setAssuntoId(""); setCriandoAssunto(false); }, [materiaId]);
   useEffect(() => carregarMateria(materiaId), [materiaId]);
   const areaNova = AREAS_MATERIA.find((a) => a.value === novaArea);
   const digitando = novaEscolha === OUTRA_OPCAO || (!!areaNova && !areaNova.sugestoes.length);
@@ -140,7 +147,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     if (!arquivo) return setErro("Escolha o arquivo.");
     setSalvando(true);
     try {
-      const doc = await enviarDocumento(materiaId, arquivo, tipo);
+      const doc = await enviarDocumento(materiaId, arquivo, tipo, assuntoId || undefined);
       setArquivo(null);
       if (doc.status_processamento === "ERRO") {
         setErro(doc.detalhe || "A IA não conseguiu ler este arquivo.");
@@ -154,9 +161,9 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     if (texto.trim().length < 5) return setErro("Escreva a instrução (pelo menos 5 letras).");
     setSalvando(true);
     try {
-      await criarInstrucao(materiaId, texto.trim());
+      await criarInstrucao(materiaId, texto.trim(), assuntoId || undefined);
       setTexto("");
-      depois("Instrução salva. A IA vai seguir sempre nesta matéria.");
+      depois(assuntoId ? "Instrução salva. A IA vai seguir sempre neste assunto." : "Instrução salva. A IA vai seguir sempre nesta matéria.");
     } catch (e) { setErro(erroDe(e, "Não foi possível salvar a instrução.")); }
     finally { setSalvando(false); }
   };
@@ -185,10 +192,28 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
     try { await usoDoDocumento(d.id, !tirar); depois(tirar ? "A IA parou de usar este material (continua guardado)." : "A IA voltou a usar este material."); }
     catch (e) { notify(erroDe(e, "Não foi possível mudar.")); }
   };
+  const criarNovoAssunto = async () => {
+    if (!assuntoNovo.trim()) return setErroAssunto("Dê um nome para o assunto.");
+    setSalvando(true);
+    try {
+      const novo = await criarAssunto(materiaId, assuntoNovo.trim());
+      setAssuntos(await listarAssuntos(materiaId));
+      setAssuntoId(novo.id);
+      setCriandoAssunto(false);
+      setAssuntoNovo("");
+      setErroAssunto("");
+      notify("Assunto criado. Envie material ou escreva instruções para ele.");
+    } catch (e) { setErroAssunto(erroDe(e, "Não foi possível criar o assunto.")); }
+    finally { setSalvando(false); }
+  };
+  const nomeAssunto = (id?: string | null) => (id ? assuntos.find((a) => a.id === id)?.nome ?? "outro assunto" : "Geral");
+  const assuntoAtual = assuntos.find((a) => a.id === assuntoId);
+
   const nomeMateria = materias?.find((m) => m.id === materiaId)?.nome;
   const r = memoria[materiaId];
   const nada = !r || r.nivel === "SEM_TREINO";
-  const docsMateria = documentos.filter((d) => d.materia_id === materiaId);
+  const instrucoesDoAssunto = instrucoes.filter((i) => (i.assunto_id ?? "") === assuntoId);
+  const docsMateria = documentos.filter((d) => d.materia_id === materiaId && (d.assunto_id ?? "") === assuntoId);
   // só depois do primeiro material/instrução: sugere o que mais ajuda a IA (rubrica ou gabarito em uso)
   const falta = [...(r?.falta ?? [])];
   if (!nada && !docsMateria.some((d) => d.ativo !== false && (d.tipo === "RUBRICA" || d.tipo === "GABARITO")))
@@ -257,6 +282,35 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
             <Button onPress={criarNovaMateria}>Criar matéria</Button>
           </div>
         </Modal>
+      )}
+
+      {!!materiaId && (
+        <Card>
+          <SectionTitle title="Assunto" />
+          <p className="rotulo-escolha">Escolha o assunto para ensinar ou crie um novo. "Geral" vale para a matéria toda.</p>
+          <Seletor rotulo="Assunto" placeholder="Geral (a matéria toda)"
+            opcoes={assuntos.map((a) => ({ valor: a.id, rotulo: `${a.nome}${a.da_escola ? " (escola)" : ""}` }))}
+            valor={assuntoId} onChange={setAssuntoId} />
+          {assuntoAtual && (
+            <p className="tiny muted">{assuntoAtual.materiais} trecho(s) de material · {assuntoAtual.instrucoes} instrução(ões) · {assuntoAtual.correcoes} exemplo(s) de correção neste assunto.</p>
+          )}
+          {!criandoAssunto ? (
+            <Button variant="secondary" icon={Plus} onPress={() => setCriandoAssunto(true)}>Novo assunto</Button>
+          ) : (
+            <>
+              <div className="form-grid">
+                <label>Nome do assunto
+                  <input value={assuntoNovo} onChange={(e) => setAssuntoNovo(e.target.value)} placeholder="Ex.: Função afim" />
+                </label>
+              </div>
+              {erroAssunto && <p className="error" role="alert">{erroAssunto}</p>}
+              <div className="form-actions">
+                <Button variant="secondary" onPress={() => setCriandoAssunto(false)}>Cancelar</Button>
+                <Button disabled={salvando} onPress={criarNovoAssunto}>{salvando ? "Salvando..." : "Criar assunto"}</Button>
+              </div>
+            </>
+          )}
+        </Card>
       )}
 
       {!!materiaId && (
@@ -351,7 +405,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
 
       {!!materiaId && (
         <Card>
-          <SectionTitle title="Materiais enviados" />
+          <SectionTitle title={`Materiais enviados · ${nomeAssunto(assuntoId)}`} />
           <p className="tiny muted">Tirar de uso: a IA para de usar o material e ele sai do treino, mas o arquivo continua guardado. Você pode voltar a usar quando quiser.</p>
           {!docsMateria.length ? (
             <Empty title="Nenhum material enviado" text="Envie apostilas, rubricas ou gabaritos para a IA aprender." />
@@ -400,10 +454,10 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
         )}
           {(
           <Card>
-            <SectionTitle title={`Instruções para ${nomeMateria ?? "a matéria"}`} />
-            {!instrucoes.length ? (
+            <SectionTitle title={`Instruções para ${nomeMateria ?? "a matéria"} · ${nomeAssunto(assuntoId)}`} />
+            {!instrucoesDoAssunto.length ? (
               <Empty title="Nenhuma instrução ainda" text='Use "Escrever instruções" para dizer à IA como você quer que ela aja.' />
-            ) : instrucoes.map((i) => (
+            ) : instrucoesDoAssunto.map((i) => (
               <div className="material-row" key={i.id}>
                 <div className="activity-icon"><PenLine size={21} /></div>
                 <div className="activity-info"><strong>{i.texto}</strong></div>

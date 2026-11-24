@@ -12,6 +12,7 @@ from app.database import get_db
 from app.ia import memoria, registro
 from app.models.enum import PerfilEnum, TipoDocumentoEnum
 from app.lecionados import materias_do_professor
+from app.routers.assuntos import assunto_do_usuario
 from app.models.usuario import Correcao, DocumentoBase, IaTrecho, Materia, Usuario
 from app.schemas.documento import (
     DispensarSugestaoRequest, DocumentoBaseResponse, EmUsoRequest, ErroDaIA, InstrucaoRequest, InstrucaoResponse,
@@ -54,7 +55,7 @@ def _resposta(d: DocumentoBase, m: Materia, u: Usuario) -> DocumentoBaseResponse
     return DocumentoBaseResponse(
         id=d.id, materia_id=d.materia_id, materia_nome=m.nome, nome_arquivo=d.nome_arquivo, tipo=d.tipo,
         status_processamento=d.status_processamento, tamanho_bytes=d.tamanho_bytes, enviado_por_nome=u.nome,
-        pode_baixar=bool(d.caminho) and d.ativo, criado_em=d.criado_em, detalhe=d.detalhe, ativo=d.ativo,
+        assunto_id=d.assunto_id, pode_baixar=bool(d.caminho) and d.ativo, criado_em=d.criado_em, detalhe=d.detalhe, ativo=d.ativo,
     )
 
 
@@ -86,6 +87,7 @@ def enviar_documento(
     materia_id: uuid.UUID,
     file: UploadFile,
     tipo: TipoDocumentoEnum = Form(...),
+    assunto_id: uuid.UUID | None = Form(default=None),
     usuario: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -94,6 +96,8 @@ def enviar_documento(
     if usuario.perfil == PerfilEnum.PROFESSOR and materia.id not in materias_do_professor(db, usuario.id):
         raise HTTPException(status.HTTP_403_FORBIDDEN, f"Você não leciona {materia.nome}.")
 
+    if assunto_id:
+        assunto_do_usuario(db, usuario, assunto_id, materia.id)
     sufixo = Path(file.filename or "").suffix.lower()
     if sufixo not in EXTENSOES:
         raise HTTPException(422, "Envie PDF, DOCX, TXT ou imagem (PNG, JPG, WEBP).")
@@ -115,6 +119,7 @@ def enviar_documento(
         tipo=tipo,
         tamanho_bytes=len(conteudo),
         caminho=nome_no_disco,
+        assunto_id=assunto_id,
     )
     db.add(documento)
     db.flush()
@@ -172,24 +177,28 @@ def _materia_de_quem_ensina(db: Session, usuario: Usuario, materia_id) -> Materi
 @router.get("/materias/{materia_id}/instrucoes", response_model=list[InstrucaoResponse])
 def listar_instrucoes(materia_id: uuid.UUID, usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     _materia_de_quem_ensina(db, usuario, materia_id)
-    return [InstrucaoResponse(id=t.id, materia_id=t.materia_id, texto=t.texto, criado_em=t.criado_em)
-            for t in memoria.instrucoes_de(db, materia_id, usuario.id)]
+    return [InstrucaoResponse(id=t.id, materia_id=t.materia_id, texto=t.texto, assunto_id=t.assunto_id,
+                              criado_em=t.criado_em)
+            for t in memoria.instrucoes_de(db, materia_id, usuario.id, todas=True)]
 
 
 @router.post("/materias/{materia_id}/instrucoes", response_model=InstrucaoResponse, status_code=status.HTTP_201_CREATED)
 def criar_instrucao(materia_id: uuid.UUID, payload: InstrucaoRequest,
                     usuario: Usuario = Depends(get_current_user), db: Session = Depends(get_db)):
     materia = _materia_de_quem_ensina(db, usuario, materia_id)
-    if len(memoria.instrucoes_de(db, materia.id, usuario.id)) >= memoria.MAX_INSTRUCOES:
+    if payload.assunto_id:
+        assunto_do_usuario(db, usuario, payload.assunto_id, materia.id)
+    if len(memoria.instrucoes_de(db, materia.id, usuario.id, todas=True)) >= memoria.MAX_INSTRUCOES:
         raise HTTPException(status.HTTP_409_CONFLICT,
                             f"Você já tem {memoria.MAX_INSTRUCOES} instruções nesta matéria. Apague alguma antes.")
     texto = payload.texto.strip()
     trecho = IaTrecho(materia_id=materia.id, professor_id=usuario.id, origem=memoria.INSTRUCAO,
-                      titulo="Instrução do professor", texto=texto)
+                      assunto_id=payload.assunto_id, titulo="Instrução do professor", texto=texto)
     db.add(trecho)
     db.commit()
     db.refresh(trecho)
-    return InstrucaoResponse(id=trecho.id, materia_id=trecho.materia_id, texto=trecho.texto, criado_em=trecho.criado_em)
+    return InstrucaoResponse(id=trecho.id, materia_id=trecho.materia_id, texto=trecho.texto,
+                             assunto_id=trecho.assunto_id, criado_em=trecho.criado_em)
 
 
 @router.get("/materias/{materia_id}/erros-da-ia", response_model=list[ErroDaIA])

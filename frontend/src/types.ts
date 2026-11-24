@@ -31,6 +31,7 @@ export interface Activity {
   status: ActivityStatus;
   kind: "redacao" | "matematica";
   student: string;
+  alunoId?: string; // fila de revisao: quem enviou
   turmaId?: string; // fila de revisao: filtro por turma
   turmaNome?: string;
   questoes?: { codigo: string; enunciado: string; tem_imagem?: boolean; alternativas?: string[] | null }[];
