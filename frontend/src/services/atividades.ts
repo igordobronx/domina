@@ -1,10 +1,11 @@
 import type { Activity, ActivityStatus } from "../types";
 import { listarAtividades, minhasSubmissoes, type MinhaSubmissaoAPI } from "./api";
 
-// status para o PROFESSOR/GESTOR (fila de revisao): qualquer status != APROVADA conta como "em revisao"
-// (AGUARDANDO_CORRECAO, PENDENTE ou REQUER_ATENCAO)
+// status para o PROFESSOR/GESTOR (fila de revisao): AGUARDANDO_CORRECAO = "Enviada" (a IA ainda nao
+// corrigiu); PENDENTE ou REQUER_ATENCAO = "Corrigida pela IA" (falta o professor); APROVADA = "Corrigida"
 export function paraStatus(statusBackend: string): ActivityStatus {
-  return statusBackend === "APROVADA" ? "aprovada" : "pendente";
+  if (statusBackend === "APROVADA") return "aprovada";
+  return statusBackend === "AGUARDANDO_CORRECAO" ? "pendente" : "corrigida_ia";
 }
 
 // status para o ALUNO: separa "Enviada" (pendente, sem correcao) de "Corrigida pela IA"

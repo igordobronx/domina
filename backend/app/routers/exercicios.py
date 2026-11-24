@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app import avisos
 from app.auditoria import registrar
 from app.auth.dependencies import get_current_user
 from app.config import settings
@@ -23,6 +24,7 @@ from app.models.enum import PerfilEnum, UsuarioTurmaPapelEnum
 from app.lecionados import leciona
 from app.models.usuario import Exercicio, ExercicioResposta, Materia, Turma, Usuario, UsuarioTurma
 from app.routers.submissoes import _professor_da_turma
+from app.routers.assuntos import assunto_do_usuario
 from app.schemas.exercicio import (
     AvaliarRespostaRequest, ExercicioAlunoResponse, ExercicioLoteRequest, ExercicioProfessorResponse,
     ExercicioRequest, RespostaAlunoResponse, ResponderRequest, ResumoAlunoResponse, SugerirRequest,
@@ -70,6 +72,8 @@ def _alvo(db: Session, ex: Exercicio) -> list[Usuario]:
 
 def _conferir(db: Session, usuario: Usuario, payload: ExercicioRequest) -> None:
     materia = _materia_da_escola(db, usuario, payload.materia_id)
+    if payload.assunto_id:
+        assunto_do_usuario(db, usuario, payload.assunto_id, materia.id)
     turma = db.get(Turma, payload.turma_id)
     if not turma or turma.escola_id != usuario.escola_id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Turma não encontrada.")
@@ -93,7 +97,7 @@ def _meu(db: Session, usuario: Usuario, exercicio_id: uuid.UUID) -> Exercicio:
 
 
 def _aplicar(ex: Exercicio, p: ExercicioRequest) -> None:
-    ex.titulo, ex.assunto = p.titulo.strip(), p.assunto.strip()
+    ex.titulo, ex.assunto, ex.assunto_id = p.titulo.strip(), p.assunto.strip(), p.assunto_id
     ex.materia_id, ex.turma_id, ex.tipo = p.materia_id, p.turma_id, p.tipo
     ex.alunos = sorted({str(a) for a in p.aluno_ids}) if p.aluno_ids else None
     ex.enunciado = p.enunciado.strip()
@@ -109,7 +113,7 @@ def _resposta_professor(db: Session, ex: Exercicio) -> ExercicioProfessorRespons
         func.count(ExercicioResposta.id), func.count(ExercicioResposta.id).filter(ExercicioResposta.correta.is_(True)),
     ).filter(ExercicioResposta.exercicio_id == ex.id).one()
     return ExercicioProfessorResponse(
-        id=ex.id, titulo=ex.titulo or "", assunto=ex.assunto or "", materia_id=ex.materia_id,
+        id=ex.id, titulo=ex.titulo or "", assunto=ex.assunto or "", assunto_id=ex.assunto_id, materia_id=ex.materia_id,
         materia_nome=db.get(Materia, ex.materia_id).nome, turma_id=ex.turma_id,
         turma_nome=db.get(Turma, ex.turma_id).nome, tipo=ex.tipo,
         aluno_ids=[uuid.UUID(a) for a in ex.alunos] if ex.alunos else None,
@@ -172,6 +176,7 @@ def criar(payload: ExercicioRequest, usuario: Usuario = Depends(get_current_user
     registrar(db, usuario.id, "CRIAR", "Exercicio", ex.id)
     db.commit()
     db.refresh(ex)
+    avisos.tentar(db, avisos.exercicio_novo, ex, _alvo(db, ex))  # avisa quem deve fazer
     return _resposta_professor(db, ex)
 
 
@@ -205,6 +210,8 @@ def criar_em_turmas(payload: ExercicioLoteRequest, usuario: Usuario = Depends(ge
     if not criados:
         raise HTTPException(422, "Escolha pelo menos um aluno.")
     db.commit()
+    for ex in criados:
+        avisos.tentar(db, avisos.exercicio_novo, ex, _alvo(db, ex))  # avisa quem deve fazer
     return [_resposta_professor(db, ex) for ex in criados]
 
 
@@ -299,10 +306,13 @@ def sugerir(payload: SugerirRequest, usuario: Usuario = Depends(get_current_user
     _so_professor(usuario)
     materia = _materia_da_escola(db, usuario, payload.materia_id)
     _precisa_da_ia()
+    if payload.assunto_id:
+        assunto_do_usuario(db, usuario, payload.assunto_id, materia.id)
     instrucoes = (payload.instrucoes or "").strip() or None
     # memoria do professor (RAG): so o MATERIAL dele; exemplos de correcao nao ajudam a criar exercicio
     contexto = memoria.contexto_do_professor(
-        db, materia.id, f"{payload.assunto} {instrucoes or ''}", professor_id=usuario.id, exemplos=0)
+        db, materia.id, f"{payload.assunto} {instrucoes or ''}", professor_id=usuario.id, exemplos=0,
+        assunto_id=payload.assunto_id)
     sugestoes = sugerir_exercicios(materia.nome, payload.assunto.strip(), payload.tipo, payload.quantidade,
                                    instrucoes, contexto=contexto)
     _guardar_treino(db, materia, usuario)
@@ -316,8 +326,11 @@ def sugerir_resposta(payload: SugerirRespostaRequest, usuario: Usuario = Depends
     _so_professor(usuario)
     materia = _materia_da_escola(db, usuario, payload.materia_id)
     _precisa_da_ia()
+    if payload.assunto_id:
+        assunto_do_usuario(db, usuario, payload.assunto_id, materia.id)
     contexto = memoria.contexto_do_professor(
-        db, materia.id, f"{payload.assunto or ''} {payload.enunciado}", professor_id=usuario.id, exemplos=0)
+        db, materia.id, f"{payload.assunto or ''} {payload.enunciado}", professor_id=usuario.id, exemplos=0,
+        assunto_id=payload.assunto_id)
     resposta = sugerir_resposta_exemplo(
         materia.nome, (payload.assunto or "").strip(), payload.enunciado.strip(), contexto=contexto)
     _guardar_treino(db, materia, usuario)

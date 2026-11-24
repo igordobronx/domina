@@ -21,6 +21,7 @@ from app.models.usuario import (
     Atividade, Correcao, CorrecaoCriterio, DominioAluno, Materia, Submissao, Tema, Usuario,
 )
 from app.competencias import garantir_competencias
+from app import avisos
 from app.metas import avaliar_seguro
 from app.routers.submissoes import MATERIAS_EXATAS, _gestor_da_escola, caminhos_da_submissao, _professor_da_turma, _submissao_visivel
 from app.schemas.submissao import AprovarRequest, AvaliacaoIARequest, CorrecaoResponse, CorrigirRequest, CriterioResponse
@@ -125,6 +126,7 @@ def corrigir_submissao(
         contexto, fontes = memoria.montar_contexto(
             db, materia.id, consulta,
             professor_id=atividade.criado_por or (usuario.id if usuario.perfil == PerfilEnum.PROFESSOR else None),
+            assunto_id=atividade.assunto_id,
             **({} if exatas else {"exemplos": 0}),  # redacao: so o material do professor (ver config.py)
         )
     try:
@@ -206,6 +208,7 @@ def corrigir_submissao(
     tokens_estimados = len(submissao.texto_confirmado) // 4
     registrar_uso(db, usuario.escola_id, tokens_llm=tokens_estimados)
     db.commit()
+    avisos.tentar(db, avisos.ia_corrigiu, submissao, correcao.status)  # avisa o professor
     return _correcao_response(db, correcao)
 
 
@@ -329,6 +332,7 @@ def aprovar_correcao(
     if materia.tipo in MATERIAS_EXATAS:
         registrar_erros(db, submissao.aluno_id)  # onde ele errou, para o plano de estudo
     registrar(db, usuario.id, "APROVAR", "Correcao", correcao.id)
+    avisos.corrigida(db, submissao, atividade)
     db.flush()
     memoria.indexar_correcao(db, correcao)  # a IA aprende com esta aprovacao (nunca bloqueia)
     db.commit()

@@ -32,12 +32,16 @@ import {
   login as apiLogin,
   logout as apiLogout,
   me as apiMe,
+  listarAvisos,
+  marcarAvisosLidos,
+  type AvisoAPI,
   perfilParaRole,
   type UsuarioAtual,
 } from "./services/api";
 import { usePwa } from "./hooks/usePwa";
 import { Badge, Button, IconButton, Logo, Modal } from "./components/ui";
 import { InstallBanner } from "./components/InstallBanner";
+import { ListaAvisos } from "./components/ListaAvisos";
 import { Dashboard } from "./screens/Dashboard";
 import { EducatorDashboard } from "./screens/EducatorDashboard";
 import { allowedPages, readRoute } from "./services/navigation";
@@ -173,6 +177,22 @@ export function App() {
       .catch(() => apiLogout())
       .finally(() => setAuthChecked(true));
   }, []);
+  // sino do topo: avisos reais (ex.: "sua atividade foi corrigida"); confere a cada minuto
+  const [avisos, setAvisos] = useState<{ nao_lidos: number; itens: AvisoAPI[] }>({ nao_lidos: 0, itens: [] });
+  useEffect(() => {
+    if (!currentUser) return;
+    const buscar = () => listarAvisos().then(setAvisos).catch(() => undefined);
+    buscar();
+    const t = window.setInterval(buscar, 60_000);
+    return () => window.clearInterval(t);
+  }, [currentUser]);
+  // ao abrir, guarda quais eram novos (continuam destacados enquanto a janela estiver aberta) e marca tudo como lido
+  const [avisosNovos, setAvisosNovos] = useState<Set<string>>(new Set());
+  const abrirAvisos = () => {
+    setModal("notifications");
+    setAvisosNovos(new Set(avisos.itens.filter((a) => !a.lido).map((a) => a.id)));
+    if (avisos.nao_lidos) marcarAvisosLidos().then(() => setAvisos((a) => ({ nao_lidos: 0, itens: a.itens.map((i) => ({ ...i, lido: true })) }))).catch(() => undefined);
+  };
   const [updateReady, setUpdateReady] = useState(false);
   const updateWorker = useRef<((reload?: boolean) => Promise<void>) | null>(
     null,
@@ -499,9 +519,9 @@ export function App() {
               <IconButton
                 icon={Bell}
                 label="Notificações"
-                onPress={() => setModal("notifications")}
+                onPress={abrirAvisos}
               />
-              <span />
+              {avisos.nao_lidos > 0 && <span aria-label={`${avisos.nao_lidos} aviso(s) novo(s)`} />}
             </div>
             <div className="profile-menu-wrap" ref={perfilRef}>
               <button
@@ -713,36 +733,11 @@ export function App() {
             </>
           )}
           {modal === "notifications" && (
-            <div className="notification-list">
-              <div>
-                <Badge>Resultado disponível</Badge>
-                <h3>Uma nova oportunidade de aprender</h3>
-                <p>
-                  Confira as atividades aprovadas e as orientações do seu
-                  professor.
-                </p>
-                <Button
-                  onPress={() => {
-                    setModal(null);
-                    navigate(
-                      role === "aluno"
-                        ? "atividades"
-                        : role === "professor"
-                          ? "revisoes"
-                          : "turmas",
-                    );
-                  }}
-                >
-                  Ver atividades
-                </Button>
-              </div>
-              <div>
-                <Badge tone="neutral">Seu ritmo</Badge>
-                <p>
-                  Seu plano tem três práticas curtas para continuar evoluindo.
-                </p>
-              </div>
-            </div>
+            <ListaAvisos
+              itens={avisos.itens}
+              novos={avisosNovos}
+              onAbrir={(destino) => { setModal(null); if (destino) navigate(destino as Page); }}
+            />
           )}
           {modal === "search" && (
             <>

@@ -12,6 +12,10 @@ describe("Status do aluno", () => {
     expect(paraStatusAluno("REQUER_ATENCAO", false)).toBe("pendente"));
   it("aprovada pelo professor (ou prova objetiva) é 'aprovada'", () =>
     expect(paraStatusAluno("APROVADA", true)).toBe("aprovada"));
-  it("o status do professor não muda", () =>
-    expect(paraStatus("PENDENTE")).toBe("pendente"));
+  it("professor: sem correção da IA é 'pendente'; com correção da IA é 'corrigida_ia'", () => {
+    expect(paraStatus("AGUARDANDO_CORRECAO")).toBe("pendente");
+    expect(paraStatus("PENDENTE")).toBe("corrigida_ia");
+    expect(paraStatus("REQUER_ATENCAO")).toBe("corrigida_ia");
+    expect(paraStatus("APROVADA")).toBe("aprovada");
+  });
 });

@@ -9,6 +9,7 @@ from PIL import Image, ImageOps
 
 from app.config import settings
 from app.ia import registro
+from app.ocr.simbolos import sem_latex
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,8 @@ Regras:
   desenhada), escreva uma linha [desenho: ...] descrevendo só o que você VÊ (átomos, ligações,
   setas, rótulos escritos ao lado). Não deduza nem complete: não diga qual é a resposta certa e
   não troque o desenho do aluno pelo que seria o correto.
+- Escreva contas e símbolos em TEXTO SIMPLES, com os caracteres comuns (÷ × · → ² ³ √ π Δ Ω °,
+  frações como 180/2,5, índices como Vm ou t0). NUNCA use LaTeX nem cifrão ($, \\frac, \\text, ^, _).
 - Palavra ou símbolo que não der para ler: [ilegível]. Trecho riscado: pule.
 - Não transcreva cabeçalho (nome, turma, data), numeração impressa nem o enunciado da prova.
 - Responda só com a transcrição, sem comentários. Se a folha estiver vazia, responda vazio."""
@@ -131,4 +134,4 @@ def extract_text(image_bytes: bytes, mime_type: str, exatas: bool = False, extra
     )
     if response.candidates and response.candidates[0].finish_reason == types.FinishReason.RECITATION:
         raise TextoPublicado()
-    return (response.text or "").strip()
+    return sem_latex((response.text or "").strip())

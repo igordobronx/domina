@@ -34,6 +34,7 @@ MAX_LETRAS_INSTRUCOES = 8000  # o que entra no pedido ao modelo
 # ponytail: a busca compara com os trechos da materia em memoria (Python). Aguenta bem milhares
 # de trechos por materia; passando disso, trocar por pgvector no Postgres.
 MAX_CANDIDATOS = 3000
+BONUS_ASSUNTO = 0.1  # soma na nota de parecido dos trechos do assunto pedido
 MAX_TRECHOS_POR_DOCUMENTO = 400  # ~480 mil letras; apostila maior que isso e cortada
 
 _VAZIAS = set("a o e de da do das dos em no na nos nas um uma para por com que se os as ao aos "
@@ -68,11 +69,13 @@ def _cosseno(a: list[float], b: list[float]) -> float:
     return sum(x * y for x, y in zip(a, b)) / norma if norma else 0.0
 
 
-def _do_professor(db: Session, materia_id, origem: str, professor_id):
+def _do_professor(db: Session, materia_id, origem: str, professor_id, assunto_id=None):
     """A memoria e de CADA professor: o jeito de corrigir muda de um para outro (a inteligencia
     da IA, nao). Vale o que o proprio professor ensinou; material enviado pelo GESTOR e da
     escola e vale para todos os professores da materia."""
     q = db.query(IaTrecho).filter_by(materia_id=materia_id, origem=origem).filter(IaTrecho.ignorado.is_(False))
+    if assunto_id:  # com assunto: o dele + o Geral (sem assunto). Sem assunto: a materia toda, como antes
+        q = q.filter(or_(IaTrecho.assunto_id == assunto_id, IaTrecho.assunto_id.is_(None)))
     # material arquivado ("excluir" na tela de materiais) tambem deixa de ser usado, sem apagar nada
     q = q.filter(or_(IaTrecho.documento_id.is_(None),
                      IaTrecho.documento_id.notin_(db.query(DocumentoBase.id).filter(DocumentoBase.ativo.is_(False)))))
@@ -82,20 +85,22 @@ def _do_professor(db: Session, materia_id, origem: str, professor_id):
     return q.filter(or_(IaTrecho.professor_id == professor_id, IaTrecho.professor_id.in_(gestores)))
 
 
-def instrucoes_de(db: Session, materia_id, professor_id) -> list[IaTrecho]:
+def instrucoes_de(db: Session, materia_id, professor_id, assunto_id=None, todas: bool = False) -> list[IaTrecho]:
     """Instrucoes escritas pelo professor ("sempre faca tal coisa"). Valem SEMPRE (nao dependem
     de parecer com o pedido) e sao as mais fortes: o professor escreveu para a IA."""
-    return (_do_professor(db, materia_id, INSTRUCAO, professor_id)
-            .order_by(IaTrecho.criado_em).limit(MAX_INSTRUCOES).all())
+    q = _do_professor(db, materia_id, INSTRUCAO, professor_id, assunto_id)
+    if not todas and not assunto_id:  # instrucao de um assunto so vale quando o pedido e desse assunto
+        q = q.filter(IaTrecho.assunto_id.is_(None))
+    return q.order_by(IaTrecho.criado_em).limit(MAX_INSTRUCOES).all()
 
 
 def buscar(db: Session, materia_id, consulta: str, origem: str, k: int = 4,
-           professor_id=None) -> list[IaTrecho]:
+           professor_id=None, assunto_id=None) -> list[IaTrecho]:
     """Os k trechos mais parecidos com a consulta, na memoria DESTE professor nesta materia.
     Sem professor (atividade antiga, sem dono) so vale o material do gestor."""
     if k <= 0:
         return []
-    q = _do_professor(db, materia_id, origem, professor_id)
+    q = _do_professor(db, materia_id, origem, professor_id, assunto_id)
     candidatos = q.order_by(IaTrecho.criado_em.desc()).limit(MAX_CANDIDATOS).all()
     if not candidatos or not consulta.strip():
         return []
@@ -106,6 +111,8 @@ def buscar(db: Session, materia_id, consulta: str, origem: str, k: int = 4,
     else:
         notas = _por_palavras(consulta, [t.texto for t in candidatos])
         pares = [(nota, t) for nota, t in zip(notas, candidatos) if nota > 0]
+    if assunto_id:  # o que e do assunto vem antes do Geral
+        pares = [(nota + (BONUS_ASSUNTO if t.assunto_id == assunto_id else 0), t) for nota, t in pares]
     pares.sort(key=lambda par: par[0], reverse=True)
     if origem != CORRECAO:
         return [t for _, t in pares[:k]]
@@ -134,6 +141,7 @@ def indexar_documento(db: Session, documento: DocumentoBase) -> None:
         partes = dividir(texto)[:MAX_TRECHOS_POR_DOCUMENTO]
         _guardar(db, [
             IaTrecho(materia_id=documento.materia_id, professor_id=documento.enviado_por, origem=MATERIAL,
+                     assunto_id=documento.assunto_id,
                      documento_id=documento.id, titulo=f"{documento.tipo.value}: {documento.nome_arquivo}"[:255],
                      texto=parte)
             for parte in partes
@@ -196,6 +204,7 @@ def indexar_correcao(db: Session, correcao: Correcao) -> None:
         db.query(IaTrecho).filter_by(correcao_id=correcao.id).delete()
         _guardar(db, [IaTrecho(
             materia_id=atividade.materia_id, professor_id=correcao.revisado_por, origem=CORRECAO,
+            assunto_id=atividade.assunto_id,
             correcao_id=correcao.id, titulo=atividade.titulo[:255], ignorado=ignorado,
             texto=_exemplo(db, correcao, submissao, atividade),
         )])
@@ -222,6 +231,7 @@ def indexar_exercicio(db: Session, exercicio: Exercicio, resposta: ExercicioResp
             linhas.append("Resposta de exemplo do professor: " + " | ".join(e[:400] for e in exemplos[:3]))
         _guardar(db, [IaTrecho(
             materia_id=exercicio.materia_id, professor_id=exercicio.criado_por, origem=EXERCICIO,
+            assunto_id=exercicio.assunto_id,
             exercicio_resposta_id=resposta.id, titulo=(exercicio.titulo or exercicio.enunciado)[:255], ignorado=ignorado,
             texto="\n".join(linhas),
         )])
@@ -232,9 +242,9 @@ def indexar_exercicio(db: Session, exercicio: Exercicio, resposta: ExercicioResp
 # ---------- usar ----------
 
 def contexto_do_professor(db: Session, materia_id, consulta: str, professor_id=None,
-                          materiais: int = 4, exemplos: int = 3) -> str:
+                          materiais: int = 4, exemplos: int = 3, assunto_id=None) -> str:
     """So o texto do contexto (ver montar_contexto)."""
-    return montar_contexto(db, materia_id, consulta, professor_id, materiais, exemplos)[0]
+    return montar_contexto(db, materia_id, consulta, professor_id, materiais, exemplos, assunto_id)[0]
 
 
 def _fonte(tipo: str, titulo: str, texto: str) -> dict:
@@ -243,15 +253,15 @@ def _fonte(tipo: str, titulo: str, texto: str) -> dict:
 
 
 def montar_contexto(db: Session, materia_id, consulta: str, professor_id=None,
-                    materiais: int = 4, exemplos: int = 3) -> tuple[str, list[dict]]:
+                    materiais: int = 4, exemplos: int = 3, assunto_id=None) -> tuple[str, list[dict]]:
     """Bloco de texto para colar no prompt: material do professor + correcoes parecidas que ele
     ja aprovou. Devolve ("", []) quando a memoria nao tem nada util (o prompt fica igual ao de antes).
     A lista de fontes diz o que entrou no pedido, para o professor conferir na revisao."""
     try:
-        do_material = buscar(db, materia_id, consulta, MATERIAL, materiais, professor_id)
-        das_correcoes = buscar(db, materia_id, consulta, CORRECAO, exemplos, professor_id) if exemplos else []
-        dos_exercicios = buscar(db, materia_id, consulta, EXERCICIO, 2, professor_id) if exemplos else []
-        instrucoes = instrucoes_de(db, materia_id, professor_id)
+        do_material = buscar(db, materia_id, consulta, MATERIAL, materiais, professor_id, assunto_id)
+        das_correcoes = buscar(db, materia_id, consulta, CORRECAO, exemplos, professor_id, assunto_id) if exemplos else []
+        dos_exercicios = buscar(db, materia_id, consulta, EXERCICIO, 2, professor_id, assunto_id) if exemplos else []
+        instrucoes = instrucoes_de(db, materia_id, professor_id, assunto_id)
     except Exception:
         logger.exception("falha ao buscar na memoria da materia %s", materia_id)
         return "", []
@@ -326,7 +336,7 @@ def sugerir_instrucoes(db: Session, materia_id, professor_id, limite: int = 3) -
                 break
         else:
             grupos.append({"texto": motivo.strip(), "chave": chave, "ids": [cid]})
-    ja_ditas = [_chave(t.texto) for t in instrucoes_de(db, materia_id, professor_id)]
+    ja_ditas = [_chave(t.texto) for t in instrucoes_de(db, materia_id, professor_id, todas=True)]
     return [
         {"texto": g["texto"], "vezes": len(g["ids"]), "correcao_ids": [str(i) for i in g["ids"]]}
         for g in sorted(grupos, key=lambda g: -len(g["ids"]))

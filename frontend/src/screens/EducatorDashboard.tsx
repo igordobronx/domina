@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -17,7 +18,7 @@ import { ActivityRow } from "./Dashboard";
 import { EvolutionChart } from "../components/Chart";
 import { topics } from "../data/demo";
 import type { Activity, DemoState, Page, Role } from "../types";
-import type { UsuarioAtual } from "../services/api";
+import { listarMaterias, type MateriaAPI, type UsuarioAtual } from "../services/api";
 export function EducatorDashboard({
   role,
   state,
@@ -31,6 +32,11 @@ export function EducatorDashboard({
   openActivity: (a: Activity) => void;
   currentUser?: UsuarioAtual | null;
 }) {
+  // usuario real: o backend so devolve as materias que o professor leciona (gestor: todas da escola)
+  const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
+  useEffect(() => {
+    if (currentUser) listarMaterias().then(setMaterias).catch(() => setMaterias([]));
+  }, [currentUser?.id]);
   const pending = state.activities.filter((a) => a.status === "pendente");
   const teacher = role === "professor";
   const primeiroNome = currentUser?.nome.split(" ")[0];
@@ -140,6 +146,29 @@ export function EducatorDashboard({
         </Card>
       )}
       <div className="dashboard-middle">
+        {currentUser ? (
+          <Card>
+            <SectionTitle title={role === "professor" ? "Suas matérias" : "Matérias da escola"} />
+            {materias === null ? (
+              <p className="muted">Carregando...</p>
+            ) : materias.length ? (
+              <div className="topic-list">
+                {materias.map((m) => (
+                  <div className="topic-row" key={m.id}>
+                    <div className="topic-heading"><strong>{m.nome}</strong></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Empty
+                title="Você ainda não tem matérias definidas"
+                text={role === "professor"
+                  ? "Peça ao gestor da escola para vincular suas matérias às suas turmas. Sem isso você não vê atividades, alunos nem evolução de nenhuma matéria."
+                  : "Cadastre matérias para a escola."}
+              />
+            )}
+          </Card>
+        ) : (
         <Card>
           <SectionTitle title="O que a turma está construindo" />
           <p className="card-subtitle muted">
@@ -158,6 +187,7 @@ export function EducatorDashboard({
           </div>
           <Badge tone="neutral">Não há ranking entre alunos</Badge>
         </Card>
+        )}
         <Card className="educator-note">
           <ShieldCheck size={35} />
           <h3>Confiança se constrói com cuidado.</h3>
@@ -174,14 +204,14 @@ export function EducatorDashboard({
           </Button>
         </Card>
       </div>
-      <Card>
+      {!currentUser && <Card>
         <SectionTitle title="Uma turma em evolução" />
         <EvolutionChart />
         <p className="tiny muted">
           Série ilustrativa. Indicadores reais dependerão da integração com o
           backend.
         </p>
-      </Card>
+      </Card>}
     </>
   );
 }

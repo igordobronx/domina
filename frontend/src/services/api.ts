@@ -287,6 +287,7 @@ export function criarAtividadesLote(payload: {
   questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[] }[];
   valor_total?: number;
   prazo?: string;
+  assunto_id?: string | null;
 }): Promise<AtividadeAPI[]> {
   return request<AtividadeAPI[]>("/atividades/lote", { method: "POST", body: JSON.stringify(payload) });
 }
@@ -313,6 +314,7 @@ export function criarAtividade(payload: {
   questoes?: { enunciado: string; resposta_correta: string }[];
   valor_total?: number;
   prazo?: string;
+  assunto_id?: string | null;
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>("/atividades", {
     method: "POST",
@@ -598,6 +600,7 @@ export type TipoExercicioAPI = "OBJETIVO" | "DISCURSIVO";
 export interface ExercicioPayload {
   titulo: string;
   assunto: string;
+  assunto_id?: string | null; // assunto da IA (Treinar IA), opcional
   materia_id: string;
   turma_id: string;
   aluno_ids?: string[] | null; // so estes alunos da turma; nulo = turma toda
@@ -703,12 +706,12 @@ export function excluirExercicio(id: string): Promise<void> {
   return request<void>(`/exercicios/${id}`, { method: "DELETE" });
 }
 export function sugerirExercicios(p: {
-  materia_id: string; assunto: string; tipo: TipoExercicioAPI; quantidade: number; instrucoes?: string;
+  materia_id: string; assunto: string; assunto_id?: string | null; tipo: TipoExercicioAPI; quantidade: number; instrucoes?: string;
 }): Promise<SugestaoExercicioAPI[]> {
   return request<SugestaoExercicioAPI[]>("/exercicios/sugerir", { method: "POST", body: JSON.stringify(p) });
 }
 export function sugerirRespostaExemplo(p: {
-  materia_id: string; assunto?: string; enunciado: string;
+  materia_id: string; assunto?: string; assunto_id?: string | null; enunciado: string;
 }): Promise<{ resposta_exemplo: string }> {
   return request<{ resposta_exemplo: string }>("/exercicios/sugerir-resposta", { method: "POST", body: JSON.stringify(p) });
 }
@@ -723,6 +726,27 @@ export function dominioDoAluno(alunoId: string): Promise<DominioAPI[]> {
   return request<DominioAPI[]>(`/alunos/${alunoId}/dominio`);
 }
 
+// assunto dentro de uma matéria (Treinar IA); sem assunto = "Geral"
+export interface AssuntoAPI {
+  id: string;
+  materia_id: string;
+  nome: string;
+  da_escola: boolean; // criado pelo gestor, vale para todos os professores
+  ativo: boolean;
+  materiais: number;
+  instrucoes: number;
+  correcoes: number;
+}
+export function listarAssuntos(materiaId: string, incluirInativos = false): Promise<AssuntoAPI[]> {
+  return request<AssuntoAPI[]>(`/materias/${materiaId}/assuntos${incluirInativos ? "?incluir_inativos=true" : ""}`);
+}
+export function criarAssunto(materiaId: string, nome: string): Promise<AssuntoAPI> {
+  return request<AssuntoAPI>(`/materias/${materiaId}/assuntos`, { method: "POST", body: JSON.stringify({ nome }) });
+}
+export function editarAssunto(id: string, p: { nome?: string; ativo?: boolean }): Promise<AssuntoAPI> {
+  return request<AssuntoAPI>(`/assuntos/${id}`, { method: "PATCH", body: JSON.stringify(p) });
+}
+
 export interface DocumentoAPI {
   id: string;
   materia_id: string;
@@ -733,6 +757,7 @@ export interface DocumentoAPI {
   detalhe?: string | null; // motivo quando a IA não conseguiu ler o arquivo
   tamanho_bytes: number | null;
   enviado_por_nome: string;
+  assunto_id?: string | null; // nulo = Geral da matéria
   pode_baixar: boolean;
   ativo?: boolean; // false = tirado de uso
   criado_em: string;
@@ -805,6 +830,7 @@ export interface InstrucaoAPI {
   id: string;
   materia_id: string;
   texto: string;
+  assunto_id?: string | null;
   criado_em: string;
 }
 
@@ -812,8 +838,10 @@ export function listarInstrucoes(materiaId: string): Promise<InstrucaoAPI[]> {
   return request<InstrucaoAPI[]>(`/materias/${materiaId}/instrucoes`);
 }
 
-export function criarInstrucao(materiaId: string, texto: string): Promise<InstrucaoAPI> {
-  return request<InstrucaoAPI>(`/materias/${materiaId}/instrucoes`, { method: "POST", body: JSON.stringify({ texto }) });
+export function criarInstrucao(materiaId: string, texto: string, assuntoId?: string): Promise<InstrucaoAPI> {
+  return request<InstrucaoAPI>(`/materias/${materiaId}/instrucoes`, {
+    method: "POST", body: JSON.stringify({ texto, assunto_id: assuntoId || null }),
+  });
 }
 
 export function excluirInstrucao(materiaId: string, id: string): Promise<void> {
@@ -846,10 +874,12 @@ export function enviarDocumento(
   materiaId: string,
   file: File,
   tipo: DocumentoAPI["tipo"],
+  assuntoId?: string,
 ): Promise<DocumentoAPI> {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("tipo", tipo);
+  if (assuntoId) formData.append("assunto_id", assuntoId);
   return request<DocumentoAPI>(`/materias/${materiaId}/documentos`, { method: "POST", body: formData });
 }
 
@@ -1129,4 +1159,41 @@ export function usoDoItem(materiaId: string, item: ItemAprendidoAPI, emUso: bool
     method: "PUT",
     body: JSON.stringify({ em_uso: emUso }),
   });
+}
+
+// marcas do professor sobre a foto do envio (as da IA vêm em CriterioAPI.pontos)
+export interface AnotacaoAPI {
+  id: string;
+  pagina: number;
+  x: number;
+  y: number;
+  largura: number;
+  altura: number;
+  tipo: "acerto" | "erro" | "nota";
+  comentario: string;
+  autor_nome: string;
+  minha: boolean;
+  criado_em: string;
+}
+export type NovaAnotacao = Pick<AnotacaoAPI, "pagina" | "x" | "y" | "largura" | "altura" | "tipo" | "comentario">;
+export function listarAnotacoes(submissaoId: string): Promise<AnotacaoAPI[]> {
+  return request<AnotacaoAPI[]>(`/submissoes/${submissaoId}/anotacoes`);
+}
+export function criarAnotacao(submissaoId: string, p: NovaAnotacao): Promise<AnotacaoAPI> {
+  return request<AnotacaoAPI>(`/submissoes/${submissaoId}/anotacoes`, { method: "POST", body: JSON.stringify(p) });
+}
+export function editarAnotacao(id: string, p: { tipo?: AnotacaoAPI["tipo"]; comentario?: string }): Promise<AnotacaoAPI> {
+  return request<AnotacaoAPI>(`/anotacoes/${id}`, { method: "PATCH", body: JSON.stringify(p) });
+}
+export function apagarAnotacao(id: string): Promise<void> {
+  return request<void>(`/anotacoes/${id}`, { method: "DELETE" });
+}
+
+// avisos (o sino do topo)
+export interface AvisoAPI { id: string; tipo: string; texto: string; destino: string | null; submissao_id: string | null; lido: boolean; criado_em: string }
+export function listarAvisos(): Promise<{ nao_lidos: number; itens: AvisoAPI[] }> {
+  return request<{ nao_lidos: number; itens: AvisoAPI[] }>("/avisos");
+}
+export function marcarAvisosLidos(): Promise<void> {
+  return request<void>("/avisos/lidos", { method: "POST" });
 }

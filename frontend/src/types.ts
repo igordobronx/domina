@@ -15,7 +15,7 @@ export type Page =
   | "escolas"
   | "configuracoes"
   | "ajuda";
-// pendente = "Enviada" para o aluno e "Em revisão" para o professor; corrigida_ia so aparece para o aluno
+// pendente = "Enviada" (a IA ainda nao corrigiu); corrigida_ia = tem correcao da IA e falta o professor (aluno e professor veem)
 export type ActivityStatus = "disponivel" | "pendente" | "corrigida_ia" | "aprovada";
 export interface Activity {
   id: string;
@@ -31,6 +31,7 @@ export interface Activity {
   status: ActivityStatus;
   kind: "redacao" | "matematica";
   student: string;
+  alunoId?: string; // fila de revisao: quem enviou
   turmaId?: string; // fila de revisao: filtro por turma
   turmaNome?: string;
   questoes?: { codigo: string; enunciado: string; tem_imagem?: boolean; alternativas?: string[] | null }[];

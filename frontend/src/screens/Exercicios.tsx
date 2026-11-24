@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, ChevronDown, ChevronUp, CircleCheck, MessageSquare, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
 import { CampoComSimbolos } from "../components/CampoComSimbolos";
+import { SeletorAssunto } from "../components/SeletorAssunto";
 import {
   avaliarRespostaExercicio, criarExerciciosLote, editarExercicio, excluirExercicio, listarExerciciosProfessor,
   listarMaterias, listarTurmasMinhas, membrosTurma, respostasDoExercicio, resumoExerciciosTurma,
@@ -91,6 +92,7 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
   const [titulo, setTitulo] = useState(inicial?.titulo ?? "");
   const [assunto, setAssunto] = useState(inicial?.assunto ?? "");
   const [materiaId, setMateriaId] = useState(inicial?.materia_id ?? "");
+  const [assuntoId, setAssuntoId] = useState(inicial?.assunto_id ?? "");
   // criando: pode marcar varias turmas (vira um exercicio por turma). Editando: a turma do exercicio
   const [turmaIds, setTurmaIds] = useState<string[]>(inicial ? [inicial.turma_id] : []);
   const turmaId = turmaIds.length === 1 ? turmaIds[0] : "";
@@ -147,7 +149,7 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
   const payloadDe = (x: Rascunho, nome: string): ExercicioPayload | string => {
     if (!nome.trim()) return "Dê um nome ao exercício.";
     if (!x.enunciado.trim()) return "Escreva o enunciado.";
-    const base = { titulo: nome.trim(), assunto: assunto.trim(), materia_id: materiaId, turma_id: turmaIds[0],
+    const base = { titulo: nome.trim(), assunto: assunto.trim(), assunto_id: assuntoId || null, materia_id: materiaId, turma_id: turmaIds[0],
       aluno_ids: paraAlguns ? escolhidosValidos : null,
       tipo: x.tipo, enunciado: x.enunciado.trim(), explicacao: x.explicacao.trim() || null,
       gerado_por_ia: x.daIA || (x.tipo === "DISCURSIVO" && x.respostaIA) };
@@ -183,7 +185,7 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
     if (!r.enunciado.trim()) return setErro("Escreva o enunciado antes de pedir a resposta para a IA.");
     setSugerindoResposta(true); setErro("");
     try {
-      const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, assunto: assunto.trim() || undefined, enunciado: r.enunciado });
+      const { resposta_exemplo } = await sugerirRespostaExemplo({ materia_id: materiaId, assunto: assunto.trim() || undefined, assunto_id: assuntoId || null, enunciado: r.enunciado });
       // preenche a primeira vazia; se todas estao preenchidas, entra como mais uma
       const vazia = r.respostasExemplo.findIndex((e) => !e.trim());
       const lista = vazia >= 0 ? r.respostasExemplo.map((e, i) => (i === vazia ? resposta_exemplo : e))
@@ -198,7 +200,7 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
     if (!assunto.trim()) return setErro("Escreva o tema para a IA.");
     setGerando(true); setErro(""); setSugestoes([]);
     try {
-      setSugestoes(await sugerirExercicios({ materia_id: materiaId, assunto: assunto.trim(), tipo: tipoIA, quantidade,
+      setSugestoes(await sugerirExercicios({ materia_id: materiaId, assunto: assunto.trim(), assunto_id: assuntoId || null, tipo: tipoIA, quantidade,
         instrucoes: instrucoes.trim() || undefined }));
     } catch (e) { setErro(erroDe(e, "A IA não conseguiu gerar agora. Tente de novo.")); }
     finally { setGerando(false); }
@@ -250,6 +252,7 @@ function FormExercicio({ inicial, turmas, materias, notify, onFechar, onSalvo }:
             {materias.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
           </select>
         </label>
+        <SeletorAssunto materiaId={materiaId} value={assuntoId} onChange={setAssuntoId} />
         <label>Tema
           <input value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex.: Coesão, Função afim, Porcentagem" />
         </label>

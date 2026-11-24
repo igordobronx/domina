@@ -1,6 +1,10 @@
+import { SeletorAssunto } from "../components/SeletorAssunto";
+import { FotoComMarcas } from "../components/FotoComMarcas";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
+  ArrowUpRight,
+  BookOpen,
   Check,
   FileText,
   Pencil,
@@ -53,7 +57,7 @@ import {
   type TurmaAPI,
 } from "../services/api";
 import { carregarAtividadesDoAluno } from "../services/atividades";
-import { carregarRevisoes } from "../services/revisoes";
+import { carregarRevisoes, enviaram, paraRevisar, type GrupoAtividade } from "../services/revisoes";
 import type { UsuarioAtual } from "../services/api";
 
 type Ponto = {
@@ -106,63 +110,32 @@ function destacarTrechos(texto: string, criterios: { codigo: string; pontos: Pon
   return partes;
 }
 
-// foto original (exatas por imagem) com uma caixa por ponto (acerto/erro), posicionada pela IA
-function ImagemComCaixas({
-  submissaoId,
-  criterios,
-}: {
-  submissaoId: string;
-  criterios: { codigo: string; pontos: Ponto[] }[];
+// O que o professor/aluno ve em "Texto enviado". Envio por foto: exatas mostra a FOTO com as marcas (da IA e do
+// professor) e deixa o texto lido recolhido; redacao deixa escolher entre o texto transcrito e a foto marcavel.
+function VisaoDoEnvio({ submissaoId, imagem, criterios, texto, editavel, notify, vazio }: {
+  submissaoId?: string; imagem: boolean; criterios: { codigo: string; pontos: Ponto[] }[] | null | undefined;
+  texto: string | null | undefined; editavel: boolean; notify: (m: string) => void; vazio?: ReactNode;
 }) {
-  const [urls, setUrls] = useState<string[] | null>(null);
-  const [erro, setErro] = useState(false);
-  useEffect(() => {
-    let ativo = true;
-    // as folhas vem pelo indice (?pagina=N) ate a primeira que nao existe
-    (async () => {
-      const achadas: string[] = [];
-      for (let n = 0; n < 6; n++) {
-        try {
-          achadas.push(await urlImagemSubmissao(submissaoId, n));
-        } catch {
-          break;
-        }
-      }
-      if (!ativo) return;
-      if (achadas.length) setUrls(achadas);
-      else setErro(true);
-    })();
-    return () => {
-      ativo = false;
-    };
-  }, [submissaoId]);
-
-  if (erro) return <p className="tiny">Não foi possível carregar a foto original.</p>;
-  if (!urls) return <p className="tiny">Carregando foto...</p>;
-  const pontos = todosOsPontos(criterios);
+  const [modo, setModo] = useState<"texto" | "foto">("texto");
+  const comoTexto = texto ? (criterios ? destacarTrechos(texto, criterios) : texto) : vazio;
+  if (!imagem || !submissaoId) return <>{comoTexto}</>;
+  const exatas = !!criterios?.some((c) => /^Q\d/.test(c.codigo));
+  const foto = <FotoComMarcas submissaoId={submissaoId} pontos={criterios ? todosOsPontos(criterios) : []} editavel={editavel} notify={notify} />;
+  if (exatas) {
+    return (
+      <>
+        {foto}
+        {texto && <details><summary>Ver o texto lido da foto</summary>{comoTexto}</details>}
+      </>
+    );
+  }
   return (
     <>
-      {urls.map((url, n) => (
-        <div className="imagem-com-caixas" key={n}>
-          {urls.length > 1 && <p className="tiny muted">Folha {n + 1} de {urls.length}</p>}
-          <img src={url} alt={urls.length > 1 ? `Prova enviada, folha ${n + 1}` : "Prova enviada"} />
-          {pontos.map((p, k) =>
-            p.caixa && (p.caixa.pagina ?? 0) === n ? (
-              <div
-                key={k}
-                className={`caixa ponto-${p.tipo}`}
-                title={`${p.criterio} · ${p.tipo === "acerto" ? "acerto" : "erro"}: ${p.comentario}`}
-                style={{
-                  left: `${p.caixa.x * 100}%`,
-                  top: `${p.caixa.y * 100}%`,
-                  width: `${p.caixa.largura * 100}%`,
-                  height: `${p.caixa.altura * 100}%`,
-                }}
-              />
-            ) : null,
-          )}
-        </div>
-      ))}
+      <div className="tabs" role="group" aria-label="Como ver o envio">
+        <button aria-pressed={modo === "texto"} className={modo === "texto" ? "active" : ""} onClick={() => setModo("texto")}>Texto transcrito</button>
+        <button aria-pressed={modo === "foto"} className={modo === "foto" ? "active" : ""} onClick={() => setModo("foto")}>Foto com marcações</button>
+      </div>
+      {modo === "foto" ? foto : comoTexto}
     </>
   );
 }
@@ -206,6 +179,8 @@ export function Activities({
   const realProfessor = !!currentUser && role === "professor" && !!reviewOnly;
   const realReviewer = !!currentUser && (role === "professor" || role === "gestor") && !!reviewOnly;
   const [realActivities, setRealActivities] = useState<Activity[] | null>(null);
+  const [grupos, setGrupos] = useState<GrupoAtividade[]>([]); // fila de revisao: uma por atividade/turma
+  const [grupoSel, setGrupoSel] = useState<string | null>(null); // atividade aberta (lista de alunos)
   const [loadingReal, setLoadingReal] = useState(real || realReviewer);
   const recarregar = () => {
     if (real && currentUser) {
@@ -217,7 +192,7 @@ export function Activities({
     } else if (realReviewer) {
       setLoadingReal(true);
       carregarRevisoes()
-        .then(setRealActivities)
+        .then(({ linhas, grupos }) => { setRealActivities(linhas); setGrupos(grupos); })
         .catch(() => notify("Não foi possível carregar a fila de revisão."))
         .finally(() => setLoadingReal(false));
     }
@@ -265,6 +240,7 @@ export function Activities({
         onBack={() => select(null)}
         onApproved={() => { select(null); recarregar(); }}
         readOnly={role === "gestor"}
+        notify={notify}
       />
     )}
     </>);
@@ -282,10 +258,23 @@ export function Activities({
         onCorrigidaReal={real ? recarregar : undefined}
       />
     );
-  // turmas que aparecem na fila (professor com varias turmas ou gestor); vem das proprias linhas
+  const grupo = grupos.find((g) => g.atividadeId === grupoSel);
+  if (realReviewer && grupo)
+    return (<>
+      <BarraAtividade
+        atividadeId={grupo.atividadeId}
+        onEditar={() => setEditandoId(grupo.atividadeId)}
+        onExcluida={() => { setGrupoSel(null); recarregar(); }}
+        notify={notify}
+      />
+      <EnviosDaAtividade grupo={grupo} onBack={() => setGrupoSel(null)} abrir={(id) => select(id)} />
+    </>);
+  // turmas que aparecem na fila (professor com varias turmas ou gestor)
   const turmasFila = reviewOnly
-    ? [...new Map(activities.filter((a) => a.turmaId).map((a) => [a.turmaId!, a.turmaNome!])).entries()]
-        .sort((x, y) => x[1].localeCompare(y[1]))
+    ? realReviewer
+      ? [...new Map(grupos.map((g) => [g.turmaId, g.turmaNome])).entries()].sort((x, y) => x[1].localeCompare(y[1]))
+      : [...new Map(activities.filter((a) => a.turmaId).map((a) => [a.turmaId!, a.turmaNome!])).entries()]
+          .sort((x, y) => x[1].localeCompare(y[1]))
     : [];
   // filtro salvo de uma turma que nao esta mais na fila nao pode esconder tudo
   const turmaAtiva = turmasFila.some(([id]) => id === turmaFiltro) ? turmaFiltro : "";
@@ -297,6 +286,13 @@ export function Activities({
       `${a.title} ${a.subject} ${a.student}`.toLowerCase().includes(search.toLowerCase()),
     )
     .sort((x, y) => (reviewOnly ? (x.turmaNome ?? "").localeCompare(y.turmaNome ?? "") || x.student.localeCompare(y.student) : 0));
+  // fila real do professor/gestor: uma linha por atividade (filtros: para revisar / concluídas)
+  const listaGrupos = grupos
+    .filter((g) =>
+      (!turmaAtiva || g.turmaId === turmaAtiva) &&
+      (filter === "todas" || (filter === "pendente" ? paraRevisar(g) > 0 : enviaram(g) > 0 && paraRevisar(g) === 0)) &&
+      `${g.titulo} ${g.materia} ${g.turmaNome}`.toLowerCase().includes(search.toLowerCase()))
+    .sort((x, y) => x.turmaNome.localeCompare(y.turmaNome) || x.titulo.localeCompare(y.titulo));
   return (
     <>
       <div className="page-heading">
@@ -320,10 +316,17 @@ export function Activities({
       <Card>
         <div className="list-toolbar">
           <div className="tabs" role="group" aria-label="Filtrar atividades">
-            {(reviewOnly
+            {(realReviewer
               ? [
                   ["todas", "Todas"],
-                  ["pendente", "Em revisão"],
+                  ["pendente", "Para revisar"],
+                  ["aprovada", "Concluídas"],
+                ]
+              : reviewOnly
+              ? [
+                  ["todas", "Todas"],
+                  ["pendente", "Enviadas"],
+                  ["corrigida_ia", "Corrigidas pela IA"],
                   ["aprovada", "Corrigidas"],
                 ]
               : [
@@ -366,7 +369,27 @@ export function Activities({
             />
           </label>
         </div>
-        {list.length ? (
+        {realReviewer && listaGrupos.length ? (
+          listaGrupos.map((g) => (
+            <button key={g.atividadeId} className="activity-row" onClick={() => setGrupoSel(g.atividadeId)}>
+              <span className={`activity-icon ${g.kind === "matematica" ? "math-icon" : ""}`}>
+                {g.kind === "redacao" ? <BookOpen size={20} /> : <span>ƒx</span>}
+              </span>
+              <span className="activity-info">
+                <strong>{g.titulo}</strong>
+                <span>
+                  <b>{g.turmaNome} · </b>{g.materia}
+                  {g.prazo && ` · prazo ${g.prazo.split("-").reverse().join("/")}`}
+                </span>
+              </span>
+              <span className="grupo-contagem">{enviaram(g)} de {g.alunos.length} enviaram</span>
+              {paraRevisar(g) > 0
+                ? <Badge tone="amber">{paraRevisar(g)} para revisar</Badge>
+                : enviaram(g) > 0 ? <Badge tone="green">Tudo corrigido</Badge> : <Badge tone="neutral">Sem envios</Badge>}
+              <ArrowUpRight size={18} />
+            </button>
+          ))
+        ) : !realReviewer && list.length ? (
           list.map((a) => (
             <ActivityRow key={a.id} activity={a} onClick={() => select(a.id)} aluno={!reviewOnly} />
           ))
@@ -937,7 +960,9 @@ function ActivityDetail({
               <h3>
                 {teacher && a.status !== "aprovada"
                   ? "Orientação ao aluno"
-                  : "O próximo passo na sua escrita"}
+                  : a.status === "aprovada"
+                    ? "Comentário do professor"
+                    : "Comentário da IA"}
               </h3>
               {teacher && a.status !== "aprovada" ? (
                 <>
@@ -990,6 +1015,7 @@ function ActivityDetail({
               ) : (
                 <p className="feedback-text">{a.feedback}</p>
               )}
+              {!teacher && a.criterios && <ComentariosDaIA criterios={a.criterios} />}
               <div className="card-note">
                 <ShieldCheck size={16} />
                 {a.status === "aprovada"
@@ -1002,12 +1028,8 @@ function ActivityDetail({
             <Card>
               <SectionTitle title="Texto enviado" />
               <div className="essay">
-                {a.criterios && temCaixa(a.criterios) && a.submissaoId ? (
-                  <ImagemComCaixas submissaoId={a.submissaoId} criterios={a.criterios} />
-                ) : a.text && a.criterios ? (
-                  destacarTrechos(a.text, a.criterios)
-                ) : (
-                  a.text || (
+                <VisaoDoEnvio submissaoId={a.submissaoId} imagem={a.tipoEnvio === "IMAGEM"} criterios={a.criterios}
+                  texto={a.text} editavel={false} notify={notify} vazio={
                     <>
                       <FileText size={24} />
                       <p>{a.fileName}</p>
@@ -1016,8 +1038,7 @@ function ActivityDetail({
                         e o OCR dependem da integração.
                       </p>
                     </>
-                  )
-                )}
+                  } />
               </div>
             </Card>
           </div>
@@ -1035,13 +1056,16 @@ function RevisaoReal({
   onBack,
   onApproved,
   readOnly,
+  notify,
 }: {
   activity: Activity;
   onBack: () => void;
   onApproved: () => void;
   readOnly?: boolean;
+  notify: (s: string) => void;
 }) {
   const [texto, setTexto] = useState<string | null>(null);
+  const [tipoEnvio, setTipoEnvio] = useState("");
   const [correcao, setCorrecao] = useState<CorrecaoAPI | null>(null);
   const [notas, setNotas] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState("");
@@ -1070,6 +1094,7 @@ function RevisaoReal({
     ]).then(([s, c, ag]) => {
       if (!ativo) return;
       setTexto(s.texto_confirmado ?? s.texto_ocr ?? "");
+      setTipoEnvio(s.tipo_envio);
       if (c) aplicarCorrecao(c);
       setAgente(ag);
       setCarregando(false);
@@ -1315,13 +1340,8 @@ function RevisaoReal({
           <Card>
             <SectionTitle title="Texto enviado" />
             <div className="essay">
-              {correcao && temCaixa(correcao.criterios) ? (
-                <ImagemComCaixas submissaoId={a.id} criterios={correcao.criterios} />
-              ) : texto && correcao ? (
-                destacarTrechos(texto, correcao.criterios)
-              ) : (
-                texto
-              )}
+              <VisaoDoEnvio submissaoId={a.id} imagem={tipoEnvio === "IMAGEM"} criterios={correcao?.criterios}
+                texto={texto} editavel={!readOnly} notify={notify} />
             </div>
           </Card>
           </div>
@@ -1673,6 +1693,7 @@ function NovaAtividade({
   const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
   const [turmaIds, setTurmaIds] = useState<string[]>([]); // uma atividade independente por turma marcada
   const [materiaId, setMateriaId] = useState("");
+  const [assuntoId, setAssuntoId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
   const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }]);
@@ -1776,6 +1797,7 @@ function NovaAtividade({
       questoes: exigeGabarito ? questoesValidas : undefined,
       valor_total: exigeGabarito ? valorTotal : undefined,
       prazo: prazo || undefined,
+      assunto_id: assuntoId || undefined,
     })
       .then(async (criadas) => {
         // as questoes saem como Q1, Q2... na ordem em que foram enviadas; a figura sobe em cada atividade criada
@@ -1869,6 +1891,7 @@ function NovaAtividade({
                   ))}
                 </select>
               </label>
+              <SeletorAssunto materiaId={materiaId} value={assuntoId} onChange={setAssuntoId} />
               <label>
                 Tipo
                 <select value={tipo} onChange={(e) => { setTipo(e.target.value); if (e.target.value === "PROVA_OBJETIVA") setFormato("objetiva"); }}>
@@ -2081,5 +2104,90 @@ function NovaAtividade({
         )}
       </Card>
     </>
+  );
+}
+
+// dentro da atividade: cada aluno da turma, com o status do envio (ou "Não enviou")
+function EnviosDaAtividade({ grupo: g, onBack, abrir }: { grupo: GrupoAtividade; onBack: () => void; abrir: (submissaoId: string) => void }) {
+  const [aba, setAba] = useState<"todos" | "enviaram" | "faltam">("todos");
+  const faltam = g.alunos.length - enviaram(g);
+  const alunos = g.alunos.filter((a) => aba === "todos" || (aba === "enviaram" ? a.envio : !a.envio));
+  return (
+    <>
+      <button className="back-link" onClick={onBack}>
+        <ArrowLeft size={16} />
+        Voltar às atividades
+      </button>
+      <div className="page-heading">
+        <div>
+          <Badge tone="neutral">{g.materia}</Badge>
+          <h1 className="detail-heading">{g.titulo}</h1>
+          <p>
+            {g.turmaNome} · {enviaram(g)} de {g.alunos.length} enviaram
+            {g.prazo && ` · prazo ${g.prazo.split("-").reverse().join("/")}`}
+          </p>
+        </div>
+      </div>
+      <Card>
+        <div className="list-toolbar">
+          <div className="tabs" role="group" aria-label="Filtrar alunos">
+            {([["todos", `Todos (${g.alunos.length})`], ["enviaram", `Enviaram (${enviaram(g)})`], ["faltam", `Não enviaram (${faltam})`]] as const).map(([id, label]) => (
+              <button key={id} aria-pressed={aba === id} className={aba === id ? "active" : ""} onClick={() => setAba(id)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {alunos.length ? alunos.map((a) => {
+          const e = a.envio;
+          return e ? (
+            <button key={a.id} className="activity-row" onClick={() => abrir(e.id)}>
+              <span className="activity-info">
+                <strong>{a.nome}</strong>
+                <span>Enviou em {e.date}</span>
+              </span>
+              <Badge tone={e.status === "aprovada" ? "green" : e.status === "corrigida_ia" ? "blue" : "amber"}>
+                {e.status === "aprovada" ? "Corrigida" : e.status === "corrigida_ia" ? "Corrigida pela IA" : "Enviada"}
+              </Badge>
+              {e.status === "aprovada" && e.scores && <span className="row-score">{e.scores[0]}</span>}
+              <ArrowUpRight size={18} />
+            </button>
+          ) : (
+            <div key={a.id} className="activity-row" style={{ cursor: "default" }}>
+              <span className="activity-info">
+                <strong>{a.nome}</strong>
+                <span>Ainda não enviou</span>
+              </span>
+              <Badge tone="neutral">Não enviou</Badge>
+            </div>
+          );
+        }) : <Empty title="Ninguém por aqui" text="Escolha outro filtro." />}
+      </Card>
+    </>
+  );
+}
+
+// o aluno le, alem do comentario do professor, cada acerto/erro que a IA apontou (trecho + explicacao)
+function ComentariosDaIA({ criterios }: { criterios: { codigo: string; nome: string; pontos: Ponto[] }[] }) {
+  const com = criterios.filter((c) => c.pontos.some((p) => p.comentario));
+  if (!com.length) return null;
+  return (
+    <div className="comentarios-ia">
+      <h3>Comentários da IA</h3>
+      {com.map((c) => (
+        <div key={c.codigo}>
+          <strong>{c.nome}</strong>
+          <ul>
+            {c.pontos.filter((p) => p.comentario).map((p, k) => (
+              <li key={k} className={p.tipo === "acerto" ? "ia-acerto" : "ia-erro"}>
+                <Badge tone={p.tipo === "acerto" ? "green" : "amber"}>{p.tipo === "acerto" ? "Acerto" : "A melhorar"}</Badge>{" "}
+                {p.trecho && <em>“{p.trecho}” </em>}
+                {p.comentario}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
   );
 }
