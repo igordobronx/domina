@@ -1,6 +1,6 @@
 import type { Activity } from "../types";
 import { listarAtividades, listarSubmissoesRevisao } from "./api";
-import { paraStatus } from "./atividades";
+import { paraStatusRevisao } from "./atividades";
 
 function paraData(iso: string): string {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
@@ -29,7 +29,7 @@ export async function carregarRevisoes(): Promise<{ linhas: Activity[]; grupos: 
     title: s.atividade_titulo,
     subject: s.materia,
     date: paraData(s.criado_em),
-    status: paraStatus(s.status),
+    status: paraStatusRevisao(s.status),
     kind: "redacao",
     student: s.aluno_nome,
     turmaId: s.turma_id,

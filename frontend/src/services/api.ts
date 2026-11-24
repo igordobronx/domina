@@ -746,6 +746,10 @@ export function criarAssunto(materiaId: string, nome: string): Promise<AssuntoAP
 export function editarAssunto(id: string, p: { nome?: string; ativo?: boolean }): Promise<AssuntoAPI> {
   return request<AssuntoAPI>(`/assuntos/${id}`, { method: "PATCH", body: JSON.stringify(p) });
 }
+// pratica (exercicios) do aluno por competencia; professor so ve as materias que leciona
+export function praticaDoAluno(alunoId: string): Promise<PraticaAPI[]> {
+  return request<PraticaAPI[]>(`/alunos/${alunoId}/pratica`);
+}
 
 export interface DocumentoAPI {
   id: string;

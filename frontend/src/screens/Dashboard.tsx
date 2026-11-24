@@ -280,8 +280,8 @@ export function Dashboard({
           icon={ListTodo}
           value={conta(paraFazer.length)}
           label="Para fazer"
-          foot="Esperando o seu envio"
           gray
+          foot="Esperando o seu envio"
           onClick={() => navigate("atividades", "disponivel")}
         />
       </div>
@@ -431,7 +431,6 @@ export function Dashboard({
               key={a.id}
               activity={a}
               onClick={() => openActivity(a)}
-              aluno={student}
             />
           ))}
           {real && reais !== null && !recentes.length && (
@@ -468,7 +467,7 @@ function Stat({
   foot: string;
   amber?: boolean;
   blue?: boolean;
-  gray?: boolean; // cinza = ainda não feito (mesma cor do status "Para fazer")
+  gray?: boolean; // cinza = ainda sem fazer (mesma cor do selo "Para fazer")
   onClick?: () => void; // com onClick o cartao vira botao (leva para a lista ja filtrada)
 }) {
   const conteudo = (
@@ -492,11 +491,9 @@ function Stat({
 export function ActivityRow({
   activity: a,
   onClick,
-  aluno = false,
 }: {
   activity: Activity;
   onClick: () => void;
-  aluno?: boolean; // (sem uso desde que o professor também vê "Enviada" e "Corrigida pela IA")
 }) {
   return (
     <button className="activity-row" onClick={onClick}>
