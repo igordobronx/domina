@@ -17,7 +17,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { TextInput } from "react-native";
-import { CampoComSimbolos } from "../components/CampoComSimbolos";
+import { CampoComSimbolos, ComBarraSimbolos } from "../components/CampoComSimbolos";
 import { ActivityRow } from "./Dashboard";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
 import type { Activity, DemoState, Role } from "../types";
@@ -1542,39 +1542,48 @@ function EditarAtividade({ atividadeId, onBack, onSalvo, notify }: {
       <Card>
         <div className="form-grid">
           <label>Título<input value={titulo} onChange={(e) => setTitulo(e.target.value)} /></label>
-          <label>Prazo de entrega<input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} /></label>
+          <label>Prazo (opcional)<input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} /></label>
           {gabaritoLivre && (
-            <label>Valor total (pontos)
+            <label>Valor total
               <input type="number" min={1} value={valorTotal} onChange={(e) => setValorTotal(Number(e.target.value))} />
+              <span className="tiny muted">pontos · {Number((valorTotal / Math.max(questoes.length, 1)).toFixed(1))} por questão</span>
             </label>
           )}
         </div>
         {exatas && a.tem_envios && (
-          <p className="tiny muted">Já há envios: só o título e o prazo podem mudar. Para mudar o gabarito, crie uma nova atividade.</p>
+          <p className="tiny muted">Já há envios: só o título e o prazo mudam.</p>
         )}
-        {gabaritoLivre && questoes.map((q, i) => (
-          <div key={i} className="form-grid">
-            <label>Questão {i + 1} — enunciado
-              <CampoComSimbolos value={q.enunciado} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, enunciado: e.target.value } : x))} />
-            </label>
-            {q.alternativas ? (
-              <CamposObjetiva
-                alternativas={q.alternativas}
-                gabarito={q.resposta_correta}
-                onChange={(alternativas, resposta_correta) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, alternativas, resposta_correta } : x))}
-              />
-            ) : (
-              <label>Resposta correta
-                <CampoComSimbolos value={q.resposta_correta} onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, resposta_correta: e.target.value } : x))} />
-              </label>
-            )}
-            {questoes.length > 1 && i === questoes.length - 1 && (
-              <Button variant="ghost" icon={Trash2} onPress={() => setQuestoes(questoes.slice(0, -1))}>Remover a última questão</Button>
-            )}
-          </div>
-        ))}
         {gabaritoLivre && (
-          <Button variant="ghost" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "", alternativas: questoes[0]?.alternativas ? ["", ""] : null }])}>Adicionar questão</Button>
+          <ComBarraSimbolos materia={a.materia}>
+            {questoes.map((q, i) => (
+              <fieldset key={i} className="questao-bloco">
+                <legend>Questão {i + 1}</legend>
+                {questoes.length > 1 && i === questoes.length - 1 && (
+                  <button className="questao-remover" aria-label={`Remover questão ${i + 1}`}
+                    onClick={() => setQuestoes(questoes.slice(0, -1))}>
+                    <Trash2 size={15} />
+                  </button>
+                )}
+                <CampoComSimbolos aria-label={`Enunciado da questão ${i + 1}`} placeholder="Enunciado" rows={2} value={q.enunciado}
+                  onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, enunciado: e.target.value } : x))} />
+                {q.alternativas ? (
+                  <CamposObjetiva
+                    alternativas={q.alternativas}
+                    gabarito={q.resposta_correta}
+                    onChange={(alternativas, resposta_correta) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, alternativas, resposta_correta } : x))}
+                  />
+                ) : (
+                  <label>Resposta correta
+                    <CampoComSimbolos rows={1} value={q.resposta_correta}
+                      onChange={(e) => setQuestoes(questoes.map((x, j) => j === i ? { ...x, resposta_correta: e.target.value } : x))} />
+                  </label>
+                )}
+              </fieldset>
+            ))}
+          </ComBarraSimbolos>
+        )}
+        {gabaritoLivre && (
+          <Button variant="secondary" icon={Plus} onPress={() => setQuestoes([...questoes, { enunciado: "", resposta_correta: "", alternativas: questoes[0]?.alternativas ? ["", ""] : null }])}>Adicionar questão</Button>
         )}
         <div className="form-actions left">
           <Button onPress={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar alterações"}</Button>
@@ -1636,7 +1645,7 @@ function CamposObjetiva({ alternativas, gabarito, onChange }: {
   const alts = alternativas.length >= 2 ? alternativas : [...alternativas, "", ""].slice(0, 2);
   return (
     <fieldset className="alternativas-form">
-      <legend>Alternativas (marque a correta)</legend>
+      <legend>Alternativas (marque a certa)</legend>
       {alts.map((texto, k) => {
         const letra = "ABCDE"[k];
         return (
@@ -1651,14 +1660,14 @@ function CamposObjetiva({ alternativas, gabarito, onChange }: {
       })}
       <div className="form-actions left">
         {alts.length < 5 && (
-          <Button variant="ghost" icon={Plus} onPress={() => onChange([...alts, ""], gabarito)}>
-            Adicionar alternativa ({"ABCDE"[alts.length]})
+          <Button variant="ghost" small icon={Plus} onPress={() => onChange([...alts, ""], gabarito)}>
+            Alternativa {"ABCDE"[alts.length]}
           </Button>
         )}
         {alts.length > 2 && (
-          <Button variant="ghost" icon={Trash2}
+          <Button variant="ghost" small icon={Trash2}
             onPress={() => onChange(alts.slice(0, -1), gabarito === "ABCDE"[alts.length - 1] ? "" : gabarito)}>
-            Remover a última
+            Tirar {"ABCDE"[alts.length - 1]}
           </Button>
         )}
       </div>
@@ -1688,7 +1697,7 @@ function NovaAtividade({
   const [assuntoId, setAssuntoId] = useState("");
   const [titulo, setTitulo] = useState("");
   const [tipo, setTipo] = useState(TIPOS_ATIVIDADE[0].value);
-  const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }]);
+  const [questoes, setQuestoes] = useState<QuestaoForm[]>([{ enunciado: "", itens: [], resposta_correta: "", alternativas: ["", ""] }]);
   const [valorTotal, setValorTotal] = useState(1000);
   const [formato, setFormato] = useState<"discursiva" | "objetiva">("discursiva");
   const [prazo, setPrazo] = useState("");
@@ -1819,11 +1828,11 @@ function NovaAtividade({
                 />
               </label>
               <label>
-                Prazo de entrega (opcional, aparece no calendário)
+                Prazo (opcional)
                 <input type="date" value={prazo} onChange={(e) => setPrazo(e.target.value)} />
               </label>
               <fieldset className="turmas-check">
-                <legend>Turmas (uma atividade para cada marcada)</legend>
+                <legend>Turmas</legend>
                 {turmas!.length > 1 && (
                   <label className="check">
                     <input
@@ -1869,146 +1878,111 @@ function NovaAtividade({
             </div>
 
             {exigeGabarito && (
-              <Card>
+              <Card className="questoes-exatas">
                 <SectionTitle title="Questões e gabarito" />
-                <div className="tabs" role="group" aria-label="Formato das questões">
-                  <button aria-pressed={formato === "objetiva"} className={formato === "objetiva" ? "active" : ""}
-                    onClick={() => setFormato("objetiva")}>Objetiva (A–E, como o ENEM)</button>
-                  <button aria-pressed={formato === "discursiva"} className={formato === "discursiva" ? "active" : ""}
-                    onClick={() => setFormato("discursiva")}>Discursiva</button>
+                <div className="questoes-topo">
+                  <div className="tabs" role="group" aria-label="Formato das questões">
+                    <button aria-pressed={formato === "objetiva"} className={formato === "objetiva" ? "active" : ""}
+                      onClick={() => setFormato("objetiva")}>Objetiva (A–E)</button>
+                    <button aria-pressed={formato === "discursiva"} className={formato === "discursiva" ? "active" : ""}
+                      onClick={() => setFormato("discursiva")}>Discursiva</button>
+                  </div>
+                  <label className="valor-total">
+                    Valor total
+                    <input type="number" min={1} value={valorTotal} onChange={(e) => setValorTotal(Number(e.target.value))} />
+                    <span className="tiny muted">
+                      pontos · {Number((valorTotal / Math.max(questoes.length, 1)).toFixed(1))} por questão
+                    </span>
+                  </label>
                 </div>
                 <p className="tiny muted">
-                  {formato === "objetiva"
-                    ? "O aluno marca a alternativa na tela e a correção sai na hora, comparando com o gabarito (sem IA)."
-                    : "A IA corrige comparando a resposta do aluno com a resposta correta de cada questão — não é uma avaliação subjetiva, é uma conferência lógica."}
+                  {formato === "objetiva" ? "Corrige na hora pelo gabarito." : "A IA confere com a resposta correta."}
                 </p>
-                <label>
-                  Valor total da atividade (pontos)
-                  <input
-                    type="number"
-                    min={1}
-                    value={valorTotal}
-                    onChange={(e) => setValorTotal(Number(e.target.value))}
-                  />
-                </label>
-                <p className="tiny muted">
-                  Dividido igualmente entre as {questoes.length} questão(ões): {" "}
-                  {(valorTotal / Math.max(questoes.length, 1)).toFixed(1)} pontos cada.
-                </p>
-                {questoes.map((q, i) => (
-                  <div className="form-grid" key={i}>
-                    <label>
-                      {`Questão ${i + 1}${q.itens.length > 1 ? " (enunciado comum, se houver)" : ""}`}
-                      <CampoComSimbolos
-                        value={q.enunciado}
-                        onChange={(e) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], enunciado: e.target.value };
-                          setQuestoes(copia);
-                        }}
-                        placeholder="Ex.: Resolva 2x + 3 = 7 (ou o contexto, se a questão tiver itens a, b, c...)"
-                        rows={3}
-                      />
-                    </label>
-                    {formato === "objetiva" ? (
-                      <CamposObjetiva
-                        alternativas={q.alternativas}
-                        gabarito={q.resposta_correta}
-                        onChange={(alternativas, resposta_correta) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], alternativas, resposta_correta };
-                          setQuestoes(copia);
-                        }}
-                      />
-                    ) : q.itens.map((item, j) => (
-                      <label key={j}>
-                        {`Item ${LETRAS[j] ?? j + 1})`}
-                        <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                          <CampoComSimbolos
-                            value={item}
-                            onChange={(e) => {
-                              const copia = [...questoes];
-                              const itens = [...copia[i].itens];
-                              itens[j] = e.target.value;
-                              copia[i] = { ...copia[i], itens };
-                              setQuestoes(copia);
-                            }}
-                            placeholder={`Ex.: ${LETRAS[j] ?? j + 1}) determine o valor de x`}
-                            rows={2}
+                <ComBarraSimbolos materia={materiaSelecionada?.nome}>
+                  {questoes.map((q, i) => {
+                    const mudar = (parte: Partial<QuestaoForm>) =>
+                      setQuestoes(questoes.map((x, j) => (j === i ? { ...x, ...parte } : x)));
+                    return (
+                      <fieldset className="questao-bloco" key={i}>
+                        <legend>Questão {i + 1}</legend>
+                        {questoes.length > 1 && (
+                          <button className="questao-remover" aria-label={`Remover questão ${i + 1}`}
+                            onClick={() => setQuestoes(questoes.filter((_, j) => j !== i))}>
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                        <CampoComSimbolos
+                          aria-label={`Enunciado da questão ${i + 1}`}
+                          value={q.enunciado}
+                          onChange={(e) => mudar({ enunciado: e.target.value })}
+                          placeholder="Enunciado"
+                          rows={2}
+                        />
+                        {formato === "objetiva" ? (
+                          <CamposObjetiva
+                            alternativas={q.alternativas}
+                            gabarito={q.resposta_correta}
+                            onChange={(alternativas, resposta_correta) => mudar({ alternativas, resposta_correta })}
                           />
-                          {q.itens.length > 1 && (
-                            <button
-                              className="back-link"
-                              onClick={() => {
-                                const copia = [...questoes];
-                                copia[i] = { ...copia[i], itens: copia[i].itens.filter((_, k) => k !== j) };
-                                setQuestoes(copia);
-                              }}
-                            >
-                              <Trash2 size={14} />
+                        ) : (
+                          q.itens.map((item, j) => (
+                            <div className="questao-item" key={j}>
+                              <b>{LETRAS[j] ?? j + 1})</b>
+                              <CampoComSimbolos
+                                aria-label={`Item ${LETRAS[j] ?? j + 1} da questão ${i + 1}`}
+                                value={item}
+                                onChange={(e) => mudar({ itens: q.itens.map((x, k) => (k === j ? e.target.value : x)) })}
+                                placeholder={`Item ${LETRAS[j] ?? j + 1}`}
+                                rows={1}
+                              />
+                              <button className="back-link" aria-label={`Remover item ${LETRAS[j] ?? j + 1}`}
+                                onClick={() => mudar({ itens: q.itens.filter((_, k) => k !== j) })}>
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          ))
+                        )}
+                        {formato === "discursiva" && (
+                          <label>
+                            Resposta correta
+                            <CampoComSimbolos
+                              value={q.resposta_correta}
+                              onChange={(e) => mudar({ resposta_correta: e.target.value })}
+                              placeholder={q.itens.length ? "Ex.: a) x = 2  b) y = 5" : "Ex.: x = 2"}
+                              rows={1}
+                            />
+                          </label>
+                        )}
+                        {q.figura && (
+                          <div className="questao-figura">
+                            <img src={URL.createObjectURL(q.figura)} alt={`Figura da questão ${i + 1}`} />
+                            <button className="back-link" onClick={() => mudar({ figura: undefined })}>
+                              <Trash2 size={14} /> Tirar figura
+                            </button>
+                          </div>
+                        )}
+                        <div className="questao-acoes">
+                          {formato === "discursiva" && (
+                            <button className="back-link" onClick={() => mudar({ itens: [...q.itens, ""] })}>
+                              <Plus size={14} /> Item
                             </button>
                           )}
+                          {!q.figura && (
+                            <label className="back-link questao-figura-botao">
+                              <Plus size={14} /> Figura
+                              <input type="file" accept="image/*" hidden
+                                onChange={(e) => mudar({ figura: e.target.files?.[0] })} />
+                            </label>
+                          )}
                         </div>
-                      </label>
-                    ))}
-                    {formato === "discursiva" && <button
-                      className="back-link"
-                      onClick={() => {
-                        const copia = [...questoes];
-                        copia[i] = { ...copia[i], itens: [...copia[i].itens, ""] };
-                        setQuestoes(copia);
-                      }}
-                    >
-                      <Plus size={14} />
-                      Adicionar item ({LETRAS[q.itens.length] ?? q.itens.length + 1})
-                    </button>}
-                    <label>
-                      Figura da questão (opcional)
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], figura: e.target.files?.[0] };
-                          setQuestoes(copia);
-                        }}
-                      />
-                      {q.figura && (
-                        <img
-                          src={URL.createObjectURL(q.figura)}
-                          alt="Pré-visualização da figura"
-                          style={{ maxWidth: "100%", maxHeight: 220, display: "block", marginTop: 8 }}
-                        />
-                      )}
-                    </label>
-                    {formato === "discursiva" && <label>
-                      Resposta correta (de cada item, se houver)
-                      <CampoComSimbolos
-                        value={q.resposta_correta}
-                        onChange={(e) => {
-                          const copia = [...questoes];
-                          copia[i] = { ...copia[i], resposta_correta: e.target.value };
-                          setQuestoes(copia);
-                        }}
-                        placeholder="Ex.: a) x = 2  b) y = 5"
-                        rows={2}
-                      />
-                    </label>}
-                    {questoes.length > 1 && (
-                      <button
-                        className="back-link"
-                        onClick={() => setQuestoes(questoes.filter((_, j) => j !== i))}
-                      >
-                        <Trash2 size={14} />
-                        Remover questão
-                      </button>
-                    )}
-                  </div>
-                ))}
+                      </fieldset>
+                    );
+                  })}
+                </ComBarraSimbolos>
                 <Button
                   variant="secondary"
                   icon={Plus}
-                  onPress={() => setQuestoes([...questoes, { enunciado: "", itens: [""], resposta_correta: "", alternativas: ["", ""] }])}
+                  onPress={() => setQuestoes([...questoes, { enunciado: "", itens: [], resposta_correta: "", alternativas: ["", ""] }])}
                 >
                   Adicionar questão
                 </Button>

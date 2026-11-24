@@ -3287,3 +3287,117 @@ button.top-avatar {
   .resumo-numeros, .resumo-competencias { grid-template-columns: 1fr; }
   .student-domain { padding-left: 0; }
 }
+
+/* criar/editar atividade de exatas: barra unica de simbolos e uma questao por bloco */
+.barra-simbolos {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 6px;
+  padding: 10px 0;
+  margin-bottom: 12px;
+  background: var(--bg-fcfbf8);
+}
+.barra-simbolos .simbolos-painel {
+  padding: 6px 8px;
+}
+.barra-simbolos .simbolos-lista button {
+  min-width: 32px;
+  height: 32px;
+  font-size: 16px;
+}
+.questoes-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+.valor-total {
+  display: flex;
+  flex-direction: row;
+  font-size: 13px;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.valor-total input {
+  width: 96px;
+}
+.questao-bloco {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px 10px;
+  margin: 0 0 14px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+.questao-bloco > legend {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 6px;
+}
+.questao-bloco textarea,
+.questao-bloco input:not([type="radio"]) {
+  width: 100%;
+}
+.questao-remover {
+  position: absolute;
+  top: -4px;
+  right: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 6px;
+  cursor: pointer;
+}
+.questao-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.questao-item > b {
+  padding-top: 10px;
+}
+.questao-acoes {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.questao-bloco label:not(.alternativa) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+.questao-bloco label.questao-figura-botao {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.questao-figura {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.questao-figura img {
+  max-width: 100%;
+  max-height: 200px;
+}
+@media (max-width: 600px) {
+  /* no celular a barra presa no topo ocupa uma linha so (rola para o lado) */
+  .barra-simbolos .simbolos-lista {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .barra-simbolos .simbolos-lista button {
+    flex-shrink: 0;
+  }
+  .barra-simbolos > .tiny {
+    display: none;
+  }
+}
