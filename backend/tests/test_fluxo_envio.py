@@ -186,7 +186,8 @@ def test_professor_envia_em_nome_do_aluno_e_gera_nota():
     from app import correcao as ia
 
     prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
-    atividades = client.get("/atividades", headers=prof).json()
+    # so redacao (sem questoes): outros testes da suite criam atividades de exatas, que a lista traz primeiro
+    atividades = [a for a in client.get("/atividades", headers=prof).json() if not a.get("questoes")]
     assert atividades and atividades[0]["alunos"], atividades
     aluno_id = atividades[0]["alunos"][0]["id"]
 
