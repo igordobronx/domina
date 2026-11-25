@@ -1,3 +1,4 @@
+import { Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
 import { Check, Download, Monitor, Moon, RotateCcw, Save, ShieldCheck, Sun } from "lucide-react";
 import type { DemoState, Role } from "../types";
@@ -70,7 +71,7 @@ export function Settings({
           </label>
           <label>
             Meta semanal de práticas
-            <select
+            <Escolha
               value={goal}
               onChange={(e) => setGoal(Number(e.target.value))}
             >
@@ -79,7 +80,7 @@ export function Settings({
                   {n} práticas por semana
                 </option>
               ))}
-            </select>
+            </Escolha>
           </label>
         </div>
         {error && (
@@ -326,7 +327,7 @@ export function Help() {
           ],
           [
             "Como testar o fluxo completo?",
-            "Abra Atividades no perfil Aluno, envie uma resposta e troque para Professor no seletor da barra superior. Em Revisões, abra a atividade, ajuste as notas, escreva um feedback e aprove. Volte ao perfil Aluno para ver o resultado.",
+            "Abra Atividades no perfil Aluno, envie uma resposta e troque para Professor no seletor da barra superior. Em Atividades, abra a atividade, ajuste as notas, escreva um feedback e aprove. Volte ao perfil Aluno para ver o resultado.",
           ],
           [
             "O que significa meu percentual de domínio?",

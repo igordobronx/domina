@@ -4,13 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.pontos import valor_da_questao
 from app.auth.dependencies import get_current_user
 from app.database import get_db
 from app.models.enum import PerfilEnum, StatusCorrecaoEnum
 from app.lecionados import materias_visiveis_do_aluno
-from app.models.usuario import Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, Usuario
+from app.models.usuario import Atividade, Correcao, CorrecaoCriterio, Materia, Submissao, Tema, Usuario
 from app.routers.dominio import _compartilha_turma
-from app.schemas.evolucao import EvolucaoMateriaResponse, EvolucaoPontoResponse
+from app.schemas.evolucao import EvolucaoMateriaResponse, SubtopicoResponse, EvolucaoPontoResponse
 
 router = APIRouter(tags=["evolucao"])
 
@@ -75,8 +76,26 @@ def _evolucao_de(db: Session, aluno_id, materia_ids=None) -> list[EvolucaoMateri
             )
         )
 
+    # exatas: media por subtopico (nota final da questao / valor dela), das correcoes aprovadas
+    subs: dict[uuid.UUID, dict[str, list[float]]] = {}
+    for correcao, submissao, atividade, materia in linhas:
+        if atividade.valor_total is None or correcao.nota_professor is None:
+            continue
+        criterios = db.query(CorrecaoCriterio, Tema).join(Tema, Tema.id == CorrecaoCriterio.tema_id) \
+            .filter(CorrecaoCriterio.correcao_id == correcao.id).all()
+        if not criterios:
+            continue
+        for c, t in criterios:
+            valor_questao = valor_da_questao(atividade, t, len(criterios))
+            if not t.subtopico:
+                continue
+            nota = float(c.nota_professor if c.nota_professor is not None else c.nota)
+            subs.setdefault(materia.id, {}).setdefault(t.subtopico, []).append(nota / valor_questao * 100)
+
     return [
         EvolucaoMateriaResponse(
+            subtopicos=[SubtopicoResponse(nome=n, percentual=round(sum(v) / len(v), 1), num_questoes=len(v))
+                        for n, v in sorted(subs.get(materia_id, {}).items())],
             materia_id=materia_id,
             materia=info["nome"],
             media_percentual=round(sum(p.percentual for p in info["pontos"]) / len(info["pontos"]), 1),

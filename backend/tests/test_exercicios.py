@@ -21,7 +21,7 @@ def _setup():
         mk("Prof Exerc", "prof.exerc@x.com", "PROFESSOR", turma)
         mk("Ana Exerc", "ana.exerc@x.com", "ALUNO", turma)
         mk("Caio Exerc", "caio.exerc@x.com", "ALUNO", outra)
-        materia = client.post("/materias", headers=g, json={"nome": "Matematica Ex", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        materia = client.post("/materias", headers=g, json={"nome": "Matematica Ex", "area": "EXATAS"}).json()["id"]
         vincular("prof.exerc@x.com", turma, materia)
         _c.update(turma=turma, outra=outra, materia=materia)
     return token("prof.exerc@x.com", "123456"), _c
@@ -213,3 +213,28 @@ def test_ia_aprende_com_o_que_o_professor_marcou_no_discursivo():
     assert ia()["exercicios_aprendidos"] == antes + 1
     assert client.put(url, headers=p, json={"resultado": None}).status_code == 200
     assert ia()["exercicios_aprendidos"] == antes
+
+
+def test_exercicio_com_varias_questoes_vira_um_grupo():
+    p, c = _setup()
+    base = _objetivo(c, titulo="Lista de soma", turma_ids=[c["turma"]])
+    base.pop("turma_id")
+    extra = {"tipo": "DISCURSIVO", "enunciado": "Explique 1+1.", "resposta_exemplo": "Dois."}
+    # questao extra invalida (objetivo sem gabarito) recusa o exercicio inteiro
+    ruim = {"tipo": "OBJETIVO", "enunciado": "x", "alternativas": ["a", "b"]}
+    assert client.post("/exercicios/lote", headers=p, json={**base, "mais_questoes": [ruim]}).status_code == 422
+    r = client.post("/exercicios/lote", headers=p, json={**base, "mais_questoes": [extra]})
+    assert r.status_code == 201, r.text
+    q1, q2 = r.json()
+    assert q1["grupo_id"] and q1["grupo_id"] == q2["grupo_id"] and (q1["ordem"], q2["ordem"]) == (0, 1)
+    assert q1["titulo"] == q2["titulo"] == "Lista de soma" and q2["tipo"] == "DISCURSIVO"
+    aluno = token("ana.exerc@x.com", "123456")
+    vistos = [e for e in client.get("/exercicios/turma", headers=aluno).json() if e["grupo_id"] == q1["grupo_id"]]
+    assert [e["ordem"] for e in vistos] == [0, 1]
+    # sem questoes extras: sem grupo (exercicio de uma questao so)
+    sozinho = client.post("/exercicios/lote", headers=p, json=base).json()[0]
+    assert sozinho["grupo_id"] is None
+    # excluir uma questao tira o exercicio inteiro
+    assert client.delete(f"/exercicios/{q1['id']}", headers=p).status_code == 204
+    resto = [e for e in client.get("/exercicios/turma", headers=aluno).json() if e["grupo_id"] == q1["grupo_id"]]
+    assert resto == []

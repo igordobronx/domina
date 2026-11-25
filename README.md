@@ -89,8 +89,9 @@ confirmado. Sem a chave do serviço de modelo configurada, responde 503.
 
 **O objetivo dado ao agente:** deixar tudo pronto para o professor revisar e para o aluno
 estudar. Um caminho típico:
-1. `ler_envio`: confere se o texto está legível e completo. Se estiver ilegível, vazio ou
-   cortado (OCR ruim), usa `pedir_nova_foto` e termina sem corrigir.
+1. `ler_envio`: lê o envio. Se entende, sempre corrige, seja qual for o envio (sem sentido, fora do
+   tema, em branco...): dá a nota que couber, inclusive 0, com feedback. Só se a foto for
+   impossível de ler usa `pedir_nova_foto` e termina sem corrigir.
 2. Escolhe o corretor certo: `corrigir_redacao_enem` ou `corrigir_exatas` (matemática; a ferramenta errada
    para o tipo da matéria devolve erro, e o agente se corrige).
 3. `consultar_historico_aluno`: compara a nota de agora com o domínio por competência e as

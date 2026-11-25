@@ -8,14 +8,8 @@ TipoExercicio = Literal["OBJETIVO", "DISCURSIVO"]
 Resultado = Literal["CERTA", "PARCIAL", "ERRADA"]
 
 
-class ExercicioRequest(BaseModel):
-    titulo: str = Field(min_length=1, max_length=200)
-    assunto: str = Field(min_length=1, max_length=200)  # o "tema" da tela
-    assunto_id: uuid.UUID | None = None  # assunto da IA (Treinar IA), opcional
-    materia_id: uuid.UUID
-    turma_id: uuid.UUID
-    # so para estes alunos da turma; vazio/nulo = a turma toda
-    aluno_ids: list[uuid.UUID] | None = None
+class QuestaoExercicio(BaseModel):
+    """Uma questao do exercicio (enunciado + gabarito). O exercicio pode ter varias."""
     tipo: TipoExercicio
     enunciado: str = Field(min_length=1, max_length=10_000)
     alternativas: list[str] | None = None
@@ -47,12 +41,24 @@ class ExercicioRequest(BaseModel):
         return self
 
 
+class ExercicioRequest(QuestaoExercicio):
+    titulo: str = Field(min_length=1, max_length=200)
+    assunto: str = Field(min_length=1, max_length=200)  # o "tema" da tela
+    assunto_id: uuid.UUID | None = None  # assunto da IA (Treinar IA), opcional
+    materia_id: uuid.UUID
+    turma_id: uuid.UUID
+    # so para estes alunos da turma; vazio/nulo = a turma toda
+    aluno_ids: list[uuid.UUID] | None = None
+
+
 class ExercicioLoteRequest(ExercicioRequest):
     """Criar o mesmo exercicio em varias turmas: vira um exercicio separado por turma.
     Com aluno_ids, os alunos podem ser de turmas diferentes: cada turma recebe a sua copia so com
     os alunos dela, e turma sem nenhum aluno escolhido fica de fora."""
     turma_id: uuid.UUID | None = None
     turma_ids: list[uuid.UUID] = Field(min_length=1)
+    # questoes alem da principal (a de cima): o exercicio fica com varias, todas no mesmo grupo
+    mais_questoes: list[QuestaoExercicio] = Field(default_factory=list, max_length=19)
 
 
 class RespostaAlunoResponse(BaseModel):
@@ -108,6 +114,8 @@ class ExercicioProfessorResponse(BaseModel):
     respostas: int = 0
     acertos: int = 0
     alunos_alvo: int = 0  # quantos alunos devem fazer (turma toda ou os escolhidos)
+    grupo_id: uuid.UUID | None = None  # questoes do mesmo exercicio dividem o grupo
+    ordem: int = 0
 
 
 class ExercicioAlunoResponse(BaseModel):
@@ -130,6 +138,8 @@ class ExercicioAlunoResponse(BaseModel):
     resposta_exemplo: str | None = None
     respostas_exemplo: list[str] = []
     explicacao: str | None = None
+    grupo_id: uuid.UUID | None = None
+    ordem: int = 0
 
 
 class ResponderRequest(BaseModel):

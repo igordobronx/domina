@@ -246,17 +246,20 @@ export function Dashboard({
       )}
       <div className={`stats-grid ${student ? "stats-5" : ""}`}>
         <Stat
-          icon={Target}
-          value={real ? (mediaReal != null ? `${mediaReal}%` : "--") : "67%"}
-          label="Domínio médio"
-          foot={real ? "Baseado nas suas correções aprovadas" : "↑ 12 pontos neste mês"}
+          icon={ListTodo}
+          value={conta(paraFazer.length)}
+          label="Para fazer"
+          gray
+          foot="Esperando o seu envio"
+          onClick={() => navigate("atividades", "disponivel")}
         />
         <Stat
-          icon={CheckCheck}
-          value={conta(approved.length)}
-          label="Atividades corrigidas"
-          foot="Com revisão do professor"
-          onClick={() => navigate("atividades", "aprovada")}
+          icon={Clock3}
+          value={conta(pending.length)}
+          label={student ? "Enviadas" : "Aguardando revisão"}
+          foot={student ? "Você pode pedir a correção da IA" : "Você recebe o resultado aqui"}
+          amber
+          onClick={() => navigate("atividades", "pendente")}
         />
         {student && (
           <Stat
@@ -269,20 +272,17 @@ export function Dashboard({
           />
         )}
         <Stat
-          icon={Clock3}
-          value={conta(pending.length)}
-          label={student ? "Enviadas" : "Aguardando revisão"}
-          foot={student ? "Você pode pedir a correção da IA" : "Você recebe o resultado aqui"}
-          amber
-          onClick={() => navigate("atividades", "pendente")}
+          icon={CheckCheck}
+          value={conta(approved.length)}
+          label="Atividades corrigidas"
+          foot="Com revisão do professor"
+          onClick={() => navigate("atividades", "aprovada")}
         />
         <Stat
-          icon={ListTodo}
-          value={conta(paraFazer.length)}
-          label="Para fazer"
-          gray
-          foot="Esperando o seu envio"
-          onClick={() => navigate("atividades", "disponivel")}
+          icon={Target}
+          value={real ? (mediaReal != null ? `${mediaReal}%` : "--") : "67%"}
+          label="Domínio médio"
+          foot={real ? "Baseado nas suas correções aprovadas" : "↑ 12 pontos neste mês"}
         />
       </div>
       <div className="dashboard-middle">

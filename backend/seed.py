@@ -128,7 +128,7 @@ def run_seed():
                       defaults=dict(papel=UsuarioTurmaPapelEnum.PROFESSOR))
 
         materia = get_or_create(db, Materia, escola_id=escola.id, tipo=TipoMateriaEnum.REDACAO_ENEM,
-                                defaults=dict(nome="Redação ENEM"))
+                                defaults=dict(nome="Redação ENEM", area="REDACAO"))
         get_or_create(db, ProfessorMateria, usuario_id=professor.id, turma_id=turma.id, materia_id=materia.id)
         temas = {}
         for codigo, nome in COMPETENCIAS_ENEM:

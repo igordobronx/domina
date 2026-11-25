@@ -43,7 +43,7 @@ def token(email):
 
 
 def nova_materia(nome):
-    r = client.post("/materias", headers=token("professor@domina.com"), json={"nome": nome, "tipo": "MATERIA_OBJETIVA"})
+    r = client.post("/materias", headers=token("professor@domina.com"), json={"nome": nome, "area": "EXATAS"})
     assert r.status_code == 201, r.text
     return r.json()["id"]
 
@@ -144,7 +144,7 @@ def test_correcao_de_exatas_usa_material_e_correcoes_aprovadas_do_professor():
 
 def test_materia_teorica_compara_o_conteudo_e_nao_as_palavras():
     prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
-    r = client.post("/materias", headers=prof, json={"nome": "Teoria musical", "tipo": "MATERIA_DISCURSIVA"})
+    r = client.post("/materias", headers=prof, json={"nome": "Teoria musical", "area": "HUMANAS"})
     turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
     atividade = client.post("/atividades", headers=prof, json={
         "materia_id": r.json()["id"], "turma_id": turma_id, "titulo": "Escalas", "tipo": "EXERCICIO",
@@ -520,6 +520,7 @@ def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
         prof_id = db.query(IaTrecho.professor_id).filter_by(materia_id=mid).first()[0]
         achados = memoria.buscar(db, mid, "Equação Quanto é 2 + 2", memoria.CORRECAO, 1, prof_id)
         assert len(achados) == 1 and "EXEMPLO MODELO" in achados[0].texto
+    assert client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": "MEDIA"}).json()["avaliacao_ia"] == "MEDIA"
     assert client.put(f"/submissoes/{subs[2]}/avaliacao-ia", headers=prof, json={"avaliacao": None}).json()["avaliacao_ia"] is None
 
     # 3) esquecer = tirar de uso: a lista vem com as que a IA mais errou primeiro; nada e apagado
@@ -571,3 +572,38 @@ def test_jeito_de_corrigir_boa_correcao_vem_primeiro_e_esquecer_nao_apaga():
     assert client.put(f"/documentos/{doc['id']}/uso", headers=prof, json={"em_uso": True}).json()["ativo"] is True
     assert ia()["trechos_de_material"] > 0 and no_treino()[0] > 3
     assert client.put(f"/documentos/{doc['id']}/uso", headers=token("aluno@domina.com"), json={"em_uso": False}).status_code == 403
+
+
+def test_professor_corrige_direto_sem_ia_e_a_memoria_guarda_so_a_nota_dele():
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    materia_id = nova_materia("Matemática sem IA")
+    turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
+    atividade = client.post("/atividades", headers=prof, json={
+        "materia_id": materia_id, "turma_id": turma_id, "titulo": "Lista sem IA", "tipo": "EXERCICIO",
+        "questoes": [{"enunciado": "Resolva 3x = 9", "resposta_correta": "x = 3"}],
+    }).json()
+    sub = client.post("/submissoes/texto", headers=aluno, json={"atividade_id": atividade["id"], "texto": "x = 3"}).json()
+    # ficha em branco: nao grava nada
+    ficha = client.get(f"/submissoes/{sub['id']}/correcao-manual", headers=prof).json()
+    assert ficha["modelo_usado"] == "professor" and [c["codigo"] for c in ficha["criterios"]] == ["Q1"]
+    assert client.get(f"/submissoes/{sub['id']}/correcao", headers=prof).status_code == 404
+    r = client.put(f"/submissoes/{sub['id']}/aprovar", headers=prof, json={
+        "notas": [{"codigo": "Q1", "nota": 700}], "feedback": "Boa resolução."})
+    assert r.status_code == 200, r.text
+    assert r.json()["nota_professor"] == 700 and r.json()["status"] == "APROVADA"
+    m = client.get(f"/materias/{materia_id}/ia", headers=prof).json()
+    assert m["correcoes_aprendidas"] == 1
+    assert not m["concordancia"]  # sem correcao da IA nao ha o que comparar
+    assert client.get(f"/submissoes/{sub['id']}/correcao-manual", headers=prof).status_code == 409
+
+
+def test_lista_de_atividades_do_aluno_tem_as_mais_recentes_primeiro():
+    prof, aluno = token("professor@domina.com"), token("aluno@domina.com")
+    materia_id = nova_materia("Matemática ordem")
+    turma_id = client.get("/turmas/minhas", headers=prof).json()[0]["id"]
+    for t in ("Antiga ordem", "Nova ordem"):
+        assert client.post("/atividades", headers=prof, json={
+            "materia_id": materia_id, "turma_id": turma_id, "titulo": t, "tipo": "EXERCICIO",
+            "questoes": [{"enunciado": "1+1", "resposta_correta": "2"}]}).status_code == 201
+    titulos = [a["titulo"] for a in client.get("/atividades", headers=aluno).json()]
+    assert titulos.index("Nova ordem") < titulos.index("Antiga ordem")

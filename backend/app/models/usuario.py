@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
@@ -91,6 +92,9 @@ class Materia(Base):
     escola_id = Column(UUID(as_uuid=True), ForeignKey("escola.id"), nullable=False)
     nome = Column(String(150), nullable=False)
     tipo = Column(SQLEnum(TipoMateriaEnum), nullable=False)
+    # area do conhecimento (EXATAS, NATUREZA, HUMANAS, LINGUAGENS, REDACAO, OUTRA); o formato da atividade
+    # (redacao x gabarito) vem do tipo da ATIVIDADE, nao da materia
+    area = Column(String(20), nullable=False, default="OUTRA", server_default="OUTRA")
     versao = Column(Integer, default=1, nullable=False) #começa no 1 mesmo como default de acordo co a documentação
 
 class Tema(Base):
@@ -113,6 +117,9 @@ class Tema(Base):
     alternativas = Column(JSON, nullable=True)
     # figura do enunciado (ex.: estruturas quimicas), anexada pelo professor; caminho em UPLOAD_DIR
     imagem = Column(String(255), nullable=True)
+    # assunto da questao (so exatas/gabarito): o professor escreve ou a IA identifica; alimenta a evolucao por subtopico
+    subtopico = Column(String(150), nullable=True)
+    valor = Column(Numeric(6, 2), nullable=True)  # pontos desta questao (vazio = total dividido igual)
 
 class Assunto(Base):
     """Assunto dentro de uma materia (ex.: "Funcao afim"). A memoria da IA, os materiais, as
@@ -206,6 +213,7 @@ class Atividade(Base):
     arquivada = Column(Boolean, nullable=False, default=False, server_default=false())
     # quem propos a atividade; nulo = anterior a este campo (visivel a todos os professores da turma)
     criado_por = Column(UUID(as_uuid=True), ForeignKey("usuario.id"), nullable=True)
+    criado_em = Column(DateTime, default=datetime.now, nullable=True)  # lista: mais recentes primeiro
     assunto_id = Column(UUID(as_uuid=True), ForeignKey("assunto.id"), nullable=True)  # opcional; nulo = Geral
 
 
@@ -343,6 +351,8 @@ class Correcao(Base):
     explicacao_ruim = Column(Boolean, nullable=False, default=False, server_default=false())
     # o professor marcou esta correcao como exemplo modelo: entra primeiro na busca de exemplos
     boa_correcao = Column(Boolean, nullable=False, default=False, server_default=false())
+    # avaliacao intermediaria: correcao razoavel (nem modelo, nem ruim)
+    correcao_razoavel = Column(Boolean, nullable=False, default=False, server_default=false())
 
 
 class CorrecaoCriterio(Base):
@@ -428,6 +438,10 @@ class Exercicio(Base):
     # discursivo com mais de uma resposta de exemplo (todas, inclusive a 1a); nulo = so a resposta_exemplo
     respostas_exemplo = Column(JSON, nullable=True)
     explicacao = Column(Text, nullable=True)
+    # varias questoes no mesmo exercicio: cada questao e uma linha, e as do mesmo exercicio (por turma)
+    # dividem o grupo_id; `ordem` e a posicao dela. Sem grupo = exercicio de uma questao so
+    grupo_id = Column(UUID(as_uuid=True), nullable=True)
+    ordem = Column(Integer, nullable=False, default=0, server_default="0")
     # excluir = desativar (as respostas dos alunos ficam)
     ativo = Column(Boolean, nullable=False, default=True, server_default=true())
     criado_em = Column(DateTime, server_default=func.now(), nullable=True)

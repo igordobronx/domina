@@ -21,7 +21,7 @@ def _setup():
         for nome, email in (("Prof A", "prof.a.assunto@x.com"), ("Prof B", "prof.b.assunto@x.com")):
             client.post("/usuarios", headers=g, json={"nome": nome, "email": email, "senha": "123456",
                                                      "perfil": "PROFESSOR", "turma_id": turma})
-        materia = client.post("/materias", headers=g, json={"nome": "Mat Assunto", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        materia = client.post("/materias", headers=g, json={"nome": "Mat Assunto", "area": "EXATAS"}).json()["id"]
         vincular("prof.a.assunto@x.com", turma, materia)
         vincular("prof.b.assunto@x.com", turma, materia)
         _c.update(turma=turma, materia=materia)

@@ -1,3 +1,4 @@
+import { Escolha } from "../components/Seletor";
 import { useCallback, useEffect, useState } from "react";
 import { ShieldCheck, ShieldAlert } from "lucide-react";
 import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
@@ -81,9 +82,9 @@ export function Logs({ role, notify }: { role: Role; notify: (m: string) => void
         <div className="form-grid">
           {aba === "seguranca" ? (
             <label>Tipo
-              <select value={tipo} onChange={(e) => { setTipo(e.target.value); setPagina(0); }}>
+              <Escolha value={tipo} onChange={(e) => { setTipo(e.target.value); setPagina(0); }}>
                 {TIPOS.map((t) => <option key={t} value={t}>{t || "Todos"}</option>)}
-              </select>
+              </Escolha>
             </label>
           ) : (
             <label>Ação

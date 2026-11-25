@@ -117,7 +117,7 @@ def _setup():
         mk("Prof XP", "prof.xp@x.com", "PROFESSOR")
         a1 = mk("Ana XP", "ana.xp@x.com", "ALUNO")
         a2 = mk("Beto XP", "beto.xp@x.com", "ALUNO")
-        materia = client.post("/materias", headers=g, json={"nome": "Mat XP", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        materia = client.post("/materias", headers=g, json={"nome": "Mat XP", "area": "EXATAS"}).json()["id"]
         vincular("prof.xp@x.com", turma, materia)
         _c.update(turma=turma, a1=a1, a2=a2, materia=materia)
     return g, token("prof.xp@x.com", "123456"), _c

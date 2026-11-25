@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import type { LucideIcon } from "lucide-react";
-import { ArrowUpRight, X } from "lucide-react";
+import { ArrowUpRight, Plus, X } from "lucide-react";
 import { colors as c, fonts } from "../theme";
 
 export function Label({
@@ -239,19 +239,32 @@ export function Empty({
     </div>
   );
 }
+const pilha: (() => void)[] = [];
 export function Modal({
   title,
   children,
   onClose,
+  largo,
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  largo?: boolean; // formularios compridos (criar/editar)
 }) {
+  // Esc fecha o pop-up; com pop-ups empilhados, so o de cima (ref: o onClose muda a cada render)
+  const fechar = useRef(onClose);
+  fechar.current = onClose;
+  useEffect(() => {
+    const eu = () => fechar.current();
+    pilha.push(eu);
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape" && pilha[pilha.length - 1] === eu) eu(); };
+    document.addEventListener("keydown", esc);
+    return () => { pilha.splice(pilha.indexOf(eu), 1); document.removeEventListener("keydown", esc); };
+  }, []);
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <section
-        className="modal"
+        className={largo ? "modal largo" : "modal"}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -278,5 +291,18 @@ export function Row({ children }: { children: ReactNode }) {
     >
       {children}
     </View>
+  );
+}
+
+// botao que abre um formulario de criar num pop-up; `children` recebe o fechar
+export function BotaoCriar({ rotulo, titulo, children }: {
+  rotulo: string; titulo: string; children: (fechar: () => void) => ReactNode;
+}) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <>
+      <Button icon={Plus} onPress={() => setAberto(true)}>{rotulo}</Button>
+      {aberto && <Modal title={titulo} largo onClose={() => setAberto(false)}>{children(() => setAberto(false))}</Modal>}
+    </>
   );
 }

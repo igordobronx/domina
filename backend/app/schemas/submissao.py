@@ -45,6 +45,7 @@ class CriterioResponse(BaseModel):
     nota_professor: float | None
     justificativa: str
     pontos: list[PontoResponse] = []
+    valor: float | None = None  # maximo de pontos deste criterio (exatas); redacao: nulo
 
 
 class CorrecaoResponse(BaseModel):
@@ -58,7 +59,7 @@ class CorrecaoResponse(BaseModel):
     modelo_usado: str
     feedback: str | None
     criterios: list[CriterioResponse]
-    avaliacao_ia: str | None = None  # BOA (exemplo modelo) | MA (explicacao ruim) | nulo
+    avaliacao_ia: str | None = None  # BOA (exemplo modelo) | MEDIA (razoavel) | MA (explicacao ruim) | nulo
 
 
 class NotaCriterioInput(BaseModel):
@@ -81,6 +82,7 @@ class AprovarRequest(BaseModel):
     motivo_mudanca: str | None = Field(default=None, max_length=1000)
     # 1 clique: "a explicacao da IA estava ruim" (mesmo com a nota certa). So a IA usa.
     explicacao_ruim: bool = False
+    correcao_razoavel: bool = False  # 1 clique: nem modelo, nem ruim
     boa_correcao: bool = False  # 1 clique: esta correcao e um exemplo modelo para a IA
 
     @field_validator("notas")
@@ -96,23 +98,30 @@ class MateriaResponse(BaseModel):
     id: uuid.UUID
     nome: str
     tipo: str
+    area: str
 
 
 class CriarMateriaRequest(BaseModel):
     nome: str = Field(min_length=1, max_length=150)
-    tipo: Literal["REDACAO_ENEM", "REDACAO_OUTRO_VESTIBULAR", "MATERIA_OBJETIVA", "MATERIA_DISCURSIVA"]
+    area: Literal["EXATAS", "NATUREZA", "HUMANAS", "LINGUAGENS", "REDACAO", "OUTRA"]
 
 
 class QuestaoInput(BaseModel):
     # discursiva de quimica/fisica tem enunciado e gabarito longos (mecanismo, nomes); colunas sao Text
     enunciado: str = Field(min_length=1, max_length=10_000)
-    resposta_correta: str = Field(min_length=1, max_length=5_000)
+    # objetiva: a letra do gabarito. Discursiva: a resposta exemplo. Os dois sao obrigatorios
+    resposta_correta: str = Field(default="", max_length=5_000)
+    subtopico: str | None = Field(default=None, max_length=150)  # em branco = a IA identifica
+    valor: float | None = Field(default=None, gt=0, le=10_000)  # pontos da questao; vazio = divide o que sobra
     # objetiva (estilo ENEM): textos das alternativas (A, B, C...); o gabarito vira so a letra
     alternativas: list[str] | None = Field(default=None, min_length=2, max_length=5)
 
     @model_validator(mode="after")
     def _objetiva(self):
-        if self.alternativas is None:
+        if self.alternativas is None:  # discursiva: resposta exemplo obrigatoria (digitada ou gerada pela IA e aprovada)
+            self.resposta_correta = self.resposta_correta.strip()
+            if not self.resposta_correta:
+                raise ValueError("Informe a resposta exemplo (ou gere com a IA e revise).")
             return self
         self.alternativas = [a.strip() for a in self.alternativas]
         if not all(self.alternativas):
@@ -133,6 +142,8 @@ class QuestaoAtividadeResponse(BaseModel):
     enunciado: str
     alternativas: list[str] | None = None  # objetiva: o aluno recebe as alternativas, nunca o gabarito
     tem_imagem: bool = False  # figura anexada pelo professor (GET /atividades/{id}/questoes/{codigo}/imagem)
+    subtopico: str | None = None
+    valor: float | None = None  # pontos desta questao
     resposta_correta: str | None = None  # so professor/gestor (para editar); o aluno nunca recebe o gabarito
 
 
@@ -232,4 +243,4 @@ class MinhaSubmissaoResponse(BaseModel):
 
 
 class AvaliacaoIARequest(BaseModel):
-    avaliacao: Literal["BOA", "MA"] | None = None
+    avaliacao: Literal["BOA", "MEDIA", "MA"] | None = None

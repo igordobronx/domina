@@ -119,6 +119,8 @@ export interface QuestaoAtividadeAPI {
   enunciado: string;
   tem_imagem?: boolean; // figura do enunciado anexada pelo professor
   alternativas?: string[] | null; // objetiva (estilo ENEM): textos de A, B, C...; o gabarito e so a letra
+  subtopico?: string | null;
+  valor?: number | null; // pontos desta questao
   resposta_correta?: string | null; // so professor/gestor recebem o gabarito
 }
 
@@ -162,6 +164,7 @@ export interface CriterioAPI {
   nota_professor: number | null;
   justificativa: string;
   pontos: PontoAPI[];
+  valor?: number | null; // maximo de pontos do criterio (exatas)
 }
 
 export interface MinhaSubmissaoAPI {
@@ -265,6 +268,7 @@ export interface MateriaAPI {
   id: string;
   nome: string;
   tipo: "REDACAO_ENEM" | "REDACAO_OUTRO_VESTIBULAR" | "MATERIA_OBJETIVA" | "MATERIA_DISCURSIVA";
+  area: "EXATAS" | "NATUREZA" | "HUMANAS" | "LINGUAGENS" | "REDACAO" | "OUTRA";
 }
 
 export function listarMaterias(): Promise<MateriaAPI[]> {
@@ -273,7 +277,7 @@ export function listarMaterias(): Promise<MateriaAPI[]> {
 
 export function criarMateria(payload: {
   nome: string;
-  tipo: MateriaAPI["tipo"];
+  area: MateriaAPI["area"];
 }): Promise<MateriaAPI> {
   return request<MateriaAPI>("/materias", { method: "POST", body: JSON.stringify(payload) });
 }
@@ -284,7 +288,7 @@ export function criarAtividadesLote(payload: {
   turma_ids: string[];
   titulo: string;
   tipo: AtividadeAPI["tipo"];
-  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[] }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string; valor?: number }[];
   valor_total?: number;
   prazo?: string;
   assunto_id?: string | null;
@@ -296,7 +300,7 @@ export function editarAtividade(id: string, payload: {
   titulo?: string;
   prazo?: string | null; // null limpa o prazo
   valor_total?: number;
-  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[] }[];
+  questoes?: { enunciado: string; resposta_correta: string; alternativas?: string[]; subtopico?: string; valor?: number }[];
 }): Promise<AtividadeAPI> {
   return request<AtividadeAPI>(`/atividades/${id}`, { method: "PUT", body: JSON.stringify(payload) });
 }
@@ -311,7 +315,7 @@ export function criarAtividade(payload: {
   turma_id: string;
   titulo: string;
   tipo: AtividadeAPI["tipo"];
-  questoes?: { enunciado: string; resposta_correta: string }[];
+  questoes?: { enunciado: string; resposta_correta: string; subtopico?: string }[];
   valor_total?: number;
   prazo?: string;
   assunto_id?: string | null;
@@ -424,8 +428,9 @@ export interface CorrecaoAPI {
   confianca: number;
   status: string;
   feedback: string | null;
+  modelo_usado: string; // "professor" = o professor corrigiu direto, sem a IA
   criterios: CriterioAPI[];
-  avaliacao_ia: "BOA" | "MA" | null; // BOA = exemplo modelo; MA = explicação ruim (só a IA usa)
+  avaliacao_ia: "BOA" | "MEDIA" | "MA" | null; // BOA = exemplo modelo; MA = explicação ruim (só a IA usa)
 }
 
 // o que da memória do professor a IA usou numa correção (só professor/gestor veem)
@@ -479,20 +484,25 @@ export function verCorrecao(id: string): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/correcao`);
 }
 
+// ficha em branco para o professor corrigir sem a IA (nada e gravado ate aprovar)
+export function verCorrecaoManual(id: string): Promise<CorrecaoAPI> {
+  return request<CorrecaoAPI>(`/submissoes/${id}/correcao-manual`);
+}
+
 export function aprovarCorrecao(
   id: string,
   notas: { codigo: string; nota: number }[],
   feedback: string,
   motivoMudanca?: string, // por que o professor mudou a nota da IA (só a IA usa, para aprender)
-  avaliacaoIA: "BOA" | "MA" | null = null, // 1 clique: boa correção (modelo) ou explicação ruim, sem mudar a nota
+  avaliacaoIA: "BOA" | "MEDIA" | "MA" | null = null, // 1 clique: boa correção (modelo) ou explicação ruim, sem mudar a nota
 ): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/aprovar`, {
     method: "PUT",
-    body: JSON.stringify({ notas, feedback, motivo_mudanca: motivoMudanca?.trim() || null, explicacao_ruim: avaliacaoIA === "MA", boa_correcao: avaliacaoIA === "BOA" }),
+    body: JSON.stringify({ notas, feedback, motivo_mudanca: motivoMudanca?.trim() || null, explicacao_ruim: avaliacaoIA === "MA", correcao_razoavel: avaliacaoIA === "MEDIA", boa_correcao: avaliacaoIA === "BOA" }),
   });
 }
 
-export function avaliarIA(id: string, avaliacao: "BOA" | "MA" | null): Promise<CorrecaoAPI> {
+export function avaliarIA(id: string, avaliacao: "BOA" | "MEDIA" | "MA" | null): Promise<CorrecaoAPI> {
   return request<CorrecaoAPI>(`/submissoes/${id}/avaliacao-ia`, { method: "PUT", body: JSON.stringify({ avaliacao }) });
 }
 
@@ -521,6 +531,7 @@ export interface EvolucaoMateriaAPI {
   media_percentual: number;
   num_atividades: number;
   historico: EvolucaoPontoAPI[];
+  subtopicos?: { nome: string; percentual: number; num_questoes: number }[]; // exatas
 }
 
 export function evolucaoMinha(): Promise<EvolucaoMateriaAPI[]> {
@@ -614,6 +625,10 @@ export interface ExercicioPayload {
   gerado_por_ia: boolean;
 }
 
+// uma questao do exercicio (enunciado + gabarito); o exercicio pode ter varias
+export type QuestaoExercicioPayload = Pick<ExercicioPayload, "tipo" | "enunciado" | "alternativas" | "resposta_correta"
+  | "resposta_exemplo" | "respostas_exemplo" | "explicacao" | "gerado_por_ia">;
+
 export interface ExercicioProfessorAPI extends Required<Omit<ExercicioPayload, "alternativas" | "resposta_correta" | "resposta_exemplo" | "respostas_exemplo" | "explicacao" | "aluno_ids">> {
   respostas_exemplo: string[];
   aluno_ids: string[] | null;
@@ -629,6 +644,8 @@ export interface ExercicioProfessorAPI extends Required<Omit<ExercicioPayload, "
   respostas: number;
   acertos: number;
   alunos_alvo: number;
+  grupo_id: string | null; // questoes do mesmo exercicio dividem o grupo
+  ordem: number;
 }
 
 export interface ExercicioAlunoAPI {
@@ -650,6 +667,8 @@ export interface ExercicioAlunoAPI {
   resposta_exemplo: string | null;
   respostas_exemplo: string[];
   explicacao: string | null;
+  grupo_id: string | null;
+  ordem: number;
 }
 
 export interface SugestaoExercicioAPI {
@@ -667,7 +686,7 @@ export function listarExerciciosProfessor(): Promise<ExercicioProfessorAPI[]> {
 export function criarExercicio(p: ExercicioPayload): Promise<ExercicioProfessorAPI> {
   return request<ExercicioProfessorAPI>("/exercicios", { method: "POST", body: JSON.stringify(p) });
 }
-export function criarExerciciosLote(p: ExercicioPayload & { turma_ids: string[] }): Promise<ExercicioProfessorAPI[]> {
+export function criarExerciciosLote(p: ExercicioPayload & { turma_ids: string[]; mais_questoes?: QuestaoExercicioPayload[] }): Promise<ExercicioProfessorAPI[]> {
   return request<ExercicioProfessorAPI[]>("/exercicios/lote", { method: "POST", body: JSON.stringify(p) });
 }
 export type ResultadoAPI = "CERTA" | "PARCIAL" | "ERRADA";

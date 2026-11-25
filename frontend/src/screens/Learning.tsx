@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SeletorMultiplo } from "../components/Seletor";
 import {
   ArrowLeft,
   ArrowRight,
@@ -85,7 +86,9 @@ function doDemo(t: (typeof studyTasks)[number]): ExercicioComum {
 }
 
 export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }) {
-  const [subject, setSubject] = useState("Todas");
+  const [escolhidas, setEscolhidas] = useState<string[]>([]);
+  const [verTodas, setVerTodas] = useState(false);
+  const [abertas, setAbertas] = useState<string[]>([]); // materias com subtopicos expandidos
   const [porMateria, setPorMateria] = useState<EvolucaoMateriaAPI[] | null>(null);
   const [dominio, setDominio] = useState<DominioAPI[] | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -133,8 +136,11 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
     );
   }
 
-  const subjects = ["Todas", ...materias.map((m) => m.materia)];
-  const visiveis = subject === "Todas" ? materias : materias.filter((m) => m.materia === subject);
+  // nada marcado = mostra todas (nada pre-selecionado)
+  const visiveis = escolhidas.length ? materias.filter((m) => escolhidas.includes(m.materia)) : materias;
+  const subject = visiveis.length === 1 ? visiveis[0].materia : "Todas";
+  const LIMITE = 3; // atalho: com muitas materias mostra so as 3 primeiras ate clicar em "Ver mais"
+  const cardsMaterias = verTodas ? visiveis : visiveis.slice(0, LIMITE);
   const totalAtividades = visiveis.reduce((acc, m) => acc + m.num_atividades, 0);
   const mediaGeral = totalAtividades
     ? Math.round(
@@ -148,8 +154,8 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
     historico.length > 1 ? Math.round(historico[historico.length - 1].percentual - historico[0].percentual) : 0;
   // C1-C5 so fazem sentido para redacao: exatas nao alimenta o dominio por tema (ver backend).
   // o nome exato da materia varia (ex.: "Redação ENEM"), entao basta comecar com "Redação".
-  const mostraCompetencias = subject === "Todas" || subject.toLowerCase().startsWith("redação");
-  const competenciasRedacao = mostraCompetencias ? (dominio ?? []).filter((d) => d.num_evidencias > 0) : [];
+  const comEvidencia = (dominio ?? []).filter((d) => d.num_evidencias > 0);
+  const MAX_SUB = 5;
 
   return (
     <>
@@ -176,20 +182,12 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
       </Card>
       <Card>
         <SectionTitle title="Cada matéria, uma conquista" />
-        <div className="tabs input-tabs">
-          {subjects.map((s) => (
-            <button
-              key={s}
-              aria-pressed={subject === s}
-              className={subject === s ? "active" : ""}
-              onClick={() => setSubject(s)}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
+        <SeletorMultiplo rotulo="Matérias" placeholder="Todas as matérias (escolha para filtrar)" todos="Todas as matérias"
+          opcoes={materias.map((m) => ({ valor: m.materia, rotulo: m.materia }))}
+          valores={escolhidas} onChange={(v) => { setEscolhidas(v); setVerTodas(false); }} />
+        <SectionTitle title="Matérias" />
         <div className="topic-cards">
-          {visiveis.map((m) => (
+          {cardsMaterias.map((m) => (
             <div className="topic-detail" key={m.materia_id}>
               <Badge tone="neutral">{m.materia}</Badge>
               <h3>{m.materia}</h3>
@@ -199,27 +197,39 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
               </div>
               <Progress value={m.media_percentual} label={m.materia} />
               <p className="tiny muted">Com base em {m.num_atividades} atividade(s) corrigida(s)</p>
+              {(() => {
+                // redacao: competencias C1-C5 (dominio); demais materias: subtopicos das questoes
+                const subs = m.materia.toLowerCase().startsWith("redação")
+                  ? comEvidencia.filter((d) => d.materia === m.materia).map((d) => ({
+                      chave: d.tema_id, nome: `${d.habilidade_codigo} ${HABILIDADE_NOME[d.habilidade_codigo] ?? d.tema}`,
+                      pct: d.percentual_dominio, tema: d.tema }))
+                  : (m.subtopicos ?? []).map((x) => ({ chave: x.nome, nome: x.nome, pct: x.percentual, tema: x.nome }));
+                if (!subs.length) return null;
+                const aberta = abertas.includes(m.materia_id);
+                return (
+                  <>
+                    <h4>{m.materia.toLowerCase().startsWith("redação") ? "Competências (C1 a C5)" : "Subtópicos"}</h4>
+                    {(aberta ? subs : subs.slice(0, MAX_SUB)).map((d) => (
+                      <div key={d.chave} style={{ marginTop: 10 }}>
+                        <div className="tiny">{d.nome} · {Math.round(d.pct)}%</div>
+                        <Progress value={d.pct} label={d.tema} />
+                      </div>
+                    ))}
+                    {subs.length > MAX_SUB && (
+                      <Button variant="secondary" small onPress={() => setAbertas(aberta ? abertas.filter((x) => x !== m.materia_id) : [...abertas, m.materia_id])}>
+                        {aberta ? "Ver menos" : "Ver mais"}
+                      </Button>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           ))}
         </div>
-        {competenciasRedacao.length > 0 && (
-          <>
-            <SectionTitle title="Competências da redação (C1 a C5)" />
-            <div className="topic-cards">
-              {competenciasRedacao.map((d) => (
-                <div className="topic-detail" key={d.tema_id}>
-                  <Badge tone="neutral">{d.habilidade_codigo}</Badge>
-                  <h3>{HABILIDADE_NOME[d.habilidade_codigo] ?? d.tema}</h3>
-                  <div className="topic-large">
-                    {Math.round(d.percentual_dominio)}
-                    <small>%</small>
-                  </div>
-                  <Progress value={d.percentual_dominio} label={d.tema} />
-                  <p className="tiny muted">Com base em {d.num_evidencias} correções aprovadas</p>
-                </div>
-              ))}
-            </div>
-          </>
+        {visiveis.length > LIMITE && (
+          <Button variant="secondary" small onPress={() => setVerTodas(!verTodas)}>
+            {verTodas ? "Ver menos" : "Ver mais"}
+          </Button>
         )}
         <div className="card-note">
           O domínio é uma estimativa de aprendizagem, não uma nota oficial nem
@@ -526,11 +536,17 @@ function DoProfessor({ real, aberto, setAberto }: { real: boolean; aberto: boole
     exerciciosDaTurma().then(setLista).catch((e) => setErro(e instanceof Error ? e.message : "Não foi possível carregar."));
   }, [real]);
   const abrir = (ex: ExercicioAlunoAPI | null) => { setAtual(ex); setAberto(!!ex); window.scrollTo(0, 0); };
+  // exercicio com varias questoes: as linhas do mesmo grupo, na ordem
+  const questoesDe = (ex: ExercicioAlunoAPI) =>
+    (ex.grupo_id ? (lista ?? []).filter((x) => x.grupo_id === ex.grupo_id) : [ex]).sort((a, b) => a.ordem - b.ordem);
   if (aberto && atual)
     return (
       <ExercicioDoProfessor
         key={atual.id}
         ex={atual}
+        posicao={questoesDe(atual).length > 1 ? `Questão ${questoesDe(atual).findIndex((x) => x.id === atual.id) + 1} de ${questoesDe(atual).length}` : ""}
+        proxima={questoesDe(atual)[questoesDe(atual).findIndex((x) => x.id === atual.id) + 1] ?? null}
+        onProxima={abrir}
         onBack={() => abrir(null)}
         onRespondido={(novo) => { setAtual(novo); setLista((l) => l?.map((x) => (x.id === novo.id ? novo : x)) ?? l); }}
       />
@@ -544,31 +560,39 @@ function DoProfessor({ real, aberto, setAberto }: { real: boolean; aberto: boole
     <>
       <p className="tiny muted">{feitos} de {lista.length} feito(s)</p>
       <div className="study-grid">
-        {lista.map((ex) => (
-          <Card key={ex.id} className="study-task ex-prof">
+        {lista.filter((ex) => !ex.grupo_id || questoesDe(ex)[0].id === ex.id).map((principal) => {
+          const todas = questoesDe(principal);
+          const feitas = todas.filter((x) => x.minha_resposta !== null).length;
+          // abre na primeira questao que ainda nao foi respondida
+          const ex = todas.find((x) => x.minha_resposta === null) ?? todas[0];
+          return (
+          <Card key={principal.id} className="study-task ex-prof">
             <div className="section-title">
               <Badge tone="neutral">{ex.tipo === "OBJETIVO" ? "Objetivo" : "Discursivo"}</Badge>
               {ex.minha_resposta !== null ? (
                 <Badge tone="neutral">Feito</Badge>
               ) : ex.gerado_por_ia ? <Badge tone="neutral"><Sparkles size={13} /> Com ajuda da IA</Badge> : null}
             </div>
-            {ex.minha_resposta !== null && <ResultadoMini resultado={ex.tipo === "OBJETIVO" && !ex.resultado ? (ex.correta ? "CERTA" : "ERRADA") : (ex.resultado as "CERTA" | "ERRADA" | "PARCIAL" | null)} />}
+            {todas.length > 1 ? <Badge tone="neutral">{feitas} de {todas.length} questões feitas</Badge>
+              : ex.minha_resposta !== null && <ResultadoMini resultado={ex.tipo === "OBJETIVO" && !ex.resultado ? (ex.correta ? "CERTA" : "ERRADA") : (ex.resultado as "CERTA" | "ERRADA" | "PARCIAL" | null)} />}
             {ex.comentario && <Badge tone="amber">O professor comentou</Badge>}
             <span className="eyebrow">{ex.materia_nome} · {ex.assunto}</span>
             <h2>{ex.titulo}</h2>
             <p className="tiny muted">Prof. {ex.professor_nome}</p>
-            <Button variant={ex.minha_resposta === null ? "primary" : "secondary"} icon={ArrowRight} onPress={() => abrir(ex)}>
-              {ex.minha_resposta === null ? "Começar" : "Ver de novo"}
+            <Button variant={feitas < todas.length ? "primary" : "secondary"} icon={ArrowRight} onPress={() => abrir(ex)}>
+              {feitas === todas.length ? "Ver de novo" : feitas ? "Continuar" : "Começar"}
             </Button>
           </Card>
-        ))}
+          );
+        })}
       </div>
     </>
   );
 }
 
-function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
+function ExercicioDoProfessor({ ex, onBack, onRespondido, posicao, proxima, onProxima }: {
   ex: ExercicioAlunoAPI; onBack: () => void; onRespondido: (ex: ExercicioAlunoAPI) => void;
+  posicao: string; proxima: ExercicioAlunoAPI | null; onProxima: (ex: ExercicioAlunoAPI) => void;
 }) {
   const objetivo = ex.tipo === "OBJETIVO";
   const [escolha, setEscolha] = useState<number | null>(null);
@@ -593,7 +617,7 @@ function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
       </button>
       <Card className="exercise-card">
         <Badge tone="neutral">{ex.materia_nome} · {ex.assunto} · {objetivo ? "Objetivo" : "Discursivo"}</Badge>
-        <div className="exercise-step">{ex.titulo.toUpperCase()} · PROF. {ex.professor_nome.toUpperCase()}</div>
+        <div className="exercise-step">{ex.titulo.toUpperCase()} · PROF. {ex.professor_nome.toUpperCase()}{posicao ? ` · ${posicao.toUpperCase()}` : ""}</div>
         <h1 className="enunciado-ex">{ex.enunciado}</h1>
         {objetivo ? (
           <fieldset className="options">
@@ -639,7 +663,7 @@ function ExercicioDoProfessor({ ex, onBack, onRespondido }: {
               {ex.comentario && <p className="comentario-prof"><b>Comentário do professor:</b> {ex.comentario}</p>}
             </div>
             <div className="form-actions left">
-              <Button onPress={onBack}>Concluir</Button>
+              {proxima ? <Button icon={ArrowRight} onPress={() => onProxima(proxima)}>Próxima questão</Button> : <Button onPress={onBack}>Concluir</Button>}
             </div>
           </>
         ) : (

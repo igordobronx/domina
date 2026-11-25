@@ -1,8 +1,9 @@
+import { Seletor, Escolha } from "../components/Seletor";
 import { useEffect, useState } from "react";
 import { BookOpen, PenLine, Plus, Sparkles, Trash2, Upload } from "lucide-react";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { Badge, Button, Card, Empty, Modal, SectionTitle } from "../components/ui";
 import {
-  baixarDocumento, criarAssunto, criarMateria, listarAssuntos, usoDoDocumento, criarInstrucao, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
+  baixarDocumento, criarAssunto, listarAssuntos, usoDoDocumento, criarInstrucao, criarMateria, dispensarSugestaoInstrucao, enviarDocumento, listarSugestoesInstrucao, excluirInstrucao, listarDocumentos, listarAprendido, listarErrosDaIA, listarInstrucoes, listarMaterias, usoDoItem,
   verMemoriaIA, type AssuntoAPI, type DocumentoAPI, type ErroDaIAAPI, type InstrucaoAPI, type ItemAprendidoAPI, type MateriaAPI, type MemoriaIAAPI, type SugestaoInstrucaoAPI,
 } from "../services/api";
 
@@ -54,19 +55,28 @@ function Evolucao({ pontos }: { pontos: MemoriaIAAPI["evolucao"] }) {
   );
 }
 const LIMITE_MB = 20;
-const TIPOS_MATERIA: { value: MateriaAPI["tipo"]; label: string }[] = [
-  { value: "MATERIA_OBJETIVA", label: "Exatas (matemática, física, química...)" },
-  { value: "REDACAO_ENEM", label: "Redação ENEM" },
-  { value: "REDACAO_OUTRO_VESTIBULAR", label: "Redação (outro vestibular)" },
-  { value: "MATERIA_DISCURSIVA", label: "Outra matéria discursiva" },
-];
 const erroDe = (e: unknown, padrao: string) => (e instanceof Error ? e.message : padrao);
+
+// area da materia e as sugestoes de cada uma; o professor pode sempre digitar a dele
+const AREAS_MATERIA: { value: MateriaAPI["area"]; label: string; sugestoes: string[] }[] = [
+  { value: "EXATAS", label: "Exatas", sugestoes: ["Matemática", "Física", "Química"] },
+  { value: "NATUREZA", label: "Natureza", sugestoes: ["Biologia", "Ciências"] },
+  { value: "HUMANAS", label: "Humanas", sugestoes: ["História", "Geografia", "Filosofia", "Sociologia"] },
+  { value: "LINGUAGENS", label: "Linguagens", sugestoes: ["Língua Portuguesa", "Literatura", "Redação", "Inglês", "Espanhol", "Artes", "Educação Física"] },
+  { value: "REDACAO", label: "Redação", sugestoes: ["ENEM", "FUVEST", "UFG", "UEG", "UFU", "PUC", "UNIEVA"] },
+  { value: "OUTRA", label: "Outra", sugestoes: [] },
+];
+const OUTRA_OPCAO = "__outra__";
 
 export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const [materias, setMaterias] = useState<MateriaAPI[] | null>(null);
   const [materiaId, setMateriaId] = useState("");
+  const [novaMateria, setNovaMateria] = useState(false);
+  const [novaNome, setNovaNome] = useState("");
+  const [novaArea, setNovaArea] = useState("");
+  const [novaEscolha, setNovaEscolha] = useState(""); // sugestao da area ou OUTRA_OPCAO (digitar)
   const [como, setComo] = useState<"arquivo" | "texto" | null>(null);
-  const [tipo, setTipo] = useState<DocumentoAPI["tipo"]>("APOSTILA");
+  const [tipo, setTipo] = useState<DocumentoAPI["tipo"] | "">("");
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [texto, setTexto] = useState("");
   const [erro, setErro] = useState("");
@@ -76,9 +86,6 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const [criandoAssunto, setCriandoAssunto] = useState(false);
   const [assuntoNovo, setAssuntoNovo] = useState("");
   const [erroAssunto, setErroAssunto] = useState("");
-  const [criandoMateria, setCriandoMateria] = useState(false);
-  const [novaNome, setNovaNome] = useState("");
-  const [novaTipo, setNovaTipo] = useState<MateriaAPI["tipo"]>(TIPOS_MATERIA[0].value);
   const [memoria, setMemoria] = useState<Record<string, MemoriaIAAPI>>({});
   const [documentos, setDocumentos] = useState<DocumentoAPI[]>([]);
   const [instrucoes, setInstrucoes] = useState<InstrucaoAPI[]>([]);
@@ -114,6 +121,18 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   }, []);
   useEffect(() => { setAssuntoId(""); setCriandoAssunto(false); }, [materiaId]);
   useEffect(() => carregarMateria(materiaId), [materiaId]);
+  const areaNova = AREAS_MATERIA.find((a) => a.value === novaArea);
+  const digitando = novaEscolha === OUTRA_OPCAO || (!!areaNova && !areaNova.sugestoes.length);
+  const criarNovaMateria = () => {
+    const nome = (digitando ? novaNome : novaEscolha).trim();
+    if (!areaNova || !nome) return notify("Escolha a área e a matéria.");
+    criarMateria({ nome, area: areaNova.value })
+      .then((nova) => listarMaterias().then((ms) => {
+        setMaterias(ms);
+        setNovaMateria(false); setNovaNome(""); setNovaArea(""); setNovaEscolha("");
+      }))
+      .catch((e) => notify(e instanceof Error ? e.message : "Não foi possível criar a matéria."));
+  };
   const mb = (b: number | null) => (b === null ? "" : b < 1024 * 1024 ? `${Math.max(1, Math.round(b / 1024))} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`);
 
   const depois = (aviso: string) => {
@@ -124,6 +143,7 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   };
   const enviarArquivo = async () => {
     if (!materiaId) return setErro("Escolha a matéria que a IA vai aprender.");
+    if (!tipo) return setErro("Escolha o tipo do material.");
     if (!arquivo) return setErro("Escolha o arquivo.");
     setSalvando(true);
     try {
@@ -189,23 +209,6 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
   const nomeAssunto = (id?: string | null) => (id ? assuntos.find((a) => a.id === id)?.nome ?? "outro assunto" : "Geral");
   const assuntoAtual = assuntos.find((a) => a.id === assuntoId);
 
-  const criarNovaMateria = async () => {
-    if (!novaNome.trim()) return setErro("Dê um nome para a matéria.");
-    setSalvando(true);
-    try {
-      const nova = await criarMateria({ nome: novaNome.trim(), tipo: novaTipo });
-      const ms = await listarMaterias();
-      setMaterias(ms);
-      carregarResumo(ms);
-      setMateriaId(nova.id);
-      setCriandoMateria(false);
-      setNovaNome("");
-      setErro("");
-      notify("Matéria criada. Agora é só ensinar a IA.");
-    } catch (e) { setErro(erroDe(e, "Não foi possível criar a matéria.")); }
-    finally { setSalvando(false); }
-  };
-
   const nomeMateria = materias?.find((m) => m.id === materiaId)?.nome;
   const r = memoria[materiaId];
   const nada = !r || r.nivel === "SEM_TREINO";
@@ -231,53 +234,63 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
 
       {materias !== null && (
         <Card>
-          <SectionTitle title="Matéria" />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <SectionTitle title="Matéria" />
+            <Button variant="secondary" icon={Plus} onPress={() => setNovaMateria(true)}>Nova matéria</Button>
+          </div>
           {materias.length ? (
             <>
               <p className="rotulo-escolha">Escolha a matéria para ver e ensinar a IA</p>
-              <div className="botoes-escolha" role="group" aria-label="Matéria">
-                {materias.map((m) => (
-                  <button key={m.id} type="button" aria-pressed={materiaId === m.id}
-                    className={materiaId === m.id ? "active" : ""} onClick={() => setMateriaId(materiaId === m.id ? "" : m.id)}>{m.nome}</button>
-                ))}
-              </div>
+              <Seletor rotulo="Matéria" placeholder="Escolha a matéria" opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))}
+                valor={materiaId} onChange={setMateriaId} />
             </>
-          ) : <Empty title="Nenhuma matéria na escola" text="Crie a primeira matéria abaixo e já comece a ensinar a IA." />}
-          {!criandoMateria ? (
-            <Button variant="secondary" icon={Plus} onPress={() => setCriandoMateria(true)}>Nova matéria</Button>
           ) : (
-            <>
-              <div className="form-grid">
-                <label>Nome
-                  <input value={novaNome} onChange={(e) => setNovaNome(e.target.value)} placeholder="Ex.: Matemática" />
-                </label>
-                <label>Tipo
-                  <select value={novaTipo} onChange={(e) => setNovaTipo(e.target.value as MateriaAPI["tipo"])}>
-                    {TIPOS_MATERIA.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
-                </label>
-              </div>
-              {erro && !materiaId && <p className="error" role="alert">{erro}</p>}
-              <div className="form-actions">
-                <Button variant="secondary" onPress={() => setCriandoMateria(false)}>Cancelar</Button>
-                <Button disabled={salvando} onPress={criarNovaMateria}>{salvando ? "Salvando..." : "Criar matéria"}</Button>
-              </div>
-            </>
+            <Empty title="Nenhuma matéria na escola" text="Crie a primeira com o botão acima. Depois você ensina a IA aqui." />
           )}
         </Card>
+      )}
+
+      {novaMateria && (
+        <Modal title="Nova matéria" onClose={() => setNovaMateria(false)}>
+          <div className="form-grid">
+            <label>
+              Área
+              <Escolha value={novaArea} onChange={(e) => { setNovaArea(e.target.value); setNovaEscolha(""); }}>
+                <option value="">Escolha a área</option>
+                {AREAS_MATERIA.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+              </Escolha>
+            </label>
+            {!!areaNova?.sugestoes.length && (
+              <label>
+                {areaNova.value === "REDACAO" ? "Vestibular" : "Matéria"}
+                <Escolha value={novaEscolha} onChange={(e) => setNovaEscolha(e.target.value)}>
+                  <option value="">Escolha...</option>
+                  {areaNova.sugestoes.map((n) => <option key={n} value={n}>{n}</option>)}
+                  <option value={OUTRA_OPCAO}>{areaNova.value === "REDACAO" ? "Outro" : "Outra"}</option>
+                </Escolha>
+              </label>
+            )}
+            {!!areaNova && digitando && (
+              <label>
+                Nome
+                <input value={novaNome} onChange={(e) => setNovaNome(e.target.value)} placeholder="Ex.: Matemática" />
+              </label>
+            )}
+          </div>
+          <div className="form-actions">
+            <Button variant="secondary" onPress={() => setNovaMateria(false)}>Cancelar</Button>
+            <Button onPress={criarNovaMateria}>Criar matéria</Button>
+          </div>
+        </Modal>
       )}
 
       {!!materiaId && (
         <Card>
           <SectionTitle title="Assunto" />
           <p className="rotulo-escolha">Escolha o assunto para ensinar ou crie um novo. "Geral" vale para a matéria toda.</p>
-          <div className="botoes-escolha" role="group" aria-label="Assunto">
-            <button type="button" aria-pressed={!assuntoId} className={!assuntoId ? "active" : ""} onClick={() => setAssuntoId("")}>Geral</button>
-            {assuntos.map((a) => (
-              <button key={a.id} type="button" aria-pressed={assuntoId === a.id} className={assuntoId === a.id ? "active" : ""}
-                onClick={() => setAssuntoId(assuntoId === a.id ? "" : a.id)}>{a.nome}{a.da_escola ? " (escola)" : ""}</button>
-            ))}
-          </div>
+          <Seletor rotulo="Assunto" placeholder="Geral (a matéria toda)"
+            opcoes={assuntos.map((a) => ({ valor: a.id, rotulo: `${a.nome}${a.da_escola ? " (escola)" : ""}` }))}
+            valor={assuntoId} onChange={setAssuntoId} />
           {assuntoAtual && (
             <p className="tiny muted">{assuntoAtual.materiais} trecho(s) de material · {assuntoAtual.instrucoes} instrução(ões) · {assuntoAtual.correcoes} exemplo(s) de correção neste assunto.</p>
           )}
@@ -340,19 +353,17 @@ export function TreinarIA({ notify }: { notify: (m: string) => void }) {
         {(
           <>
             <p className="rotulo-escolha">Como ensinar</p>
-            <div className="botoes-escolha" role="group" aria-label="Como ensinar">
-              <button aria-pressed={como === "arquivo"} className={como === "arquivo" ? "active" : ""}
-                onClick={() => { setComo("arquivo"); setErro(""); }}><Upload size={14} /> Enviar arquivo</button>
-              <button aria-pressed={como === "texto"} className={como === "texto" ? "active" : ""}
-                onClick={() => { setComo("texto"); setErro(""); }}><PenLine size={14} /> Escrever instruções</button>
-            </div>
+            <Seletor rotulo="Como ensinar" placeholder="Escolha como ensinar"
+              opcoes={[{ valor: "arquivo", rotulo: "Enviar arquivo" }, { valor: "texto", rotulo: "Escrever instruções" }]}
+              valor={como ?? ""} onChange={(v) => { setComo((v || null) as typeof como); setErro(""); }} />
 
             {como === "arquivo" && (
               <div className="form-grid">
                 <label>Tipo do material
-                  <select value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoAPI["tipo"])}>
+                  <Escolha value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoAPI["tipo"])}>
+                    <option value="">Escolha o tipo</option>
                     {TIPOS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
+                  </Escolha>
                 </label>
                 <label className="span-2">Arquivo (PDF, foto, DOCX ou TXT, até {LIMITE_MB} MB)
                   <input type="file" accept=".pdf,.png,.jpg,.jpeg,.docx,.txt,.md"

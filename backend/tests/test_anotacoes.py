@@ -26,7 +26,7 @@ def _setup():
                                                  "perfil": "PROFESSOR", "turma_id": outra})
         aluno = mk("Ana Marca", "ana.marca@x.com", "ALUNO")
         mk("Bia Marca", "bia.marca@x.com", "ALUNO")
-        materia = client.post("/materias", headers=g, json={"nome": "Mat Marca", "tipo": "MATERIA_OBJETIVA"}).json()["id"]
+        materia = client.post("/materias", headers=g, json={"nome": "Mat Marca", "area": "EXATAS"}).json()["id"]
         vincular("prof.marca@x.com", turma, materia)
         p = token("prof.marca@x.com", "123456")
         ativ = client.post("/atividades/lote", headers=p, json={

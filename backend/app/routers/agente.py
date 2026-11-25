@@ -22,7 +22,7 @@ from app.models.enum import StatusCorrecaoEnum
 from app.models.usuario import AgenteExecucao, Atividade, Correcao, Materia, Submissao, Tema, Usuario
 from app.routers.dominio import _dominio_de
 from app.routers.correcoes import _correcao_response, _pode_corrigir, _pode_ver_correcao, corrigir_submissao
-from app.routers.submissoes import MATERIAS_EXATAS, _submissao_visivel
+from app.routers.submissoes import tem_gabarito, _submissao_visivel
 from app.schemas.agente import AgenteRequest, AgenteResponse
 from app.schemas.dominio import DominioResponse
 from app.schemas.submissao import CorrigirRequest
@@ -47,7 +47,7 @@ def _ferramentas(
 ) -> list[Ferramenta]:
     atividade = db.get(Atividade, submissao.atividade_id)
     materia = db.get(Materia, atividade.materia_id)
-    exatas = materia.tipo in MATERIAS_EXATAS
+    exatas = tem_gabarito(atividade)
 
     def correcao_atual():
         return db.query(Correcao).filter_by(submissao_id=submissao.id).first()
@@ -198,7 +198,7 @@ def _ferramentas(
         ),
         Ferramenta(
             "pedir_nova_foto",
-            "Pede ao aluno uma nova foto quando o texto lido está ilegível, vazio ou cortado.",
+            "Pede ao aluno uma nova foto SÓ quando não dá para ler a imagem (ilegível ou cortada). Texto legível, mesmo ruim, deve ser corrigido.",
             {"mensagem": {"type": "string", "description": "O que o aluno deve fazer."}},
             pedir_foto, ["mensagem"],
         ),

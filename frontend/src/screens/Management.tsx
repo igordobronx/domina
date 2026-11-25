@@ -1,7 +1,9 @@
+import { SeletorMultiplo, Escolha } from "../components/Seletor";
+import { Filtros } from "../components/Filtros";
 import { useEffect, useState } from "react";
 import { BookOpen, Check, Plus, Users } from "lucide-react";
 import type { DemoState, Role } from "../types";
-import { Badge, Button, Card, Empty, SectionTitle } from "../components/ui";
+import { Badge, Button, Card, Empty, Modal, Progress, SectionTitle } from "../components/ui";
 import { ResumoDominioAluno } from "./ResumoAluno";
 import {
   criarTurma,
@@ -92,12 +94,11 @@ export function Classes({
           <p>Uma visão próxima de cada jornada de aprendizagem.</p>
         </div>
         {gestor && (
-          <Button icon={Plus} onPress={() => setCriando(!criando)}>
-            {criando ? "Fechar" : "Nova turma"}
-          </Button>
+          <Button icon={Plus} onPress={() => setCriando(true)}>Nova turma</Button>
         )}
       </div>
       {criando && (
+        <Modal title="Nova turma" onClose={() => setCriando(false)}>
         <Card>
           <SectionTitle title="Nova turma" />
           <div className="form-grid">
@@ -123,10 +124,14 @@ export function Classes({
               {erro}
             </p>
           )}
-          <Button disabled={salvando} onPress={criarTurmaForm}>
-            {salvando ? "Criando..." : "Criar turma"}
-          </Button>
+          <div className="form-actions">
+            <Button variant="secondary" onPress={() => setCriando(false)}>Cancelar</Button>
+            <Button disabled={salvando} onPress={criarTurmaForm}>
+              {salvando ? "Criando..." : "Criar turma"}
+            </Button>
+          </div>
         </Card>
+        </Modal>
       )}
       {loading ? (
         <Empty title="Carregando..." text="Buscando turmas no servidor." />
@@ -241,6 +246,7 @@ function TurmaCard({
             </Button>
           )}
           {adicionando && (
+            <Modal title="Adicionar à turma" onClose={() => setAdicionando(false)}>
             <AdicionarMembro
               turmaId={turma.id}
               soAluno={!gestor}
@@ -252,6 +258,7 @@ function TurmaCard({
               onCancel={() => setAdicionando(false)}
               notify={notify}
             />
+            </Modal>
           )}
         </>
       )}
@@ -269,7 +276,6 @@ function MateriasDoProfessor({
   const [aberto, setAberto] = useState(false);
   const [marcadas, setMarcadas] = useState<string[]>(escolhidas);
   const [salvando, setSalvando] = useState(false);
-  const alterna = (id: string) => setMarcadas((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
   const salvar = async () => {
     setSalvando(true);
     try {
@@ -291,12 +297,8 @@ function MateriasDoProfessor({
     );
   return (
     <div className="botoes-escolha" role="group" aria-label="Matérias que o professor leciona nesta turma">
-      {materias.map((m) => (
-        <button key={m.id} aria-pressed={marcadas.includes(m.id)} className={marcadas.includes(m.id) ? "active" : ""}
-          onClick={() => alterna(m.id)}>
-          {m.nome}
-        </button>
-      ))}
+      <SeletorMultiplo todos="Selecionar todos" rotulo="Matérias que o professor leciona nesta turma" placeholder="Escolha as matérias"
+        opcoes={materias.map((m) => ({ valor: m.id, rotulo: m.nome }))} valores={marcadas} onChange={setMarcadas} />
       <Button disabled={salvando} onPress={salvar}>{salvando ? "Salvando..." : "Salvar"}</Button>
       <Button variant="secondary" onPress={() => setAberto(false)}>Cancelar</Button>
     </div>
@@ -353,7 +355,7 @@ function AdicionarMembro({
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [perfil, setPerfil] = useState<"ALUNO" | "PROFESSOR">("ALUNO");
+  const [perfil, setPerfil] = useState<"" | "ALUNO" | "PROFESSOR">("");
   const [erro, setErro] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -394,8 +396,8 @@ function AdicionarMembro({
   };
 
   const cadastrarEMatricular = async () => {
-    if (!nome.trim() || !email.trim() || senha.length < 6) {
-      setErro("Preencha nome, email e uma senha com 6+ caracteres.");
+    if (!nome.trim() || !email.trim() || senha.length < 6 || !perfil) {
+      setErro("Preencha nome, email, perfil e uma senha com 6+ caracteres.");
       return;
     }
     setSalvando(true);
@@ -430,14 +432,14 @@ function AdicionarMembro({
         <div className="form-grid">
           <label>
             Usuário
-            <select value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)}>
+            <Escolha value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)}>
               <option value="">Selecione...</option>
               {(candidatos ?? []).map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.nome} ({u.perfil === "PROFESSOR" ? "Professor(a)" : "Aluno(a)"})
                 </option>
               ))}
-            </select>
+            </Escolha>
           </label>
         </div>
       ) : (
@@ -457,10 +459,11 @@ function AdicionarMembro({
           {!soAluno && (
           <label>
             Perfil
-            <select value={perfil} onChange={(e) => setPerfil(e.target.value as "ALUNO" | "PROFESSOR")}>
+            <Escolha value={perfil} onChange={(e) => setPerfil(e.target.value as "ALUNO" | "PROFESSOR")}>
+              <option value="">Escolha o perfil</option>
               <option value="ALUNO">Aluno(a)</option>
               <option value="PROFESSOR">Professor(a)</option>
-            </select>
+            </Escolha>
           </label>
           )}
         </div>
@@ -519,7 +522,7 @@ export function Materials({
   const [documentos, setDocumentos] = useState<DocumentoAPI[] | null>(null);
   const [filtro, setFiltro] = useState(""); // matéria escolhida no filtro da lista (vazio = todas)
   const [materiaId, setMateriaId] = useState("");
-  const [tipo, setTipo] = useState<DocumentoAPI["tipo"]>("APOSTILA");
+  const [tipo, setTipo] = useState<DocumentoAPI["tipo"] | "">("");
   const [carregando, setCarregando] = useState(real);
   const [salvando, setSalvando] = useState(false);
 
@@ -545,6 +548,10 @@ export function Materials({
     if (real) {
       if (!materiaId) {
         setError("Escolha a matéria do material.");
+        return;
+      }
+      if (!tipo) {
+        setError("Escolha o tipo do material.");
         return;
       }
       setSalvando(true);
@@ -595,11 +602,10 @@ export function Materials({
           <h1>Materiais e critérios</h1>
           <p>O conteúdo da escola orienta cada correção.</p>
         </div>
-        <Button icon={Plus} onPress={() => setAdding(!adding)}>
-          {adding ? "Fechar formulário" : "Adicionar material"}
-        </Button>
+        <Button icon={Plus} onPress={() => setAdding(true)}>Adicionar material</Button>
       </div>
       {adding && (
+        <Modal title="Novo material" largo onClose={() => setAdding(false)}>
         <Card>
           <SectionTitle title="Novo material" />
           <div className="form-grid">
@@ -607,24 +613,25 @@ export function Materials({
               <>
                 <label>
                   Matéria
-                  <select value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
+                  <Escolha value={materiaId} onChange={(e) => setMateriaId(e.target.value)}>
                     <option value="">Escolha a matéria…</option>
                     {(materias ?? []).map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.nome}
                       </option>
                     ))}
-                  </select>
+                  </Escolha>
                 </label>
                 <label>
                   Tipo
-                  <select value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoAPI["tipo"])}>
+                  <Escolha value={tipo} onChange={(e) => setTipo(e.target.value as DocumentoAPI["tipo"])}>
+                    <option value="">Escolha o tipo</option>
                     {TIPOS_DOCUMENTO.map((t) => (
                       <option key={t.value} value={t.value}>
                         {t.label}
                       </option>
                     ))}
-                  </select>
+                  </Escolha>
                 </label>
               </>
             ) : (
@@ -639,13 +646,13 @@ export function Materials({
                 </label>
                 <label>
                   Matéria
-                  <select
+                  <Escolha
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                   >
                     <option>Redação ENEM</option>
                     <option>Matemática</option>
-                  </select>
+                  </Escolha>
                 </label>
               </>
             )}
@@ -674,24 +681,21 @@ export function Materials({
               {error}
             </p>
           )}
-          <Button disabled={salvando} onPress={add}>
-            {salvando ? "Enviando..." : real ? "Enviar material" : "Salvar material demonstrativo"}
-          </Button>
+          <div className="form-actions">
+            <Button variant="secondary" onPress={() => setAdding(false)}>Cancelar</Button>
+            <Button disabled={salvando} onPress={add}>
+              {salvando ? "Enviando..." : real ? "Enviar material" : "Salvar material demonstrativo"}
+            </Button>
+          </div>
         </Card>
+        </Modal>
       )}
       {real ? (
         <>
-          <div className="botoes-escolha" role="group" aria-label="Filtrar por matéria">
-            <button aria-pressed={filtro === ""} className={filtro === "" ? "active" : ""} onClick={() => setFiltro("")}>
-              Todas
-            </button>
-            {(materias ?? []).map((m) => (
-              <button key={m.id} aria-pressed={filtro === m.id} className={filtro === m.id ? "active" : ""}
-                onClick={() => setFiltro(m.id)}>
-                {m.nome}
-              </button>
-            ))}
-          </div>
+          <Filtros grupos={[{
+            id: "materia", titulo: "Matéria", valor: filtro, onChange: setFiltro,
+            opcoes: (materias ?? []).map((m) => ({ valor: m.id, rotulo: m.nome })),
+          }]} />
           {carregando ? (
             <Card><p className="muted">Carregando...</p></Card>
           ) : (

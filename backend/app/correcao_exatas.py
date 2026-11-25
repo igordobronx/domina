@@ -112,6 +112,9 @@ null -- não invente uma posição.
 EXEMPLO_CAIXA = ', "caixa": {"x": 0.1, "y": 0.2, "largura": 0.3, "altura": 0.1}'
 
 
+SEM_GABARITO = "(não informado pelo professor: corrija pelo seu conhecimento geral e pelo material dele, se houver)"
+
+
 class QuestaoCorrigida(BaseModel):
     codigo: str
     leitura: str = ""  # antes da nota: o schema respeita a ordem, entao o modelo le primeiro
@@ -148,7 +151,7 @@ def corrigir(
     # contexto: memoria do professor (app/ia/memoria.py): material dele + correcoes que ja aprovou
     imagens = [imagem] if isinstance(imagem, tuple) else list(imagem or [])
     texto_questoes = "\n".join(
-        f"{codigo}) {enunciado}\n   Gabarito: {resposta}" for codigo, enunciado, resposta in questoes
+        f"{codigo}) {enunciado}\n   Gabarito: {resposta or SEM_GABARITO}" for codigo, enunciado, resposta in questoes
     )
     prompt = PROMPT.format(
         materia=materia_nome,
