@@ -42,9 +42,9 @@
     "semantic_hash": ""
   },
   "backend/app/config.py": {
-    "mtime": 1794964529.218415,
-    "seen": 1794965887.193085,
-    "ast_hash": "ffec5dc0541c0ecd132639135da07062",
+    "mtime": 1795553649.3056173,
+    "seen": 1795566761.042468,
+    "ast_hash": "5fa63f99c91aa829c3b120fbe29c78d0",
     "semantic_hash": ""
   },
   "backend/app/database.py": {
@@ -54,9 +54,9 @@
     "semantic_hash": ""
   },
   "backend/app/main.py": {
-    "mtime": 1795274766.4633617,
-    "seen": 1795275111.932013,
-    "ast_hash": "f37826a892cf6e8aed7af36e3544abba",
+    "mtime": 1795553649.3067818,
+    "seen": 1795566761.0425038,
+    "ast_hash": "11314fc054db449dc9990063dc235430",
     "semantic_hash": ""
   },
   "backend/app/models/__init__.py": {
@@ -72,9 +72,9 @@
     "semantic_hash": ""
   },
   "backend/app/models/usuario.py": {
-    "mtime": 1795552358.5385842,
-    "seen": 1795553305.6492002,
-    "ast_hash": "0466278ff3ffca5b8f2bd9429680a535",
+    "mtime": 1795553672.7729068,
+    "seen": 1795566761.042511,
+    "ast_hash": "b89f8ab7854ac95778c4646e45a7c013",
     "semantic_hash": ""
   },
   "backend/app/ocr/__init__.py": {
@@ -138,21 +138,21 @@
     "semantic_hash": ""
   },
   "backend/app/routers/submissoes.py": {
-    "mtime": 1795281832.0116742,
-    "seen": 1795282146.774603,
-    "ast_hash": "9634eecb04edc745bcab016123f16707",
+    "mtime": 1795553649.3108075,
+    "seen": 1795566761.042561,
+    "ast_hash": "5c75b22409fc4be1e8868c62ba36ebf8",
     "semantic_hash": ""
   },
   "backend/app/schemas/submissao.py": {
-    "mtime": 1795281832.0093381,
-    "seen": 1795282146.774631,
-    "ast_hash": "efa32c5c25c7f91578c32c6ec462b065",
+    "mtime": 1795553649.3125148,
+    "seen": 1795566761.042593,
+    "ast_hash": "be262d9c5993f18cee4a4f1c861a5cc8",
     "semantic_hash": ""
   },
   "backend/tests/test_fluxo_envio.py": {
-    "mtime": 1794858728.6016042,
-    "seen": 1794961100.8214788,
-    "ast_hash": "22dff1019752d83d48d670843d392025",
+    "mtime": 1795554598.6447177,
+    "seen": 1795566761.042717,
+    "ast_hash": "4c86902c5060ce9e733a64aa7a88b312",
     "semantic_hash": ""
   },
   "backend/requirements-dev.txt": {
@@ -168,15 +168,15 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1795286248.0235431,
-    "seen": 1795553305.649596,
-    "ast_hash": "402c458fb1dbfce1e90e932f266f6bb6",
+    "mtime": 1795566667.7409196,
+    "seen": 1795566761.0428731,
+    "ast_hash": "d7d74ddb4b3964479b8b60d456b3b9f7",
     "semantic_hash": ""
   },
   "backend/app/ocr/gemini.py": {
-    "mtime": 1794859822.5591176,
-    "seen": 1794961100.821333,
-    "ast_hash": "84351583ef77cf8101f92d7020d9335b",
+    "mtime": 1795553649.3077924,
+    "seen": 1795566761.0425138,
+    "ast_hash": "a16750d76ee96de4636056c2202e4e50",
     "semantic_hash": ""
   },
   "backend/app/correcao.py": {
@@ -234,9 +234,9 @@
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
-    "mtime": 1795552075.9842203,
-    "seen": 1795553305.649479,
-    "ast_hash": "70e4558627c0a2eb8c61210edc5bb003",
+    "mtime": 1795553649.3144338,
+    "seen": 1795566761.0427651,
+    "ast_hash": "27a746c33013b4df4019ff46e3d03dd2",
     "semantic_hash": ""
   },
   "frontend/src/components/Chart.tsx": {
@@ -276,9 +276,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Activities.tsx": {
-    "mtime": 1795553223.3758013,
-    "seen": 1795553305.649508,
-    "ast_hash": "f1c31f50938a178352beeea8218e9da3",
+    "mtime": 1795553697.7802622,
+    "seen": 1795566761.042794,
+    "ast_hash": "985296374645c3f08a4a3774a926b7a5",
     "semantic_hash": ""
   },
   "frontend/src/screens/Dashboard.tsx": {
@@ -288,9 +288,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/EducatorDashboard.tsx": {
-    "mtime": 1792709022.7397978,
-    "seen": 1794961100.82154,
-    "ast_hash": "b40a492b117bdb0a4c05e0e76fb8930d",
+    "mtime": 1795553649.3161807,
+    "seen": 1795566761.042801,
+    "ast_hash": "fee00bd2925f67fe0d981a51b24f47c0",
     "semantic_hash": ""
   },
   "frontend/src/screens/Learning.tsx": {
@@ -336,9 +336,9 @@
     "semantic_hash": ""
   },
   "frontend/src/types.ts": {
-    "mtime": 1795274766.4735458,
-    "seen": 1795275111.932317,
-    "ast_hash": "297416912319be674efa3ce3ea289140",
+    "mtime": 1795553649.3187306,
+    "seen": 1795566761.042835,
+    "ast_hash": "ea11ecc7a797ec20143478debb534a3d",
     "semantic_hash": ""
   },
   "frontend/src/vite-env.d.ts": {
@@ -504,15 +504,15 @@
     "semantic_hash": ""
   },
   "backend/app/routers/documento.py": {
-    "mtime": 1794961374.7082353,
-    "seen": 1794961691.845699,
-    "ast_hash": "4b4c215bad1c11990d8be8d51c700f8e",
+    "mtime": 1795553649.3093588,
+    "seen": 1795566761.042538,
+    "ast_hash": "9e546c68637b0246c74a7a9ae7e6a749",
     "semantic_hash": ""
   },
   "backend/app/schemas/documento.py": {
-    "mtime": 1794962453.4416692,
-    "seen": 1794962752.823553,
-    "ast_hash": "9c63e53ca0fb831a8119c3caf91d495e",
+    "mtime": 1795553649.3111975,
+    "seen": 1795566761.0425751,
+    "ast_hash": "43183e96f812be601632143ac89afb62",
     "semantic_hash": ""
   },
   "backend/app/routers/dominio.py": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/api.ts": {
-    "mtime": 1795552449.277794,
-    "seen": 1795553305.649536,
-    "ast_hash": "a082d72a82d7ad69bdfd55a862354138",
+    "mtime": 1795553649.3175735,
+    "seen": 1795566761.042818,
+    "ast_hash": "68c7279f9b904f40b53bfd7be9b76e16",
     "semantic_hash": ""
   },
   "frontend/src/services/atividades.ts": {
@@ -570,9 +570,9 @@
     "semantic_hash": ""
   },
   "frontend/src/services/revisoes.ts": {
-    "mtime": 1795274766.4727643,
-    "seen": 1795275111.9323132,
-    "ast_hash": "ba06c8c665bcd7d2874299f8647a1718",
+    "mtime": 1795553649.3178976,
+    "seen": 1795566761.04283,
+    "ast_hash": "e3ec7b98cdb51a818716d52adc6e9199",
     "semantic_hash": ""
   },
   "backend/app/estudos.py": {
@@ -990,9 +990,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/correcoes.py": {
-    "mtime": 1795281832.0102642,
-    "seen": 1795282146.774583,
-    "ast_hash": "73333325590434f5772999577cf80a52",
+    "mtime": 1795553649.3089845,
+    "seen": 1795566761.042536,
+    "ast_hash": "37ec83d9e0f52eee49008ef8d656462d",
     "semantic_hash": ""
   },
   "backend/scripts_testar_agente_real.py": {
@@ -1224,9 +1224,9 @@
     "semantic_hash": ""
   },
   "backend/app/routers/exercicios.py": {
-    "mtime": 1795552358.5390701,
-    "seen": 1795553305.6492329,
-    "ast_hash": "b5eef56677b1216fa5542315e3b52046",
+    "mtime": 1795553649.310309,
+    "seen": 1795566761.042547,
+    "ast_hash": "8120c3c7011cfd280b83533bce26c92f",
     "semantic_hash": ""
   },
   "backend/app/routers/metas.py": {
@@ -1236,9 +1236,9 @@
     "semantic_hash": ""
   },
   "backend/app/schemas/exercicio.py": {
-    "mtime": 1795552358.5379796,
-    "seen": 1795553305.6492748,
-    "ast_hash": "f48d0bd659efe14d303d7ae2eec2f042",
+    "mtime": 1795553672.773297,
+    "seen": 1795566761.042582,
+    "ast_hash": "d05b250825af03cd391824c358b4c0f0",
     "semantic_hash": ""
   },
   "backend/app/schemas/metas.py": {
@@ -1320,9 +1320,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/Exercicios.tsx": {
-    "mtime": 1795552991.5782468,
-    "seen": 1795553305.649517,
-    "ast_hash": "779efd5cd1c8c34dc6362f38e1712bb5",
+    "mtime": 1795553713.9911788,
+    "seen": 1795566761.0428019,
+    "ast_hash": "e64ff9460dbd92787a5e740394d04bf5",
     "semantic_hash": ""
   },
   "frontend/src/screens/Metas.tsx": {
@@ -1422,9 +1422,9 @@
     "semantic_hash": ""
   },
   "backend/app/ia/memoria.py": {
-    "mtime": 1795281799.8242981,
-    "seen": 1795282146.774552,
-    "ast_hash": "4187d9e197feb1fe1d05e820414e42e0",
+    "mtime": 1795553649.3062432,
+    "seen": 1795566761.0424929,
+    "ast_hash": "d479e5e4783e9e411f7d9136ab091096",
     "semantic_hash": ""
   },
   "backend/app/ia/registro.py": {
@@ -1536,9 +1536,9 @@
     "semantic_hash": ""
   },
   "frontend/src/screens/TreinarIA.tsx": {
-    "mtime": 1795281766.14343,
-    "seen": 1795282146.774802,
-    "ast_hash": "d05eded972b732995df754f4ed271eff",
+    "mtime": 1795553740.0773997,
+    "seen": 1795566761.042816,
+    "ast_hash": "30debfc18bd7687c3560231c43e18184",
     "semantic_hash": ""
   },
   ".trail/README.md": {
@@ -1595,12 +1595,6 @@
     "ast_hash": "c30e282e3371f816c51ec4c21c5cafad",
     "semantic_hash": ""
   },
-  "backend/migrations/versions/0031_atividade_criado_em.py": {
-    "mtime": 1795202324.902111,
-    "seen": 1795202684.2253828,
-    "ast_hash": "d722d56038e12014bd6fced25e5ec540",
-    "semantic_hash": ""
-  },
   ".trail/learnings/2026-11-20-professor-corrige-sem-ia-e-listas-joa.md": {
     "mtime": 1795202703.3804352,
     "seen": 1795203105.1330528,
@@ -1631,12 +1625,6 @@
     "ast_hash": "37504b0e2b730ab41e376abd71c7167a",
     "semantic_hash": ""
   },
-  "backend/migrations/versions/0032_correcao_razoavel.py": {
-    "mtime": 1795222098.5155532,
-    "seen": 1795222153.089406,
-    "ast_hash": "d472a0f7fa0ae488878058fd1b5d2cfc",
-    "semantic_hash": ""
-  },
   ".trail/learnings/2026-11-21-espac-o-no-card-da-turma-joa.md": {
     "mtime": 1795223112.7946243,
     "seen": 1795223173.740061,
@@ -1647,12 +1635,6 @@
     "mtime": 1795225816.8495553,
     "seen": 1795275111.932101,
     "ast_hash": "f2c4b390b436429074cafbbd0f7ccc97",
-    "semantic_hash": ""
-  },
-  "backend/migrations/versions/0033_subtopico_da_questao.py": {
-    "mtime": 1795225223.6835835,
-    "seen": 1795225373.6924758,
-    "ast_hash": "1d8dcdccfede540fd2541114dd9031a6",
     "semantic_hash": ""
   },
   ".trail/learnings/2026-11-21-evoluc-a-o-do-aluno-e-joa.md": {
@@ -1733,22 +1715,10 @@
     "ast_hash": "fc2d5d58b0ffd03e9e8daba0a1519252",
     "semantic_hash": ""
   },
-  "backend/migrations/versions/0034_area_da_materia.py": {
-    "mtime": 1795278639.7683394,
-    "seen": 1795278956.033791,
-    "ast_hash": "3fd47644dfd1bf7d669e5c9dac3f1d76",
-    "semantic_hash": ""
-  },
   "backend/app/pontos.py": {
     "mtime": 1795551565.6912081,
     "seen": 1795553305.649206,
     "ast_hash": "7b659986a2d18a176a841c9de08d0810",
-    "semantic_hash": ""
-  },
-  "backend/migrations/versions/0035_pontos_da_questao.py": {
-    "mtime": 1795281799.7846603,
-    "seen": 1795282146.774701,
-    "ast_hash": "fa2165c668d27648d8b1f23bae122d68",
     "semantic_hash": ""
   },
   "frontend/src/components/EditorQuestao.tsx": {
@@ -1769,16 +1739,178 @@
     "ast_hash": "d12d48308de440a8b4a29dec44c8dae5",
     "semantic_hash": ""
   },
-  "backend/migrations/versions/0036_exercicio_com_varias_questoes.py": {
-    "mtime": 1795552363.7971582,
-    "seen": 1795553305.6493912,
-    "ast_hash": "594262da02113e7a6f820118e7baa2bd",
-    "semantic_hash": ""
-  },
   ".trail/learnings/2026-11-24-pr-da-domina-ciclo-3-cancelado-joa.md": {
     "mtime": 1795547260.9128542,
     "seen": 1795553305.649594,
     "ast_hash": "63cacb6ede45abf0af25f2997a4a4e1e",
+    "semantic_hash": ""
+  },
+  "backend/app/avisos.py": {
+    "mtime": 1795553649.305242,
+    "seen": 1795566761.04246,
+    "ast_hash": "b8c049ce500f99e6729f50426d873278",
+    "semantic_hash": ""
+  },
+  "backend/app/ocr/simbolos.py": {
+    "mtime": 1795553649.3079057,
+    "seen": 1795566761.042516,
+    "ast_hash": "e2f687e581df8bb2fc59b8f7108b8d79",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/anotacoes.py": {
+    "mtime": 1795553649.308107,
+    "seen": 1795566761.0425239,
+    "ast_hash": "f8bbb72ee667113575d50369ded9f658",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/assuntos.py": {
+    "mtime": 1795553649.308277,
+    "seen": 1795566761.042526,
+    "ast_hash": "30c38b9a11404352e1095580887aca67",
+    "semantic_hash": ""
+  },
+  "backend/app/routers/avisos.py": {
+    "mtime": 1795553649.3084614,
+    "seen": 1795566761.042531,
+    "ast_hash": "01fec017d80b8a865e23573132abeec1",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0031_assunto.py": {
+    "mtime": 1795553649.3126569,
+    "seen": 1795566761.0426722,
+    "ast_hash": "bf05f4011f00af563f95d23347876b85",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0032_anotacao_aviso.py": {
+    "mtime": 1795553649.312761,
+    "seen": 1795566761.042675,
+    "ast_hash": "c379e3e71e44e5111c14239036808509",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0033_aviso_tipo.py": {
+    "mtime": 1795553649.3128517,
+    "seen": 1795566761.042676,
+    "ast_hash": "680ab7336ad61fec9cdbd16afe3835fa",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0034_atividade_criado_em.py": {
+    "mtime": 1795553661.8856044,
+    "seen": 1795566761.042678,
+    "ast_hash": "406044249ed96b6cd90eb0e5bd6d3548",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0035_correcao_razoavel.py": {
+    "mtime": 1795553661.8852496,
+    "seen": 1795566761.042679,
+    "ast_hash": "c3124661b8b9350c4e092b5bcc4f9e99",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0036_subtopico_da_questao.py": {
+    "mtime": 1795553661.8849955,
+    "seen": 1795566761.04268,
+    "ast_hash": "a1fce831b7e996510f5256324ec77ec1",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0037_area_da_materia.py": {
+    "mtime": 1795553661.884678,
+    "seen": 1795566761.0426822,
+    "ast_hash": "27b31141a8584783617b448e02b262c0",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0038_pontos_da_questao.py": {
+    "mtime": 1795553661.884311,
+    "seen": 1795566761.0426838,
+    "ast_hash": "cba5cde3e4f2218c972c341e2e36d8c5",
+    "semantic_hash": ""
+  },
+  "backend/migrations/versions/0039_exercicio_com_varias_questoes.py": {
+    "mtime": 1795553661.8838315,
+    "seen": 1795566761.042685,
+    "ast_hash": "dfa6619829c92f32260bea57cbdcd554",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_anotacoes.py": {
+    "mtime": 1795553798.8727171,
+    "seen": 1795566761.042696,
+    "ast_hash": "274b2847d0003b5f13667ba8f75bbf85",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_assuntos.py": {
+    "mtime": 1795553798.8734133,
+    "seen": 1795566761.042698,
+    "ast_hash": "e88cfb282c3bad677b78828385036e8a",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_avisos.py": {
+    "mtime": 1795553798.87385,
+    "seen": 1795566761.042701,
+    "ast_hash": "f1b45ead41d5c1f5a59958a72b22b04b",
+    "semantic_hash": ""
+  },
+  "backend/tests/test_simbolos.py": {
+    "mtime": 1795553649.3134744,
+    "seen": 1795566761.042729,
+    "ast_hash": "23fa00eff88072ec6655ccd1819f4e9b",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/FotoComMarcas.tsx": {
+    "mtime": 1795553649.3147,
+    "seen": 1795566761.0427752,
+    "ast_hash": "9e8eab7745352cf3713727c7ccfa1233",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/ListaAvisos.tsx": {
+    "mtime": 1795553649.314792,
+    "seen": 1795566761.042778,
+    "ast_hash": "23995989ec65aef13d2947489094893e",
+    "semantic_hash": ""
+  },
+  "frontend/src/components/SeletorAssunto.tsx": {
+    "mtime": 1795553649.3148828,
+    "seen": 1795566761.042784,
+    "ast_hash": "f9cca5c19b06210c36beb5e47622cd56",
+    "semantic_hash": ""
+  },
+  ".trail/learnings/2026-11-24-dev-sh-quebrado-apo-s-merge-joa.md": {
+    "mtime": 1795555821.4165611,
+    "seen": 1795566761.042866,
+    "ast_hash": "86f5bab6d62024d98984c3d17ff03f0a",
+    "semantic_hash": ""
+  },
+  ".trail/learnings/2026-11-24-pr-domina-ciclo-3-bloqueado-main-joa.md": {
+    "mtime": 1795553554.0891955,
+    "seen": 1795566761.042869,
+    "ast_hash": "f74463559ba029cb21d91aad1bc87766",
+    "semantic_hash": ""
+  },
+  ".trail/learnings/2026-11-25-main-puxada-e-prints-do-pr-joa.md": {
+    "mtime": 1795566535.1900403,
+    "seen": 1795566761.042871,
+    "ast_hash": "e0112029967e3dc38684abe4e025e94f",
+    "semantic_hash": ""
+  },
+  "docs/decisoes/assuntos.md": {
+    "mtime": 1795553649.3135817,
+    "seen": 1795566761.042955,
+    "ast_hash": "9709916710b2ac8a24c40c6b63039ec2",
+    "semantic_hash": ""
+  },
+  "docs/decisoes/ia-propria-na-gaveta.md": {
+    "mtime": 1795553649.3136957,
+    "seen": 1795566761.042958,
+    "ast_hash": "cb77a07d7201a48c101ac20da1790956",
+    "semantic_hash": ""
+  },
+  "docs/decisoes/marcacoes-na-foto.md": {
+    "mtime": 1795553649.3138244,
+    "seen": 1795566761.042964,
+    "ast_hash": "8e4c1d377c419e8376aa4b966e454f3b",
+    "semantic_hash": ""
+  },
+  "docs/decisoes/notificacoes.md": {
+    "mtime": 1795553649.3139458,
+    "seen": 1795566761.042965,
+    "ast_hash": "84959eaa58ca33252b4519fcba4fed32",
     "semantic_hash": ""
   }
 }
