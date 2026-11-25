@@ -68,7 +68,7 @@ Detalhe, em ordem, de tudo: `docs/historico_domina.md`. Em uma linha por área:
 
 **XP e gamificação (18/11, mesma branch):** nível agora = **XP** (ações do aluno + metas), calculado na hora em `backend/app/gamificacao.py` (sem migration). Tabela de XP, teto de 30 XP/dia em exercícios, 9 conquistas, sequência de dias e faixas novas (80, 300, 550, 850, 1200, 1600) em `docs/decisoes/gamificacao-niveis-e-metas.md`. Rota `GET /gamificacao/minha` (só aluno). Tela "Minha evolução" com nível + barra de XP, sequência, conquistas, histórico e "Como ganhar XP" (`frontend/src/screens/Gamificacao.tsx`). Visão geral, "Metas e níveis" e ranking falam em XP. Testes: `backend/tests/test_gamificacao.py` (14). Sem mudança de banco.
 
-**Turmas: resumo do domínio do aluno (21/11, mesma branch):** ao clicar no aluno em Turmas, `ResumoDominioAluno` (`frontend/src/screens/ResumoAluno.tsx`) mostra média, atividades corrigidas, exercícios certos, ponto forte/fraco, gráfico por matéria e C1–C5 com prática (`/alunos/{id}/dominio`, `/evolucao`, `/pratica`). Removida a opção "Nova matéria" da criação de atividade (não há outra tela para criar matéria). Tasks do PR anotadas em `docs/superpowers/pr-notas.md`.
+**Turmas: resumo do domínio do aluno (21/11, mesma branch):** ao clicar no aluno em Turmas, `ResumoDominioAluno` (`frontend/src/screens/ResumoAluno.tsx`) mostra média, atividades corrigidas, exercícios certos, ponto forte/fraco, gráfico por matéria e C1–C5 com prática (`/alunos/{id}/dominio`, `/evolucao`, `/pratica`). Removida a opção "Nova matéria" da criação de atividade (não há outra tela para criar matéria).
 
 ## 5. Correção da redação: estado do prompt
 
