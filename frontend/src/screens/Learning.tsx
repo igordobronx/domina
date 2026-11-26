@@ -30,13 +30,9 @@ import {
   type UsuarioAtual,
 } from "../services/api";
 
-export const HABILIDADE_NOME: Record<string, string> = {
-  C1: "Norma culta",
-  C2: "Compreensão do tema",
-  C3: "Argumentação",
-  C4: "Coesão textual",
-  C5: "Proposta de intervenção",
-};
+// nomes curtos das competencias: agora em services/mapaConhecimento (reexportado para quem ja importa daqui)
+import { HABILIDADE_NOME, atividadesCorrigidas, montarMapa, tituloSubtopicos } from "../services/mapaConhecimento";
+export { HABILIDADE_NOME };
 
 // formato comum pro card/exercicio, seja ele gerado pelo backend ou (so no fallback sem
 // conta real) um dos exercicios de demonstracao fixos em data/demo.ts
@@ -152,9 +148,9 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
     .sort((a, b) => a.data.localeCompare(b.data));
   const crescimento =
     historico.length > 1 ? Math.round(historico[historico.length - 1].percentual - historico[0].percentual) : 0;
-  // C1-C5 so fazem sentido para redacao: exatas nao alimenta o dominio por tema (ver backend).
-  // o nome exato da materia varia (ex.: "Redação ENEM"), entao basta comecar com "Redação".
-  const comEvidencia = (dominio ?? []).filter((d) => d.num_evidencias > 0);
+  // subtopicos de cada materia: mesma regra e ordem da Visao geral (services/mapaConhecimento):
+  // redacao = competencias C1-C5 com evidencia; exatas = subtopicos das questoes; menor % primeiro
+  const mapa = montarMapa(materias, dominio ?? []);
   const MAX_SUB = 5;
 
   return (
@@ -176,11 +172,11 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
         </div>
         <RealSparkline pontos={historico} />
         <p className="tiny muted">
-          Baseado em {totalAtividades} atividade(s) corrigida(s) e aprovada(s) pelo professor
+          Baseado em {atividadesCorrigidas(totalAtividades)} e aprovadas pelo professor
           {subject !== "Todas" ? ` em ${subject}` : ""}.
         </p>
       </Card>
-      <Card>
+      <Card className="materias-card">
         <SectionTitle title="Cada matéria, uma conquista" />
         <SeletorMultiplo rotulo="Matérias" placeholder="Todas as matérias (escolha para filtrar)" todos="Todas as matérias"
           opcoes={materias.map((m) => ({ valor: m.materia, rotulo: m.materia }))}
@@ -196,23 +192,18 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
                 <small>%</small>
               </div>
               <Progress value={m.media_percentual} label={m.materia} />
-              <p className="tiny muted">Com base em {m.num_atividades} atividade(s) corrigida(s)</p>
+              <p className="tiny muted">Com base em {atividadesCorrigidas(m.num_atividades)}</p>
               {(() => {
-                // redacao: competencias C1-C5 (dominio); demais materias: subtopicos das questoes
-                const subs = m.materia.toLowerCase().startsWith("redação")
-                  ? comEvidencia.filter((d) => d.materia === m.materia).map((d) => ({
-                      chave: d.tema_id, nome: `${d.habilidade_codigo} ${HABILIDADE_NOME[d.habilidade_codigo] ?? d.tema}`,
-                      pct: d.percentual_dominio, tema: d.tema }))
-                  : (m.subtopicos ?? []).map((x) => ({ chave: x.nome, nome: x.nome, pct: x.percentual, tema: x.nome }));
+                const subs = mapa.subtopicos[m.materia] ?? [];
                 if (!subs.length) return null;
                 const aberta = abertas.includes(m.materia_id);
                 return (
                   <>
-                    <h4>{m.materia.toLowerCase().startsWith("redação") ? "Competências (C1 a C5)" : "Subtópicos"}</h4>
+                    <h4>{tituloSubtopicos(m.materia)}</h4>
                     {(aberta ? subs : subs.slice(0, MAX_SUB)).map((d) => (
-                      <div key={d.chave} style={{ marginTop: 10 }}>
-                        <div className="tiny">{d.nome} · {Math.round(d.pct)}%</div>
-                        <Progress value={d.pct} label={d.tema} />
+                      <div key={d.nome} style={{ marginTop: 10 }}>
+                        <div className="tiny">{d.nome} · {d.percentual}%</div>
+                        <Progress value={d.percentual} label={d.nome} />
                       </div>
                     ))}
                     {subs.length > MAX_SUB && (

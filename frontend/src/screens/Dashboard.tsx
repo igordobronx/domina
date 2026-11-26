@@ -19,7 +19,8 @@ import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
 import type { UsuarioAtual } from "../services/api";
 import { carregarDominioReal, type Recomendacao } from "../services/dominio";
-import { minhasMetas, minhasSubmissoes, type DominioAPI, type NivelAPI } from "../services/api";
+import { dominioMeu, evolucaoMinha, minhasMetas, minhasSubmissoes, type DominioAPI, type NivelAPI } from "../services/api";
+import { atividadesCorrigidas, montarMapa, tituloSubtopicos, type MapaConhecimento } from "../services/mapaConhecimento";
 import { carregarAtividadesDoAluno } from "../services/atividades";
 import { iso } from "../hooks/useCalendario";
 
@@ -80,6 +81,16 @@ export function Dashboard({
       setRecomendacao(recomendacao);
     });
   }, [real, currentUser?.id]);
+  // mapa por materia (% e subtopicos): mesma base da tela Minha evolucao
+  const [mapa, setMapa] = useState<MapaConhecimento | null>(null);
+  const [materiaSub, setMateriaSub] = useState<string | null>(null); // aba do cartao de subtopicos
+  useEffect(() => {
+    if (!real) return;
+    Promise.all([evolucaoMinha(), dominioMeu()])
+      .then(([ev, dom]) => setMapa(montarMapa(ev, dom)))
+      .catch(() => setMapa(montarMapa([], [])));
+  }, [real, currentUser?.id]);
+  const abaSub = materiaSub && mapa?.subtopicos[materiaSub] ? materiaSub : mapa?.inicial ?? null;
   const mediaReal = dominioReal?.length
     ? Math.round(dominioReal.reduce((s, d) => s + d.percentual_dominio, 0) / dominioReal.length)
     : null;
@@ -301,25 +312,19 @@ export function Dashboard({
           </p>
           <div className="topic-list">
             {real
-              ? (dominioReal ?? []).map((d) => (
-                  <div key={d.tema_id} className="topic-row">
+              ? (mapa?.materias ?? []).map((m) => (
+                  <div key={m.nome} className="topic-row">
                     <div className="topic-heading">
                       <div>
-                        <strong>{d.tema}</strong>
-                        <span>
-                          {d.habilidade_codigo} <span className="separator">/</span>{" "}
-                          {d.num_evidencias} correções aprovadas
-                        </span>
+                        <strong>{m.nome}</strong>
+                        <span>{atividadesCorrigidas(m.atividades)}</span>
                       </div>
                       <span className="topic-value">
-                        {Math.round(d.percentual_dominio)}
+                        {m.percentual}
                         <small>%</small>
                       </span>
                     </div>
-                    <Progress
-                      value={d.percentual_dominio}
-                      label={`Domínio em ${d.tema}`}
-                    />
+                    <Progress value={m.percentual} label={`Domínio em ${m.nome}`} />
                   </div>
                 ))
               : topics.map((t) => (
@@ -340,7 +345,7 @@ export function Dashboard({
                     <Progress value={t.value} label={`Domínio em ${t.name}`} />
                   </div>
                 ))}
-            {real && dominioReal !== null && !dominioReal.length && (
+            {real && mapa !== null && !mapa.materias.length && (
               <p className="tiny muted">
                 Ainda não há correções aprovadas para estimar seu domínio.
               </p>
@@ -419,6 +424,46 @@ export function Dashboard({
           </Button>
         </Card>
       </div>
+      {real && mapa && mapa.materias.length > 0 && abaSub && (
+        <Card>
+          <SectionTitle title="Subtópicos" action="Ver evolução" onAction={() => navigate("evolucao")} />
+          <p className="muted card-subtitle">Veja em que parte de cada matéria focar.</p>
+          <div className="tabs" role="group" aria-label="Escolher matéria">
+            {[...mapa.materias].reverse().map((m) => (
+              <button
+                key={m.nome}
+                aria-pressed={abaSub === m.nome}
+                className={abaSub === m.nome ? "active" : ""}
+                onClick={() => setMateriaSub(m.nome)}
+              >
+                {m.nome}
+              </button>
+            ))}
+          </div>
+          {/* o cartao ja se chama "Subtopicos": o titulo de dentro so aparece na redacao (C1 a C5) */}
+          {tituloSubtopicos(abaSub) !== "Subtópicos" && <h4 className="subtopicos-titulo">{tituloSubtopicos(abaSub)}</h4>}
+          <div className="topic-list">
+            {mapa.subtopicos[abaSub].length ? (
+              mapa.subtopicos[abaSub].map((s) => (
+                <div key={s.nome} className="topic-row">
+                  <div className="topic-heading">
+                    <div>
+                      <strong>{s.nome}</strong>
+                    </div>
+                    <span className="topic-value">
+                      {s.percentual}
+                      <small>%</small>
+                    </span>
+                  </div>
+                  <Progress value={s.percentual} label={`Domínio em ${s.nome}`} />
+                </div>
+              ))
+            ) : (
+              <p className="tiny muted">Ainda não há subtópicos nesta matéria.</p>
+            )}
+          </div>
+        </Card>
+      )}
       <Card>
         <SectionTitle
           title={student ? "Suas atividades recentes" : "Atividades da turma"}
