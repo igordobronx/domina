@@ -119,7 +119,11 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
   if (carregando) return <>{topo}<Empty title="Carregando sua evolução..." text="Isso leva só um instante." /></>;
   if (erro) return <>{topo}<Empty title="Ainda não dá para ver sua evolução" text={erro} /></>;
 
-  const materias = porMateria ?? [];
+  // subtopicos e ordem das materias: mesma regra da Visao geral (services/mapaConhecimento):
+  // redacao = competencias C1-C5 com evidencia; exatas = subtopicos das questoes; menor % primeiro
+  const mapa = montarMapa(porMateria ?? [], dominio ?? []);
+  const ordem = mapa.materias.map((m) => m.nome);
+  const materias = [...(porMateria ?? [])].sort((a, b) => ordem.indexOf(a.materia) - ordem.indexOf(b.materia));
   if (!materias.length) {
     return (
       <>
@@ -148,9 +152,6 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
     .sort((a, b) => a.data.localeCompare(b.data));
   const crescimento =
     historico.length > 1 ? Math.round(historico[historico.length - 1].percentual - historico[0].percentual) : 0;
-  // subtopicos de cada materia: mesma regra e ordem da Visao geral (services/mapaConhecimento):
-  // redacao = competencias C1-C5 com evidencia; exatas = subtopicos das questoes; menor % primeiro
-  const mapa = montarMapa(materias, dominio ?? []);
   const MAX_SUB = 5;
 
   return (

@@ -23,3 +23,9 @@ Formato escolhido: **dois cartões**. Só no site; usa rotas que já existem (`/
 - As duas telas usam a mesma função (`montarMapa`): mesma conta, mesmos nomes curtos (C1 Norma culta...) e mesma ordem (subtópicos do menor % para o maior).
 - Mesmos textos: "Competências (C1 a C5)" na redação, "Subtópicos" nas outras; "1 atividade corrigida" / "2 atividades corrigidas".
 - O formato continua diferente de propósito: Visão geral = resumo; Minha evolução = detalhe (gráfico, filtro, cartão por matéria).
+
+## Revisão do PR (27/11): Visão geral = resumo, detalhe só na Minha evolução
+Sugestões do time (aceitas pelo Gustavo): 3 + 2.
+- **Sai o cartão "Subtópicos" da Visão geral.** Ela mostra só as matérias em %; o link "Ver evolução" leva à Minha evolução, que já tem um cartão por matéria com os subtópicos.
+- **Uma ordem só, nas duas telas:** matérias e subtópicos do menor % para o maior (o que precisa de mais atenção primeiro). Antes as matérias iam do maior para o menor e os subtópicos ao contrário.
+- A ordem das matérias na Minha evolução também vem de `montarMapa` (um lugar só).

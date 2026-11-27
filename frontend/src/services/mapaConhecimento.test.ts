@@ -27,18 +27,14 @@ describe("Mapa de conhecimento do aluno", () => {
   ];
   const dominio = [dom("C1", 80), dom("C4", 30), dom("C2", 60, 0)];
 
-  it("lista só as matérias, do maior % para o menor, arredondado", () => {
+  it("lista as matérias do menor % para o maior (mesma ordem dos subtópicos), arredondado", () => {
     const m = montarMapa(evolucao, dominio);
     expect(m.materias.map((x) => [x.nome, x.percentual])).toEqual([
-      ["Matemática", 75],
-      ["Redação ENEM", 70],
       ["Física", 67],
+      ["Redação ENEM", 70],
+      ["Matemática", 75],
     ]);
-    expect(m.materias[0].atividades).toBe(2);
-  });
-
-  it("a aba que abre primeiro é a matéria de menor %", () => {
-    expect(montarMapa(evolucao, dominio).inicial).toBe("Física");
+    expect(m.materias[2].atividades).toBe(2);
   });
 
   it("exatas: subtópicos das questões, do menor % para o maior", () => {
@@ -60,7 +56,6 @@ describe("Mapa de conhecimento do aluno", () => {
   it("sem nada corrigido, o mapa vem vazio", () => {
     const m = montarMapa([], []);
     expect(m.materias).toEqual([]);
-    expect(m.inicial).toBeNull();
   });
 });
 

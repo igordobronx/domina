@@ -19,9 +19,9 @@ export interface SubtopicoNoMapa {
   percentual: number; // arredondado
 }
 export interface MapaConhecimento {
-  materias: MateriaNoMapa[]; // maior % primeiro
-  subtopicos: Record<string, SubtopicoNoMapa[]>; // por nome da materia, menor % primeiro
-  inicial: string | null; // materia de menor %: e onde o aluno mais precisa
+  // tudo do menor % para o maior: o que precisa de mais atencao aparece primeiro
+  materias: MateriaNoMapa[];
+  subtopicos: Record<string, SubtopicoNoMapa[]>; // por nome da materia
 }
 
 // mesma regra da tela Minha evolucao: redacao usa as competencias C1-C5 (dominio);
@@ -31,7 +31,7 @@ const ehRedacao = (materia: string) => materia.toLowerCase().startsWith("redaÃ§Ã
 export function montarMapa(evolucao: EvolucaoMateriaAPI[], dominio: DominioAPI[]): MapaConhecimento {
   const materias = evolucao
     .map((m) => ({ nome: m.materia, percentual: Math.round(m.media_percentual), atividades: m.num_atividades }))
-    .sort((a, b) => b.percentual - a.percentual || a.nome.localeCompare(b.nome));
+    .sort((a, b) => a.percentual - b.percentual || a.nome.localeCompare(b.nome));
 
   const subtopicos: Record<string, SubtopicoNoMapa[]> = {};
   for (const m of evolucao) {
@@ -46,7 +46,7 @@ export function montarMapa(evolucao: EvolucaoMateriaAPI[], dominio: DominioAPI[]
     subtopicos[m.materia] = subs.sort((a, b) => a.percentual - b.percentual || a.nome.localeCompare(b.nome));
   }
 
-  return { materias, subtopicos, inicial: materias.length ? materias[materias.length - 1].nome : null };
+  return { materias, subtopicos };
 }
 
 // textos comuns da Visao geral e da Minha evolucao (as duas telas falam igual)
