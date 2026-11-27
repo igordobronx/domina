@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SeletorMultiplo } from "../components/Seletor";
 import {
   ArrowLeft,
@@ -103,8 +103,8 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
       .finally(() => setCarregando(false));
   }, [currentUser?.id]);
 
-  // topo (titulo + nivel/XP) aparece sempre; o dominio por materia vem embaixo, quando existir
-  const topo = (
+  // titulo e nivel/XP no topo; o dominio por materia no meio; conquistas e XP por ultimo
+  const pagina = (conteudo: ReactNode) => (
     <>
       <div className="page-heading">
         <div>
@@ -113,11 +113,11 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
           <p>Compare você com você. Cada conquista tem seu valor.</p>
         </div>
       </div>
-      {currentUser && <PainelXP alunoId={currentUser.id} />}
+      {currentUser ? <PainelXP alunoId={currentUser.id}>{conteudo}</PainelXP> : conteudo}
     </>
   );
-  if (carregando) return <>{topo}<Empty title="Carregando sua evolução..." text="Isso leva só um instante." /></>;
-  if (erro) return <>{topo}<Empty title="Ainda não dá para ver sua evolução" text={erro} /></>;
+  if (carregando) return pagina(<Empty title="Carregando sua evolução..." text="Isso leva só um instante." />);
+  if (erro) return pagina(<Empty title="Ainda não dá para ver sua evolução" text={erro} />);
 
   // subtopicos e ordem das materias: mesma regra da Visao geral (services/mapaConhecimento):
   // redacao = competencias C1-C5 com evidencia; exatas = subtopicos das questoes; menor % primeiro
@@ -125,14 +125,11 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
   const ordem = mapa.materias.map((m) => m.nome);
   const materias = [...(porMateria ?? [])].sort((a, b) => ordem.indexOf(a.materia) - ordem.indexOf(b.materia));
   if (!materias.length) {
-    return (
-      <>
-        {topo}
-        <Empty
-          title="Seu domínio por matéria aparece aqui em breve"
-          text="Assim que o professor aprovar a primeira correção de uma atividade sua, o histórico desta matéria passa a aparecer aqui."
-        />
-      </>
+    return pagina(
+      <Empty
+        title="Seu domínio por matéria aparece aqui em breve"
+        text="Assim que o professor aprovar a primeira correção de uma atividade sua, o histórico desta matéria passa a aparecer aqui."
+      />,
     );
   }
 
@@ -154,29 +151,8 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
     historico.length > 1 ? Math.round(historico[historico.length - 1].percentual - historico[0].percentual) : 0;
   const MAX_SUB = 5;
 
-  return (
+  return pagina(
     <>
-      {topo}
-      <Card>
-        <SectionTitle title="Seu domínio ao longo do tempo" />
-        <div className="evolution-highlight">
-          <strong>
-            {mediaGeral}
-            <span>%</span>
-          </strong>
-          {historico.length > 1 && (
-            <Badge>
-              <TrendingUp size={13} />
-              {crescimento >= 0 ? ` +${crescimento}` : ` ${crescimento}`} pontos desde a primeira correção
-            </Badge>
-          )}
-        </div>
-        <RealSparkline pontos={historico} />
-        <p className="tiny muted">
-          Baseado em {atividadesCorrigidas(totalAtividades)} e aprovadas pelo professor
-          {subject !== "Todas" ? ` em ${subject}` : ""}.
-        </p>
-      </Card>
       <Card className="materias-card">
         <SectionTitle title="Cada matéria, uma conquista" />
         <SeletorMultiplo rotulo="Matérias" placeholder="Todas as matérias (escolha para filtrar)" todos="Todas as matérias"
@@ -227,6 +203,26 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
           O domínio é uma estimativa de aprendizagem, não uma nota oficial nem
           previsão de resultado no ENEM.
         </div>
+      </Card>
+      <Card>
+        <SectionTitle title="Seu domínio ao longo do tempo" />
+        <div className="evolution-highlight">
+          <strong>
+            {mediaGeral}
+            <span>%</span>
+          </strong>
+          {historico.length > 1 && (
+            <Badge>
+              <TrendingUp size={13} />
+              {crescimento >= 0 ? ` +${crescimento}` : ` ${crescimento}`} pontos desde a primeira correção
+            </Badge>
+          )}
+        </div>
+        <RealSparkline pontos={historico} />
+        <p className="tiny muted">
+          Baseado em {atividadesCorrigidas(totalAtividades)} e aprovadas pelo professor
+          {subject !== "Todas" ? ` em ${subject}` : ""}.
+        </p>
       </Card>
     </>
   );

@@ -29,3 +29,7 @@ Sugestões do time (aceitas pelo Gustavo): 3 + 2.
 - **Sai o cartão "Subtópicos" da Visão geral.** Ela mostra só as matérias em %; o link "Ver evolução" leva à Minha evolução, que já tem um cartão por matéria com os subtópicos.
 - **Uma ordem só, nas duas telas:** matérias e subtópicos do menor % para o maior (o que precisa de mais atenção primeiro). Antes as matérias iam do maior para o menor e os subtópicos ao contrário.
 - A ordem das matérias na Minha evolução também vem de `montarMapa` (um lugar só).
+
+## Minha evolução: ordem da tela (27/11)
+- Ordem: nível e sequência de dias, matérias (com subtópicos), gráfico "Seu domínio ao longo do tempo", e por último Conquistas, "De onde veio seu XP" e "Como ganhar XP".
+- `PainelXP` (Gamificacao.tsx) recebe o conteúdo da tela como `children` e o põe entre o nível e as conquistas (uma chamada só à API).
