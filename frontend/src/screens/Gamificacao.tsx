@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Award,
   Check,
@@ -45,8 +45,9 @@ const COMO_GANHAR: [string, string][] = [
 const dataCurta = (iso: string) =>
   new Date(`${iso}T12:00:00`).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 
-// nivel, XP, sequencia de dias, conquistas e historico: topo da "Minha evolucao" do aluno
-export function PainelXP({ alunoId }: { alunoId: string }) {
+// "Minha evolucao" do aluno: nivel e sequencia no topo, o conteudo da tela (children) no meio,
+// e conquistas + historico de XP por ultimo
+export function PainelXP({ alunoId, children }: { alunoId: string; children?: ReactNode }) {
   const [dados, setDados] = useState<GamificacaoAPI | null>(null);
   const [erro, setErro] = useState(false);
 
@@ -54,8 +55,8 @@ export function PainelXP({ alunoId }: { alunoId: string }) {
     minhaGamificacao().then(setDados).catch(() => setErro(true));
   }, [alunoId]);
 
-  if (erro) return null; // a evolucao continua aparecendo mesmo se o XP falhar
-  if (!dados) return <Card className="xp-carregando"><p className="tiny muted">Carregando seu nível...</p></Card>;
+  if (erro) return <>{children}</>; // a evolucao continua aparecendo mesmo se o XP falhar
+  if (!dados) return <><Card className="xp-carregando"><p className="tiny muted">Carregando seu nível...</p></Card>{children}</>;
 
   const { nivel, sequencia, conquistas, historico } = dados;
   const noMax = nivel.pontos_proximo == null;
@@ -108,6 +109,8 @@ export function PainelXP({ alunoId }: { alunoId: string }) {
           </div>
         </Card>
       </div>
+
+      {children}
 
       <Card>
         <SectionTitle title={`Conquistas · ${ganhas} de ${conquistas.length}`} />

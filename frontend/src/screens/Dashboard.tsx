@@ -19,7 +19,8 @@ import { Badge, Button, Card, Progress, SectionTitle } from "../components/ui";
 import { EvolutionChart } from "../components/Chart";
 import type { UsuarioAtual } from "../services/api";
 import { carregarDominioReal, type Recomendacao } from "../services/dominio";
-import { minhasMetas, minhasSubmissoes, type DominioAPI, type NivelAPI } from "../services/api";
+import { dominioMeu, evolucaoMinha, minhasMetas, minhasSubmissoes, type DominioAPI, type NivelAPI } from "../services/api";
+import { atividadesCorrigidas, montarMapa, type MapaConhecimento } from "../services/mapaConhecimento";
 import { carregarAtividadesDoAluno } from "../services/atividades";
 import { iso } from "../hooks/useCalendario";
 
@@ -79,6 +80,14 @@ export function Dashboard({
       setDominioReal(dominio);
       setRecomendacao(recomendacao);
     });
+  }, [real, currentUser?.id]);
+  // mapa por materia (so a %; os subtopicos ficam na Minha evolucao): mesma base das duas telas
+  const [mapa, setMapa] = useState<MapaConhecimento | null>(null);
+  useEffect(() => {
+    if (!real) return;
+    Promise.all([evolucaoMinha(), dominioMeu()])
+      .then(([ev, dom]) => setMapa(montarMapa(ev, dom)))
+      .catch(() => setMapa(montarMapa([], [])));
   }, [real, currentUser?.id]);
   const mediaReal = dominioReal?.length
     ? Math.round(dominioReal.reduce((s, d) => s + d.percentual_dominio, 0) / dominioReal.length)
@@ -301,25 +310,19 @@ export function Dashboard({
           </p>
           <div className="topic-list">
             {real
-              ? (dominioReal ?? []).map((d) => (
-                  <div key={d.tema_id} className="topic-row">
+              ? (mapa?.materias ?? []).map((m) => (
+                  <div key={m.nome} className="topic-row">
                     <div className="topic-heading">
                       <div>
-                        <strong>{d.tema}</strong>
-                        <span>
-                          {d.habilidade_codigo} <span className="separator">/</span>{" "}
-                          {d.num_evidencias} correções aprovadas
-                        </span>
+                        <strong>{m.nome}</strong>
+                        <span>{atividadesCorrigidas(m.atividades)}</span>
                       </div>
                       <span className="topic-value">
-                        {Math.round(d.percentual_dominio)}
+                        {m.percentual}
                         <small>%</small>
                       </span>
                     </div>
-                    <Progress
-                      value={d.percentual_dominio}
-                      label={`Domínio em ${d.tema}`}
-                    />
+                    <Progress value={m.percentual} label={`Domínio em ${m.nome}`} />
                   </div>
                 ))
               : topics.map((t) => (
@@ -340,7 +343,7 @@ export function Dashboard({
                     <Progress value={t.value} label={`Domínio em ${t.name}`} />
                   </div>
                 ))}
-            {real && dominioReal !== null && !dominioReal.length && (
+            {real && mapa !== null && !mapa.materias.length && (
               <p className="tiny muted">
                 Ainda não há correções aprovadas para estimar seu domínio.
               </p>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SeletorMultiplo } from "../components/Seletor";
 import {
   ArrowLeft,
@@ -30,13 +30,9 @@ import {
   type UsuarioAtual,
 } from "../services/api";
 
-export const HABILIDADE_NOME: Record<string, string> = {
-  C1: "Norma culta",
-  C2: "Compreensão do tema",
-  C3: "Argumentação",
-  C4: "Coesão textual",
-  C5: "Proposta de intervenção",
-};
+// nomes curtos das competencias: agora em services/mapaConhecimento (reexportado para quem ja importa daqui)
+import { HABILIDADE_NOME, atividadesCorrigidas, montarMapa, tituloSubtopicos } from "../services/mapaConhecimento";
+export { HABILIDADE_NOME };
 
 // formato comum pro card/exercicio, seja ele gerado pelo backend ou (so no fallback sem
 // conta real) um dos exercicios de demonstracao fixos em data/demo.ts
@@ -107,8 +103,8 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
       .finally(() => setCarregando(false));
   }, [currentUser?.id]);
 
-  // topo (titulo + nivel/XP) aparece sempre; o dominio por materia vem embaixo, quando existir
-  const topo = (
+  // titulo e nivel/XP no topo; o dominio por materia no meio; conquistas e XP por ultimo
+  const pagina = (conteudo: ReactNode) => (
     <>
       <div className="page-heading">
         <div>
@@ -117,22 +113,23 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
           <p>Compare você com você. Cada conquista tem seu valor.</p>
         </div>
       </div>
-      {currentUser && <PainelXP alunoId={currentUser.id} />}
+      {currentUser ? <PainelXP alunoId={currentUser.id}>{conteudo}</PainelXP> : conteudo}
     </>
   );
-  if (carregando) return <>{topo}<Empty title="Carregando sua evolução..." text="Isso leva só um instante." /></>;
-  if (erro) return <>{topo}<Empty title="Ainda não dá para ver sua evolução" text={erro} /></>;
+  if (carregando) return pagina(<Empty title="Carregando sua evolução..." text="Isso leva só um instante." />);
+  if (erro) return pagina(<Empty title="Ainda não dá para ver sua evolução" text={erro} />);
 
-  const materias = porMateria ?? [];
+  // subtopicos e ordem das materias: mesma regra da Visao geral (services/mapaConhecimento):
+  // redacao = competencias C1-C5 com evidencia; exatas = subtopicos das questoes; menor % primeiro
+  const mapa = montarMapa(porMateria ?? [], dominio ?? []);
+  const ordem = mapa.materias.map((m) => m.nome);
+  const materias = [...(porMateria ?? [])].sort((a, b) => ordem.indexOf(a.materia) - ordem.indexOf(b.materia));
   if (!materias.length) {
-    return (
-      <>
-        {topo}
-        <Empty
-          title="Seu domínio por matéria aparece aqui em breve"
-          text="Assim que o professor aprovar a primeira correção de uma atividade sua, o histórico desta matéria passa a aparecer aqui."
-        />
-      </>
+    return pagina(
+      <Empty
+        title="Seu domínio por matéria aparece aqui em breve"
+        text="Assim que o professor aprovar a primeira correção de uma atividade sua, o histórico desta matéria passa a aparecer aqui."
+      />,
     );
   }
 
@@ -152,35 +149,11 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
     .sort((a, b) => a.data.localeCompare(b.data));
   const crescimento =
     historico.length > 1 ? Math.round(historico[historico.length - 1].percentual - historico[0].percentual) : 0;
-  // C1-C5 so fazem sentido para redacao: exatas nao alimenta o dominio por tema (ver backend).
-  // o nome exato da materia varia (ex.: "Redação ENEM"), entao basta comecar com "Redação".
-  const comEvidencia = (dominio ?? []).filter((d) => d.num_evidencias > 0);
   const MAX_SUB = 5;
 
-  return (
+  return pagina(
     <>
-      {topo}
-      <Card>
-        <SectionTitle title="Seu domínio ao longo do tempo" />
-        <div className="evolution-highlight">
-          <strong>
-            {mediaGeral}
-            <span>%</span>
-          </strong>
-          {historico.length > 1 && (
-            <Badge>
-              <TrendingUp size={13} />
-              {crescimento >= 0 ? ` +${crescimento}` : ` ${crescimento}`} pontos desde a primeira correção
-            </Badge>
-          )}
-        </div>
-        <RealSparkline pontos={historico} />
-        <p className="tiny muted">
-          Baseado em {totalAtividades} atividade(s) corrigida(s) e aprovada(s) pelo professor
-          {subject !== "Todas" ? ` em ${subject}` : ""}.
-        </p>
-      </Card>
-      <Card>
+      <Card className="materias-card">
         <SectionTitle title="Cada matéria, uma conquista" />
         <SeletorMultiplo rotulo="Matérias" placeholder="Todas as matérias (escolha para filtrar)" todos="Todas as matérias"
           opcoes={materias.map((m) => ({ valor: m.materia, rotulo: m.materia }))}
@@ -196,23 +169,18 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
                 <small>%</small>
               </div>
               <Progress value={m.media_percentual} label={m.materia} />
-              <p className="tiny muted">Com base em {m.num_atividades} atividade(s) corrigida(s)</p>
+              <p className="tiny muted">Com base em {atividadesCorrigidas(m.num_atividades)}</p>
               {(() => {
-                // redacao: competencias C1-C5 (dominio); demais materias: subtopicos das questoes
-                const subs = m.materia.toLowerCase().startsWith("redação")
-                  ? comEvidencia.filter((d) => d.materia === m.materia).map((d) => ({
-                      chave: d.tema_id, nome: `${d.habilidade_codigo} ${HABILIDADE_NOME[d.habilidade_codigo] ?? d.tema}`,
-                      pct: d.percentual_dominio, tema: d.tema }))
-                  : (m.subtopicos ?? []).map((x) => ({ chave: x.nome, nome: x.nome, pct: x.percentual, tema: x.nome }));
+                const subs = mapa.subtopicos[m.materia] ?? [];
                 if (!subs.length) return null;
                 const aberta = abertas.includes(m.materia_id);
                 return (
                   <>
-                    <h4>{m.materia.toLowerCase().startsWith("redação") ? "Competências (C1 a C5)" : "Subtópicos"}</h4>
+                    <h4>{tituloSubtopicos(m.materia)}</h4>
                     {(aberta ? subs : subs.slice(0, MAX_SUB)).map((d) => (
-                      <div key={d.chave} style={{ marginTop: 10 }}>
-                        <div className="tiny">{d.nome} · {Math.round(d.pct)}%</div>
-                        <Progress value={d.pct} label={d.tema} />
+                      <div key={d.nome} style={{ marginTop: 10 }}>
+                        <div className="tiny">{d.nome} · {d.percentual}%</div>
+                        <Progress value={d.percentual} label={d.nome} />
                       </div>
                     ))}
                     {subs.length > MAX_SUB && (
@@ -235,6 +203,26 @@ export function Evolution({ currentUser }: { currentUser?: UsuarioAtual | null }
           O domínio é uma estimativa de aprendizagem, não uma nota oficial nem
           previsão de resultado no ENEM.
         </div>
+      </Card>
+      <Card>
+        <SectionTitle title="Seu domínio ao longo do tempo" />
+        <div className="evolution-highlight">
+          <strong>
+            {mediaGeral}
+            <span>%</span>
+          </strong>
+          {historico.length > 1 && (
+            <Badge>
+              <TrendingUp size={13} />
+              {crescimento >= 0 ? ` +${crescimento}` : ` ${crescimento}`} pontos desde a primeira correção
+            </Badge>
+          )}
+        </div>
+        <RealSparkline pontos={historico} />
+        <p className="tiny muted">
+          Baseado em {atividadesCorrigidas(totalAtividades)} e aprovadas pelo professor
+          {subject !== "Todas" ? ` em ${subject}` : ""}.
+        </p>
       </Card>
     </>
   );

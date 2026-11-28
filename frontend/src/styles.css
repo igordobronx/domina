@@ -3325,3 +3325,16 @@ button.top-avatar {
   .student-domain { padding-left: 0; }
 }
 .pontos-seletor { display: grid; gap: 8px; }
+/* "Seu proximo passo": o selo traz o nome longo da competencia; quebra linha em vez de sair do cartao */
+.next-card .badge {
+  white-space: normal;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+/* Minha evolucao, "Cada materia, uma conquista": respiro entre titulo, filtro, "Materias" e os cartoes */
+.materias-card > .section-title {
+  margin-bottom: 16px;
+}
+.materias-card > .section-title:not(:first-child) {
+  margin-top: 32px;
+}
